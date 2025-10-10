@@ -1,10 +1,10 @@
 import { ref, watch } from 'vue'
-import { getRevenueSeries } from '../services/financials'
+import { getFcfSeries } from '../services/financials'
 
-export function useRevenueSeries(tickerRef) {
+export function useFcfSeries(tickerRef) {
   const period  = ref('annual')   // 'annual' | 'quarterly'
   const series  = ref([])
-  const title   = ref('Revenue — Empty')
+  const title   = ref('Free Cash Flow — Empty')
   const message = ref('')
   const loading = ref(false)
 
@@ -12,20 +12,20 @@ export function useRevenueSeries(tickerRef) {
     message.value = ''
     const t = (tickerRef?.value || '').toUpperCase()
     if (!t) {
-      title.value = 'Revenue — Empty'
+      title.value = 'Free Cash Flow — Empty'
       series.value = []
       message.value = 'Enter a ticker'
       return
     }
     loading.value = true
     try {
-      const data = await getRevenueSeries(t, period.value)
+      const data = await getFcfSeries(t, period.value)
       if (!data.length) {
-        title.value = 'Revenue — No data'
+        title.value = 'Free Cash Flow — No data'
         series.value = []
-        message.value = `No revenue data for '${t}'.`
+        message.value = `No FCF data for '${t}'.`
       } else {
-        title.value = `Revenue (${period.value === 'annual' ? 'Annual' : 'Quarterly'})`
+        title.value = `Free Cash Flow (${period.value === 'annual' ? 'Annual' : 'Quarterly'})`
         series.value = data
       }
     } finally {

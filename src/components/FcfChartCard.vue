@@ -11,17 +11,19 @@ import VChart from 'vue-echarts'
 
 const props = defineProps({
   series:  { type: Array, default: () => [] },
-  title:   { type: String, default: 'Empty Chart' },
+  title:   { type: String, default: 'Free Cash Flow' },
   message: { type: String, default: '' }
 })
 
+function fmtShort(n){const a=Math.abs(n); if(a>=1e12)return(n/1e12).toFixed(2)+'T'; if(a>=1e9)return(n/1e9).toFixed(2)+'B'; if(a>=1e6)return(n/1e6).toFixed(2)+'M'; if(a>=1e3)return(n/1e3).toFixed(0)+'K'; return String(n)}
+
 const chartOption = computed(() => ({
   backgroundColor: 'transparent',
-  title: { text: props.title, left: 'center', textStyle: { color: '#fff', fontSize: 14 } },
+  title: { text: props.title, left: 'center', textStyle: { color: '#fff', fontSize: 14 } }, // ⬅ same title style
   grid:  { left: 24, right: 24, top: 44, bottom: 50, containLabel: true },
-  tooltip: { trigger: 'axis' },
+  tooltip: { trigger: 'axis', valueFormatter: (v)=> fmtShort(v) },
   xAxis: {
-    type: 'time', boundaryGap: false,
+    type: 'time',
     axisLabel: { color: '#ddd' },
     axisLine:  { lineStyle: { color: '#aaa' } },
     splitLine: { show: false }
@@ -29,20 +31,16 @@ const chartOption = computed(() => ({
   yAxis: {
     type: 'value',
     scale: true,
-    min: (v)=>{const r=v.max-v.min; if(r===0){const p=Math.abs(v.min)*.05||1; return v.min-p} return v.min-r*.06},
-    max: (v)=>{const r=v.max-v.min; if(r===0){const p=Math.abs(v.max)*.05||1; return v.max+p} return v.max+r*.06},
-    axisLabel: { color: '#ddd', formatter: (val)=> Math.round(val).toString() }, // ⬅ rounded labels
+    axisLabel: { color: '#ddd', formatter: (v)=> fmtShort(v) }, // ⬅ same color
     axisLine:  { lineStyle: { color: '#aaa' } },
     splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } } // ⬅ unified splits
   },
   series: [{
-    type: 'line',
-    name: 'Close',
+    type: 'bar',
+    name: 'FCF',
     data: props.series,
-    smooth: 0.15,
-    showSymbol: false,
-    emphasis: { disabled: true },
-    lineStyle: { width: 2 }
+    barMaxWidth: 28,
+    itemStyle: { opacity: 0.9 }
   }]
 }))
 </script>

@@ -1,2 +1,26 @@
-* { box-sizing: border-box; }
 html, body, #app { height: 100%; margin: 0; }
+body { background: #121212; color: #fff; }
+
+.panel {
+  background: #1f1f1f;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  padding: 12px;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 600px));
+  justify-content: center;   /* center rows */
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  max-width: 1200px;
+  margin: 12px auto 0;
+}

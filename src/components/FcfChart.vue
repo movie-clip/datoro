@@ -11,11 +11,11 @@
 
 <script setup>
 import { toRef } from 'vue'
-import { useRevenueSeries } from '../composables/useRevenueSeries'
+import { useFcfSeries } from '../composables/useFcfSeries'
 import BaseChart from './BaseChart.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
-const { period, series, title, message } = useRevenueSeries(toRef(props, 'ticker'))
+const { period, series, title, message } = useFcfSeries(toRef(props, 'ticker'))
 </script>
 
 <style scoped>

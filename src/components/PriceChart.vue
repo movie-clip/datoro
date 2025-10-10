@@ -1,8 +1,9 @@
 <template>
-  <section class="card">
+  <div style="display:grid; grid-template-rows:auto 1fr auto; gap:10px;">
     <TimeframeButtons v-model="tfKey" :order="tfOrder" />
-    <ChartCard :series="series" :title="title" :message="message" />
-  </section>
+    <BaseChart :title="title" :series="series" kind="line" yFormat="int" />
+    <p v-if="message" class="msg">{{ message }}</p>
+  </div>
 </template>
 
 <script setup>
@@ -10,7 +11,7 @@ import { toRef } from 'vue'
 import { TF_ORDER } from '../models/timeframe'
 import { usePriceSeries } from '../composables/usePriceSeries'
 import TimeframeButtons from './TimeframeButtons.vue'
-import ChartCard from './ChartCard.vue'
+import BaseChart from './BaseChart.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
 const { tfKey, series, title, message } = usePriceSeries(toRef(props, 'ticker'))
@@ -18,15 +19,5 @@ const tfOrder = TF_ORDER
 </script>
 
 <style scoped>
-.card {
-  background: #1f1f1f;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 10px;
-  max-width: 600px;
-  width: 100%;
-}
+.msg { margin: 6px 0 0; opacity: 0.85; }
 </style>
