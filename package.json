@@ -1,0 +1,28 @@
+{
+  "name": "finance-vue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "echarts": "^6.0.0",
+    "express": "^5.1.0",
+    "fetch-cookie": "^3.1.0",
+    "node-fetch": "^3.3.2",
+    "tough-cookie": "^6.0.0",
+    "vue": "^3.5.22",
+    "vue-echarts": "^8.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.7"
+  }
+}
