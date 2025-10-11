@@ -43,6 +43,7 @@ import ChartModal from './ChartModal.vue'
 const props = defineProps({
   title: { type: String, required: true },
   series: { type: Array, required: true },
+  compactSeries: { type: Array, required: true },
   loading: { type: Boolean, default: false },
   viewModeOptions: { type: Array, default: () => [] },
   selectedSegments: { type: Array, required: true }
@@ -87,7 +88,8 @@ function fmtShort(n){
   return String(n)
 }
 
-const createOption = (isLarge = false) => {
+const createOption = (isLarge = false, dataSource) => {
+  // Match BaseChart padding exactly
   const topPadding = isLarge ? 30 : 44
   const bottomPadding = isLarge ? 60 : 50
   
@@ -100,16 +102,13 @@ const createOption = (isLarge = false) => {
     },
     legend: { show: false },
     grid: { 
-      left: isLarge ? 60 : 46, 
-      right: isLarge ? 30 : 16, 
+      left: 24, 
+      right: 24, 
       top: topPadding, 
       bottom: bottomPadding, 
-      containLabel: false 
+      containLabel: true 
     },
-    tooltip: { 
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' }
-    },
+    tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'time', 
       boundaryGap: false,
@@ -152,9 +151,9 @@ const createOption = (isLarge = false) => {
 
   // Handle both single series array and multi-series array
   let series
-  if (Array.isArray(props.series) && props.series.length > 0 && props.series[0]?.name) {
+  if (Array.isArray(dataSource) && dataSource.length > 0 && dataSource[0]?.name) {
     // Multi-series format with stacking
-    series = props.series.map((s) => ({
+    series = dataSource.map((s) => ({
       type: 'bar',
       name: s.name,
       data: s.data,
@@ -167,7 +166,7 @@ const createOption = (isLarge = false) => {
     series = [{ 
       type: 'bar', 
       name: props.title, 
-      data: props.series, 
+      data: dataSource, 
       barMaxWidth: 28, 
       itemStyle: { opacity: 0.9 } 
     }]
@@ -176,8 +175,8 @@ const createOption = (isLarge = false) => {
   return { ...base, series }
 }
 
-const compactOption = computed(() => createOption(false))
-const modalOption = computed(() => createOption(true))
+const compactOption = computed(() => createOption(false, props.compactSeries))
+const modalOption = computed(() => createOption(true, props.series))
 </script>
 
 <style scoped>

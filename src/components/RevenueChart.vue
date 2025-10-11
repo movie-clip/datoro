@@ -2,14 +2,18 @@
 <template>
   <div style="position:relative; min-height:240px;">
     <div v-if="loading && series.length === 0" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
-    <RevenueChartWithModal
+    <BaseChart
       v-else
       :key="`revenue-${ticker}`"
       :title="title"
       :series="series"
+      :compactSeries="compactSeries"
+      kind="bar"
+      yFormat="short"
       :loading="loading"
-      :viewModeOptions="viewModeOptions"
+      aria-label="Revenue chart"
       :selectedSegments="selectedSegments"
+      :viewModeOptions="viewModeOptions"
       @update:selectedSegments="selectedSegments = $event"
       @modal-closed="resetSelection"
     />
@@ -21,10 +25,10 @@
 <script setup>
 import { toRef } from 'vue';
 import { useRevenueSeries } from '../composables/useRevenueSeries';
-import RevenueChartWithModal from './RevenueChartWithModal.vue';
+import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
-const { selectedSegments, viewModeOptions, series, title, message, loading, error } = useRevenueSeries(toRef(props, 'ticker'));
+const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error } = useRevenueSeries(toRef(props, 'ticker'));
 
 const resetSelection = () => {
   selectedSegments.value = ['total'];

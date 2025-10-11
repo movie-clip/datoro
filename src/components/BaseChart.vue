@@ -14,13 +14,20 @@
     
     <ChartModal :is-open="showModal" @close="closeModal">
       <h2 class="modal-title">{{ title }}</h2>
-      <!-- Show custom buttons if not using legend -->
-      <div v-if="!useLegend && viewModeOptions.length > 0" class="view-mode-buttons">
+      <!-- Show toggle buttons - support both single-select (viewMode) and multi-select (selectedSegments) -->
+      <div v-if="viewModeOptions.length > 0 && !useLegend" class="view-mode-buttons">
         <button
           v-for="option in viewModeOptions"
           :key="option.value"
-          :class="['view-mode-btn', { active: viewMode === option.value }]"
-          @click.stop="updateViewMode(option.value)"
+          :class="[
+            'view-mode-btn', 
+            { 
+              active: selectedSegments 
+                ? selectedSegments.includes(option.value) 
+                : viewMode === option.value 
+            }
+          ]"
+          @click.stop="selectedSegments ? toggleSegment(option.value) : updateViewMode(option.value)"
         >
           {{ option.label }}
         </button>
@@ -38,12 +45,14 @@ import ChartModal from './ChartModal.vue'
 const props = defineProps({
   title:      { type: String, default: '' },
   series:     { type: [Array, Object], default: () => [] },
+  compactSeries: { type: [Array, Object], default: null },
   kind:       { type: String, default: 'line' },
   yFormat:    { type: String, default: 'int' },
   smooth:     { type: Number, default: 0.15 },
   barMaxWidth:{ type: Number, default: 28 },
   isModal:    { type: Boolean, default: false },
   viewMode:   { type: String, default: null },
+  selectedSegments: { type: Array, default: null },
   viewModeOptions: { type: Array, default: () => [] },
   loading:    { type: Boolean, default: false },
   showLegend: { type: Boolean, default: false },
@@ -52,7 +61,7 @@ const props = defineProps({
 })
 
 const showModal = ref(false)
-const emit = defineEmits(['update:viewMode', 'modal-closed'])
+const emit = defineEmits(['update:viewMode', 'update:selectedSegments', 'modal-closed'])
 
 const handleClick = () => {
   if (!props.isModal) {
@@ -67,6 +76,25 @@ const closeModal = () => {
 
 const updateViewMode = (mode) => {
   emit('update:viewMode', mode)
+}
+
+const toggleSegment = (segmentValue) => {
+  if (!props.selectedSegments) return
+  
+  const current = [...props.selectedSegments]
+  const idx = current.indexOf(segmentValue)
+  
+  if (idx >= 0) {
+    // Remove if already selected (but keep at least one)
+    if (current.length > 1) {
+      current.splice(idx, 1)
+    }
+  } else {
+    // Add if not selected
+    current.push(segmentValue)
+  }
+  
+  emit('update:selectedSegments', current)
 }
 
 function fmtShort(n){
@@ -165,16 +193,19 @@ const createOption = (isLarge = false) => {
     },
   }
 
+  // Use compactSeries for compact view if provided, otherwise use series
+  const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
+  
   // Handle both single series array and multi-series array
   let series
-  if (Array.isArray(props.series) && props.series.length > 0 && props.series[0]?.name) {
+  if (Array.isArray(dataSource) && dataSource.length > 0 && dataSource[0]?.name) {
     // Multi-series format: [{ name: 'FCF', data: [...] }, { name: 'SBC', data: [...] }]
-    series = props.series.map((s, idx) => ({
+    series = dataSource.map((s, idx) => ({
       type: props.kind,
       name: s.name,
       data: s.data,
-      // Don't stack - show each series as separate bars side by side
-      stack: undefined,
+      // Use stack property from series object if provided
+      stack: s.stack || undefined,
       barMaxWidth: props.barMaxWidth,
       itemStyle: { opacity: 0.9, ...(s.itemStyle || {}) },
       smooth: props.kind === 'line' ? props.smooth : undefined,
@@ -188,14 +219,14 @@ const createOption = (isLarge = false) => {
       ? [{ 
           type: 'bar', 
           name: props.title || 'Series', 
-          data: props.series, 
+          data: dataSource, 
           barMaxWidth: props.barMaxWidth, 
           itemStyle: { opacity: 0.9 } 
         }]
       : [{ 
           type: 'line', 
           name: props.title || 'Series', 
-          data: props.series, 
+          data: dataSource, 
           smooth: props.smooth, 
           showSymbol: false, 
           emphasis: { disabled: true }, 

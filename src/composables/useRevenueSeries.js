@@ -152,8 +152,13 @@ export function useRevenueSeries(tickerRef) {
     }
   }
 
+  // Computed series for compact view - always show Total Revenue only
+  const compactSeries = computed(() => {
+    return totalRevenue.value || [];
+  });
+
   watch(() => tickerRef?.value, () => refresh(), { immediate: true });
   watch(period, () => refresh());
 
-  return { period, selectedSegments, viewModeOptions, series, title, message, loading, error, refresh };
+  return { period, selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error, refresh };
 }
