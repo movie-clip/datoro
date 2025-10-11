@@ -178,13 +178,17 @@ async function getMarginsGrowth(ticker) {
 
 async function getBalance(ticker) {
   const t = (ticker || '').trim().toUpperCase()
-  const out = { cash: '—', debt: '—', net: '—' }
+  const out = { cash: '—', debt: '—', net: '—', altmanZScore: '—', altmanZColor: 'grey' }
   if (!t) return { data: out, error: 'No ticker provided' }
   try {
-    const url = `${BASE}/balance-sheet-statement/${t}?period=annual&limit=1`
-    const res = await fetch(url)
-    if (!res.ok) return { data: out, error: `HTTP ${res.status}` }
-    const arr = await res.json()
+    // Fetch balance sheet and Altman Z-Score in parallel
+    const [balanceRes, zScoreRes] = await Promise.all([
+      fetch(`${BASE}/balance-sheet-statement/${t}?period=annual&limit=1`),
+      fetch(`/api/fmp/stable/financial-scores?symbol=${t}`)
+    ])
+    
+    if (!balanceRes.ok) return { data: out, error: `HTTP ${balanceRes.status}` }
+    const arr = await balanceRes.json()
     if (!Array.isArray(arr) || arr.length === 0) return { data: out, error: 'No balance sheet data' }
     const d = arr[0] || {}
     
@@ -199,6 +203,26 @@ async function getBalance(ticker) {
     out.cash = fmtNumber(totalCash)
     out.debt = fmtNumber(totalDebt)
     out.net = fmtNumber(netDebt)
+    
+    // Process Altman Z-Score
+    if (zScoreRes.ok) {
+      const zScoreData = await zScoreRes.json()
+      if (Array.isArray(zScoreData) && zScoreData.length > 0) {
+        const zScore = Number(zScoreData[0].altmanZScore)
+        if (!isNaN(zScore)) {
+          out.altmanZScore = zScore.toFixed(2)
+          // Determine color based on Z-Score ranges
+          // > 2.99: Safe (green), 1.81-2.99: Grey zone (grey), < 1.81: Distress (red)
+          if (zScore > 2.99) {
+            out.altmanZColor = 'green'
+          } else if (zScore >= 1.81) {
+            out.altmanZColor = 'grey'
+          } else {
+            out.altmanZColor = 'red'
+          }
+        }
+      }
+    }
     
     return { data: out, error: null }
   } catch (error) {

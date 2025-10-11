@@ -12,7 +12,7 @@
       <tbody>
         <tr v-for="row in rows" :key="row.label">
           <th scope="row">{{ row.label }}</th>
-          <td>{{ row.value }}</td>
+          <td :style="row.color ? { color: row.color, fontWeight: '600' } : {}">{{ row.value }}</td>
         </tr>
       </tbody>
     </table>
