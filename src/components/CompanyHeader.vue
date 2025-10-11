@@ -43,6 +43,8 @@ const props = defineProps({
   ticker: { type: String, required: true }
 })
 
+const emit = defineEmits(['update:companyName'])
+
 const loading = ref(false)
 const profile = ref({})
 const quote = ref({})
@@ -91,6 +93,10 @@ async function fetchCompanyData() {
       profile.value = Array.isArray(profileData) && profileData.length > 0 
         ? profileData[0] 
         : {}
+      // Emit company name to parent
+      if (profile.value.companyName) {
+        emit('update:companyName', profile.value.companyName)
+      }
     }
 
     if (quoteRes.ok) {

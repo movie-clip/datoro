@@ -13,7 +13,11 @@
       <button class="btn" @click="$emit('submit')">Search</button>
     </div>
     
-    <CompanyHeader v-if="model" :ticker="model" />
+    <CompanyHeader 
+      v-if="model" 
+      :ticker="model" 
+      @update:companyName="$emit('update:companyName', $event)"
+    />
   </div>
 </template>
 
@@ -21,7 +25,7 @@
 import CompanyHeader from './CompanyHeader.vue'
 
 const model = defineModel()
-defineEmits(['submit'])
+defineEmits(['submit', 'update:companyName'])
 </script>
 
 <style scoped>

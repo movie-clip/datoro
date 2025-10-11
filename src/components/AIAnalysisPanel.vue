@@ -1,0 +1,253 @@
+<template>
+  <section class="analysis-panel">
+    <div class="analysis-header">
+      <h3>{{ title }}</h3>
+      <button 
+        v-if="!loading && data" 
+        @click="refresh" 
+        class="refresh-btn"
+        title="Refresh analysis"
+      >
+        ↻
+      </button>
+    </div>
+    
+    <div v-if="loading" class="loading">
+      <div class="loading-spinner"></div>
+      <p>Analyzing...</p>
+    </div>
+    
+    <div v-else-if="error" class="error">
+      <p>{{ error }}</p>
+      <button @click="refresh" class="retry-btn">Try Again</button>
+    </div>
+    
+    <div v-else-if="data" class="content">
+      <div class="analysis-text" v-html="formattedData"></div>
+      <div v-if="cached" class="cache-indicator" title="Loaded from cache">
+        📌 Cached (expires in {{ daysUntilExpiry }} days)
+      </div>
+    </div>
+    
+    <div v-else class="empty">
+      <p>Enter a ticker to view analysis</p>
+    </div>
+  </section>
+</template>
+
+<script setup>
+import { ref, watch, toRef, computed } from 'vue'
+import { getCompetitiveAdvantages, getInvestmentRisks, clearAnalysisCache } from '../services/ai/chatgptService'
+
+const props = defineProps({
+  ticker: { type: String, required: true },
+  companyName: { type: String, default: '' },
+  type: { type: String, required: true, validator: (v) => ['advantages', 'risks'].includes(v) }
+})
+
+const tickerRef = toRef(props, 'ticker')
+const data = ref(null)
+const loading = ref(false)
+const error = ref(null)
+const cached = ref(false)
+
+const title = computed(() => 
+  props.type === 'advantages' ? 'Competitive Advantages' : 'Investment Risks'
+)
+
+const formattedData = computed(() => {
+  if (!data.value) return ''
+  // Convert bullet points to styled HTML
+  return data.value
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => {
+      // Handle bullet points
+      if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+        return `<div class="bullet-point">${line.substring(1).trim()}</div>`
+      }
+      return `<div class="bullet-point">${line}</div>`
+    })
+    .join('')
+})
+
+const daysUntilExpiry = computed(() => {
+  // Simple calculation - actual expiry is tracked in localStorage
+  return 30
+})
+
+async function refresh() {
+  loading.value = true
+  error.value = null
+  data.value = null
+  cached.value = false
+  
+  const t = (tickerRef.value || '').trim().toUpperCase()
+  if (!t) {
+    loading.value = false
+    return
+  }
+  
+  try {
+    // Clear cache before refresh
+    clearAnalysisCache(t, props.type)
+    
+    const fetchFn = props.type === 'advantages' ? getCompetitiveAdvantages : getInvestmentRisks
+    const result = await fetchFn(t, props.companyName)
+    
+    if (result.error) {
+      error.value = result.error
+    } else {
+      data.value = result.data
+      cached.value = result.cached || false
+    }
+  } catch (e) {
+    error.value = e.message || 'Failed to load analysis'
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(tickerRef, () => refresh(), { immediate: true })
+</script>
+
+<style scoped>
+.analysis-panel {
+  background: #1f1f1f;
+  border-radius: 8px;
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.analysis-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.refresh-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ddd;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  gap: 12px;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #4a9eff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ff6a6a;
+  gap: 12px;
+}
+
+.retry-btn {
+  background: rgba(255, 106, 106, 0.1);
+  border: 1px solid rgba(255, 106, 106, 0.3);
+  color: #ff6a6a;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover {
+  background: rgba(255, 106, 106, 0.2);
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.analysis-text {
+  color: #ddd;
+  font-size: 14px;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.bullet-point {
+  margin-bottom: 10px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.bullet-point::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #4a9eff;
+  font-weight: bold;
+}
+
+.cache-indicator {
+  font-size: 11px;
+  color: #888;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  text-align: center;
+  cursor: help;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+}
+</style>

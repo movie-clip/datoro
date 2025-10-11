@@ -106,7 +106,14 @@ function fmtShort(n){
   if (a >= 1e3 ) return (n/1e3 ).toFixed(0)+'K'
   return String(n)
 }
-const yFormatter = (v, mode) => mode === 'short' ? fmtShort(v) : Math.round(v).toString()
+
+const yFormatter = (v, mode) => {
+  if (mode === 'short') return fmtShort(v)
+  if (mode === 'currency') return '$' + fmtShort(v)
+  if (mode === 'percent') return v.toFixed(2) + '%'
+  if (mode === 'int') return Math.round(v).toLocaleString()
+  return Math.round(v).toString()
+}
 
 const createOption = (isLarge = false) => {
   // In modal view with useLegend, show legend at top
