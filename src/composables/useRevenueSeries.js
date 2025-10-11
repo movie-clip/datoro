@@ -6,28 +6,31 @@ export function useRevenueSeries(tickerRef) {
   const viewMode = ref('total');   // 'total' | segment name
   const totalRevenue = ref([]);
   const segmentData = ref({ segments: [], series: {} });
-  const title   = ref('Revenue — Empty');
+  const title   = ref('Revenue');
   const message = ref('');
   const loading = ref(false);
   const error   = ref(null);
 
-  // Computed series based on viewMode
-  // Always ensure we return a simple array format for single series display
+  // Computed series - filter based on selected viewMode (like FCF chart)
   const series = computed(() => {
+    if (segmentData.value.segments.length === 0) {
+      // No segments available, return total revenue as simple array
+      return totalRevenue.value || [];
+    }
+    
+    // Filter based on viewMode
     if (viewMode.value === 'total') {
-      // Return total revenue as simple array: [[date, value], ...]
       return totalRevenue.value || [];
     } else {
-      // Return specific segment as simple array: [[date, value], ...]
+      // Return the selected segment's data
       return segmentData.value.series[viewMode.value] || [];
     }
   });
 
-  // Computed view mode options for the chart
-  // Only return options if there are segments available
+  // Computed view mode options for the chart (used by BaseChart to show legend)
   const viewModeOptions = computed(() => {
     if (segmentData.value.segments.length === 0) {
-      return []; // No segments = no buttons
+      return []; // No segments = no legend
     }
     
     const options = [{ label: 'Total Revenue', value: 'total' }];
@@ -51,7 +54,7 @@ export function useRevenueSeries(tickerRef) {
   async function refresh() {
     message.value = '';
     error.value = null;
-    // Always reset to total revenue when refreshing
+    // Reset to total revenue when refreshing
     viewMode.value = 'total';
     const t = (tickerRef?.value || '').toUpperCase();
     if (!t) {
@@ -85,9 +88,7 @@ export function useRevenueSeries(tickerRef) {
       } else {
         totalRevenue.value = totalResult.data;
         segmentData.value = segmentResult.data || { segments: [], series: {} };
-        
-        const segmentLabel = viewMode.value !== 'total' ? ` - ${formatSegmentLabel(viewMode.value)}` : '';
-        title.value = `Revenue${segmentLabel}`;
+        title.value = 'Revenue';
       }
     } catch (e) {
       title.value = 'Error';
@@ -102,14 +103,6 @@ export function useRevenueSeries(tickerRef) {
 
   watch(() => tickerRef?.value, () => refresh(), { immediate: true });
   watch(period, () => refresh());
-  
-  // Update title when viewMode changes
-  watch(viewMode, () => {
-    if (totalRevenue.value.length > 0) {
-      const segmentLabel = viewMode.value !== 'total' ? ` - ${formatSegmentLabel(viewMode.value)}` : '';
-      title.value = `Revenue${segmentLabel}`;
-    }
-  });
 
   return { period, viewMode, viewModeOptions, series, title, message, loading, error, refresh };
 }

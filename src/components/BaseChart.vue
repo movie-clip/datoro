@@ -14,7 +14,8 @@
     
     <ChartModal :is-open="showModal" @close="closeModal">
       <h2 class="modal-title">{{ title }}</h2>
-      <div v-if="viewModeOptions.length > 0" class="view-mode-buttons">
+      <!-- Show custom buttons if not using legend -->
+      <div v-if="!useLegend && viewModeOptions.length > 0" class="view-mode-buttons">
         <button
           v-for="option in viewModeOptions"
           :key="option.value"
@@ -45,6 +46,9 @@ const props = defineProps({
   viewMode:   { type: String, default: null },
   viewModeOptions: { type: Array, default: () => [] },
   loading:    { type: Boolean, default: false },
+  showLegend: { type: Boolean, default: false },
+  stacked:    { type: Boolean, default: false },
+  useLegend:  { type: Boolean, default: false },
 })
 
 const showModal = ref(false)
@@ -76,8 +80,19 @@ function fmtShort(n){
 const yFormatter = (v, mode) => mode === 'short' ? fmtShort(v) : Math.round(v).toString()
 
 const createOption = (isLarge = false) => {
-  // In modal view, reduce top padding since title is now outside the chart
-  const topPadding = isLarge ? 30 : 44
+  // In modal view with useLegend, show legend at top
+  const showLegendAtTop = isLarge && props.useLegend
+  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : 44)
+  const bottomPadding = isLarge ? 60 : 50
+  
+  // Build legend selection: only first series (typically 'Total Revenue') selected by default
+  // Apply this whenever useLegend is true, not just in modal view
+  const legendSelected = {}
+  if (props.useLegend && Array.isArray(props.series) && props.series.length > 0 && props.series[0]?.name) {
+    props.series.forEach((s, idx) => {
+      legendSelected[s.name] = idx === 0 // Only first item selected
+    })
+  }
   
   const base = {
     backgroundColor: 'transparent',
@@ -87,12 +102,25 @@ const createOption = (isLarge = false) => {
       left: 'center', 
       textStyle: { color: '#fff', fontSize: 14 } 
     },
-    legend: { show: false },
+    // Show legend at top in modal if using legend mode
+    legend: showLegendAtTop ? {
+      show: true,
+      type: 'plain', // Use plain instead of scroll for multi-line wrapping
+      orient: 'horizontal',
+      top: 10,
+      left: 'center',
+      textStyle: { color: '#ddd', fontSize: 12 },
+      selectedMode: 'single', // Only one item can be selected at a time (radio button style)
+      selected: legendSelected // Set default selection
+    } : props.useLegend ? {
+      show: false, // Hide legend in compact view, but still apply selection
+      selected: legendSelected
+    } : { show: false },
     grid: { 
       left: 24, 
       right: 24, 
       top: topPadding, 
-      bottom: isLarge ? 60 : 50, 
+      bottom: bottomPadding, 
       containLabel: true 
     },
     tooltip: { trigger: 'axis' },
@@ -140,6 +168,8 @@ const createOption = (isLarge = false) => {
       type: props.kind,
       name: s.name,
       data: s.data,
+      // Don't stack - show each series as separate bars side by side
+      stack: undefined,
       barMaxWidth: props.barMaxWidth,
       itemStyle: { opacity: 0.9, ...(s.itemStyle || {}) },
       smooth: props.kind === 'line' ? props.smooth : undefined,

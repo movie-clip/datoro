@@ -9,12 +9,10 @@
       kind="bar"
       yFormat="short"
       :loading="loading"
-      v-model:viewMode="viewMode"
-      v-model:selectedSegments="selectedSegments"
-      :viewModeOptions="viewModeOptions"
-      :availableSegments="availableSegments"
-      @modal-closed="resetViewMode"
       aria-label="Revenue chart"
+      v-model:viewMode="viewMode"
+      :viewModeOptions="viewModeOptions"
+      @modal-closed="resetViewMode"
     />
     <p v-if="error" class="msg error" role="alert">{{ error }}</p>
     <p v-else-if="message" class="msg">{{ message }}</p>
@@ -27,21 +25,10 @@ import { useRevenueSeries } from '../composables/useRevenueSeries';
 import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
-const { 
-  viewMode, 
-  selectedSegments,
-  viewModeOptions, 
-  availableSegments,
-  series, 
-  title, 
-  message, 
-  loading, 
-  error 
-} = useRevenueSeries(toRef(props, 'ticker'));
+const { viewMode, viewModeOptions, series, title, message, loading, error } = useRevenueSeries(toRef(props, 'ticker'));
 
 const resetViewMode = () => {
   viewMode.value = 'total';
-  selectedSegments.value = [];
 };
 </script>
 

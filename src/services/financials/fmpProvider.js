@@ -242,8 +242,12 @@ async function getRevenueSegments(ticker, period = 'annual') {
     
     // Process product/business segments
     // New structure: each row has a 'data' object with segment names as keys
+    // Only use data from the last 5 years to avoid old/deprecated segment names
     if (Array.isArray(productData) && productData.length > 0) {
-      productData.forEach(row => {
+      // Take only the 5 most recent records
+      const recentData = productData.slice(0, 5)
+      
+      recentData.forEach(row => {
         const date = Date.parse(row.date)
         
         // The segments are inside the 'data' object
@@ -254,6 +258,27 @@ async function getRevenueSegments(ticker, period = 'annual') {
               allSegments.add(segmentName)
               if (!segmentSeries[segmentName]) segmentSeries[segmentName] = []
               segmentSeries[segmentName].push([date, value])
+            }
+          })
+        }
+      })
+      
+      // Now fetch full historical data ONLY for the segments we identified from recent years
+      productData.forEach(row => {
+        const date = Date.parse(row.date)
+        
+        if (row.data && typeof row.data === 'object') {
+          Object.keys(row.data).forEach(segmentName => {
+            // Only include if this segment exists in our recent segments
+            if (allSegments.has(segmentName)) {
+              const value = Number(row.data[segmentName])
+              if (value > 0) {
+                // Check if we already added this date point
+                const existingIdx = segmentSeries[segmentName].findIndex(point => point[0] === date)
+                if (existingIdx === -1) {
+                  segmentSeries[segmentName].push([date, value])
+                }
+              }
             }
           })
         }
