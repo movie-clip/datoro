@@ -312,9 +312,9 @@ const modalOption = computed(() => createOption(true))
 
 .echart { 
   width: 100%; 
-  height: 440px; 
+  height: 340px;
   display: block; 
-  margin: 0; 
+  margin: 0;
 }
 
 .echart.clickable {

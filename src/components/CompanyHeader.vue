@@ -146,7 +146,6 @@ watch(() => props.ticker, () => {
   height: 48px;
   border-radius: 8px;
   object-fit: contain;
-  background: #fff;
   padding: 4px;
 }
 

@@ -418,6 +418,28 @@ async function getEpsSeries(ticker) {
   }
 }
 
+async function getEbitdaSeries(ticker, period = 'annual') {
+  const t = (ticker || '').trim().toUpperCase()
+  if (!t) return { data: [], error: 'No ticker provided' }
+  try {
+    const url = `${BASE}/income-statement/${t}?period=${period === 'quarterly' ? 'quarter' : 'annual'}&limit=20`
+    const res = await fetch(url)
+    if (!res.ok) return { data: [], error: `HTTP ${res.status}` }
+    const arr = await res.json()
+    
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return { data: [], error: 'Not enough data' }
+    }
+    
+    // Return EBITDA data
+    const ebitdaData = arr.map(row => [Date.parse(row.date), Number(row.ebitda) || 0])
+    
+    return { data: ebitdaData, error: null }
+  } catch (error) {
+    return handleServiceError(error, 'getEbitdaSeries')
+  }
+}
+
 async function getCashDebtSeries(ticker, period = 'annual') {
   const t = (ticker || '').trim().toUpperCase()
   if (!t) return { data: [], error: 'No ticker provided' }
@@ -444,6 +466,40 @@ async function getCashDebtSeries(ticker, period = 'annual') {
     return { data: enhanced, error: null }
   } catch (error) {
     return handleServiceError(error, 'getCashDebtSeries')
+  }
+}
+
+async function getCapitalReturnedSeries(ticker, period = 'annual') {
+  const t = (ticker || '').trim().toUpperCase()
+  if (!t) return { data: [], error: 'No ticker provided' }
+  try {
+    const url = `${BASE}/cash-flow-statement/${t}?period=${period === 'quarterly' ? 'quarter' : 'annual'}&limit=20`
+    const res = await fetch(url)
+    if (!res.ok) return { data: [], error: `HTTP ${res.status}` }
+    const arr = await res.json()
+    
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return { data: [], error: 'Not enough data' }
+    }
+    
+    // Return data with dividends, buybacks, and total
+    // Note: FMP returns these as negative numbers (cash outflows)
+    const enhanced = arr.map(row => {
+      const dividends = Math.abs(Number(row.dividendsPaid) || 0)
+      const buybacks = Math.abs(Number(row.commonStockRepurchased) || 0)
+      const total = dividends + buybacks
+      
+      return {
+        date: Date.parse(row.date),
+        dividends,
+        buybacks,
+        total,
+      }
+    })
+    
+    return { data: enhanced, error: null }
+  } catch (error) {
+    return handleServiceError(error, 'getCapitalReturnedSeries')
   }
 }
 
@@ -480,6 +536,39 @@ function fmtNumber(n) {
   return s + a.toFixed(0)
 }
 
+/**
+ * Get income statement data
+ * @param {string} ticker - Stock ticker symbol
+ * @param {string} period - 'annual' or 'quarterly'
+ * @param {number} limit - Number of periods to fetch
+ * @returns {Promise<Array>} Income statement data
+ */
+async function getIncomeStatement(ticker, period = 'annual', limit = 20) {
+  const t = (ticker || '').trim().toUpperCase()
+  if (!t) return []
+
+  try {
+    const periodParam = period === 'quarterly' ? 'quarter' : 'annual'
+    const url = `${BASE}/income-statement/${t}?period=${periodParam}&limit=${limit}`
+    const res = await fetch(url)
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`)
+    }
+    
+    const data = await res.json()
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      return []
+    }
+
+    return data
+  } catch (err) {
+    console.error('[fmpProvider] getIncomeStatement error:', err)
+    return []
+  }
+}
+
 export default {
   getValuation,
   getCashFlowFacts,
@@ -489,6 +578,9 @@ export default {
   getRevenueSegments,
   getFcfSeries,
   getEpsSeries,
+  getEbitdaSeries,
   getCashDebtSeries,
   getSharesSeries,
+  getCapitalReturnedSeries,
+  getIncomeStatement,
 }

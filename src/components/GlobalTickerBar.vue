@@ -14,8 +14,8 @@
     </div>
     
     <CompanyHeader 
-      v-if="model" 
-      :ticker="model" 
+      v-if="confirmedTicker" 
+      :ticker="confirmedTicker" 
       @update:companyName="$emit('update:companyName', $event)"
     />
   </div>
@@ -23,6 +23,10 @@
 
 <script setup>
 import CompanyHeader from './CompanyHeader.vue'
+
+const props = defineProps({
+  confirmedTicker: { type: String, default: '' }
+})
 
 const model = defineModel()
 defineEmits(['submit', 'update:companyName'])

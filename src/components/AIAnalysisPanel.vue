@@ -24,8 +24,13 @@
     
     <div v-else-if="data" class="content">
       <div class="analysis-text" v-html="formattedData"></div>
-      <div v-if="cached" class="cache-indicator" title="Loaded from cache">
-        📌 Cached (expires in {{ daysUntilExpiry }} days)
+      <div class="footer-info">
+        <div v-if="cached" class="cache-indicator" title="Loaded from cache">
+          📌 Cached (expires in {{ daysUntilExpiry }} days)
+        </div>
+        <div v-if="provider" class="provider-indicator" :title="`Using ${provider === 'ollama' ? 'local Ollama' : 'OpenAI API'}`">
+          🤖 {{ provider === 'ollama' ? 'Ollama' : 'OpenAI' }}
+        </div>
       </div>
     </div>
     
@@ -37,7 +42,7 @@
 
 <script setup>
 import { ref, watch, toRef, computed } from 'vue'
-import { getCompetitiveAdvantages, getInvestmentRisks, clearAnalysisCache } from '../services/ai/chatgptService'
+import { getCompetitiveAdvantages, getInvestmentRisks } from '../services/ai/chatgptService'
 
 const props = defineProps({
   ticker: { type: String, required: true },
@@ -50,6 +55,7 @@ const data = ref(null)
 const loading = ref(false)
 const error = ref(null)
 const cached = ref(false)
+const provider = ref(null)
 
 const title = computed(() => 
   props.type === 'advantages' ? 'Competitive Advantages' : 'Investment Risks'
@@ -57,8 +63,21 @@ const title = computed(() =>
 
 const formattedData = computed(() => {
   if (!data.value) return ''
-  // Convert bullet points to styled HTML
-  return data.value
+  
+  // Handle new JSON format: array of {title, description}
+  if (data.value.success !== false && Array.isArray(data.value.data)) {
+    return data.value.data
+      .map(item => {
+        const title = item.title ? `<strong>${item.title}:</strong>` : ''
+        const description = item.description || ''
+        return `<div class="bullet-point">${title} ${description}</div>`
+      })
+      .join('')
+  }
+  
+  // Fallback for old format (plain text with bullet points)
+  const text = typeof data.value === 'string' ? data.value : data.value.data?.[0]?.description || ''
+  return text
     .split('\n')
     .map(line => line.trim())
     .filter(line => line.length > 0)
@@ -77,7 +96,7 @@ const daysUntilExpiry = computed(() => {
   return 30
 })
 
-async function refresh() {
+async function fetchAnalysis(clearCache = false) {
   loading.value = true
   error.value = null
   data.value = null
@@ -89,18 +108,32 @@ async function refresh() {
     return
   }
   
+  // Wait for company name to be available (max 3 seconds)
+  let company = props.companyName
+  if (!company) {
+    console.log(`[AI] Waiting for company name for ${t}...`)
+    for (let i = 0; i < 30; i++) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+      if (props.companyName) {
+        company = props.companyName
+        console.log(`[AI] Got company name: ${company}`)
+        break
+      }
+    }
+  }
+  
   try {
-    // Clear cache before refresh
-    clearAnalysisCache(t, props.type)
-    
     const fetchFn = props.type === 'advantages' ? getCompetitiveAdvantages : getInvestmentRisks
-    const result = await fetchFn(t, props.companyName)
+    const result = await fetchFn(t, company || t, clearCache)
     
     if (result.error) {
       error.value = result.error
+      provider.value = result.provider
     } else {
+      // Store the entire result object (includes parsed data)
       data.value = result.data
       cached.value = result.cached || false
+      provider.value = result.provider
     }
   } catch (e) {
     error.value = e.message || 'Failed to load analysis'
@@ -109,13 +142,21 @@ async function refresh() {
   }
 }
 
-watch(tickerRef, () => refresh(), { immediate: true })
+// Manual refresh - clears cache and fetches fresh
+async function refresh() {
+  await fetchAnalysis(true)
+}
+
+// Auto-refresh when ticker changes - uses cache
+watch(tickerRef, () => fetchAnalysis(false), { immediate: true })
 </script>
 
 <style scoped>
 .analysis-panel {
   background: #1f1f1f;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   padding: 16px;
   height: 100%;
   display: flex;
@@ -219,7 +260,7 @@ watch(tickerRef, () => refresh(), { immediate: true })
 }
 
 .bullet-point {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   padding-left: 20px;
   position: relative;
 }
@@ -230,16 +271,38 @@ watch(tickerRef, () => refresh(), { immediate: true })
   left: 0;
   color: #4a9eff;
   font-weight: bold;
+  font-size: 16px;
 }
 
-.cache-indicator {
+.bullet-point :deep(strong) {
+  color: #fff;
+  font-weight: 600;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.footer-info {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cache-indicator,
+.provider-indicator {
   font-size: 11px;
   color: #888;
   padding: 4px 8px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  text-align: center;
   cursor: help;
+  white-space: nowrap;
+}
+
+.provider-indicator {
+  background: rgba(74, 158, 255, 0.1);
+  color: #4a9eff;
 }
 
 .empty {

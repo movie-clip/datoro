@@ -11,9 +11,9 @@ body { background: #121212; color: #fff; }
 
 .charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 600px));
-  justify-content: center;   /* center rows */
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 450px));
+  justify-content: center;
+  gap: 12px;
   margin-top: 12px;
 }
 
