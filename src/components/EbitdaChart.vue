@@ -5,18 +5,38 @@
     <BaseChart
       v-else
       :title="title"
-      :series="series"
-      :compactSeries="compactSeries"
+      :series="chartView === 'margin' ? ebitdaWithMargin : series"
+      :compactSeries="ebitdaWithMargin"
       kind="bar"
       yFormat="currency"
       :loading="loading"
-      :stacked="true"
-      :selectedSegments="selectedSegments"
-      :viewModeOptions="viewModeOptions"
+      :stacked="chartView === 'bridge'"
+      :dualAxis="chartView === 'margin'"
+      :selectedSegments="chartView === 'bridge' ? selectedSegments : undefined"
+      :viewModeOptions="chartView === 'bridge' ? viewModeOptions : undefined"
       @update:selectedSegments="selectedSegments = $event"
       aria-label="EBITDA chart"
       @modal-closed="resetView"
-    />
+    >
+      <template #controls>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <button 
+            @click="chartView = 'margin'" 
+            :class="{ active: chartView === 'margin' }"
+            class="view-toggle"
+          >
+            EBITDA & Margin
+          </button>
+          <button 
+            @click="chartView = 'bridge'" 
+            :class="{ active: chartView === 'bridge' }"
+            class="view-toggle"
+          >
+            Bridge View
+          </button>
+        </div>
+      </template>
+    </BaseChart>
     <p v-if="error" class="msg error" role="alert">{{ error }}</p>
     <p v-else-if="message" class="msg">{{ message }}</p>
   </div>
@@ -27,21 +47,57 @@ import { toRef } from 'vue';
 import { useEbitdaSeries } from '../composables/useEbitdaSeries';
 import BaseChart from './BaseChart.vue';
 
+import { computed } from 'vue';
+
 const props = defineProps({ ticker: { type: String, required: true } });
 const { 
   series, 
-  compactSeries, 
+  compactSeries,
+  marginData,
   title, 
   message, 
   loading, 
-  error, 
+  error,
+  chartView,
   selectedSegments, 
   viewModeOptions,
   segmentData
 } = useEbitdaSeries(toRef(props, 'ticker'));
 
+// Combined EBITDA bars with margin line for dual-axis view
+const ebitdaWithMargin = computed(() => {
+  if (Array.isArray(compactSeries.value) && compactSeries.value.length > 0 && compactSeries.value[0].name) {
+    // compactSeries is already a multi-series array, use it
+    return [
+      ...compactSeries.value,
+      {
+        name: 'EBITDA Margin',
+        data: marginData.value,
+        type: 'line',
+        yAxisIndex: 1
+      }
+    ];
+  }
+  // compactSeries is a simple array for margin view
+  return [
+    {
+      name: 'EBITDA',
+      data: compactSeries.value,
+      type: 'bar'
+    },
+    {
+      name: 'EBITDA Margin %',
+      data: marginData.value,
+      type: 'line',
+      yAxisIndex: 1
+    }
+  ];
+});
+
 const resetView = () => {
-  // Reset to showing all components
+  // Reset to margin view by default
+  chartView.value = 'margin';
+  // Also reset bridge components if switching back
   selectedSegments.value = ['revenue', 'costOfRevenue', 'operatingExpenses', 'depreciationAndAmortization'];
 };
 </script>
@@ -56,5 +112,22 @@ const resetView = () => {
   min-height: 200px;
   font-size: 1.2em;
   color: #888;
+}
+.view-toggle {
+  padding: 4px 12px;
+  border: 1px solid #ddd;
+  background: #f5f5f5;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.2s;
+}
+.view-toggle:hover {
+  background: #e8e8e8;
+}
+.view-toggle.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
 }
 </style>

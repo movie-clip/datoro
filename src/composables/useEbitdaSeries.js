@@ -8,8 +8,9 @@ export function useEbitdaSeries(tickerRef) {
   const loading = ref(false);
   const error   = ref(null);
   const period = ref('annual');
+  const chartView = ref('margin'); // 'bridge' | 'margin' - default to margin view
   
-  // Selected segments (components) to display
+  // Selected segments (components) to display (only for bridge view)
   const selectedSegments = ref(['revenue', 'costOfRevenue', 'operatingExpenses', 'depreciationAndAmortization']);
   
   // All available segments
@@ -26,10 +27,16 @@ export function useEbitdaSeries(tickerRef) {
     depreciationAndAmortization: { label: 'D&A', sign: 1 }
   };
 
-  // Computed series based on selected segments
+  // Computed series based on selected view and segments
   const series = computed(() => {
     if (!rawData.value.length) return []
     
+    if (chartView.value === 'margin') {
+      // EBITDA with Margin view - return simple EBITDA bars (margin will be added by chart component)
+      return rawData.value.map(d => [d.date, d.ebitda])
+    }
+    
+    // Bridge view - show selected components
     const result = []
     selectedSegments.value.forEach(segmentKey => {
       if (segmentConfig[segmentKey]) {
@@ -43,16 +50,22 @@ export function useEbitdaSeries(tickerRef) {
     return result
   })
   
-  // Compact series for default view - show all components
+  // Compact series for default view - show EBITDA with margin
   const compactSeries = computed(() => {
     if (!rawData.value.length) return []
     
-    return [
-      { name: 'Revenue', data: rawData.value.map(d => [d.date, d.revenue]) },
-      { name: 'Cost of Revenue', data: rawData.value.map(d => [d.date, -d.costOfRevenue]) },
-      { name: 'Operating Expenses', data: rawData.value.map(d => [d.date, -d.operatingExpenses]) },
-      { name: 'D&A', data: rawData.value.map(d => [d.date, d.depreciationAndAmortization]) }
-    ]
+    // Return simple EBITDA bars for compact view (margin overlay handled by chart)
+    return rawData.value.map(d => [d.date, d.ebitda])
+  })
+  
+  // EBITDA margin data for overlay
+  const marginData = computed(() => {
+    if (!rawData.value.length) return []
+    
+    return rawData.value.map(d => {
+      const margin = d.revenue > 0 ? (d.ebitda / d.revenue) * 100 : 0
+      return [d.date, margin]
+    })
   })
   
   // View mode options for segment selection
@@ -88,7 +101,7 @@ export function useEbitdaSeries(tickerRef) {
         rawData.value = [];
         message.value = `No EBITDA data for '${t}'.`;
       } else {
-        title.value = `EBITDA`;
+        title.value = chartView.value === 'margin' ? 'EBITDA & Margin' : 'EBITDA Bridge';
         rawData.value = result.data;
       }
     } catch (e) {
@@ -103,16 +116,21 @@ export function useEbitdaSeries(tickerRef) {
 
   watch(() => tickerRef?.value, () => refresh(), { immediate: true });
   watch(period, () => refresh());
+  watch(chartView, () => {
+    title.value = chartView.value === 'margin' ? 'EBITDA & Margin' : 'EBITDA Bridge';
+  });
 
   return { 
     series, 
     compactSeries, 
+    marginData,
     title, 
     message, 
     loading, 
     error, 
     refresh, 
     period,
+    chartView,
     selectedSegments,
     viewModeOptions,
     segmentData
