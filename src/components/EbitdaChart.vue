@@ -6,15 +6,16 @@
       v-else
       :title="title"
       :series="series"
+      :compactSeries="compactSeries"
       kind="bar"
       yFormat="currency"
       :loading="loading"
-      v-model:viewMode="viewMode"
-      :viewModeOptions="[
-        { value: 'annual', label: 'Annual' },
-        { value: 'quarterly', label: 'Quarterly' }
-      ]"
+      :stacked="true"
+      :selectedSegments="selectedSegments"
+      :viewModeOptions="viewModeOptions"
+      @update:selectedSegments="selectedSegments = $event"
       aria-label="EBITDA chart"
+      @modal-closed="resetView"
     />
     <p v-if="error" class="msg error" role="alert">{{ error }}</p>
     <p v-else-if="message" class="msg">{{ message }}</p>
@@ -27,7 +28,22 @@ import { useEbitdaSeries } from '../composables/useEbitdaSeries';
 import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
-const { series, title, message, loading, error, viewMode } = useEbitdaSeries(toRef(props, 'ticker'));
+const { 
+  series, 
+  compactSeries, 
+  title, 
+  message, 
+  loading, 
+  error, 
+  selectedSegments, 
+  viewModeOptions,
+  segmentData
+} = useEbitdaSeries(toRef(props, 'ticker'));
+
+const resetView = () => {
+  // Reset to showing all components
+  selectedSegments.value = ['revenue', 'costOfRevenue', 'operatingExpenses', 'depreciationAndAmortization'];
+};
 </script>
 
 <style scoped>

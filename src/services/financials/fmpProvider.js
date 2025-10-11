@@ -431,8 +431,17 @@ async function getEbitdaSeries(ticker, period = 'annual') {
       return { data: [], error: 'Not enough data' }
     }
     
-    // Return EBITDA data
-    const ebitdaData = arr.map(row => [Date.parse(row.date), Number(row.ebitda) || 0])
+    // Return EBITDA data with bridge components
+    const ebitdaData = arr.map(row => ({
+      date: Date.parse(row.date),
+      revenue: Number(row.revenue) || 0,
+      costOfRevenue: Number(row.costOfRevenue) || 0,
+      grossProfit: Number(row.grossProfit) || 0,
+      operatingExpenses: Number(row.operatingExpenses) || 0,
+      operatingIncome: Number(row.operatingIncome) || 0,
+      depreciationAndAmortization: Number(row.depreciationAndAmortization) || 0,
+      ebitda: Number(row.ebitda) || 0
+    }))
     
     return { data: ebitdaData, error: null }
   } catch (error) {
