@@ -14,6 +14,7 @@ import EpsChart from './components/EpsChart.vue'
 import CashDebtChart from './components/CashDebtChart.vue'
 import SharesChart from './components/SharesChart.vue'
 import InsiderTradingChart from './components/InsiderTradingChart.vue'
+import DividendYieldChart from './components/DividendYieldChart.vue'
 
 const inputTicker = ref('AAPL')
 const ticker = ref('AAPL')
@@ -36,7 +37,7 @@ function applyTicker(){ const t=(inputTicker.value||'').trim().toUpperCase(); if
       <section class="panel"><BalanceTable :ticker="ticker" /></section>
     </section>
 
-    <!-- Charts: 7 charts -->
+    <!-- Charts: 8 charts -->
     <section class="charts">
       <section class="panel"><PriceChart          :ticker="ticker" /></section>
       <section class="panel"><RevenueChart        :ticker="ticker" /></section>
@@ -45,6 +46,7 @@ function applyTicker(){ const t=(inputTicker.value||'').trim().toUpperCase(); if
       <section class="panel"><CashDebtChart       :ticker="ticker" /></section>
       <section class="panel"><SharesChart         :ticker="ticker" /></section>
       <section class="panel"><InsiderTradingChart :ticker="ticker" /></section>
+      <section class="panel"><DividendYieldChart  :ticker="ticker" /></section>
     </section>
   </main>
 </template>
