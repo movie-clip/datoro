@@ -7,12 +7,9 @@
       :title="title"
       :series="series"
       kind="bar"
-      yFormat="short"
+      yFormat="int"
       :loading="loading"
-      aria-label="Free Cash Flow chart"
-      v-model:viewMode="viewMode"
-      :viewModeOptions="viewModeOptions"
-      @modal-closed="resetViewMode"
+      aria-label="EPS chart"
     />
     <p v-if="error" class="msg error" role="alert">{{ error }}</p>
     <p v-else-if="message" class="msg">{{ message }}</p>
@@ -21,21 +18,11 @@
 
 <script setup>
 import { toRef } from 'vue';
-import { useFcfSeries } from '../composables/useFcfSeries';
+import { useEpsSeries } from '../composables/useEpsSeries';
 import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
-const { viewMode, series, title, message, loading, error } = useFcfSeries(toRef(props, 'ticker'));
-
-const viewModeOptions = [
-  { label: 'FCF', value: 'fcf' },
-  { label: 'FCF Per Share', value: 'fcfPerShare' },
-  { label: 'FCF & SBC', value: 'fcfAndSbc' },
-];
-
-const resetViewMode = () => {
-  viewMode.value = 'fcf';
-};
+const { series, title, message, loading, error } = useEpsSeries(toRef(props, 'ticker'));
 </script>
 
 <style scoped>

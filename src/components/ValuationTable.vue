@@ -32,7 +32,7 @@ const rows = computed(() => [
   { label: 'PE / FPE', value: `${data.value.pe} / ${data.value.fpe}` },
   { label: 'Price to Sales', value: data.value.ps },
   { label: 'Price to Book', value: data.value.pb },
-  { label: 'EV / EBITDA', value: data.value.evEbitda },
+  { label: 'EV To EBITDA', value: data.value.evEbitda },
 ])
 
 async function refresh() {

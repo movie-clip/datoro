@@ -3,15 +3,19 @@ import { ref } from 'vue'
 import GlobalTickerBar from './components/GlobalTickerBar.vue'
 
 import ValuationTable from './components/ValuationTable.vue'
-import CashFlowTable from './components/CashFlowTable.vue'          // NEW
-import MarginsGrowthTable from './components/MarginsGrowthTable.vue'// NEW
+import CashFlowTable from './components/CashFlowTable.vue'
+import MarginsGrowthTable from './components/MarginsGrowthTable.vue'
+import BalanceTable from './components/BalanceTable.vue'
 
 import PriceChart from './components/PriceChart.vue'
 import RevenueChart from './components/RevenueChart.vue'
 import FcfChart from './components/FcfChart.vue'
+import EpsChart from './components/EpsChart.vue'
+import CashDebtChart from './components/CashDebtChart.vue'
+import SharesChart from './components/SharesChart.vue'
 
-const inputTicker = ref('ACN')
-const ticker = ref('ACN')
+const inputTicker = ref('AAPL')
+const ticker = ref('AAPL')
 function applyTicker(){ const t=(inputTicker.value||'').trim().toUpperCase(); if(t) ticker.value=t }
 </script>
 
@@ -23,18 +27,22 @@ function applyTicker(){ const t=(inputTicker.value||'').trim().toUpperCase(); if
       <GlobalTickerBar v-model="inputTicker" @submit="applyTicker" />
     </section>
 
-    <!-- NEW: 3 info cards in a row -->
+    <!-- Info cards: 4 tables in a row -->
     <section class="info-grid">
       <section class="panel"><ValuationTable :ticker="ticker" /></section>
       <section class="panel"><CashFlowTable :ticker="ticker" /></section>
       <section class="panel"><MarginsGrowthTable :ticker="ticker" /></section>
+      <section class="panel"><BalanceTable :ticker="ticker" /></section>
     </section>
 
-    <!-- Charts (unchanged) -->
+    <!-- Charts: 6 charts -->
     <section class="charts">
-      <section class="panel"><PriceChart   :ticker="ticker" /></section>
-      <section class="panel"><RevenueChart :ticker="ticker" /></section>
-      <section class="panel"><FcfChart     :ticker="ticker" /></section>
+      <section class="panel"><PriceChart     :ticker="ticker" /></section>
+      <section class="panel"><RevenueChart   :ticker="ticker" /></section>
+      <section class="panel"><FcfChart       :ticker="ticker" /></section>
+      <section class="panel"><EpsChart       :ticker="ticker" /></section>
+      <section class="panel"><CashDebtChart  :ticker="ticker" /></section>
+      <section class="panel"><SharesChart    :ticker="ticker" /></section>
     </section>
   </main>
 </template>

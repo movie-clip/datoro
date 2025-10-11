@@ -1,38 +1,38 @@
 <template>
   <BaseTable
-    title="Cash Flow"
+    title="Balance"
     :rows="rows"
     :loading="loading"
     :error="error"
-    aria-label="Cash flow metrics"
+    aria-label="Balance sheet metrics"
   />
 </template>
 
 <script setup>
 import { ref, watch, toRef, computed } from 'vue'
-import { getCashFlowFacts } from '../services/financials/index.js'
+import { getBalance } from '../services/financials/index.js'
 import BaseTable from './BaseTable.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
 const tRef = toRef(props, 'ticker')
 
-const data = ref({ fcfYield: '—', fcfYieldAdjSBC: '—', sbcImpact: '—' })
+const data = ref({ cash: '—', debt: '—', net: '—' })
 const error = ref(null)
 const loading = ref(false)
 
 const rows = computed(() => [
-  { label: 'Free Cash Flow Yield', value: data.value.fcfYield ?? '—' },
-  { label: 'FCF Yield (Adj. SBC)', value: data.value.fcfYieldAdjSBC ?? '—' },
-  { label: 'SBC Impact', value: data.value.sbcImpact ?? '—' },
+  { label: 'Cash', value: data.value.cash },
+  { label: 'Debt', value: data.value.debt },
+  { label: 'Net', value: data.value.net },
 ])
 
 async function refresh() {
   loading.value = true
   error.value = null
-  const result = await getCashFlowFacts(tRef.value)
+  const result = await getBalance(tRef.value)
   if (result.error) {
     error.value = result.error
-    data.value = { fcfYield: '—', fcfYieldAdjSBC: '—', sbcImpact: '—' }
+    data.value = { cash: '—', debt: '—', net: '—' }
   } else {
     data.value = result.data
   }

@@ -15,4 +15,4 @@ export const TIMEFRAMES = {
 }
 
 export const TF_ORDER = ['5D', '1M', '6M', 'YTD', '5Y', 'ALL']
-export const DEFAULT_TF = '1M'
+export const DEFAULT_TF = 'YTD'

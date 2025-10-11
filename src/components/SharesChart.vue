@@ -9,10 +9,7 @@
       kind="bar"
       yFormat="short"
       :loading="loading"
-      aria-label="Free Cash Flow chart"
-      v-model:viewMode="viewMode"
-      :viewModeOptions="viewModeOptions"
-      @modal-closed="resetViewMode"
+      aria-label="Shares Outstanding chart"
     />
     <p v-if="error" class="msg error" role="alert">{{ error }}</p>
     <p v-else-if="message" class="msg">{{ message }}</p>
@@ -20,22 +17,13 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
-import { useFcfSeries } from '../composables/useFcfSeries';
+import { toRef, ref } from 'vue';
+import { useSharesSeries } from '../composables/useSharesSeries';
 import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
-const { viewMode, series, title, message, loading, error } = useFcfSeries(toRef(props, 'ticker'));
-
-const viewModeOptions = [
-  { label: 'FCF', value: 'fcf' },
-  { label: 'FCF Per Share', value: 'fcfPerShare' },
-  { label: 'FCF & SBC', value: 'fcfAndSbc' },
-];
-
-const resetViewMode = () => {
-  viewMode.value = 'fcf';
-};
+const period = ref('annual');
+const { series, title, message, loading, error } = useSharesSeries(toRef(props, 'ticker'), period);
 </script>
 
 <style scoped>

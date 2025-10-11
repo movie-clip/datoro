@@ -1,33 +1,35 @@
 
 <template>
-  <div style="display:grid; grid-template-rows:auto 1fr auto; gap:10px;">
-    <TimeframeButtons v-model="tfKey" :order="tfOrder" aria-label="Select timeframe" />
-    <div style="position:relative; min-height:240px;">
-      <div v-if="loading" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
-      <BaseChart
-        v-else
-        :title="title"
-        :series="series"
-        kind="line"
-        yFormat="int"
-        aria-label="Price chart"
-      />
-      <p v-if="error" class="msg error" role="alert">{{ error }}</p>
-      <p v-else-if="message" class="msg">{{ message }}</p>
-    </div>
+  <div style="position:relative; min-height:240px;">
+    <div v-if="loading && series.length === 0" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
+    <BaseChart
+      v-else
+      :title="title"
+      :series="series"
+      kind="line"
+      yFormat="int"
+      v-model:viewMode="tfKey"
+      :viewModeOptions="timeframeOptions"
+      :loading="loading"
+      aria-label="Price chart"
+    />
+    <p v-if="error" class="msg error" role="alert">{{ error }}</p>
+    <p v-else-if="message" class="msg">{{ message }}</p>
   </div>
 </template>
 
 <script setup>
-import { toRef } from 'vue';
+import { toRef, computed } from 'vue';
 import { TF_ORDER } from '../models/timeframe';
 import { usePriceSeries } from '../composables/usePriceSeries';
-import TimeframeButtons from './TimeframeButtons.vue';
 import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
 const { tfKey, series, title, message, loading, error } = usePriceSeries(toRef(props, 'ticker'));
-const tfOrder = TF_ORDER;
+
+const timeframeOptions = computed(() => 
+  TF_ORDER.map(key => ({ label: key, value: key }))
+);
 </script>
 
 <style scoped>

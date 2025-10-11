@@ -23,8 +23,8 @@ const error = ref(null)
 const loading = ref(false)
 
 const rows = computed(() => [
-  { label: 'Profit Margin (TTM)', value: data.value.profitMargin },
-  { label: 'Operating Margin (TTM)', value: data.value.operatingMargin },
+  { label: 'Profit Margin', value: data.value.profitMargin },
+  { label: 'Operating Margin', value: data.value.operatingMargin },
   { label: 'Quarterly Earnings (YoY)', value: data.value.earningsYoY },
   { label: 'Quarterly Revenue (YoY)', value: data.value.revenueYoY },
 ])
