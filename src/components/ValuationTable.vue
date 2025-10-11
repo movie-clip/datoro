@@ -1,62 +1,51 @@
 <template>
-  <section class="panel" style="max-width: 900px; margin: 12px auto 0;">
-    <div class="head">Valuation</div>
-    <table class="valtab">
-      <tbody>
-        <tr>
-          <th>Market Cap</th>
-          <td>{{ data.marketCap }}</td>
-        </tr>
-        <tr>
-          <th>PE / FPE</th>
-          <td>{{ data.pe }} / {{ data.fpe }}</td>
-        </tr>
-        <tr>
-          <th>Price to Sales</th>
-          <td>{{ data.ps }}</td>
-        </tr>
-        <tr>
-          <th>Price to Book</th>
-          <td>{{ data.pb }}</td>
-        </tr>
-        <tr>
-          <th>EV / EBITDA</th>
-          <td>{{ data.evEbitda }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+  <BaseTable
+    title="Valuation"
+    :rows="rows"
+    :loading="loading"
+    :error="error"
+    aria-label="Valuation metrics"
+  />
 </template>
 
 <script setup>
-import { ref, watch, toRef } from 'vue'
-import { fetchValuation } from '../services/company/valuationService'
+import { ref, watch, toRef, computed } from 'vue'
+import { getValuation } from '../services/financials/index.js'
+import BaseTable from './BaseTable.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
 const tRef = toRef(props, 'ticker')
 
 const data = ref({
-  marketCap: '—',
-  pe: '—',
-  fpe: '—',
-  ps: '—',
-  pb: '—',
-  evEbitda: '—',
+   marketCap: '—',
+   pe: '—',
+   fpe: '—',
+   ps: '—',
+   pb: '—',
+   evEbitda: '—',
 })
+const error = ref(null)
+const loading = ref(false)
+
+const rows = computed(() => [
+  { label: 'Market Cap', value: data.value.marketCap },
+  { label: 'PE / FPE', value: `${data.value.pe} / ${data.value.fpe}` },
+  { label: 'Price to Sales', value: data.value.ps },
+  { label: 'Price to Book', value: data.value.pb },
+  { label: 'EV / EBITDA', value: data.value.evEbitda },
+])
 
 async function refresh() {
-  data.value = await fetchValuation(tRef.value)
+  loading.value = true
+  error.value = null
+  const result = await getValuation(tRef.value)
+  if (result.error) {
+    error.value = result.error
+    data.value = { marketCap: '—', pe: '—', fpe: '—', ps: '—', pb: '—', evEbitda: '—' }
+  } else {
+    data.value = result.data
+  }
+  loading.value = false
 }
 watch(() => tRef.value, () => refresh(), { immediate: true })
 </script>
-
-<style scoped>
-.head { font-weight: 600; margin-bottom: 8px; }
-.valtab { width: 100%; border-collapse: collapse; font-size: 14px; }
-.valtab th, .valtab td {
-  text-align: left; padding: 10px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.valtab th { width: 260px; color: #ddd; font-weight: 500; }
-.valtab td { color: #fff; }
-</style>

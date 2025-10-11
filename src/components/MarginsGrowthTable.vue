@@ -1,51 +1,45 @@
 <template>
-  <section>
-    <div class="head">Margins &amp; Growth</div>
-    <table class="valtab">
-      <tbody>
-        <tr>
-          <th>Profit Margin (TTM)</th>
-          <td>{{ data.profitMargin }}</td>
-        </tr>
-        <tr>
-          <th>Operating Margin (TTM)</th>
-          <td>{{ data.operatingMargin }}</td>
-        </tr>
-        <tr>
-          <th>Quarterly Earnings (YoY)</th>
-          <td>{{ data.earningsYoY }}</td>
-        </tr>
-        <tr>
-          <th>Quarterly Revenue (YoY)</th>
-          <td>{{ data.revenueYoY }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+  <BaseTable
+    title="Margins & Growth"
+    :rows="rows"
+    :loading="loading"
+    :error="error"
+    aria-label="Margins and growth metrics"
+  />
 </template>
 
 <script setup>
-import { ref, watch, toRef } from 'vue'
-import { fetchMarginsGrowth } from '../services/company/marginsService'
+import { ref, watch, toRef, computed } from 'vue'
+import { getMarginsGrowth } from '../services/financials/index.js'
+import BaseTable from './BaseTable.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
 const tRef = toRef(props, 'ticker')
 
 const data = ref({
-  profitMargin:'—', operatingMargin:'—', earningsYoY:'—', revenueYoY:'—'
+  profitMargin: '—', operatingMargin: '—', earningsYoY: '—', revenueYoY: '—'
 })
+const error = ref(null)
+const loading = ref(false)
 
-async function refresh(){ data.value = await fetchMarginsGrowth(tRef.value) }
+const rows = computed(() => [
+  { label: 'Profit Margin (TTM)', value: data.value.profitMargin },
+  { label: 'Operating Margin (TTM)', value: data.value.operatingMargin },
+  { label: 'Quarterly Earnings (YoY)', value: data.value.earningsYoY },
+  { label: 'Quarterly Revenue (YoY)', value: data.value.revenueYoY },
+])
+
+async function refresh() {
+  loading.value = true
+  error.value = null
+  const result = await getMarginsGrowth(tRef.value)
+  if (result.error) {
+    error.value = result.error
+    data.value = { profitMargin: '—', operatingMargin: '—', earningsYoY: '—', revenueYoY: '—' }
+  } else {
+    data.value = result.data
+  }
+  loading.value = false
+}
 watch(() => tRef.value, () => refresh(), { immediate: true })
 </script>
-
-<style scoped>
-.head { font-weight: 600; margin-bottom: 8px; }
-.valtab { width: 100%; border-collapse: collapse; font-size: 14px; }
-.valtab th, .valtab td {
-  text-align: left; padding: 10px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.valtab th { width: 260px; color: #ddd; font-weight: 500; }
-.valtab td { color: #fff; }
-</style>

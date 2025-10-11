@@ -1,41 +1,43 @@
 <template>
-  <section>
-    <div class="head">Cash Flow</div>
-    <table class="valtab">
-      <tbody>
-        <tr>
-          <th>Free Cash Flow (TTM)</th>
-          <td>{{ data.fcf }}</td>
-        </tr>
-        <tr>
-          <th>Adjusted FCF (TTM)</th>
-          <td>{{ data.adjFcf }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+  <BaseTable
+    title="Cash Flow"
+    :rows="rows"
+    :loading="loading"
+    :error="error"
+    aria-label="Cash flow metrics"
+  />
 </template>
 
 <script setup>
-import { ref, watch, toRef } from 'vue'
-import { fetchCashFlowFacts } from '../services/company/cashflowService'
+import { ref, watch, toRef, computed } from 'vue'
+import { getCashFlowFacts } from '../services/financials/index.js'
+import BaseTable from './BaseTable.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
 const tRef = toRef(props, 'ticker')
 
-const data = ref({ fcf: '—', adjFcf: '—' })
+const data = ref({ cfo: '—', capex: '—', fcf: '—', adjFcf: '—' })
+const error = ref(null)
+const loading = ref(false)
 
-async function refresh() { data.value = await fetchCashFlowFacts(tRef.value) }
+const rows = computed(() => [
+  { label: 'Operating Cash Flow (TTM)', value: data.value.cfo ?? '—' },
+  { label: 'Capital Expenditures (TTM)', value: data.value.capex ?? '—' },
+  { label: 'Free Cash Flow (TTM)', value: data.value.fcf },
+  { label: 'Adjusted FCF (TTM)', value: data.value.adjFcf },
+])
+
+async function refresh() {
+  loading.value = true
+  error.value = null
+  const result = await getCashFlowFacts(tRef.value)
+  if (result.error) {
+    error.value = result.error
+    data.value = { cfo: '—', capex: '—', fcf: '—', adjFcf: '—' }
+  } else {
+    data.value = result.data
+  }
+  loading.value = false
+}
 watch(() => tRef.value, () => refresh(), { immediate: true })
 </script>
-
-<style scoped>
-.head { font-weight: 600; margin-bottom: 8px; }
-.valtab { width: 100%; border-collapse: collapse; font-size: 14px; }
-.valtab th, .valtab td {
-  text-align: left; padding: 10px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.valtab th { width: 260px; color: #ddd; font-weight: 500; }
-.valtab td { color: #fff; }
-</style>

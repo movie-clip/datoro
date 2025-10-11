@@ -37,52 +37,54 @@ function sumTTM(rows, candidates) {
   return found ? s : NaN
 }
 
+import { handleServiceError } from '../shared.js';
+
+// Returns { data: { fcf, adjFcf }, error: string|null }
 export async function fetchCashFlowFacts(ticker) {
-  const t = (ticker || '').trim().toUpperCase()
-  const out = { fcf: '—', adjFcf: '—' }
-  if (!t) return out
+  const t = (ticker || '').trim().toUpperCase();
+  const out = { fcf: '—', adjFcf: '—' };
+  if (!t) return { data: out, error: 'No ticker provided' };
 
   try {
     // 4 most recent quarters
-    const cf = await getJson(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=cf&freq=quarterly`)
+    const cf = await getJson(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=cf&freq=quarterly`);
     const rows = (Array.isArray(cf?.data) ? cf.data : [])
       .sort((a, b) => String(b?.period || '').localeCompare(String(a?.period || '')))
-      .slice(0, 4)
+      .slice(0, 4);
 
-    if (!rows.length) return out
+    if (!rows.length) return { data: out, error: 'No cash flow data found' };
 
     // CFO (Operating Cash Flow)
     const cfoTTM = sumTTM(rows, [
       'netCashProvidedByOperatingActivities',
       'cashFlowFromOperations',
       'operatingCashFlow'
-    ])
+    ]);
 
     // CapEx (usually negative). Normalize to negative outflow.
     let capexTTM = sumTTM(rows, [
       'capitalExpenditures',
       'capitalExpenditure',
       'investmentInFixedAssets'
-    ])
-    if (Number.isFinite(capexTTM) && capexTTM > 0) capexTTM = -capexTTM
+    ]);
+    if (Number.isFinite(capexTTM) && capexTTM > 0) capexTTM = -capexTTM;
 
     // Stock-based comp (for adjusted FCF)
     const sbcTTM = sumTTM(rows, [
       'stockBasedCompensation',
       'stockBasedCompensationExpense',
       'stockCompensation'
-    ])
+    ]);
 
     const fcfTTM =
-      Number.isFinite(cfoTTM) && Number.isFinite(capexTTM) ? (cfoTTM - capexTTM) : NaN
+      Number.isFinite(cfoTTM) && Number.isFinite(capexTTM) ? (cfoTTM - capexTTM) : NaN;
     const adjFcfTTM =
-      Number.isFinite(fcfTTM) && Number.isFinite(sbcTTM) ? (fcfTTM - sbcTTM) : NaN
+      Number.isFinite(fcfTTM) && Number.isFinite(sbcTTM) ? (fcfTTM - sbcTTM) : NaN;
 
-    if (Number.isFinite(fcfTTM))   out.fcf = fmtNumber(fcfTTM)
-    if (Number.isFinite(adjFcfTTM)) out.adjFcf = fmtNumber(adjFcfTTM)
-  } catch {
-    // swallow and return what we have
+    if (Number.isFinite(fcfTTM))   out.fcf = fmtNumber(fcfTTM);
+    if (Number.isFinite(adjFcfTTM)) out.adjFcf = fmtNumber(adjFcfTTM);
+    return { data: out, error: null };
+  } catch (error) {
+    return handleServiceError(error, 'fetchCashFlowFacts');
   }
-
-  return out
 }
