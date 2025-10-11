@@ -10,6 +10,7 @@
     kind="bar"
     yFormat="currency"
     :barMaxWidth="40"
+    :stacked="true"
     :selectedSegments="selectedSegments"
     @update:selectedSegments="selectedSegments = $event"
     :viewModeOptions="viewModeOptions"

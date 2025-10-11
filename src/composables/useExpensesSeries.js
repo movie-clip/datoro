@@ -3,7 +3,7 @@ import { getExpensesSeries } from '../services/company/expensesService'
 
 export function useExpensesSeries(tickerRef) {
   const period = ref('annual')
-  const selectedSegments = ref(['total'])
+  const selectedSegments = ref(['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']) // Show all by default
   const rawData = ref([])
   const title = ref('Operating Expenses — Empty')
   const message = ref('')
@@ -33,7 +33,13 @@ export function useExpensesSeries(tickerRef) {
     // Collect all dates
     const allDates = [...new Set(rawData.value.map(d => d.date))].sort((a, b) => a - b)
     
-    // Create multi-series with stacking
+    // Create multi-series with stacking and colors
+    const segmentColors = {
+      costOfRevenue: '#ef4444',        // Red
+      researchAndDevelopment: '#3b82f6', // Blue
+      sellingGeneralAdmin: '#10b981'    // Green
+    }
+    
     return segments.map(segment => {
       // Align all data to common dates
       const alignedData = allDates.map(date => {
@@ -44,15 +50,15 @@ export function useExpensesSeries(tickerRef) {
       return {
         name: segmentLabels[segment],
         data: alignedData,
-        stack: 'expenses'
+        stack: 'expenses',
+        itemStyle: { color: segmentColors[segment] }
       }
     })
   })
 
-  // Compact series always shows total
+  // Compact series shows stacked expenses by default (same as full view)
   const compactSeries = computed(() => {
-    if (!rawData.value.length) return []
-    return rawData.value.map(d => [d.date, d.total])
+    return series.value
   })
 
   const viewModeOptions = computed(() => [
@@ -63,7 +69,8 @@ export function useExpensesSeries(tickerRef) {
   ])
 
   function resetSelection() {
-    selectedSegments.value = ['total']
+    // Reset to showing all segments stacked
+    selectedSegments.value = ['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']
   }
 
   async function refresh() {
