@@ -3,7 +3,7 @@ import { getFcfSeries } from '../services/financials'
 
 export function useFcfSeries(tickerRef) {
   const period  = ref('annual');
-  const viewMode = ref('fcf'); // 'fcf' | 'fcfPerShare' | 'fcfAndSbc'
+  const viewMode = ref('fcfAndSbc'); // Default to showing both FCF & SBC
   const rawData = ref([]);
   const title   = ref('Free Cash Flow — Empty');
   const message = ref('');
@@ -27,6 +27,16 @@ export function useFcfSeries(tickerRef) {
       default:
         return rawData.value.map(d => [d.date, d.fcf])
     }
+  })
+  
+  // Compact series for default view - always show FCF & SBC
+  const compactSeries = computed(() => {
+    if (!rawData.value.length) return []
+    
+    return [
+      { name: 'FCF', data: rawData.value.map(d => [d.date, d.fcf]) },
+      { name: 'SBC', data: rawData.value.map(d => [d.date, d.sbc]) }
+    ]
   })
 
   async function refresh() {
@@ -68,5 +78,5 @@ export function useFcfSeries(tickerRef) {
   watch(() => tickerRef?.value, () => refresh(), { immediate: true });
   watch(period, () => refresh());
 
-  return { period, viewMode, series, title, message, loading, error, refresh };
+  return { period, viewMode, series, compactSeries, title, message, loading, error, refresh };
 }

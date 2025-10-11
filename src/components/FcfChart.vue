@@ -7,6 +7,7 @@
       :key="`fcf-${ticker}`"
       :title="title"
       :series="series"
+      :compactSeries="compactSeries"
       kind="bar"
       yFormat="short"
       :loading="loading"
@@ -26,7 +27,7 @@ import { useFcfSeries } from '../composables/useFcfSeries';
 import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
-const { viewMode, series, title, message, loading, error } = useFcfSeries(toRef(props, 'ticker'));
+const { viewMode, series, compactSeries, title, message, loading, error } = useFcfSeries(toRef(props, 'ticker'));
 
 const viewModeOptions = [
   { label: 'FCF', value: 'fcf' },
@@ -35,7 +36,7 @@ const viewModeOptions = [
 ];
 
 const resetViewMode = () => {
-  viewMode.value = 'fcf';
+  viewMode.value = 'fcfAndSbc'; // Reset to showing both FCF and SBC
 };
 </script>
 
