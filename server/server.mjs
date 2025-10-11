@@ -8,11 +8,15 @@ import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { getCacheService, CacheTTL } from './services/cacheService.js'
 
 // Load environment variables from .env.local
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 config({ path: join(__dirname, '..', '.env.local') })
+
+// Initialize cache service
+const cache = getCacheService()
 
 const PORT = process.env.PORT || 7071
 const DEV_ORIGIN = process.env.DEV_ORIGIN || 'http://localhost:5173'
@@ -46,6 +50,29 @@ app.use('/api/fmp', async (req, res) => {
     const subpath = req.url.replace(/^\/api\/fmp/, '')
     const [path, query] = subpath.split('?')
     const params = new URLSearchParams(query || '')
+    
+    // Generate cache key (without API key in the key)
+    const cacheKey = cache.generateKey('fmp', path, query || '')
+    
+    // Determine TTL based on endpoint
+    let ttl = CacheTTL.INCOME_STATEMENT // Default 24 hours
+    if (path.includes('/quote')) ttl = CacheTTL.PRICE
+    else if (path.includes('/historical-price')) ttl = CacheTTL.PRICE_HISTORY
+    else if (path.includes('/profile')) ttl = CacheTTL.COMPANY_PROFILE
+    else if (path.includes('/balance-sheet')) ttl = CacheTTL.BALANCE_SHEET
+    else if (path.includes('/cash-flow')) ttl = CacheTTL.CASH_FLOW
+    else if (path.includes('/revenue-product-segmentation')) ttl = CacheTTL.REVENUE_SEGMENTS
+    
+    // Check cache first (only for GET requests)
+    if (req.method === 'GET') {
+      const cached = await cache.get(cacheKey)
+      if (cached.data) {
+        console.log(`[FMP] ${subpath} → CACHE HIT (${cached.source})`)
+        res.setHeader('X-Cache', cached.source)
+        return res.json(cached.data)
+      }
+    }
+    
     // Add API key (override if client mistakenly sent one)
     params.set('apikey', FMP_API_KEY)
     const upstream = `https://financialmodelingprep.com${path}?${params.toString()}`
@@ -67,7 +94,15 @@ app.use('/api/fmp', async (req, res) => {
     
     res.status(fmpRes.status).type(contentType)
     const buf = await fmpRes.arrayBuffer()
-    res.send(Buffer.from(buf))
+    const data = JSON.parse(Buffer.from(buf).toString())
+    
+    // Cache successful responses (only for GET)
+    if (req.method === 'GET' && fmpRes.status === 200 && data) {
+      await cache.set(cacheKey, data, ttl)
+      res.setHeader('X-Cache', 'miss')
+    }
+    
+    res.send(data)
   } catch (e) {
     console.error('[FMP] Error:', e)
     res.status(500).json({ error: String(e.message || e) })
@@ -274,13 +309,27 @@ app.post('/api/ai/analysis', async (req, res) => {
   }
 })
 
-// -------------------- Health --------------------
+// -------------------- Health & Cache Stats --------------------
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-const server = app.listen(PORT, () => {
+app.get('/api/cache/stats', (_req, res) => {
+  const stats = cache.getStats()
+  res.json(stats)
+})
+
+app.post('/api/cache/clear', async (_req, res) => {
+  await cache.clear()
+  cache.resetStats()
+  res.json({ message: 'Cache cleared successfully' })
+})
+
+const server = app.listen(PORT, async () => {
   console.log(`FMP Proxy Server listening on http://localhost:${PORT}`)
   console.log(`CORS allowed origin: ${DEV_ORIGIN}`)
   console.log(`FMP API: ${FMP_API_KEY ? 'ENABLED' : 'DISABLED (set FMP_API_KEY)'}`)
+  
+  // Connect to Redis
+  await cache.connect()
 })
 
 server.on('error', (err) => {
@@ -289,8 +338,9 @@ server.on('error', (err) => {
 })
 
 // Keep process alive
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n[SERVER] Shutting down gracefully...')
+  await cache.disconnect()
   server.close(() => {
     console.log('[SERVER] Server closed')
     process.exit(0)
