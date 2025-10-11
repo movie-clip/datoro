@@ -13,6 +13,7 @@ import FcfChart from './components/FcfChart.vue'
 import EpsChart from './components/EpsChart.vue'
 import CashDebtChart from './components/CashDebtChart.vue'
 import SharesChart from './components/SharesChart.vue'
+import InsiderTradingChart from './components/InsiderTradingChart.vue'
 
 const inputTicker = ref('AAPL')
 const ticker = ref('AAPL')
@@ -35,14 +36,15 @@ function applyTicker(){ const t=(inputTicker.value||'').trim().toUpperCase(); if
       <section class="panel"><BalanceTable :ticker="ticker" /></section>
     </section>
 
-    <!-- Charts: 6 charts -->
+    <!-- Charts: 7 charts -->
     <section class="charts">
-      <section class="panel"><PriceChart     :ticker="ticker" /></section>
-      <section class="panel"><RevenueChart   :ticker="ticker" /></section>
-      <section class="panel"><FcfChart       :ticker="ticker" /></section>
-      <section class="panel"><EpsChart       :ticker="ticker" /></section>
-      <section class="panel"><CashDebtChart  :ticker="ticker" /></section>
-      <section class="panel"><SharesChart    :ticker="ticker" /></section>
+      <section class="panel"><PriceChart          :ticker="ticker" /></section>
+      <section class="panel"><RevenueChart        :ticker="ticker" /></section>
+      <section class="panel"><FcfChart            :ticker="ticker" /></section>
+      <section class="panel"><EpsChart            :ticker="ticker" /></section>
+      <section class="panel"><CashDebtChart       :ticker="ticker" /></section>
+      <section class="panel"><SharesChart         :ticker="ticker" /></section>
+      <section class="panel"><InsiderTradingChart :ticker="ticker" /></section>
     </section>
   </main>
 </template>

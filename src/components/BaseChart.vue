@@ -58,6 +58,7 @@ const props = defineProps({
   showLegend: { type: Boolean, default: false },
   stacked:    { type: Boolean, default: false },
   useLegend:  { type: Boolean, default: false },
+  dualAxis:   { type: Boolean, default: false },
 })
 
 const showModal = ref(false)
@@ -151,15 +152,64 @@ const createOption = (isLarge = false) => {
       bottom: bottomPadding, 
       containLabel: true 
     },
-    tooltip: { trigger: 'axis' },
+    tooltip: { 
+      trigger: 'axis',
+      formatter: props.dualAxis ? (params) => {
+        if (!params || params.length === 0) return ''
+        const date = new Date(params[0].value[0]).toLocaleDateString()
+        let html = `<div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${date}</div>`
+        params.forEach(item => {
+          const marker = item.marker
+          const name = item.seriesName
+          const value = item.value[1]
+          const formatted = name === 'Price' 
+            ? `$${value.toFixed(2)}` 
+            : `${value >= 0 ? '+' : ''}${(value / 1000).toFixed(1)}K shares`
+          html += `<div>${marker} ${name}: ${formatted}</div>`
+        })
+        return html
+      } : undefined
+    },
     xAxis: {
       type: 'time', 
-      boundaryGap: false,
+      boundaryGap: props.kind === 'bar' || props.dualAxis ? true : false,
       axisLabel: { color: '#ddd', fontSize: isLarge ? 14 : 12 },
       axisLine: { lineStyle: { color: '#aaa' } },
       splitLine: { show: false }
     },
-    yAxis: {
+    yAxis: props.dualAxis ? [
+      // Left axis (for price/primary data)
+      {
+        type: 'value',
+        scale: true,
+        position: 'left',
+        axisLabel: { 
+          color: '#ddd', 
+          fontSize: isLarge ? 14 : 12,
+          formatter: (val) => yFormatter(val, props.yFormat) 
+        },
+        axisLine: { lineStyle: { color: '#aaa' } },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
+      },
+      // Right axis (for insider trading/secondary data)
+      {
+        type: 'value',
+        scale: true,
+        position: 'right',
+        axisLabel: { 
+          color: '#ddd', 
+          fontSize: isLarge ? 14 : 12,
+          formatter: (val) => {
+            if (Math.abs(val) >= 1000) {
+              return (val / 1000).toFixed(1) + 'K'
+            }
+            return val.toFixed(0)
+          }
+        },
+        axisLine: { lineStyle: { color: '#aaa' } },
+        splitLine: { show: false }
+      }
+    ] : {
       type: 'value',
       scale: true,
       min: (v) => {
@@ -200,19 +250,25 @@ const createOption = (isLarge = false) => {
   let series
   if (Array.isArray(dataSource) && dataSource.length > 0 && dataSource[0]?.name) {
     // Multi-series format: [{ name: 'FCF', data: [...] }, { name: 'SBC', data: [...] }]
-    series = dataSource.map((s, idx) => ({
-      type: props.kind,
-      name: s.name,
-      data: s.data,
-      // Use stack property from series object if provided
-      stack: s.stack || undefined,
-      barMaxWidth: props.barMaxWidth,
-      itemStyle: { opacity: 0.9, ...(s.itemStyle || {}) },
-      smooth: props.kind === 'line' ? props.smooth : undefined,
-      showSymbol: props.kind === 'line' ? false : undefined,
-      emphasis: props.kind === 'line' ? { disabled: true } : undefined,
-      lineStyle: props.kind === 'line' ? { width: isLarge ? 3 : 2 } : undefined,
-    }))
+    // If series already has 'type' property, it's a fully configured series - use as-is
+    if (dataSource[0].type) {
+      series = dataSource
+    } else {
+      // Otherwise, apply default configuration
+      series = dataSource.map((s, idx) => ({
+        type: props.kind,
+        name: s.name,
+        data: s.data,
+        // Use stack property from series object if provided
+        stack: s.stack || undefined,
+        barMaxWidth: props.barMaxWidth,
+        itemStyle: { opacity: 0.9, ...(s.itemStyle || {}) },
+        smooth: props.kind === 'line' ? props.smooth : undefined,
+        showSymbol: props.kind === 'line' ? false : undefined,
+        emphasis: props.kind === 'line' ? { disabled: true } : undefined,
+        lineStyle: props.kind === 'line' ? { width: isLarge ? 3 : 2 } : undefined,
+      }))
+    }
   } else {
     // Single series format: [[timestamp, value], ...]
     series = props.kind === 'bar'

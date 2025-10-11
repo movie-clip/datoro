@@ -358,18 +358,36 @@ async function getFcfSeries(ticker, period = 'annual') {
   const t = (ticker || '').trim().toUpperCase()
   if (!t) return { data: [], error: 'No ticker provided' }
   try {
-    const url = `${BASE}/cash-flow-statement/${t}?period=${period === 'quarterly' ? 'quarter' : 'annual'}&limit=20`
-    const res = await fetch(url)
-    if (!res.ok) return { data: [], error: `HTTP ${res.status}` }
-    const arr = await res.json()
+    // Fetch both cash flow statement and key metrics in parallel
+    const periodParam = period === 'quarterly' ? 'quarter' : 'annual'
+    const [cfRes, kmRes] = await Promise.all([
+      fetch(`${BASE}/cash-flow-statement/${t}?period=${periodParam}&limit=20`),
+      fetch(`${BASE}/key-metrics/${t}?period=${periodParam}&limit=20`)
+    ])
     
-    // Return enhanced data with FCF, FCF per share, and SBC
-    const enhanced = arr.map(row => ({
-      date: Date.parse(row.date),
-      fcf: Number(row.freeCashFlow) || 0,
-      fcfPerShare: Number(row.freeCashFlowPerShare) || 0,
-      sbc: Number(row.stockBasedCompensation) || 0,
-    }))
+    if (!cfRes.ok) return { data: [], error: `HTTP ${cfRes.status}` }
+    
+    const cfArr = await cfRes.json()
+    const kmArr = kmRes.ok ? await kmRes.json() : []
+    
+    // Create a map of key metrics by date for quick lookup
+    const kmMap = new Map()
+    kmArr.forEach(km => {
+      if (km.date) {
+        kmMap.set(km.date, km)
+      }
+    })
+    
+    // Return enhanced data with FCF, FCF per share (from key metrics), and SBC
+    const enhanced = cfArr.map(row => {
+      const keyMetrics = kmMap.get(row.date)
+      return {
+        date: Date.parse(row.date),
+        fcf: Number(row.freeCashFlow) || 0,
+        fcfPerShare: keyMetrics?.freeCashFlowPerShare || 0,
+        sbc: Number(row.stockBasedCompensation) || 0,
+      }
+    })
     
     return { data: enhanced, error: null }
   } catch (error) {
