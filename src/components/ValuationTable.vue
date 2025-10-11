@@ -29,7 +29,7 @@ const loading = ref(false)
 
 const rows = computed(() => [
   { label: 'Market Cap', value: data.value.marketCap },
-  { label: 'PE / FPE', value: `${data.value.pe} / ${data.value.fpe}` },
+  { label: 'PE / FPE', value: `${data.value.pe}/${data.value.fpe}` },
   { label: 'Price to Sales', value: data.value.ps },
   { label: 'Price to Book', value: data.value.pb },
   { label: 'EV To EBITDA', value: data.value.evEbitda },

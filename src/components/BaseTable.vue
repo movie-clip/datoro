@@ -59,19 +59,20 @@ defineProps({
 
 .data-table th,
 .data-table td {
-  text-align: left;
   padding: 10px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .data-table th {
-  width: 260px;
+  width: 180px;
   color: #ddd;
   font-weight: 500;
+  text-align: left;
 }
 
 .data-table td {
   color: #fff;
+  text-align: right;
 }
 
 .loading {

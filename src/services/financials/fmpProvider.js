@@ -50,7 +50,35 @@ async function getValuation(ticker) {
       }
     }
     
-    // FPE not directly available
+    // Calculate Forward P/E from analyst estimates
+    try {
+      const [quoteRes, estimatesRes] = await Promise.all([
+        fetch(`${BASE}/quote/${t}`),
+        fetch(`${BASE}/analyst-estimates/${t}`)
+      ])
+      
+      if (quoteRes.ok && estimatesRes.ok) {
+        const quoteArr = await quoteRes.json()
+        const estimatesArr = await estimatesRes.json()
+        
+        const currentPrice = quoteArr[0]?.price
+        const currentYear = new Date().getFullYear()
+        
+        // Find next year's estimate
+        const nextYearEstimate = estimatesArr.find(est => {
+          const estYear = new Date(est.date).getFullYear()
+          return estYear === currentYear + 1
+        })
+        
+        if (currentPrice && nextYearEstimate?.estimatedEpsAvg && nextYearEstimate.estimatedEpsAvg > 0) {
+          const forwardPE = currentPrice / nextYearEstimate.estimatedEpsAvg
+          out.fpe = forwardPE.toFixed(2)
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch Forward P/E:', error)
+    }
+    
     return { data: out, error: null }
   } catch (error) {
     return handleServiceError(error, 'getValuation')
