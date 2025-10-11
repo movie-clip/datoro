@@ -13,18 +13,21 @@
     
     <div class="company-info">
       <div class="company-name">{{ profile.companyName || ticker }}</div>
-      <div class="price-info">
-        <span class="current-price">${{ formatPrice(quote.price) }}</span>
-        <span 
-          class="price-change" 
-          :class="{ positive: quote.change >= 0, negative: quote.change < 0 }"
-        >
-          {{ quote.change >= 0 ? '+' : '' }}${{ formatPrice(Math.abs(quote.change)) }} 
-          ({{ quote.change >= 0 ? '+' : '' }}{{ quote.changesPercentage?.toFixed(2) }}%)
-        </span>
-      </div>
-      <div v-if="earningsDate" class="earnings-date">
-        Next Earnings: {{ formatEarningsDate(earningsDate) }}
+      <div class="bottom-row">
+        <div class="price-info">
+          <span class="current-price">${{ formatPrice(quote.price) }}</span>
+          <span 
+            class="price-change" 
+            :class="{ positive: quote.change >= 0, negative: quote.change < 0 }"
+          >
+            {{ quote.change >= 0 ? '+' : '' }}${{ formatPrice(Math.abs(quote.change)) }} 
+            ({{ quote.change >= 0 ? '+' : '' }}{{ quote.changesPercentage?.toFixed(2) }}%)
+          </span>
+        </div>
+        <div v-if="earningsDate" class="earnings-section">
+          <div class="earnings-label">Next Earnings</div>
+          <div class="earnings-date">{{ formatEarningsDate(earningsDate) }}</div>
+        </div>
       </div>
     </div>
   </div>
@@ -80,7 +83,7 @@ async function fetchCompanyData() {
     const [profileRes, quoteRes, earningsRes] = await Promise.all([
       fetch(`/api/fmp/api/v3/profile/${t}`),
       fetch(`/api/fmp/api/v3/quote/${t}`),
-      fetch(`/api/fmp/api/v3/earnings-calendar/${t}`)
+      fetch(`/api/fmp/api/v3/historical/earning_calendar/${t}`)
     ])
 
     if (profileRes.ok) {
@@ -102,9 +105,10 @@ async function fetchCompanyData() {
       // Find next earnings date (future date)
       const now = new Date()
       const upcoming = earningsData
-        .filter(e => new Date(e.date) >= now)
+        .filter(e => e.date && new Date(e.date) >= now)
         .sort((a, b) => new Date(a.date) - new Date(b.date))
       earningsDate.value = upcoming.length > 0 ? upcoming[0].date : null
+      console.log('[CompanyHeader] Next earnings date:', earningsDate.value)
     }
   } catch (error) {
     console.error('[CompanyHeader] Error fetching data:', error)
@@ -157,7 +161,8 @@ watch(() => props.ticker, () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .company-name {
@@ -166,10 +171,20 @@ watch(() => props.ticker, () => {
   color: #fff;
 }
 
+.bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
 .price-info {
   display: flex;
   gap: 8px;
   align-items: baseline;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .current-price {
@@ -191,9 +206,26 @@ watch(() => props.ticker, () => {
   color: #f44336;
 }
 
+.earnings-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.earnings-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .earnings-date {
-  font-size: 12px;
-  color: #aaa;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
 }
 
 .loading-placeholder {
