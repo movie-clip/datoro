@@ -3,7 +3,7 @@ import { getRevenueSeries, getRevenueSegments } from '../services/financials'
 
 export function useRevenueSeries(tickerRef) {
   const period  = ref('annual');   // 'annual' | 'quarterly'
-  const viewMode = ref('total');   // 'total' | segment name
+  const selectedSegments = ref(['total']);   // Array of selected segment names
   const totalRevenue = ref([]);
   const segmentData = ref({ segments: [], series: {} });
   const title   = ref('Revenue');
@@ -11,20 +11,71 @@ export function useRevenueSeries(tickerRef) {
   const loading = ref(false);
   const error   = ref(null);
 
-  // Computed series - filter based on selected viewMode (like FCF chart)
+  // Computed series - return stacked multi-series based on selectedSegments
   const series = computed(() => {
     if (segmentData.value.segments.length === 0) {
       // No segments available, return total revenue as simple array
       return totalRevenue.value || [];
     }
     
-    // Filter based on viewMode
-    if (viewMode.value === 'total') {
+    // If only 'total' is selected, return simple array
+    if (selectedSegments.value.length === 1 && selectedSegments.value[0] === 'total') {
       return totalRevenue.value || [];
-    } else {
-      // Return the selected segment's data
-      return segmentData.value.series[viewMode.value] || [];
     }
+    
+    // Filter out 'total' if other segments are selected (since total = sum of segments)
+    const segmentsToShow = selectedSegments.value.filter(s => s !== 'total');
+    
+    // If no segments after filtering, show total
+    if (segmentsToShow.length === 0) {
+      return totalRevenue.value || [];
+    }
+    
+    // Get all unique dates from ALL segment data (not just total revenue)
+    const allDates = new Set();
+    
+    // Add dates from all selected segments
+    segmentsToShow.forEach(segment => {
+      if (segmentData.value.series[segment]) {
+        segmentData.value.series[segment].forEach(([date]) => {
+          allDates.add(date);
+        });
+      }
+    });
+    
+    const sortedDates = Array.from(allDates).sort((a, b) => a - b);
+    
+    console.log('[Revenue] Total dates found:', sortedDates.length, 'Segments to show:', segmentsToShow);
+    
+    // Create a map for quick lookup: date -> value for each segment
+    const segmentMaps = {};
+    segmentsToShow.forEach(segment => {
+      const map = new Map();
+      if (segmentData.value.series[segment]) {
+        segmentData.value.series[segment].forEach(([date, value]) => {
+          map.set(date, value);
+        });
+      }
+      segmentMaps[segment] = map;
+    });
+    
+    // Build aligned series: for each date, fill in 0 if segment doesn't have data
+    const multiSeries = [];
+    segmentsToShow.forEach(segment => {
+      const alignedData = sortedDates.map(date => {
+        const value = segmentMaps[segment].get(date) || 0;
+        return [date, value];
+      });
+      
+      multiSeries.push({
+        name: formatSegmentLabel(segment),
+        data: alignedData,
+        stack: 'revenue'
+      });
+    });
+    
+    console.log('[Revenue] Aligned multi-series for stacking:', multiSeries);
+    return multiSeries;
   });
 
   // Computed view mode options for the chart (used by BaseChart to show legend)
@@ -55,7 +106,7 @@ export function useRevenueSeries(tickerRef) {
     message.value = '';
     error.value = null;
     // Reset to total revenue when refreshing
-    viewMode.value = 'total';
+    selectedSegments.value = ['total'];
     const t = (tickerRef?.value || '').toUpperCase();
     if (!t) {
       title.value = 'Revenue — Empty';
@@ -104,5 +155,5 @@ export function useRevenueSeries(tickerRef) {
   watch(() => tickerRef?.value, () => refresh(), { immediate: true });
   watch(period, () => refresh());
 
-  return { period, viewMode, viewModeOptions, series, title, message, loading, error, refresh };
+  return { period, selectedSegments, viewModeOptions, series, title, message, loading, error, refresh };
 }
