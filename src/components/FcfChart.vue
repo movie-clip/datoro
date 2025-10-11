@@ -4,6 +4,7 @@
     <div v-if="loading && series.length === 0" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
     <BaseChart
       v-else
+      :key="`fcf-${ticker}`"
       :title="title"
       :series="series"
       kind="bar"

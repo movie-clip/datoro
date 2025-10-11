@@ -140,7 +140,12 @@ const createOption = (isLarge = false) => {
           const p = Math.abs(v.min) * 0.05 || 1
           return v.min - p
         }
-        return v.min - r * 0.06
+        const calculated = v.min - r * 0.06
+        // If all data is positive, don't let axis go negative
+        if (v.min >= 0 && calculated < 0) {
+          return 0
+        }
+        return calculated
       },
       max: (v) => {
         const r = v.max - v.min
