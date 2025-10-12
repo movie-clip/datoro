@@ -223,15 +223,28 @@ const modalOption = computed(() => createOption(true, props.series))
   position: absolute;
   top: 8px;
   right: 8px;
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.5);
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   user-select: none;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  padding: 0;
 }
 
 .expand-hint:hover {
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.8);
+  color: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
 }
 
 .modal-title {
