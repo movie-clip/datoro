@@ -86,6 +86,11 @@ sentryService.initSentry()
 app.use(sentryService.requestHandler())
 app.use(sentryService.tracingHandler())
 
+// Security headers (helmet) - protect against common attacks
+import { securityHeaders, customSecurityHeaders } from './middleware/security.js'
+app.use(securityHeaders())
+app.use(customSecurityHeaders)
+
 // Request logging with monitoring
 app.use(requestLogger(monitoring))
 
