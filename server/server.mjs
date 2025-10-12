@@ -80,6 +80,10 @@ if (!existsSync(CACHE_DIR)) {
 
 const app = express()
 
+// Trust Render proxy for rate limiting and IP detection
+// Render runs behind a proxy, so we need to trust X-Forwarded-* headers
+app.set('trust proxy', 1)
+
 // Initialize Sentry FIRST (before any other middleware)
 sentryService.initSentry()
 

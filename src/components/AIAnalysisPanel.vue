@@ -35,7 +35,7 @@
     </div>
     
     <div v-else class="empty">
-      <p>Enter a ticker to view analysis</p>
+      <p>AI analysis temporarily disabled</p>
     </div>
   </section>
 </template>
@@ -97,16 +97,25 @@ const daysUntilExpiry = computed(() => {
 })
 
 async function fetchAnalysis(clearCache = false) {
-  loading.value = true
+  // AI feature disabled - show message without making API call
+  const t = (tickerRef.value || '').trim().toUpperCase()
+  if (!t) {
+    return
+  }
+  
+  // Set a friendly disabled message
+  loading.value = false
   error.value = null
   data.value = null
   cached.value = false
   
-  const t = (tickerRef.value || '').trim().toUpperCase()
-  if (!t) {
-    loading.value = false
-    return
-  }
+  // Show disabled message instead of making API call
+  // Uncomment the code below to re-enable AI features:
+  /*
+  loading.value = true
+  error.value = null
+  data.value = null
+  cached.value = false
   
   // Wait for company name to be available (max 3 seconds)
   let company = props.companyName
@@ -152,6 +161,7 @@ async function fetchAnalysis(clearCache = false) {
   } finally {
     loading.value = false
   }
+  */
 }
 
 // Manual refresh - clears cache and fetches fresh
