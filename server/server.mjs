@@ -728,6 +728,121 @@ app.post('/api/ai/analysis', aiLimiter, async (req, res) => {
   }
 })
 
+// -------------------- Batch Data Endpoint --------------------
+// Fetch all ticker data in one optimized request (reduces 30+ calls to 1)
+app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
+  const startTime = Date.now()
+  const { ticker } = req.params
+  const mode = req.query.mode || 'full' // 'full' or 'priority'
+  
+  if (!ticker || !/^[A-Z]{1,5}$/.test(ticker.toUpperCase())) {
+    return res.status(400).json({
+      error: {
+        message: 'Invalid ticker format',
+        code: 'E001',
+        details: 'Ticker must be 1-5 uppercase letters'
+      }
+    })
+  }
+
+  const t = ticker.toUpperCase()
+  const cacheKey = cache.generateKey('batch', t, mode)
+  
+  try {
+    // Check cache first (7-day TTL for batch data)
+    const cached = await cache.get(cacheKey)
+    if (cached.data) {
+      console.log(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
+      res.setHeader('X-Cache', cached.source)
+      
+      // Track in database (background)
+      if (isDatabaseAvailable) {
+        trackSearch(req.ip, t, req.headers['user-agent'], 'batch').catch(err => {
+          console.error('[Database] Search tracking error:', err.message)
+          isDatabaseAvailable = false
+        })
+      }
+      
+      return res.json(cached.data)
+    }
+    
+    console.log(`[Batch] ${t} (${mode}) → Fetching from FMP...`)
+    
+    // Import batch service
+    const { fetchTickerBatch, fetchTickerPriority } = await import('./services/batchDataService.js')
+    
+    // Fetch data based on mode
+    const result = mode === 'priority' 
+      ? await fetchTickerPriority(t, FMP_API_KEY)
+      : await fetchTickerBatch(t, FMP_API_KEY)
+    
+    // Cache the result
+    await cache.set(cacheKey, result, CacheTTL.COMPANY_PROFILE) // 7 days
+    res.setHeader('X-Cache', 'miss')
+    
+    console.log(`[Batch] ${t} (${mode}) → Fetched in ${result.fetchDuration}ms`)
+    
+    // Track in database (background)
+    if (isDatabaseAvailable) {
+      trackSearch(req.ip, t, req.headers['user-agent'], 'batch').catch(err => {
+        console.error('[Database] Search tracking error:', err.message)
+        isDatabaseAvailable = false
+      })
+      
+      // Update company name if available
+      if (result.data.profile && Array.isArray(result.data.profile) && result.data.profile[0]?.companyName) {
+        updateTickerCompanyName(t, result.data.profile[0].companyName).catch(err => {
+          console.error('[Database] Company name update error:', err.message)
+          isDatabaseAvailable = false
+        })
+      }
+    }
+    
+    // Track API request
+    if (isDatabaseAvailable) {
+      trackApiRequest({
+        endpoint: `/api/ticker-data/${t}`,
+        method: 'GET',
+        statusCode: 200,
+        responseTime: Date.now() - startTime,
+        cached: false,
+        ipAddress: req.ip
+      }).catch(err => {
+        console.error('[Database] API tracking error:', err.message)
+        isDatabaseAvailable = false
+      })
+    }
+    
+    res.json(result)
+  } catch (error) {
+    console.error(`[Batch] Error fetching ${t}:`, error)
+    
+    // Track failed request
+    if (isDatabaseAvailable) {
+      trackApiRequest({
+        endpoint: `/api/ticker-data/${t}`,
+        method: 'GET',
+        statusCode: 500,
+        responseTime: Date.now() - startTime,
+        cached: false,
+        errorCode: 'E006',
+        ipAddress: req.ip
+      }).catch(err => {
+        console.error('[Database] API tracking error:', err.message)
+        isDatabaseAvailable = false
+      })
+    }
+    
+    res.status(500).json({
+      error: {
+        message: 'Failed to fetch ticker data',
+        code: 'E006',
+        details: error.message
+      }
+    })
+  }
+})
+
 // -------------------- Health & Monitoring --------------------
 app.get('/api/health', (_req, res) => {
   const summary = monitoring.getSummary()

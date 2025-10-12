@@ -9,16 +9,19 @@
 </template>
 
 <script setup>
-import { ref, watch, toRef, computed } from 'vue'
-import { getBalance } from '../services/financials/index.js'
+import { toRef, computed } from 'vue'
+import { useTickerData } from '../composables/useTickerData.js'
+import { getBalanceFromBatch } from '../services/financials/batchTableService.js'
 import BaseTable from './BaseTable.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
 const tRef = toRef(props, 'ticker')
 
-const data = ref({ cash: '—', debt: '—', net: '—', altmanZScore: '—', altmanZColor: 'grey' })
-const error = ref(null)
-const loading = ref(false)
+// Use batch data composable (single API call for all data)
+const { data: batchData, loading, error } = useTickerData(tRef)
+
+// Process batch data into balance sheet metrics
+const data = computed(() => getBalanceFromBatch(batchData.value))
 
 const rows = computed(() => {
   const colorMap = {
@@ -38,18 +41,4 @@ const rows = computed(() => {
     },
   ]
 })
-
-async function refresh() {
-  loading.value = true
-  error.value = null
-  const result = await getBalance(tRef.value)
-  if (result.error) {
-    error.value = result.error
-    data.value = { cash: '—', debt: '—', net: '—', altmanZScore: '—', altmanZColor: 'grey' }
-  } else {
-    data.value = result.data
-  }
-  loading.value = false
-}
-watch(() => tRef.value, () => refresh(), { immediate: true })
 </script>

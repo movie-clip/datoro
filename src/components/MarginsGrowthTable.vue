@@ -9,18 +9,19 @@
 </template>
 
 <script setup>
-import { ref, watch, toRef, computed } from 'vue'
-import { getMarginsGrowth } from '../services/financials/index.js'
+import { toRef, computed } from 'vue'
+import { useTickerData } from '../composables/useTickerData.js'
+import { getMarginsGrowthFromBatch } from '../services/financials/batchTableService.js'
 import BaseTable from './BaseTable.vue'
 
 const props = defineProps({ ticker: { type: String, required: true } })
 const tRef = toRef(props, 'ticker')
 
-const data = ref({
-  profitMargin: '—', operatingMargin: '—', earningsYoY: '—', revenueYoY: '—'
-})
-const error = ref(null)
-const loading = ref(false)
+// Use batch data composable (single API call for all data)
+const { data: batchData, loading, error } = useTickerData(tRef)
+
+// Process batch data into margins and growth metrics
+const data = computed(() => getMarginsGrowthFromBatch(batchData.value))
 
 const rows = computed(() => [
   { label: 'Profit Margin', value: data.value.profitMargin },
@@ -28,18 +29,4 @@ const rows = computed(() => [
   { label: 'Quarterly Earnings (YoY)', value: data.value.earningsYoY },
   { label: 'Quarterly Revenue (YoY)', value: data.value.revenueYoY },
 ])
-
-async function refresh() {
-  loading.value = true
-  error.value = null
-  const result = await getMarginsGrowth(tRef.value)
-  if (result.error) {
-    error.value = result.error
-    data.value = { profitMargin: '—', operatingMargin: '—', earningsYoY: '—', revenueYoY: '—' }
-  } else {
-    data.value = result.data
-  }
-  loading.value = false
-}
-watch(() => tRef.value, () => refresh(), { immediate: true })
 </script>
