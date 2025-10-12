@@ -4,6 +4,9 @@
 
 import { ref, watch, computed } from 'vue'
 
+// Get API base URL from environment variable or fallback to relative URL for dev
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+
 const cache = new Map() // Client-side cache for instant navigation
 
 export function useTickerData(tickerRef, options = {}) {
@@ -77,7 +80,7 @@ export function useTickerData(tickerRef, options = {}) {
     try {
       console.log(`[useTickerData] Fetching ${t} (${mode} mode)...`)
       
-      const response = await fetch(`/api/ticker-data/${t}?mode=${mode}`)
+      const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`)
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
