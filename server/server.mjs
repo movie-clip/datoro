@@ -195,10 +195,10 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = incomeMatch[1]
         await validateIncomeStatement.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query = {
-            period: params.get('period'),
-            limit: params.get('limit')
-          }
+          const query = {}
+          if (params.has('period')) query.period = params.get('period')
+          if (params.has('limit')) query.limit = params.get('limit')
+          
           const validated = await validateIncomeStatement.query.validateAsync(query, { 
             stripUnknown: true, 
             convert: true 
@@ -226,10 +226,10 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = balanceMatch[1]
         await validateBalanceSheet.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query = {
-            period: params.get('period'),
-            limit: params.get('limit')
-          }
+          const query = {}
+          if (params.has('period')) query.period = params.get('period')
+          if (params.has('limit')) query.limit = params.get('limit')
+          
           const validated = await validateBalanceSheet.query.validateAsync(query, {
             stripUnknown: true,
             convert: true
@@ -256,10 +256,10 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = cashflowMatch[1]
         await validateCashFlow.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query = {
-            period: params.get('period'),
-            limit: params.get('limit')
-          }
+          const query = {}
+          if (params.has('period')) query.period = params.get('period')
+          if (params.has('limit')) query.limit = params.get('limit')
+          
           const validated = await validateCashFlow.query.validateAsync(query, {
             stripUnknown: true,
             convert: true
