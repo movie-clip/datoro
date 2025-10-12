@@ -1,54 +1,80 @@
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { TIMEFRAMES, DEFAULT_TF } from '../models/timeframe'
-import { getPriceSeries } from '../services/marketData'
+import { useTickerData } from './useTickerData.js'
+import { getPriceSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function usePriceSeries(tickerRef) {
   const tfKey   = ref(DEFAULT_TF);
-  const series  = ref([]);
   const title   = ref('Empty Chart');
   const message = ref('');
-  const loading = ref(false);
   const error   = ref(null);
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    const t = (tickerRef?.value || '').toUpperCase();
+  // Use batch data composable for price history
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract and filter price series based on timeframe
+  const series = computed(() => {
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (!t) return []
+    
+    const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M']
+    const rawPrices = getPriceSeriesFromBatch(batchData.value)
+    
+    if (!rawPrices.length) return []
+    
+    // Filter by timeframe
+    const maxDays = mapTimeframeToMaxDays(cfg.range)
+    if (maxDays) {
+      const cutoffTime = Date.now() - (maxDays * 24 * 60 * 60 * 1000)
+      return rawPrices.filter(point => point[0] >= cutoffTime)
+    }
+    
+    return rawPrices
+  })
+
+  // Update title when ticker or timeframe changes
+  watch([() => tickerRef?.value, tfKey, batchData], () => {
+    const t = (tickerRef?.value || '').toUpperCase()
+    const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M']
+    
     if (!t) {
-      title.value = 'Empty Chart';
-      series.value = [];
-      message.value = 'Enter a ticker';
-      return;
+      title.value = 'Empty Chart'
+      message.value = 'Enter a ticker'
+      error.value = null
+    } else if (batchError.value) {
+      title.value = 'Error'
+      message.value = batchError.value
+      error.value = batchError.value
+    } else if (series.value.length === 0 && !loading.value) {
+      title.value = 'No data'
+      message.value = `No data for '${t}'.`
+      error.value = null
+    } else {
+      title.value = `${t} ${cfg.title}`
+      message.value = ''
+      error.value = null
     }
-    const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M'];
-    loading.value = true;
-    try {
-      const result = await getPriceSeries(t, cfg);
-      if (result.error) {
-        title.value = 'Error';
-        series.value = [];
-        message.value = result.error;
-        error.value = result.error;
-      } else if (!result.data.length) {
-        title.value = 'No data';
-        series.value = [];
-        message.value = `No data for '${t}'.`;
-      } else {
-        title.value = `${t} ${cfg.title}`;
-        series.value = result.data;
-      }
-    } catch (e) {
-      title.value = 'Error';
-      series.value = [];
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
-    }
+  }, { immediate: true })
+
+  return { tfKey, series, title, message, loading, error };
+}
+
+// Map timeframe range to max days for filtering
+function mapTimeframeToMaxDays(range) {
+  switch (range) {
+    case '5d': return 7
+    case '1mo': return 31
+    case '6mo': return 200
+    case 'ytd': return daysSinceStartOfYear()
+    case '5y': return 1850
+    case 'max':
+    default:
+      return null // full history
   }
+}
 
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true });
-  watch(tfKey, () => refresh());
-
-  return { tfKey, series, title, message, loading, error, refresh };
+function daysSinceStartOfYear() {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 1)
+  return Math.max(1, Math.ceil((now - start) / (1000 * 60 * 60 * 24)) + 1)
 }

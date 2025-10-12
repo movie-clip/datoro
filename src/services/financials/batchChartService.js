@@ -445,3 +445,39 @@ export function getInsiderTradingFromBatch(batchData) {
     return { buys: [], sells: [], net: [] }
   }
 }
+
+/**
+ * Get price history series from batch data
+ * Used by: PriceChart, InsiderTradingChart
+ * Replaces: Direct /api/fmp/api/v3/historical-price-full call (1 call eliminated)
+ */
+export function getPriceSeriesFromBatch(batchData, maxDays = null) {
+  try {
+    const priceHistory = batchData?.data?.priceHistory
+    
+    if (!priceHistory || !Array.isArray(priceHistory.historical) || priceHistory.historical.length === 0) {
+      return []
+    }
+    
+    // Convert FMP format to chart format: [timestamp, adjClose]
+    let series = priceHistory.historical.map(row => {
+      const ts = row?.date ? Date.parse(row.date) : NaN
+      const price = row?.adjClose ?? row?.close
+      return Number.isFinite(ts) && Number.isFinite(price) ? [ts, price] : null
+    }).filter(Boolean)
+    
+    // Sort ascending by timestamp (FMP returns most recent first)
+    series.sort((a, b) => a[0] - b[0])
+    
+    // Optionally limit to last N days
+    if (maxDays && series.length > 0) {
+      const cutoffTime = Date.now() - (maxDays * 24 * 60 * 60 * 1000)
+      series = series.filter(point => point[0] >= cutoffTime)
+    }
+    
+    return series
+  } catch (error) {
+    console.error('[BatchChartService] getPriceSeriesFromBatch error:', error)
+    return []
+  }
+}
