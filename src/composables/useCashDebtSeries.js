@@ -44,13 +44,20 @@ export function useCashDebtSeries(tickerRef) {
     if (!ticker) {
       title.value = 'Cash & Debt — Empty'
       message.value = 'Enter a ticker'
-    } else if (error.value) {
+    } else if (rawData.value.length > 0) {
+      // Have data - show it
+      title.value = 'Cash & Debt'
+      message.value = ''
+    } else if (error.value && !loading.value) {
+      // Error and not loading - show error
       title.value = 'Error'
       message.value = error.value
-    } else if (rawData.value.length === 0 && !loading.value) {
+    } else if (!loading.value) {
+      // No data and not loading
       title.value = 'Cash & Debt — No data'
       message.value = `No data for '${ticker}'`
     } else {
+      // Loading - set title optimistically
       title.value = 'Cash & Debt'
       message.value = ''
     }

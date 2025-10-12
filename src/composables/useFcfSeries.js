@@ -60,10 +60,13 @@ export function useFcfSeries(tickerRef) {
     if (!ticker) {
       title.value = 'Free Cash Flow — Empty'
       message.value = 'Enter a ticker'
-    } else if (error.value) {
+    } else if (rawData.value.length > 0) {
+      title.value = 'Free Cash Flow'
+      message.value = ''
+    } else if (error.value && !loading.value) {
       title.value = 'Error'
       message.value = error.value
-    } else if (rawData.value.length === 0 && !loading.value) {
+    } else if (!loading.value) {
       title.value = 'Free Cash Flow — No data'
       message.value = `No FCF data for '${ticker}'`
     } else {

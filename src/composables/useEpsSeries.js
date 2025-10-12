@@ -27,10 +27,13 @@ export function useEpsSeries(tickerRef) {
     if (!ticker) {
       title.value = 'EPS — Empty'
       message.value = 'Enter a ticker'
-    } else if (error.value) {
+    } else if (series.value.length > 0) {
+      title.value = 'EPS'
+      message.value = ''
+    } else if (error.value && !loading.value) {
       title.value = 'Error'
       message.value = error.value
-    } else if (series.value.length === 0 && !loading.value) {
+    } else if (!loading.value) {
       title.value = 'EPS — No data'
       message.value = `No EPS data for '${ticker}'`
     } else {

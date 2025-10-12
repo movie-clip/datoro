@@ -126,10 +126,13 @@ export function useRevenueSeries(tickerRef) {
     if (!ticker) {
       title.value = 'Revenue — Empty'
       message.value = 'Enter a ticker'
-    } else if (error.value) {
+    } else if (totalRevenue.value.length > 0 || series.value.length > 0) {
+      title.value = 'Revenue'
+      message.value = ''
+    } else if (error.value && !loading.value) {
       title.value = 'Error'
       message.value = error.value
-    } else if (totalRevenue.value.length === 0 && !loading.value) {
+    } else if (!loading.value) {
       title.value = 'Revenue — No data'
       message.value = `No revenue data for '${ticker}'`
     } else {
