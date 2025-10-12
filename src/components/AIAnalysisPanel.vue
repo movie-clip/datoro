@@ -127,7 +127,13 @@ async function fetchAnalysis(clearCache = false) {
     const result = await fetchFn(t, company || t, clearCache)
     
     if (result.error) {
-      error.value = result.error
+      // Check if it's an API key error and show a friendly message
+      const errorMsg = result.error
+      if (errorMsg.includes('API key not configured') || errorMsg.includes('401')) {
+        error.value = 'AI analysis requires an API key to be configured. This feature is optional.'
+      } else {
+        error.value = result.error
+      }
       provider.value = result.provider
     } else {
       // Store the entire result object (includes parsed data)
@@ -136,7 +142,13 @@ async function fetchAnalysis(clearCache = false) {
       provider.value = result.provider
     }
   } catch (e) {
-    error.value = e.message || 'Failed to load analysis'
+    const errorMsg = e.message || 'Failed to load analysis'
+    // Check if it's an API key error
+    if (errorMsg.includes('API key not configured') || errorMsg.includes('401')) {
+      error.value = 'AI analysis requires an API key to be configured. This feature is optional.'
+    } else {
+      error.value = errorMsg
+    }
   } finally {
     loading.value = false
   }
