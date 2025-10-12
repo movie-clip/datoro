@@ -4,7 +4,9 @@
 
 import { handleServiceError } from '../shared.js'
 
-const BASE = '/api/fmp/api/v3'
+// Get API base URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+const BASE = `${API_BASE_URL}/api/fmp/api/v3`
 
 async function getValuation(ticker) {
   const t = (ticker || '').trim().toUpperCase()
@@ -14,8 +16,8 @@ async function getValuation(ticker) {
     // Fetch profile, key-metrics, and ratios in parallel
     const [profileRes, metricsRes, ratiosRes] = await Promise.all([
       fetch(`${BASE}/profile/${t}`),
-      fetch(`/api/fmp/api/v4/key-metrics/${t}?period=annual&limit=1`),
-      fetch(`/api/fmp/api/v3/ratios/${t}?period=annual&limit=1`)
+      fetch(`${API_BASE_URL}/api/fmp/api/v4/key-metrics/${t}?period=annual&limit=1`),
+      fetch(`${API_BASE_URL}/api/fmp/api/v3/ratios/${t}?period=annual&limit=1`)
     ])
     
     if (!profileRes.ok) return { data: out, error: `HTTP ${profileRes.status}` }
@@ -97,9 +99,9 @@ async function getCashFlowFacts(ticker) {
   try {
     // Fetch cash flow statement, key metrics, and profile in parallel
     const [cfRes, metricsRes, profileRes] = await Promise.all([
-      fetch(`/api/fmp/api/v3/cash-flow-statement/${t}?period=quarter&limit=4`),
-      fetch(`/api/fmp/api/v4/key-metrics/${t}?period=annual&limit=1`),
-      fetch(`/api/fmp/api/v3/profile/${t}`)
+      fetch(`${API_BASE_URL}/api/fmp/api/v3/cash-flow-statement/${t}?period=quarter&limit=4`),
+      fetch(`${API_BASE_URL}/api/fmp/api/v4/key-metrics/${t}?period=annual&limit=1`),
+      fetch(`${API_BASE_URL}/api/fmp/api/v3/profile/${t}`)
     ])
     
     if (!cfRes.ok) return { data: out, error: `HTTP ${cfRes.status}` }
@@ -217,7 +219,7 @@ async function getBalance(ticker) {
     // Fetch balance sheet and Altman Z-Score in parallel
     const [balanceRes, zScoreRes] = await Promise.all([
       fetch(`${BASE}/balance-sheet-statement/${t}?period=annual&limit=1`),
-      fetch(`/api/fmp/stable/financial-scores?symbol=${t}`)
+      fetch(`${API_BASE_URL}/api/fmp/stable/financial-scores?symbol=${t}`)
     ])
     
     if (!balanceRes.ok) return { data: out, error: `HTTP ${balanceRes.status}` }

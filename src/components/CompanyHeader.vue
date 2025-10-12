@@ -39,6 +39,9 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 
+// Get API base URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+
 const props = defineProps({
   ticker: { type: String, required: true }
 })
@@ -83,9 +86,9 @@ async function fetchCompanyData() {
   try {
     // Fetch profile, quote, and earnings calendar in parallel
     const [profileRes, quoteRes, earningsRes] = await Promise.all([
-      fetch(`/api/fmp/api/v3/profile/${t}`),
-      fetch(`/api/fmp/api/v3/quote/${t}`),
-      fetch(`/api/fmp/api/v3/historical/earning_calendar/${t}`)
+      fetch(`${API_BASE_URL}/api/fmp/api/v3/profile/${t}`),
+      fetch(`${API_BASE_URL}/api/fmp/api/v3/quote/${t}`),
+      fetch(`${API_BASE_URL}/api/fmp/api/v3/historical/earning_calendar/${t}`)
     ])
 
     if (profileRes.ok) {
