@@ -16,10 +16,14 @@ body {
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   padding: 12px;
+}
+
+/* Hover effect only on charts, not tables or search bar */
+.charts > .panel {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.panel:hover {
+.charts > .panel:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
 }
@@ -52,17 +56,12 @@ body {
   }
 }
 
-.charts > .panel,
-.info-grid > .panel {
+/* Only animate charts, not tables */
+.charts > .panel {
   animation: fadeInUp 0.5s ease-out backwards;
 }
 
-/* Stagger delays for visual effect */
-.info-grid > .panel:nth-child(1) { animation-delay: 0.05s; }
-.info-grid > .panel:nth-child(2) { animation-delay: 0.1s; }
-.info-grid > .panel:nth-child(3) { animation-delay: 0.15s; }
-.info-grid > .panel:nth-child(4) { animation-delay: 0.2s; }
-
+/* Stagger delays for charts only */
 .charts > .panel:nth-child(1) { animation-delay: 0.1s; }
 .charts > .panel:nth-child(2) { animation-delay: 0.15s; }
 .charts > .panel:nth-child(3) { animation-delay: 0.2s; }

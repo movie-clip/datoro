@@ -49,6 +49,9 @@ const validationError = ref('')
 
 // Validate ticker format: 1-10 uppercase letters/numbers, no special chars except dots
 const validateInput = () => {
+  // Automatically uppercase the input as user types
+  localInput.value = localInput.value.toUpperCase()
+  
   const value = localInput.value.trim()
   
   if (!value) {

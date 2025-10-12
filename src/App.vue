@@ -101,18 +101,6 @@ function handleImageError(event) {
 .app-header {
   text-align: center;
   padding: 24px 0 16px;
-  animation: fadeInDown 0.6s ease-out;
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .brand-title {
@@ -127,11 +115,6 @@ function handleImageError(event) {
   width: 48px;
   height: 48px;
   object-fit: contain;
-  transition: transform 0.3s ease;
-}
-
-.brand-logo:hover {
-  transform: rotate(10deg) scale(1.1);
 }
 
 /* Branding */
