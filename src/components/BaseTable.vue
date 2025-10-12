@@ -1,8 +1,24 @@
 <template>
   <section class="table-panel">
     <div class="head">{{ title }}</div>
-    <div v-if="loading" class="loading" role="status" aria-live="polite">Loading...</div>
-    <div v-else-if="error" class="error" role="alert" aria-live="assertive">{{ error }}</div>
+    
+    <!-- Skeleton loader -->
+    <div v-if="loading" class="skeleton-rows">
+      <SkeletonLoader 
+        v-for="i in 5" 
+        :key="i" 
+        variant="text" 
+        :style="{ marginBottom: '12px' }" 
+      />
+    </div>
+    
+    <div v-else-if="error" class="error-container" role="alert" aria-live="assertive">
+      <p class="error">{{ error }}</p>
+      <button v-if="onRetry" class="retry-btn" @click="onRetry">
+        ↻ Retry
+      </button>
+    </div>
+    
     <table
       v-else
       class="data-table"
@@ -20,6 +36,8 @@
 </template>
 
 <script setup>
+import SkeletonLoader from './SkeletonLoader.vue'
+
 defineProps({
   title: {
     type: String,
@@ -40,6 +58,10 @@ defineProps({
   },
   ariaLabel: {
     type: String,
+    default: null
+  },
+  onRetry: {
+    type: Function,
     default: null
   }
 })
@@ -75,13 +97,43 @@ defineProps({
   text-align: right;
 }
 
+.skeleton-rows {
+  padding: 12px 0;
+}
+
 .loading {
   color: #aaa;
   padding: 12px;
 }
 
-.error {
-  color: #ff6a6a;
+.error-container {
   padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.error {
+  color: #ff6b6b;
+  font-weight: bold;
+  margin: 0;
+}
+
+.retry-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: #ff8787;
 }
 </style>

@@ -13,7 +13,12 @@
       :loading="loading"
       aria-label="Price chart"
     />
-    <p v-if="error" class="msg error" role="alert">{{ error }}</p>
+    <div v-if="error" class="error-container" role="alert">
+      <p class="msg error">{{ error }}</p>
+      <button class="retry-btn" @click="retry" :disabled="loading">
+        {{ loading ? 'Retrying...' : '↻ Retry' }}
+      </button>
+    </div>
     <p v-else-if="message" class="msg">{{ message }}</p>
   </div>
 </template>
@@ -25,7 +30,7 @@ import { usePriceSeries } from '../composables/usePriceSeries';
 import BaseChart from './BaseChart.vue';
 
 const props = defineProps({ ticker: { type: String, required: true } });
-const { tfKey, series, title, message, loading, error } = usePriceSeries(toRef(props, 'ticker'));
+const { tfKey, series, title, message, loading, error, retry } = usePriceSeries(toRef(props, 'ticker'));
 
 const timeframeOptions = computed(() => 
   TF_ORDER.map(key => ({ label: key, value: key }))
@@ -35,6 +40,37 @@ const timeframeOptions = computed(() =>
 <style scoped>
 .msg { margin: 6px 0 0; opacity: 0.85; }
 .msg.error { color: #ff6b6b; font-weight: bold; }
+
+.error-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.retry-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: #ff8787;
+}
+
+.retry-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .spinner {
   display: flex;
   align-items: center;

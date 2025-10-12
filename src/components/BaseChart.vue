@@ -1,16 +1,18 @@
 <template>
   <div class="chart-wrapper">
+    <SkeletonLoader v-if="loading && !option.series?.length" variant="chart" />
     <VChart 
+      v-else
       class="echart" 
       :class="{ 'clickable': !isModal, 'loading-chart': loading }" 
       :option="option" 
       autoresize 
       @click="handleClick"
     />
-    <div v-if="loading" class="chart-loading-overlay">
-      <div class="loading-spinner">Loading...</div>
+    <div v-if="loading && option.series?.length" class="chart-loading-overlay">
+      <div class="loading-spinner">Updating...</div>
     </div>
-    <div v-if="!isModal" class="expand-hint" @click="handleClick" title="Click to expand">⛶</div>
+    <div v-if="!isModal && !loading" class="expand-hint" @click="handleClick" title="Click to expand">⛶</div>
     
     <ChartModal :is-open="showModal" @close="closeModal">
       <h2 class="modal-title">{{ title }}</h2>
@@ -41,6 +43,7 @@
 import { computed, ref } from 'vue'
 import VChart from 'vue-echarts'
 import ChartModal from './ChartModal.vue'
+import SkeletonLoader from './SkeletonLoader.vue'
 
 const props = defineProps({
   title:      { type: String, default: '' },

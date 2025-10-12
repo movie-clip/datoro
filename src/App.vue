@@ -24,6 +24,7 @@ import AIAnalysisPanel from './components/AIAnalysisPanel.vue'
 const inputTicker = ref('AAPL')
 const ticker = ref('AAPL')
 const companyName = ref('Apple Inc.')
+
 function applyTicker(){ 
   const t=(inputTicker.value||'').trim().toUpperCase()
   if(t) {
@@ -32,11 +33,27 @@ function applyTicker(){
     companyName.value = ''
   }
 }
+
+// Hide logo if image fails to load
+function handleImageError(event) {
+  event.target.style.display = 'none'
+}
 </script>
 
 <template>
   <main class="page">
-    <h1>Markets Dashboard</h1>
+    <header class="app-header">
+      <h1 class="brand-title">
+        <!-- Replace /logo.svg with your icon path: /logo.png, /logo.jpg, etc. -->
+        <img 
+          src="/logo.png" 
+          alt="Kazoku Logo" 
+          class="brand-logo"
+          @error="handleImageError"
+        />
+        <span class="brand">Kazoku</span>
+      </h1>
+    </header>
 
     <section class="panel" style="max-width: 900px; margin: 0 auto;">
       <GlobalTickerBar 
@@ -80,6 +97,36 @@ function applyTicker(){
 </template>
 
 <style>
+/* Header */
+.app-header {
+  text-align: center;
+  padding: 24px 0 16px;
+}
+
+.brand-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+.brand-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+/* Branding */
+.brand {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
 .ai-analysis-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

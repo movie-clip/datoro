@@ -10,7 +10,7 @@ export function usePriceSeries(tickerRef) {
   const error   = ref(null);
 
   // Use batch data composable for price history
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  const { data: batchData, loading, error: batchError, refresh } = useTickerData(tickerRef)
 
   // Extract and filter price series based on timeframe
   const series = computed(() => {
@@ -56,7 +56,7 @@ export function usePriceSeries(tickerRef) {
     }
   }, { immediate: true })
 
-  return { tfKey, series, title, message, loading, error };
+  return { tfKey, series, title, message, loading, error, retry: refresh };
 }
 
 // Map timeframe range to max days for filtering

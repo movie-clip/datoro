@@ -4,6 +4,7 @@
     :rows="rows"
     :loading="loading"
     :error="error"
+    :onRetry="retry"
     aria-label="Valuation metrics"
   />
 </template>
@@ -18,7 +19,7 @@ const props = defineProps({ ticker: { type: String, required: true } })
 const tRef = toRef(props, 'ticker')
 
 // Use batch data composable (single API call for all data)
-const { data: batchData, loading, error } = useTickerData(tRef)
+const { data: batchData, loading, error, refresh: retry } = useTickerData(tRef)
 
 // Process batch data into valuation metrics
 const data = computed(() => getValuationFromBatch(batchData.value))
