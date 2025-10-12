@@ -1,11 +1,14 @@
 // Service for AI API integration with server-side file caching
 import { SYSTEM_PROMPTS } from './prompts.js'
 
+// Get API base URL from environment variable or fallback to localhost for dev
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071'
+
 // Call server endpoint for AI analysis
 async function callServerAI(ticker, companyName, type, clearCache = false) {
   const systemPrompt = SYSTEM_PROMPTS[type]
   
-  const response = await fetch('http://localhost:7071/api/ai/analysis', {
+  const response = await fetch(`${API_BASE_URL}/api/ai/analysis`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
