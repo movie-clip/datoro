@@ -10,7 +10,6 @@ services:
     region: oregon # or frankfurt, singapore (choose closest to users)
     plan: free # free tier (sleeps after 15min inactivity) - upgrade to starter ($7/mo) for 24/7
     buildCommand: npm install && npx prisma generate
-    preDeployCommand: npx prisma migrate deploy
     startCommand: node server/server.mjs
     healthCheckPath: /api/health
     buildFilter:
