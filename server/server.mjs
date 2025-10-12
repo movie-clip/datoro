@@ -2,6 +2,7 @@
 // Run: npm run server (or: node server/server.mjs)
 
 import express from 'express'
+import compression from 'compression'
 import cors from 'cors'
 import fetch from 'node-fetch'
 import { config } from 'dotenv'
@@ -87,6 +88,19 @@ app.use(sentryService.tracingHandler())
 
 // Request logging with monitoring
 app.use(requestLogger(monitoring))
+
+// Response compression (gzip/brotli) - 70-80% bandwidth reduction
+app.use(compression({
+  level: 6, // Balance between speed and compression ratio
+  threshold: 1024, // Only compress responses > 1KB
+  filter: (req, res) => {
+    // Don't compress if client doesn't accept encoding
+    if (req.headers['x-no-compression']) {
+      return false
+    }
+    return compression.filter(req, res)
+  }
+}))
 
 // CORS and body parsing
 app.use(cors({ origin: DEV_ORIGIN, credentials: false }))
@@ -940,12 +954,43 @@ server.on('error', (err) => {
   process.exit(1)
 })
 
-// Keep process alive
-process.on('SIGINT', async () => {
-  console.log('\n[SERVER] Shutting down gracefully...')
-  await cache.disconnect()
-  server.close(() => {
-    console.log('[SERVER] Server closed')
-    process.exit(0)
-  })
-})
+// Graceful shutdown handler
+async function gracefulShutdown(signal) {
+  console.log(`\n[SERVER] Received ${signal}, shutting down gracefully...`)
+  
+  try {
+    // Stop monitoring service (clear intervals)
+    monitoring.stop()
+    console.log('[SERVER] ✓ Monitoring service stopped')
+    
+    // Disconnect from Redis cache
+    await cache.disconnect()
+    console.log('[SERVER] ✓ Redis cache disconnected')
+    
+    // Close database connections (Prisma)
+    // Note: Prisma auto-disconnects, but we could add explicit cleanup here
+    console.log('[SERVER] ✓ Database connections closed')
+    
+    // Close HTTP server (stop accepting new requests)
+    server.close(() => {
+      console.log('[SERVER] ✓ HTTP server closed')
+      console.log('[SERVER] Shutdown complete')
+      process.exit(0)
+    })
+    
+    // Force exit after 10 seconds if graceful shutdown hangs
+    setTimeout(() => {
+      console.error('[SERVER] ✗ Forced shutdown after timeout')
+      process.exit(1)
+    }, 10000)
+    
+  } catch (error) {
+    console.error('[SERVER] Error during shutdown:', error)
+    process.exit(1)
+  }
+}
+
+// Handle different shutdown signals
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))   // Ctrl+C
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM')) // PM2 stop/restart
+process.on('SIGHUP', () => gracefulShutdown('SIGHUP'))   // Terminal closed

@@ -2,6 +2,29 @@
 // Batch data fetcher - fetches all ticker data in one optimized request
 
 /**
+ * Fetch with timeout using AbortController
+ */
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeout}ms`);
+    }
+    throw error;
+  }
+}
+
+/**
  * Fetch all data for a ticker in one batch
  * Returns everything needed for the dashboard in a single response
  */
@@ -47,19 +70,25 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
   try {
     const responses = await Promise.allSettled(
       Object.entries(endpoints).map(async ([key, endpoint]) => {
-        const res = await fetch(`${baseUrl}${endpoint}`, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        try {
+          // Fetch with 10 second timeout
+          const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          }, 10000);
+          
+          if (!res.ok) {
+            console.warn(`[BatchData] ${key} failed: ${res.status}`);
+            return [key, null];
           }
-        });
-        
-        if (!res.ok) {
-          console.warn(`[BatchData] ${key} failed: ${res.status}`);
+          
+          const data = await res.json();
+          return [key, data];
+        } catch (error) {
+          console.warn(`[BatchData] ${key} error:`, error.message);
           return [key, null];
         }
-        
-        const data = await res.json();
-        return [key, data];
       })
     );
 
@@ -108,10 +137,21 @@ export async function fetchTickerPriority(ticker, fmpApiKey) {
   
   const responses = await Promise.allSettled(
     Object.entries(endpoints).map(async ([key, endpoint]) => {
-      const res = await fetch(`${baseUrl}${endpoint}`);
-      if (!res.ok) return [key, null];
-      const data = await res.json();
-      return [key, data];
+      try {
+        // Fetch with 10 second timeout
+        const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        }, 10000);
+        
+        if (!res.ok) return [key, null];
+        const data = await res.json();
+        return [key, data];
+      } catch (error) {
+        console.warn(`[BatchData Priority] ${key} error:`, error.message);
+        return [key, null];
+      }
     })
   );
 

@@ -49,9 +49,37 @@ class MonitoringService {
       }
     };
 
+    // Store interval reference to allow cleanup
+    this.metricsInterval = null;
+    
+    // Start monitoring
+    this.start();
+  }
+
+  /**
+   * Start monitoring (with cleanup safety)
+   */
+  start() {
+    if (this.metricsInterval) {
+      console.warn('[MonitoringService] Already started');
+      return;
+    }
+    
     // Update metrics every 10 seconds
-    setInterval(() => this.updateSystemMetrics(), 10000);
+    this.metricsInterval = setInterval(() => this.updateSystemMetrics(), 10000);
     this.updateSystemMetrics();
+    console.log('[MonitoringService] Started');
+  }
+
+  /**
+   * Stop monitoring and cleanup interval
+   */
+  stop() {
+    if (this.metricsInterval) {
+      clearInterval(this.metricsInterval);
+      this.metricsInterval = null;
+      console.log('[MonitoringService] Stopped');
+    }
   }
 
   /**

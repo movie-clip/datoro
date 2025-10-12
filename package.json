@@ -30,6 +30,7 @@
     "@sentry/profiling-node": "^10.19.0",
     "chart.js": "^4.5.0",
     "chartjs-adapter-date-fns": "^3.0.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
