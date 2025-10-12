@@ -36,8 +36,8 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
           name: finance-view-redis
+          type: keyvalue
           property: connectionString
       - key: SENTRY_DSN
         sync: false # Optional - set manually if using Sentry
@@ -49,6 +49,14 @@ services:
         value: https://finance-view.onrender.com
       - key: DEV_ORIGIN
         value: https://finance-view.onrender.com
+
+  # Redis Cache (Key Value Instance)
+  - type: keyvalue
+    name: finance-view-redis
+    region: oregon
+    plan: free # 25MB free
+    maxmemoryPolicy: allkeys-lru # Evict least recently used keys when full
+    ipAllowList: [] # Empty = allow all (Render services auto-allowed)
 
   # Frontend Static Site
   - type: web
@@ -89,9 +97,3 @@ databases:
     plan: free # 90 days free, then $7/month
     region: oregon
     ipAllowList: [] # Empty = allow all (Render services auto-allowed)
-
-# Redis Cache
-  - name: finance-view-redis
-    plan: free # 25MB free, then $1/month for 256MB
-    maxmemoryPolicy: allkeys-lru # Evict least recently used keys when full
-    region: oregon
