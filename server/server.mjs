@@ -12,6 +12,21 @@ import { getCacheService, CacheTTL } from './services/cacheService.js'
 import { getMonitoringService } from './services/monitoringService.js'
 import * as sentryService from './services/sentryService.js'
 import { 
+  validate,
+  validateProfile,
+  validateIncomeStatement,
+  validateBalanceSheet,
+  validateCashFlow,
+  validateRevenueSegments,
+  validateHistoricalPrice,
+  validateSearch,
+  validateAIAnalysis,
+  validateAnalyticsPopular,
+  validateAnalyticsHistory,
+  validateAnalyticsStats,
+  sanitizeString
+} from './middleware/validation.js'
+import { 
   trackSearch, 
   updateTickerCompanyName, 
   trackApiRequest,
@@ -32,16 +47,6 @@ import {
   requestLogger,
   createError 
 } from './middleware/errorHandler.js'
-import { 
-  validate,
-  validateProfile,
-  validateIncomeStatement,
-  validateBalanceSheet,
-  validateCashFlow,
-  validateRevenueSegments,
-  validateHistoricalPrice,
-  validateSearch
-} from './middleware/validation.js'
 
 // Load environment variables from .env.local
 const __filename = fileURLToPath(import.meta.url)
@@ -105,11 +110,193 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     const [path, query] = subpath.split('?')
     const params = new URLSearchParams(query || '')
     
-    // Extract ticker from path (e.g., /v3/profile/AAPL or /v3/income-statement/AAPL)
-    const tickerMatch = path.match(/\/([A-Z]{1,5})(?:\/|$|\?)/)
-    if (tickerMatch) {
-      ticker = tickerMatch[1]
+    // ========== Inline Validation Based on Endpoint ==========
+    try {
+      // Profile endpoint: /api/v3/profile/:ticker
+      if (path.includes('/profile/')) {
+        const profileMatch = path.match(/\/profile\/([^\/\?]+)/)
+        if (!profileMatch || !profileMatch[1]) {
+          return res.status(400).json({
+            error: {
+              message: 'Validation failed',
+              code: 'E001',
+              timestamp: new Date().toISOString(),
+              path: req.path,
+              details: [{ field: 'ticker', message: 'Ticker is required in path', value: null }]
+            }
+          })
+        }
+        ticker = profileMatch[1]
+        await validateProfile.params.validateAsync({ ticker })
+      }
+      
+      // Income statement: /api/v3/income-statement/:ticker?period=annual&limit=10
+      else if (path.includes('/income-statement/')) {
+        const incomeMatch = path.match(/\/income-statement\/([^\/\?]+)/)
+        if (!incomeMatch || !incomeMatch[1]) {
+          return res.status(400).json({
+            error: {
+              message: 'Validation failed',
+              code: 'E001',
+              timestamp: new Date().toISOString(),
+              path: req.path,
+              details: [{ field: 'ticker', message: 'Ticker is required in path', value: null }]
+            }
+          })
+        }
+        ticker = incomeMatch[1]
+        await validateIncomeStatement.params.validateAsync({ ticker })
+        if (params.has('period') || params.has('limit')) {
+          const query = {
+            period: params.get('period'),
+            limit: params.get('limit')
+          }
+          const validated = await validateIncomeStatement.query.validateAsync(query, { 
+            stripUnknown: true, 
+            convert: true 
+          })
+          // Update params with validated values
+          if (validated.period) params.set('period', validated.period)
+          if (validated.limit) params.set('limit', String(validated.limit))
+        }
+      }
+      
+      // Balance sheet: /api/v3/balance-sheet-statement/:ticker?period=annual&limit=10
+      else if (path.includes('/balance-sheet')) {
+        const balanceMatch = path.match(/\/balance-sheet[^\/]*\/([^\/\?]+)/)
+        if (!balanceMatch || !balanceMatch[1]) {
+          return res.status(400).json({
+            error: {
+              message: 'Validation failed',
+              code: 'E001',
+              timestamp: new Date().toISOString(),
+              path: req.path,
+              details: [{ field: 'ticker', message: 'Ticker is required in path', value: null }]
+            }
+          })
+        }
+        ticker = balanceMatch[1]
+        await validateBalanceSheet.params.validateAsync({ ticker })
+        if (params.has('period') || params.has('limit')) {
+          const query = {
+            period: params.get('period'),
+            limit: params.get('limit')
+          }
+          const validated = await validateBalanceSheet.query.validateAsync(query, {
+            stripUnknown: true,
+            convert: true
+          })
+          if (validated.period) params.set('period', validated.period)
+          if (validated.limit) params.set('limit', String(validated.limit))
+        }
+      }
+      
+      // Cash flow: /api/v3/cash-flow-statement/:ticker?period=annual&limit=10
+      else if (path.includes('/cash-flow')) {
+        const cashflowMatch = path.match(/\/cash-flow[^\/]*\/([^\/\?]+)/)
+        if (!cashflowMatch || !cashflowMatch[1]) {
+          return res.status(400).json({
+            error: {
+              message: 'Validation failed',
+              code: 'E001',
+              timestamp: new Date().toISOString(),
+              path: req.path,
+              details: [{ field: 'ticker', message: 'Ticker is required in path', value: null }]
+            }
+          })
+        }
+        ticker = cashflowMatch[1]
+        await validateCashFlow.params.validateAsync({ ticker })
+        if (params.has('period') || params.has('limit')) {
+          const query = {
+            period: params.get('period'),
+            limit: params.get('limit')
+          }
+          const validated = await validateCashFlow.query.validateAsync(query, {
+            stripUnknown: true,
+            convert: true
+          })
+          if (validated.period) params.set('period', validated.period)
+          if (validated.limit) params.set('limit', String(validated.limit))
+        }
+      }
+      
+      // Revenue segments: /api/v4/revenue-product-segmentation?symbol=AAPL&structure=flat
+      else if (path.includes('/revenue-product-segmentation')) {
+        const symbol = params.get('symbol')
+        if (symbol) {
+          await validateRevenueSegments.params.validateAsync({ ticker: symbol })
+        }
+      }
+      
+      // Historical price: /api/v3/historical-price-full/:ticker?from=2023-01-01&to=2023-12-31
+      else if (path.includes('/historical-price')) {
+        const priceMatch = path.match(/\/historical-price[^\/]*\/([^\/\?]+)/)
+        if (!priceMatch || !priceMatch[1]) {
+          return res.status(400).json({
+            error: {
+              message: 'Validation failed',
+              code: 'E001',
+              timestamp: new Date().toISOString(),
+              path: req.path,
+              details: [{ field: 'ticker', message: 'Ticker is required in path', value: null }]
+            }
+          })
+        }
+        ticker = priceMatch[1]
+        await validateHistoricalPrice.params.validateAsync({ ticker })
+        if (params.has('from') || params.has('to')) {
+          const query = {
+            from: params.get('from'),
+            to: params.get('to'),
+            timeseries: params.get('timeseries')
+          }
+          const validated = await validateHistoricalPrice.query.validateAsync(query, {
+            stripUnknown: true,
+            convert: true
+          })
+          // Update params with validated values
+          Object.keys(validated).forEach(key => {
+            if (validated[key]) params.set(key, String(validated[key]))
+          })
+        }
+      }
+      
+      // Search endpoint: /api/v3/search?query=apple&limit=10
+      else if (path.includes('/search')) {
+        const query = {
+          q: params.get('query') || params.get('q'),
+          limit: params.get('limit')
+        }
+        const validated = await validateSearch.query.validateAsync(query, {
+          stripUnknown: true,
+          convert: true
+        })
+        if (validated.q) params.set('query', validated.q)
+        if (validated.limit) params.set('limit', String(validated.limit))
+      }
+      
+    } catch (validationError) {
+      // Joi validation error
+      if (validationError.isJoi) {
+        console.error('[FMP] Validation error:', validationError.details)
+        return res.status(400).json({
+          error: {
+            message: 'Validation failed',
+            code: 'E001',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+            details: validationError.details.map(detail => ({
+              field: detail.path.join('.'),
+              message: detail.message,
+              value: detail.context?.value
+            }))
+          }
+        })
+      }
+      throw validationError // Re-throw if not a Joi error
     }
+    // ========== End Validation ==========
     
     // Generate cache key (without API key in the key)
     const cacheKey = cache.generateKey('fmp', path, query || '')
@@ -471,10 +658,9 @@ app.post('/api/monitoring/reset', adminLimiter, (_req, res) => {
 
 // -------------------- Analytics Endpoints --------------------
 // Get popular tickers (last 7 days by default)
-app.get('/api/analytics/popular', async (req, res) => {
+app.get('/api/analytics/popular', validate(validateAnalyticsPopular), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10
-    const days = parseInt(req.query.days) || 7
+    const { limit, days } = req.query // Already validated and converted by middleware
     const tickers = await getPopularTickers(limit, days)
     res.json({ success: true, data: tickers })
   } catch (error) {
@@ -484,9 +670,9 @@ app.get('/api/analytics/popular', async (req, res) => {
 })
 
 // Get user's search history
-app.get('/api/analytics/history', async (req, res) => {
+app.get('/api/analytics/history', validate(validateAnalyticsHistory), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20
+    const { limit } = req.query // Already validated and converted by middleware
     const history = await getUserSearchHistory(req.ip, limit)
     res.json({ success: true, data: history })
   } catch (error) {
@@ -496,9 +682,9 @@ app.get('/api/analytics/history', async (req, res) => {
 })
 
 // Get API request statistics (last 24 hours by default)
-app.get('/api/analytics/stats', adminLimiter, async (req, res) => {
+app.get('/api/analytics/stats', adminLimiter, validate(validateAnalyticsStats), async (req, res) => {
   try {
-    const hours = parseInt(req.query.hours) || 24
+    const { hours } = req.query // Already validated and converted by middleware
     const stats = await getApiRequestStats(hours)
     res.json({ success: true, data: stats })
   } catch (error) {

@@ -241,10 +241,17 @@ export function validate(schema) {
 
       // Validate query
       if (schema.query) {
-        req.query = await schema.query.validateAsync(req.query, {
+        const validatedQuery = await schema.query.validateAsync(req.query, {
           abortEarly: false,
           stripUnknown: true,
           convert: true
+        });
+        // Replace req.query (Express makes it read-only, so we override)
+        Object.defineProperty(req, 'query', {
+          value: validatedQuery,
+          writable: true,
+          enumerable: true,
+          configurable: true
         });
       }
 
@@ -327,6 +334,55 @@ export function validatePeriod(period) {
 
   return cleaned;
 }
+
+/**
+ * Analytics - Popular Tickers
+ * GET /api/analytics/popular?limit=10&days=7
+ */
+export const validateAnalyticsPopular = {
+  query: Joi.object({
+    limit: limitSchema.optional(),
+    days: Joi.number()
+      .integer()
+      .min(1)
+      .max(365)
+      .default(7)
+      .messages({
+        'number.base': 'Days must be a number',
+        'number.min': 'Days must be at least 1',
+        'number.max': 'Days cannot exceed 365'
+      })
+  })
+};
+
+/**
+ * Analytics - User Search History
+ * GET /api/analytics/history?limit=20
+ */
+export const validateAnalyticsHistory = {
+  query: Joi.object({
+    limit: limitSchema.optional()
+  })
+};
+
+/**
+ * Analytics - API Request Stats
+ * GET /api/analytics/stats?hours=24
+ */
+export const validateAnalyticsStats = {
+  query: Joi.object({
+    hours: Joi.number()
+      .integer()
+      .min(1)
+      .max(720) // Max 30 days
+      .default(24)
+      .messages({
+        'number.base': 'Hours must be a number',
+        'number.min': 'Hours must be at least 1',
+        'number.max': 'Hours cannot exceed 720 (30 days)'
+      })
+  })
+};
 
 // ============================================
 // Export All Schemas
