@@ -749,21 +749,24 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
   const { ticker } = req.params
   const mode = req.query.mode || 'full' // 'full' or 'priority'
   
-  if (!ticker || !/^[A-Z]{1,5}$/.test(ticker.toUpperCase())) {
+  const t = ticker.toUpperCase().trim()
+  
+  // Validate ticker format (1-10 characters, letters/numbers/dots)
+  if (!t || !/^[A-Z0-9.]{1,10}$/.test(t)) {
     return res.status(400).json({
       error: {
         message: 'Invalid ticker format',
         code: 'E001',
-        details: 'Ticker must be 1-5 uppercase letters'
+        details: 'Ticker must be 1-10 characters (letters, numbers, dots)'
       }
     })
   }
 
-  const t = ticker.toUpperCase()
   const cacheKey = cache.generateKey('batch', t, mode)
   
   try {
     // Check cache first (7-day TTL for batch data)
+    console.log(`[Batch] ${t} (${mode}) → Checking cache (key: ${cacheKey})`)
     const cached = await cache.get(cacheKey)
     if (cached.data) {
       console.log(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
@@ -780,7 +783,7 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
       return res.json(cached.data)
     }
     
-    console.log(`[Batch] ${t} (${mode}) → Fetching from FMP...`)
+    console.log(`[Batch] ${t} (${mode}) → CACHE MISS - Fetching from FMP...`)
     
     // Import batch service
     const { fetchTickerBatch, fetchTickerPriority } = await import('./services/batchDataService.js')
@@ -792,6 +795,7 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
     
     // Cache the result
     await cache.set(cacheKey, result, CacheTTL.COMPANY_PROFILE) // 7 days
+    console.log(`[Batch] ${t} (${mode}) → Cached with key: ${cacheKey}, TTL: ${CacheTTL.COMPANY_PROFILE}s`)
     res.setHeader('X-Cache', 'miss')
     
     console.log(`[Batch] ${t} (${mode}) → Fetched in ${result.fetchDuration}ms`)

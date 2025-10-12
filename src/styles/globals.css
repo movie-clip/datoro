@@ -1,5 +1,14 @@
 html, body, #app { height: 100%; margin: 0; }
-body { background: #121212; color: #fff; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body { 
+  background: #121212; 
+  color: #fff;
+  overflow-x: hidden;
+}
 
 .panel {
   background: #1f1f1f;
@@ -7,6 +16,12 @@ body { background: #121212; color: #fff; }
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   padding: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
 }
 
 .charts {
@@ -23,4 +38,221 @@ body { background: #121212; color: #fff; }
   gap: 16px;
   max-width: 1200px;
   margin: 12px auto 0;
+}
+
+/* Staggered fade-in animation for grid items */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.charts > .panel,
+.info-grid > .panel {
+  animation: fadeInUp 0.5s ease-out backwards;
+}
+
+/* Stagger delays for visual effect */
+.info-grid > .panel:nth-child(1) { animation-delay: 0.05s; }
+.info-grid > .panel:nth-child(2) { animation-delay: 0.1s; }
+.info-grid > .panel:nth-child(3) { animation-delay: 0.15s; }
+.info-grid > .panel:nth-child(4) { animation-delay: 0.2s; }
+
+.charts > .panel:nth-child(1) { animation-delay: 0.1s; }
+.charts > .panel:nth-child(2) { animation-delay: 0.15s; }
+.charts > .panel:nth-child(3) { animation-delay: 0.2s; }
+.charts > .panel:nth-child(4) { animation-delay: 0.25s; }
+.charts > .panel:nth-child(5) { animation-delay: 0.3s; }
+.charts > .panel:nth-child(6) { animation-delay: 0.35s; }
+.charts > .panel:nth-child(7) { animation-delay: 0.4s; }
+.charts > .panel:nth-child(8) { animation-delay: 0.45s; }
+.charts > .panel:nth-child(9) { animation-delay: 0.5s; }
+.charts > .panel:nth-child(10) { animation-delay: 0.55s; }
+.charts > .panel:nth-child(11) { animation-delay: 0.6s; }
+.charts > .panel:nth-child(12) { animation-delay: 0.65s; }
+
+/* ==============================================
+   PRINT STYLES
+   ============================================== */
+@media print {
+  /* Reset colors for print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background: white !important;
+    color: black !important;
+    height: auto !important;
+  }
+
+  body {
+    overflow: visible !important;
+  }
+
+  /* Hide interactive elements */
+  .toolbar,
+  .expand-hint,
+  .view-mode-buttons,
+  .chart-loading-overlay,
+  button,
+  .retry-btn {
+    display: none !important;
+  }
+
+  /* Remove animations/transitions for print */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Panel adjustments */
+  .panel {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 16px;
+    padding: 16px !important;
+  }
+
+  .panel:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Chart sizing for print */
+  .chart-wrapper,
+  .echart {
+    width: 100% !important;
+    height: 300px !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Optimize grid for print - single column on narrow pages */
+  .charts {
+    display: block !important;
+    page-break-inside: avoid;
+  }
+
+  .charts > .panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 20px;
+    page-break-after: auto;
+  }
+
+  .info-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px;
+    max-width: 100%;
+    margin: 16px 0;
+  }
+
+  /* Table text color for print */
+  .data-table {
+    color: black !important;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .data-table th,
+  .data-table td {
+    color: black !important;
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .data-table th {
+    background-color: #f5f5f5 !important;
+    font-weight: 600;
+  }
+
+  /* Preserve colored values in tables */
+  .data-table td[style*="color"] {
+    print-color-adjust: exact !important;
+  }
+
+  /* Headers and titles */
+  .app-header {
+    background: white !important;
+    color: black !important;
+    border-bottom: 2px solid #000;
+    padding: 16px 0 !important;
+    margin-bottom: 20px;
+  }
+
+  .brand-logo {
+    color: black !important;
+    font-size: 20px !important;
+  }
+
+  .head {
+    color: black !important;
+    font-size: 16px !important;
+    font-weight: 700;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 4px;
+  }
+
+  /* Page breaks */
+  .charts > .panel:nth-child(3n) {
+    page-break-after: always;
+  }
+
+  /* Prevent orphans/widows */
+  p, h1, h2, h3, h4, h5, h6 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Company header */
+  .company-header {
+    color: black !important;
+    background: white !important;
+    border: 1px solid #ccc !important;
+    page-break-after: avoid;
+  }
+
+  /* Print timestamp (optional) */
+  .app-header::after {
+    content: "Printed: " attr(data-print-date);
+    display: block;
+    font-size: 10px;
+    color: #666;
+    margin-top: 8px;
+  }
+
+  /* Ensure charts are visible in print */
+  .echart canvas,
+  .echart svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Hide loading skeletons in print */
+  .skeleton-loader {
+    display: none !important;
+  }
+
+  /* Error messages styling for print */
+  .error-container {
+    color: #d32f2f !important;
+    border: 1px solid #d32f2f;
+    padding: 12px;
+    background: #ffebee !important;
+  }
 }

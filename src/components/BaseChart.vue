@@ -204,8 +204,20 @@ const createOption = (isLarge = false) => {
       // Right axis (for insider trading/secondary data)
       {
         type: 'value',
-        scale: true,
         position: 'right',
+        min: (value) => {
+          // Ensure 0 is always centered by making bounds symmetric
+          const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
+          // Add 10% padding to prevent data from touching edges
+          return -absMax * 1.1
+        },
+        max: (value) => {
+          // Ensure 0 is always centered by making bounds symmetric
+          const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
+          // Add 10% padding to prevent data from touching edges
+          return absMax * 1.1
+        },
+        splitNumber: 4, // Force 4 split lines for better centering
         axisLabel: { 
           color: '#ddd', 
           fontSize: isLarge ? 14 : 12,
@@ -217,7 +229,13 @@ const createOption = (isLarge = false) => {
           }
         },
         axisLine: { lineStyle: { color: '#aaa' } },
-        splitLine: { show: false }
+        splitLine: { 
+          show: true,
+          lineStyle: { 
+            color: 'rgba(255,255,255,0.1)',
+            type: 'dashed'
+          }
+        }
       }
     ] : {
       type: 'value',
@@ -333,25 +351,27 @@ const modalOption = computed(() => createOption(true))
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 28px;
-  height: 28px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   transition: all 0.2s;
   backdrop-filter: blur(4px);
   z-index: 10;
+  padding: 0;
 }
 
 .expand-hint:hover {
-  background: rgba(0, 0, 0, 0.7);
-  color: rgba(255, 255, 255, 0.95);
-  transform: scale(1.15);
+  background: rgba(0, 0, 0, 0.8);
+  color: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
 }
 
 .echart-modal {
