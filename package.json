@@ -9,6 +9,12 @@
     "start": "concurrently \"npm run server\" \"npm run dev\" --names \"SERVER,CLIENT\" --prefix-colors \"bgBlue.bold,bgMagenta.bold\"",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit",
+    "test:e2e": "vitest run tests/e2e",
     "pm2:dev": "pm2 start ecosystem.config.cjs --env development",
     "pm2:prod": "pm2 start ecosystem.config.cjs --env production",
     "pm2:stop": "pm2 stop finance-view-api",
@@ -41,9 +47,13 @@
     "vue-echarts": "^8.0.0"
   },
   "devDependencies": {
+    "@types/supertest": "^6.0.3",
     "@vitejs/plugin-vue": "^6.0.1",
+    "@vitest/ui": "^3.2.4",
     "concurrently": "^9.2.1",
     "prisma": "^6.17.1",
-    "vite": "^7.1.7"
+    "supertest": "^7.1.4",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
   }
 }

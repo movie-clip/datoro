@@ -298,7 +298,7 @@ class CacheService {
 // TTL constants (in seconds)
 export const CacheTTL = {
   PRICE: 5 * 60,                    // 5 minutes (real-time data)
-  PRICE_HISTORY: 60 * 60,           // 1 hour (historical prices)
+  PRICE_HISTORY: 4 * 60 * 60,       // 4 hours (historical prices - increased to reduce API load)
   INCOME_STATEMENT: 24 * 60 * 60,   // 24 hours (daily updates)
   BALANCE_SHEET: 24 * 60 * 60,      // 24 hours
   CASH_FLOW: 24 * 60 * 60,          // 24 hours

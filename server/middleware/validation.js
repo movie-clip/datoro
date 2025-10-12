@@ -31,13 +31,14 @@ const tickerSchema = Joi.string()
   });
 
 /**
- * Period validation (annual/quarterly)
+ * Period validation (annual/quarterly/quarter)
+ * FMP API accepts both "quarterly" and "quarter" for quarterly data
  */
 const periodSchema = Joi.string()
-  .valid('annual', 'quarterly')
+  .valid('annual', 'quarterly', 'quarter')
   .default('annual')
   .messages({
-    'any.only': 'Period must be either "annual" or "quarterly"'
+    'any.only': 'Period must be "annual", "quarterly", or "quarter"'
   });
 
 /**
@@ -146,6 +147,18 @@ export const validateRevenueSegments = {
       .messages({
         'any.only': 'Structure must be either "flat" or "hierarchical"'
       })
+  })
+};
+
+/**
+ * Financial scores validation (Altman Z-Score, Piotroski Score)
+ * GET /api/fmp/stable/financial-scores?symbol=AAPL
+ */
+export const validateFinancialScores = {
+  query: Joi.object({
+    symbol: tickerSchema.messages({
+      'any.required': 'Symbol parameter is required'
+    })
   })
 };
 

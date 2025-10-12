@@ -18,6 +18,7 @@ import {
   validateBalanceSheet,
   validateCashFlow,
   validateRevenueSegments,
+  validateFinancialScores,
   validateHistoricalPrice,
   validateSearch,
   validateAIAnalysis,
@@ -48,10 +49,11 @@ import {
   createError 
 } from './middleware/errorHandler.js'
 
-// Load environment variables from .env.local
+// Load environment variables from .env first, then .env.local (overrides)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-config({ path: join(__dirname, '..', '.env.local') })
+config({ path: join(__dirname, '..', '.env') })
+config({ path: join(__dirname, '..', '.env.local'), override: true })
 
 // Initialize services
 const cache = getCacheService()
@@ -225,8 +227,26 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       else if (path.includes('/revenue-product-segmentation')) {
         const symbol = params.get('symbol')
         if (symbol) {
-          await validateRevenueSegments.params.validateAsync({ ticker: symbol })
+          await validateRevenueSegments.query.validateAsync({ symbol })
         }
+      }
+      
+      // Financial scores (Altman Z-Score): /stable/financial-scores?symbol=AAPL
+      else if (path.includes('/financial-scores')) {
+        const symbol = params.get('symbol')
+        if (!symbol) {
+          return res.status(400).json({
+            error: {
+              message: 'Validation failed',
+              code: 'E001',
+              timestamp: new Date().toISOString(),
+              path: req.path,
+              details: [{ field: 'symbol', message: 'Symbol query parameter is required', value: null }]
+            }
+          })
+        }
+        ticker = symbol
+        await validateFinancialScores.query.validateAsync({ symbol })
       }
       
       // Historical price: /api/v3/historical-price-full/:ticker?from=2023-01-01&to=2023-12-31
@@ -365,9 +385,42 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     
     console.log(`[FMP] Response: ${fmpRes.status} ${contentType}`)
     
+    // Handle rate limit errors (HTTP 429)
+    if (fmpRes.status === 429) {
+      console.error('[FMP] Rate limit exceeded (HTTP 429)')
+      return res.status(429).json({
+        error: {
+          message: 'FMP API rate limit exceeded (300 requests/minute). Data is cached for 7 days to reduce API calls.',
+          code: 'E429',
+          retryAfter: '60 seconds',
+          suggestion: 'Wait 1 minute for rate limit reset, or refresh to use cached data.',
+          timestamp: new Date().toISOString()
+        }
+      })
+    }
+    
     res.status(fmpRes.status).type(contentType)
     const buf = await fmpRes.arrayBuffer()
-    const data = JSON.parse(Buffer.from(buf).toString())
+    const bufferString = Buffer.from(buf).toString()
+    
+    // Handle empty responses
+    if (!bufferString || bufferString.trim() === '') {
+      console.warn(`[FMP] Empty response for ${path}`)
+      return res.status(fmpRes.status).json([])
+    }
+    
+    // Parse JSON safely
+    let data
+    try {
+      data = JSON.parse(bufferString)
+    } catch (parseError) {
+      console.error(`[FMP] JSON parse error for ${path}:`, parseError.message)
+      console.error(`[FMP] Response (first 200 chars): ${bufferString.substring(0, 200)}`)
+      return res.status(500).json({ 
+        error: 'Failed to parse FMP API response',
+        details: parseError.message 
+      })
+    }
     
     // Cache successful responses (only for GET)
     if (req.method === 'GET' && fmpRes.status === 200 && data) {

@@ -35,10 +35,10 @@ export const generalLimiter = rateLimit({
   }
 });
 
-// Strict limiter for FMP API endpoints (50 req/min)
+// Strict limiter for FMP API endpoints (300 req/min for paid plan)
 export const fmpLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 50,
+  max: 300, // Paid plan: 300 requests/minute
   message: {
     error: 'Too many API requests, please slow down.',
     retryAfter: '60 seconds'
@@ -47,12 +47,12 @@ export const fmpLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false, // Count all requests
   handler: (req, res) => {
-    console.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit`);
+    console.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (300 req/min)`);
     res.status(429).json({
       error: 'Rate limit exceeded',
       message: 'You are making too many requests to the financial data API. Please slow down.',
       retryAfter: res.getHeader('Retry-After'),
-      limit: 50,
+      limit: 300,
       window: '1 minute',
       tip: 'Consider caching data on the client side to reduce requests.'
     });

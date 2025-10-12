@@ -14,8 +14,8 @@ async function getValuation(ticker) {
     // Fetch profile, key-metrics, and ratios in parallel
     const [profileRes, metricsRes, ratiosRes] = await Promise.all([
       fetch(`${BASE}/profile/${t}`),
-      fetch(`/api/fmp/stable/key-metrics?symbol=${t}`),
-      fetch(`/api/fmp/stable/ratios?symbol=${t}`)
+      fetch(`/api/fmp/api/v4/key-metrics/${t}?period=annual&limit=1`),
+      fetch(`/api/fmp/api/v3/ratios/${t}?period=annual&limit=1`)
     ])
     
     if (!profileRes.ok) return { data: out, error: `HTTP ${profileRes.status}` }
@@ -26,7 +26,7 @@ async function getValuation(ticker) {
     // Get Market Cap from profile
     if (d.mktCap) out.marketCap = fmtNumber(d.mktCap)
     
-    // Get EV/EBITDA from key-metrics endpoint
+    // Get EV/EBITDA from key-metrics endpoint (v4 - may be empty)
     if (metricsRes.ok) {
       const metricsArr = await metricsRes.json()
       const metrics = metricsArr[0] || {}
@@ -39,14 +39,19 @@ async function getValuation(ticker) {
     if (ratiosRes.ok) {
       const ratiosArr = await ratiosRes.json()
       const ratios = ratiosArr[0] || {}
-      if (ratios.priceToEarningsRatio) {
-        out.pe = ratios.priceToEarningsRatio.toFixed(2)
+      // Note: FMP uses "priceEarningsRatio" not "priceToEarningsRatio"
+      if (ratios.priceEarningsRatio) {
+        out.pe = ratios.priceEarningsRatio.toFixed(2)
       }
       if (ratios.priceToSalesRatio) {
         out.ps = ratios.priceToSalesRatio.toFixed(2)
       }
       if (ratios.priceToBookRatio) {
         out.pb = ratios.priceToBookRatio.toFixed(2)
+      }
+      // Get EV/EBITDA from ratios (enterpriseValueMultiple is EV/EBITDA)
+      if (ratios.enterpriseValueMultiple && out.evEbitda === '—') {
+        out.evEbitda = ratios.enterpriseValueMultiple.toFixed(2)
       }
     }
     
@@ -92,9 +97,9 @@ async function getCashFlowFacts(ticker) {
   try {
     // Fetch cash flow statement, key metrics, and profile in parallel
     const [cfRes, metricsRes, profileRes] = await Promise.all([
-      fetch(`${BASE}/cash-flow-statement/${t}?period=quarter&limit=4`),
-      fetch(`/api/fmp/stable/key-metrics?symbol=${t}`),
-      fetch(`${BASE}/profile/${t}`)
+      fetch(`/api/fmp/api/v3/cash-flow-statement/${t}?period=quarter&limit=4`),
+      fetch(`/api/fmp/api/v4/key-metrics/${t}?period=annual&limit=1`),
+      fetch(`/api/fmp/api/v3/profile/${t}`)
     ])
     
     if (!cfRes.ok) return { data: out, error: `HTTP ${cfRes.status}` }
@@ -235,7 +240,7 @@ async function getBalance(ticker) {
     // Process Altman Z-Score
     if (zScoreRes.ok) {
       const zScoreData = await zScoreRes.json()
-      if (Array.isArray(zScoreData) && zScoreData.length > 0) {
+      if (Array.isArray(zScoreData) && zScoreData.length > 0 && zScoreData[0]?.altmanZScore) {
         const zScore = Number(zScoreData[0].altmanZScore)
         if (!isNaN(zScore)) {
           out.altmanZScore = zScore.toFixed(2)
@@ -249,6 +254,10 @@ async function getBalance(ticker) {
             out.altmanZColor = 'red'
           }
         }
+      } else {
+        // V4 score endpoint may not have data for all tickers
+        // Keep default "—" value
+        console.warn(`[FMP] Altman Z-Score not available for ${t}`)
       }
     }
     
@@ -278,8 +287,8 @@ async function getRevenueSegments(ticker, period = 'annual') {
   if (!t) return { data: { segments: [], series: {} }, error: 'No ticker provided' }
   
   try {
-    // Fetch product/business segments from stable endpoint
-    const url = `/api/fmp/stable/revenue-product-segmentation?symbol=${t}`
+    // Fetch product/business segments from v4 endpoint
+    const url = `/api/fmp/api/v4/revenue-product-segmentation?symbol=${t}&structure=flat`
     const res = await fetch(url)
     
     if (!res.ok) {
@@ -400,7 +409,7 @@ async function getEpsSeries(ticker) {
   if (!t) return { data: [], error: 'No ticker provided' }
   try {
     // Fetch quarterly EPS data
-    const url = `${BASE}/income-statement/${t}?period=quarter&limit=20`
+    const url = `/api/fmp/api/v3/income-statement/${t}?period=quarter&limit=20`
     const res = await fetch(url)
     if (!res.ok) return { data: [], error: `HTTP ${res.status}` }
     const arr = await res.json()

@@ -26,3 +26,8 @@ dist-ssr
 .vscode
 
 /src/generated/prisma
+
+# Test coverage
+coverage
+*.lcov
+.nyc_output
