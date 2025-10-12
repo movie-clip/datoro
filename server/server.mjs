@@ -59,6 +59,9 @@ config({ path: join(__dirname, '..', '.env.local'), override: true })
 const cache = getCacheService()
 const monitoring = getMonitoringService()
 
+// Database health flag (disabled if offline to prevent 5s timeouts)
+let isDatabaseAvailable = true
+
 const PORT = process.env.PORT || 7071
 const DEV_ORIGIN = process.env.DEV_ORIGIN || 'http://localhost:5173'
 const FMP_API_KEY = process.env.FMP_API_KEY || ''
@@ -95,6 +98,30 @@ app.use(speedLimiter)
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
+// Request deduplication: Track in-flight requests to FMP API
+// If multiple clients request the same data simultaneously, only make one API call
+const inFlightRequests = new Map()
+
+async function fetchWithDeduplication(key, fetchFn) {
+  // If request is already in-flight, wait for it
+  if (inFlightRequests.has(key)) {
+    console.log(`[Dedup] Waiting for in-flight request: ${key}`)
+    return await inFlightRequests.get(key)
+  }
+  
+  // Start new request
+  const promise = fetchFn()
+  inFlightRequests.set(key, promise)
+  
+  try {
+    const result = await promise
+    return result
+  } finally {
+    // Clean up after request completes
+    inFlightRequests.delete(key)
+  }
+}
 
 // Apply rate limiting to FMP endpoints
 app.use('/api/fmp', fmpLimiter, async (req, res) => {
@@ -321,13 +348,18 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     // Generate cache key (without API key in the key)
     const cacheKey = cache.generateKey('fmp', path, query || '')
     
-    // Determine TTL based on endpoint
-    let ttl = CacheTTL.INCOME_STATEMENT // Default 24 hours
-    if (path.includes('/quote')) ttl = CacheTTL.PRICE
+    // Determine TTL based on endpoint (optimized for paid plan - 7 days for most data)
+    let ttl = CacheTTL.INCOME_STATEMENT // Default 7 days
+    if (path.includes('/quote') && !path.includes('/historical')) ttl = CacheTTL.QUOTE
     else if (path.includes('/historical-price')) ttl = CacheTTL.PRICE_HISTORY
     else if (path.includes('/profile')) ttl = CacheTTL.COMPANY_PROFILE
     else if (path.includes('/balance-sheet')) ttl = CacheTTL.BALANCE_SHEET
     else if (path.includes('/cash-flow')) ttl = CacheTTL.CASH_FLOW
+    else if (path.includes('/income-statement')) ttl = CacheTTL.INCOME_STATEMENT
+    else if (path.includes('/ratios')) ttl = CacheTTL.RATIOS
+    else if (path.includes('/key-metrics')) ttl = CacheTTL.KEY_METRICS
+    else if (path.includes('/financial-scores')) ttl = CacheTTL.FINANCIAL_SCORES
+    else if (path.includes('/analyst-estimates')) ttl = CacheTTL.ANALYST_ESTIMATES
     else if (path.includes('/revenue-product-segmentation')) ttl = CacheTTL.REVENUE_SEGMENTS
     
     // Check cache first (only for GET requests)
@@ -338,29 +370,36 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         res.setHeader('X-Cache', cached.source)
         wasCached = true
         
-        // Track search in database (in background)
-        if (ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
-          trackSearch(req.ip, ticker, req.headers['user-agent'], 'direct').catch(err => 
+        // Track search in database (in background) - skip if database offline
+        if (isDatabaseAvailable && ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
+          trackSearch(req.ip, ticker, req.headers['user-agent'], 'direct').catch(err => {
             console.error('[Database] Search tracking error:', err.message)
-          )
+            isDatabaseAvailable = false // Disable if database is down
+          })
           
           // Update company name if this is a profile request
           if (path.includes('/profile') && Array.isArray(cached.data) && cached.data[0]?.companyName) {
-            updateTickerCompanyName(ticker, cached.data[0].companyName).catch(err =>
+            updateTickerCompanyName(ticker, cached.data[0].companyName).catch(err => {
               console.error('[Database] Company name update error:', err.message)
-            )
+              isDatabaseAvailable = false // Disable if database is down
+            })
           }
         }
         
-        // Track API request in database (in background)
-        trackApiRequest({
-          endpoint: path,
-          method: req.method,
-          statusCode: 200,
-          responseTime: Date.now() - startTime,
-          cached: true,
-          ipAddress: req.ip
-        }).catch(err => console.error('[Database] API tracking error:', err.message))
+        // Track API request in database (in background) - skip if database offline
+        if (isDatabaseAvailable) {
+          trackApiRequest({
+            endpoint: path,
+            method: req.method,
+            statusCode: 200,
+            responseTime: Date.now() - startTime,
+            cached: true,
+            ipAddress: req.ip
+          }).catch(err => {
+            console.error('[Database] API tracking error:', err.message)
+            isDatabaseAvailable = false // Disable if database is down
+          })
+        }
         
         return res.json(cached.data)
       }
@@ -380,7 +419,12 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     if (method !== 'GET' && method !== 'HEAD') {
       options.body = req.body
     }
-    const fmpRes = await fetch(upstream, options)
+    
+    // Use deduplication for GET requests to prevent duplicate API calls
+    const dedupKey = `${method}:${upstream}`
+    const fmpRes = method === 'GET' 
+      ? await fetchWithDeduplication(dedupKey, () => fetch(upstream, options))
+      : await fetch(upstream, options)
     const contentType = fmpRes.headers.get('content-type') || 'application/json'
     
     console.log(`[FMP] Response: ${fmpRes.status} ${contentType}`)
@@ -427,45 +471,57 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       await cache.set(cacheKey, data, ttl)
       res.setHeader('X-Cache', 'miss')
       
-      // Track search in database (in background)
-      if (ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
-        trackSearch(req.ip, ticker, req.headers['user-agent'], 'direct').catch(err =>
+      // Track search in database (in background) - skip if database offline
+      if (isDatabaseAvailable && ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
+        trackSearch(req.ip, ticker, req.headers['user-agent'], 'direct').catch(err => {
           console.error('[Database] Search tracking error:', err.message)
-        )
+          isDatabaseAvailable = false // Disable if database is down
+        })
         
         // Update company name if this is a profile request
         if (path.includes('/profile') && Array.isArray(data) && data[0]?.companyName) {
-          updateTickerCompanyName(ticker, data[0].companyName).catch(err =>
+          updateTickerCompanyName(ticker, data[0].companyName).catch(err => {
             console.error('[Database] Company name update error:', err.message)
-          )
+            isDatabaseAvailable = false // Disable if database is down
+          })
         }
       }
       
-      // Track API request in database (in background)
-      trackApiRequest({
-        endpoint: path,
-        method: req.method,
-        statusCode: fmpRes.status,
-        responseTime: Date.now() - startTime,
-        cached: false,
-        ipAddress: req.ip
-      }).catch(err => console.error('[Database] API tracking error:', err.message))
+      // Track API request in database (in background) - skip if database offline
+      if (isDatabaseAvailable) {
+        trackApiRequest({
+          endpoint: path,
+          method: req.method,
+          statusCode: fmpRes.status,
+          responseTime: Date.now() - startTime,
+          cached: false,
+          ipAddress: req.ip
+        }).catch(err => {
+          console.error('[Database] API tracking error:', err.message)
+          isDatabaseAvailable = false // Disable if database is down
+        })
+      }
     }
     
     res.send(data)
   } catch (e) {
     console.error('[FMP] Error:', e)
     
-    // Track failed API request in database (in background)
-    trackApiRequest({
-      endpoint: req.url,
-      method: req.method,
-      statusCode: 500,
-      responseTime: Date.now() - startTime,
-      cached: false,
-      errorCode: 'E005',
-      ipAddress: req.ip
-    }).catch(err => console.error('[Database] API tracking error:', err.message))
+    // Track failed API request in database (in background) - skip if database offline
+    if (isDatabaseAvailable) {
+      trackApiRequest({
+        endpoint: req.url,
+        method: req.method,
+        statusCode: 500,
+        responseTime: Date.now() - startTime,
+        cached: false,
+        errorCode: 'E005',
+        ipAddress: req.ip
+      }).catch(err => {
+        console.error('[Database] API tracking error:', err.message)
+        isDatabaseAvailable = false // Disable if database is down
+      })
+    }
     
     res.status(500).json({ error: String(e.message || e) })
   }

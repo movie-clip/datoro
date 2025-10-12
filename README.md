@@ -1,5 +1,9 @@
 # Finance View
 
+![CI Status](https://github.com/movie-clip/finance-view/workflows/CI%2FCD%20Pipeline/badge.svg)
+![Tests](https://github.com/movie-clip/finance-view/workflows/Pull%20Request%20Checks/badge.svg)
+![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+
 Interactive financial data dashboard built with Vue 3, displaying equity price charts, revenue, cash flow, margins, and valuation metrics.
 
 ## Tech Stack
@@ -120,6 +124,18 @@ The frontend will be available at `http://localhost:5173`
 - `src/services/marketData/` - FMP provider for price data
 - `src/services/ai/` - ChatGPT integration with caching
 - `server/server.mjs` - Express proxy server
+
+## CI/CD
+
+This project uses GitHub Actions for automated testing and deployment.
+
+📖 **[CI/CD Setup Guide](docs/GITHUB_ACTIONS.md)** - Configure GitHub Actions, secrets, and deployment
+
+**Workflows:**
+- ✅ Automated testing on every push and PR
+- 🏗️ Build validation
+- 🔒 Security audits
+- 🚀 Automated deployment (main branch)
 
 ## Build
 

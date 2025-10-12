@@ -295,16 +295,21 @@ class CacheService {
   }
 }
 
-// TTL constants (in seconds)
+// TTL constants (in seconds) - Optimized for paid FMP plan
 export const CacheTTL = {
-  PRICE: 5 * 60,                    // 5 minutes (real-time data)
-  PRICE_HISTORY: 4 * 60 * 60,       // 4 hours (historical prices - increased to reduce API load)
-  INCOME_STATEMENT: 24 * 60 * 60,   // 24 hours (daily updates)
-  BALANCE_SHEET: 24 * 60 * 60,      // 24 hours
-  CASH_FLOW: 24 * 60 * 60,          // 24 hours
-  REVENUE_SEGMENTS: 24 * 60 * 60,   // 24 hours
-  COMPANY_PROFILE: 7 * 24 * 60 * 60, // 7 days (rarely changes)
-  AI_ANALYSIS: 30 * 24 * 60 * 60,   // 30 days (expensive to regenerate)
+  PRICE: 15 * 60,                      // 15 minutes (increased from 5min for better caching)
+  PRICE_HISTORY: 8 * 60 * 60,          // 8 hours (historical data doesn't change often)
+  INCOME_STATEMENT: 7 * 24 * 60 * 60,  // 7 days (quarterly reports)
+  BALANCE_SHEET: 7 * 24 * 60 * 60,     // 7 days (quarterly reports)
+  CASH_FLOW: 7 * 24 * 60 * 60,         // 7 days (quarterly reports)
+  RATIOS: 7 * 24 * 60 * 60,            // 7 days (NEW - quarterly reports)
+  REVENUE_SEGMENTS: 7 * 24 * 60 * 60,  // 7 days (quarterly reports)
+  COMPANY_PROFILE: 7 * 24 * 60 * 60,   // 7 days (rarely changes)
+  FINANCIAL_SCORES: 7 * 24 * 60 * 60,  // 7 days (NEW - Altman Z-Score)
+  KEY_METRICS: 7 * 24 * 60 * 60,       // 7 days (NEW - quarterly reports)
+  ANALYST_ESTIMATES: 7 * 24 * 60 * 60, // 7 days (NEW - rarely changes)
+  QUOTE: 5 * 60,                       // 5 minutes (real-time price)
+  AI_ANALYSIS: 30 * 24 * 60 * 60,      // 30 days (expensive to regenerate)
 };
 
 // Singleton instance
