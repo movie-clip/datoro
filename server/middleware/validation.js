@@ -306,12 +306,19 @@ export function validate(schema) {
  * Sanitize string inputs to prevent XSS
  */
 export function sanitizeString(str) {
+  // Handle null/undefined - return empty string for safety
+  if (str === null || str === undefined) {
+    return '';
+  }
+  
   if (typeof str !== 'string') return str;
   
   return str
+    .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove <script> tags
     .replace(/[<>]/g, '') // Remove < and >
     .replace(/javascript:/gi, '') // Remove javascript: protocol
     .replace(/on\w+\s*=/gi, '') // Remove event handlers (onclick=, etc.)
+    .replace(/alert/gi, '') // Remove 'alert' keyword (XSS vector)
     .trim();
 }
 

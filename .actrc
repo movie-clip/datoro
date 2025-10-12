@@ -1,0 +1,26 @@
+# Act Configuration
+# This file configures how Act runs GitHub Actions locally
+# Documentation: https://github.com/nektos/act
+
+# Use smaller Docker images for faster execution
+-P ubuntu-latest=catthehacker/ubuntu:act-20.04
+-P ubuntu-22.04=catthehacker/ubuntu:act-22.04
+-P ubuntu-20.04=catthehacker/ubuntu:act-20.04
+
+# Default secrets file (if exists)
+--secret-file .secrets
+
+# Enable verbose output
+# --verbose
+
+# Reuse containers to speed up repeated runs
+--reuse
+
+# Bind Docker socket (useful for Docker-in-Docker scenarios)
+# --container-daemon-socket -
+
+# Environment variables
+--env NODE_ENV=test
+
+# Artifact server (for downloading artifacts locally)
+# --artifact-server-path /tmp/artifacts
