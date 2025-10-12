@@ -8,9 +8,18 @@
     "server": "node server/server.mjs",
     "start": "concurrently \"npm run server\" \"npm run dev\" --names \"SERVER,CLIENT\" --prefix-colors \"bgBlue.bold,bgMagenta.bold\"",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pm2:dev": "pm2 start ecosystem.config.cjs --env development",
+    "pm2:prod": "pm2 start ecosystem.config.cjs --env production",
+    "pm2:stop": "pm2 stop finance-view-api",
+    "pm2:restart": "pm2 restart finance-view-api",
+    "pm2:reload": "pm2 reload finance-view-api",
+    "pm2:logs": "pm2 logs finance-view-api",
+    "pm2:monit": "pm2 monit",
+    "pm2:status": "pm2 status"
   },
   "dependencies": {
+    "@prisma/client": "^6.17.1",
     "@sentry/node": "^10.19.0",
     "@sentry/profiling-node": "^10.19.0",
     "chart.js": "^4.5.0",
@@ -34,6 +43,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
     "concurrently": "^9.2.1",
+    "prisma": "^6.17.1",
     "vite": "^7.1.7"
   }
 }

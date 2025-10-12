@@ -1,0 +1,138 @@
+// Finance View - Database Schema
+// User tracking, search analytics, popular tickers, API usage
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User Management
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  ipAddress String   @unique @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  searches      Search[]
+  apiRequests   ApiRequest[]
+
+  @@map("users")
+}
+
+// ============================================
+// Search Tracking
+// ============================================
+
+model Search {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  ticker    String
+  query     String?
+  source    String   @default("direct") // direct, search, autocomplete
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("searches")
+  @@index([ticker])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================
+// Popular Tickers (Aggregated)
+// ============================================
+
+model PopularTicker {
+  id           String   @id @default(uuid())
+  ticker       String   @unique
+  companyName  String?  @map("company_name")
+  searchCount  Int      @default(0) @map("search_count")
+  lastSearched DateTime @default(now()) @map("last_searched")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("popular_tickers")
+  @@index([searchCount(sort: Desc)])
+  @@index([lastSearched(sort: Desc)])
+}
+
+// ============================================
+// API Request Analytics
+// ============================================
+
+model ApiRequest {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  endpoint     String
+  method       String   @default("GET")
+  statusCode   Int      @map("status_code")
+  responseTime Int      @map("response_time") // milliseconds
+  cached       Boolean  @default(false)
+  errorCode    String?  @map("error_code")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("api_requests")
+  @@index([endpoint])
+  @@index([statusCode])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// ============================================
+// Daily Analytics (Aggregated)
+// ============================================
+
+model DailyAnalytics {
+  id                String   @id @default(uuid())
+  date              DateTime @unique @db.Date
+  totalRequests     Int      @default(0) @map("total_requests")
+  uniqueUsers       Int      @default(0) @map("unique_users")
+  cacheHitRate      Float    @default(0) @map("cache_hit_rate")
+  avgResponseTime   Int      @default(0) @map("avg_response_time")
+  errorRate         Float    @default(0) @map("error_rate")
+  topTicker         String?  @map("top_ticker")
+  topEndpoint       String?  @map("top_endpoint")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("daily_analytics")
+  @@index([date(sort: Desc)])
+}
+
+// ============================================
+// Error Log (for debugging)
+// ============================================
+
+model ErrorLog {
+  id           String   @id @default(uuid())
+  errorCode    String   @map("error_code")
+  message      String
+  endpoint     String?
+  ticker       String?
+  stackTrace   String?  @map("stack_trace") @db.Text
+  userId       String?  @map("user_id")
+  ipAddress    String?  @map("ip_address")
+  count        Int      @default(1) // For grouping same errors
+  firstSeen    DateTime @default(now()) @map("first_seen")
+  lastSeen     DateTime @default(now()) @map("last_seen")
+  resolved     Boolean  @default(false)
+  resolvedAt   DateTime? @map("resolved_at")
+
+  @@map("error_logs")
+  @@index([errorCode])
+  @@index([endpoint])
+  @@index([ticker])
+  @@index([resolved])
+  @@index([firstSeen(sort: Desc)])
+}

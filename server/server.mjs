@@ -12,6 +12,14 @@ import { getCacheService, CacheTTL } from './services/cacheService.js'
 import { getMonitoringService } from './services/monitoringService.js'
 import * as sentryService from './services/sentryService.js'
 import { 
+  trackSearch, 
+  updateTickerCompanyName, 
+  trackApiRequest,
+  getPopularTickers,
+  getUserSearchHistory,
+  getApiRequestStats
+} from './services/databaseService.js'
+import { 
   generalLimiter, 
   fmpLimiter, 
   adminLimiter, 
@@ -83,6 +91,10 @@ const UA =
 
 // Apply rate limiting to FMP endpoints
 app.use('/api/fmp', fmpLimiter, async (req, res) => {
+  const startTime = Date.now()
+  let ticker = null
+  let wasCached = false
+  
   try {
     if (!FMP_API_KEY) {
       console.error('[FMP] API key not configured')
@@ -92,6 +104,12 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     const subpath = req.url.replace(/^\/api\/fmp/, '')
     const [path, query] = subpath.split('?')
     const params = new URLSearchParams(query || '')
+    
+    // Extract ticker from path (e.g., /v3/profile/AAPL or /v3/income-statement/AAPL)
+    const tickerMatch = path.match(/\/([A-Z]{1,5})(?:\/|$|\?)/)
+    if (tickerMatch) {
+      ticker = tickerMatch[1]
+    }
     
     // Generate cache key (without API key in the key)
     const cacheKey = cache.generateKey('fmp', path, query || '')
@@ -111,6 +129,32 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       if (cached.data) {
         console.log(`[FMP] ${subpath} → CACHE HIT (${cached.source})`)
         res.setHeader('X-Cache', cached.source)
+        wasCached = true
+        
+        // Track search in database (in background)
+        if (ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
+          trackSearch(req.ip, ticker, req.headers['user-agent'], 'direct').catch(err => 
+            console.error('[Database] Search tracking error:', err.message)
+          )
+          
+          // Update company name if this is a profile request
+          if (path.includes('/profile') && Array.isArray(cached.data) && cached.data[0]?.companyName) {
+            updateTickerCompanyName(ticker, cached.data[0].companyName).catch(err =>
+              console.error('[Database] Company name update error:', err.message)
+            )
+          }
+        }
+        
+        // Track API request in database (in background)
+        trackApiRequest({
+          endpoint: path,
+          method: req.method,
+          statusCode: 200,
+          responseTime: Date.now() - startTime,
+          cached: true,
+          ipAddress: req.ip
+        }).catch(err => console.error('[Database] API tracking error:', err.message))
+        
         return res.json(cached.data)
       }
     }
@@ -142,11 +186,47 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     if (req.method === 'GET' && fmpRes.status === 200 && data) {
       await cache.set(cacheKey, data, ttl)
       res.setHeader('X-Cache', 'miss')
+      
+      // Track search in database (in background)
+      if (ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
+        trackSearch(req.ip, ticker, req.headers['user-agent'], 'direct').catch(err =>
+          console.error('[Database] Search tracking error:', err.message)
+        )
+        
+        // Update company name if this is a profile request
+        if (path.includes('/profile') && Array.isArray(data) && data[0]?.companyName) {
+          updateTickerCompanyName(ticker, data[0].companyName).catch(err =>
+            console.error('[Database] Company name update error:', err.message)
+          )
+        }
+      }
+      
+      // Track API request in database (in background)
+      trackApiRequest({
+        endpoint: path,
+        method: req.method,
+        statusCode: fmpRes.status,
+        responseTime: Date.now() - startTime,
+        cached: false,
+        ipAddress: req.ip
+      }).catch(err => console.error('[Database] API tracking error:', err.message))
     }
     
     res.send(data)
   } catch (e) {
     console.error('[FMP] Error:', e)
+    
+    // Track failed API request in database (in background)
+    trackApiRequest({
+      endpoint: req.url,
+      method: req.method,
+      statusCode: 500,
+      responseTime: Date.now() - startTime,
+      cached: false,
+      errorCode: 'E005',
+      ipAddress: req.ip
+    }).catch(err => console.error('[Database] API tracking error:', err.message))
+    
     res.status(500).json({ error: String(e.message || e) })
   }
 })
@@ -387,6 +467,44 @@ app.get('/api/monitoring/summary', (_req, res) => {
 app.post('/api/monitoring/reset', adminLimiter, (_req, res) => {
   monitoring.reset()
   res.json({ message: 'Monitoring metrics reset successfully' })
+})
+
+// -------------------- Analytics Endpoints --------------------
+// Get popular tickers (last 7 days by default)
+app.get('/api/analytics/popular', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10
+    const days = parseInt(req.query.days) || 7
+    const tickers = await getPopularTickers(limit, days)
+    res.json({ success: true, data: tickers })
+  } catch (error) {
+    console.error('[Analytics] Popular tickers error:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// Get user's search history
+app.get('/api/analytics/history', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 20
+    const history = await getUserSearchHistory(req.ip, limit)
+    res.json({ success: true, data: history })
+  } catch (error) {
+    console.error('[Analytics] History error:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// Get API request statistics (last 24 hours by default)
+app.get('/api/analytics/stats', adminLimiter, async (req, res) => {
+  try {
+    const hours = parseInt(req.query.hours) || 24
+    const stats = await getApiRequestStats(hours)
+    res.json({ success: true, data: stats })
+  } catch (error) {
+    console.error('[Analytics] Stats error:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
 })
 
 // 404 handler (must be after all routes)
