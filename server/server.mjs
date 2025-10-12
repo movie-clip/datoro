@@ -9,14 +9,40 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { getCacheService, CacheTTL } from './services/cacheService.js'
+import { getMonitoringService } from './services/monitoringService.js'
+import * as sentryService from './services/sentryService.js'
+import { 
+  generalLimiter, 
+  fmpLimiter, 
+  adminLimiter, 
+  aiLimiter, 
+  speedLimiter 
+} from './middleware/rateLimiter.js'
+import { 
+  errorHandler, 
+  notFoundHandler, 
+  requestLogger,
+  createError 
+} from './middleware/errorHandler.js'
+import { 
+  validate,
+  validateProfile,
+  validateIncomeStatement,
+  validateBalanceSheet,
+  validateCashFlow,
+  validateRevenueSegments,
+  validateHistoricalPrice,
+  validateSearch
+} from './middleware/validation.js'
 
 // Load environment variables from .env.local
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 config({ path: join(__dirname, '..', '.env.local') })
 
-// Initialize cache service
+// Initialize services
 const cache = getCacheService()
+const monitoring = getMonitoringService()
 
 const PORT = process.env.PORT || 7071
 const DEV_ORIGIN = process.env.DEV_ORIGIN || 'http://localhost:5173'
@@ -33,14 +59,30 @@ if (!existsSync(CACHE_DIR)) {
 }
 
 const app = express()
+
+// Initialize Sentry FIRST (before any other middleware)
+sentryService.initSentry()
+
+// Sentry request handler (must be first middleware)
+app.use(sentryService.requestHandler())
+app.use(sentryService.tracingHandler())
+
+// Request logging with monitoring
+app.use(requestLogger(monitoring))
+
+// CORS and body parsing
 app.use(cors({ origin: DEV_ORIGIN, credentials: false }))
 app.use(express.json())
+
+// Speed limiter (slows down heavy users)
+app.use(speedLimiter)
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
-app.use('/api/fmp', async (req, res) => {
+// Apply rate limiting to FMP endpoints
+app.use('/api/fmp', fmpLimiter, async (req, res) => {
   try {
     if (!FMP_API_KEY) {
       console.error('[FMP] API key not configured')
@@ -218,7 +260,8 @@ function parseAndValidateJSON(rawResponse) {
   }
 }
 
-app.post('/api/ai/analysis', async (req, res) => {
+// Apply AI rate limiter to AI endpoints
+app.post('/api/ai/analysis', aiLimiter, async (req, res) => {
   try {
     const { ticker, companyName, type, systemPrompt, clearCache } = req.body
     
@@ -309,19 +352,51 @@ app.post('/api/ai/analysis', async (req, res) => {
   }
 })
 
-// -------------------- Health & Cache Stats --------------------
-app.get('/api/health', (_req, res) => res.json({ ok: true }))
+// -------------------- Health & Monitoring --------------------
+app.get('/api/health', (_req, res) => {
+  const summary = monitoring.getSummary()
+  res.json({ 
+    ok: true,
+    ...summary
+  })
+})
 
-app.get('/api/cache/stats', (_req, res) => {
+// Admin endpoints with strict rate limiting
+app.get('/api/cache/stats', adminLimiter, (_req, res) => {
   const stats = cache.getStats()
   res.json(stats)
 })
 
-app.post('/api/cache/clear', async (_req, res) => {
+app.post('/api/cache/clear', adminLimiter, async (_req, res) => {
   await cache.clear()
   cache.resetStats()
   res.json({ message: 'Cache cleared successfully' })
 })
+
+// Monitoring endpoints
+app.get('/api/monitoring/stats', adminLimiter, (_req, res) => {
+  const metrics = monitoring.getMetrics()
+  res.json(metrics)
+})
+
+app.get('/api/monitoring/summary', (_req, res) => {
+  const summary = monitoring.getSummary()
+  res.json(summary)
+})
+
+app.post('/api/monitoring/reset', adminLimiter, (_req, res) => {
+  monitoring.reset()
+  res.json({ message: 'Monitoring metrics reset successfully' })
+})
+
+// 404 handler (must be after all routes)
+app.use(notFoundHandler)
+
+// Sentry error handler (must be before any other error middleware)
+app.use(sentryService.errorHandler())
+
+// Global error handler with monitoring (must be last)
+app.use(errorHandler(monitoring))
 
 const server = app.listen(PORT, async () => {
   console.log(`FMP Proxy Server listening on http://localhost:${PORT}`)

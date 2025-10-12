@@ -11,6 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@sentry/node": "^10.19.0",
+    "@sentry/profiling-node": "^10.19.0",
     "chart.js": "^4.5.0",
     "chartjs-adapter-date-fns": "^3.0.0",
     "cors": "^2.8.5",
@@ -18,8 +20,11 @@
     "dotenv": "^17.2.3",
     "echarts": "^6.0.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-slow-down": "^3.0.0",
     "fetch-cookie": "^3.1.0",
     "ioredis": "^5.8.1",
+    "joi": "^18.0.1",
     "lru-cache": "^11.2.2",
     "node-fetch": "^3.3.2",
     "tough-cookie": "^6.0.0",
