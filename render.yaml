@@ -10,8 +10,19 @@ services:
     region: oregon # or frankfurt, singapore (choose closest to users)
     plan: free # free tier (sleeps after 15min inactivity) - upgrade to starter ($7/mo) for 24/7
     buildCommand: npm install && npx prisma generate
+    preDeployCommand: npx prisma migrate deploy
     startCommand: node server/server.mjs
     healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - server/**
+        - prisma/**
+        - package.json
+        - package-lock.json
+      ignoredPaths:
+        - src/**
+        - public/**
+        - "*.md"
     envVars:
       - key: NODE_ENV
         value: production
@@ -46,6 +57,18 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true # Preview PRs before merging
+    buildFilter:
+      paths:
+        - src/**
+        - public/**
+        - index.html
+        - vite.config.js
+        - package.json
+        - package-lock.json
+      ignoredPaths:
+        - server/**
+        - prisma/**
+        - "*.md"
     headers:
       - path: /*
         name: Cache-Control
