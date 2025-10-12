@@ -1,14 +1,29 @@
 import { ref, watch, computed } from 'vue'
-import { getFcfSeries } from '../services/financials'
+import { useTickerData } from './useTickerData.js'
+import { getFcfSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useFcfSeries(tickerRef) {
   const period  = ref('annual');
   const viewMode = ref('fcfAndSbc'); // Default to showing both FCF & SBC
-  const rawData = ref([]);
   const title   = ref('Free Cash Flow — Empty');
   const message = ref('');
-  const loading = ref(false);
-  const error   = ref(null);
+
+  // Use batch data composable (shares single API call with tables)
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract FCF data from batch
+  const rawData = computed(() => 
+    getFcfSeriesFromBatch(batchData.value, period.value)
+  )
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && rawData.value.length === 0) {
+      return `No FCF data for '${t}'`
+    }
+    return null
+  })
 
   // Transform data based on view mode
   const series = computed(() => {
@@ -39,44 +54,28 @@ export function useFcfSeries(tickerRef) {
     ]
   })
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    const t = (tickerRef?.value || '').toUpperCase();
-    if (!t) {
-      title.value = 'Free Cash Flow — Empty';
-      rawData.value = [];
-      message.value = 'Enter a ticker';
-      return;
+  // Update title based on ticker
+  watch(() => tickerRef?.value, (t) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
+      title.value = 'Free Cash Flow — Empty'
+      message.value = 'Enter a ticker'
+    } else if (error.value) {
+      title.value = 'Error'
+      message.value = error.value
+    } else if (rawData.value.length === 0 && !loading.value) {
+      title.value = 'Free Cash Flow — No data'
+      message.value = `No FCF data for '${ticker}'`
+    } else {
+      title.value = 'Free Cash Flow'
+      message.value = ''
     }
-    loading.value = true;
-    try {
-      const result = await getFcfSeries(t, period.value);
-      if (result.error) {
-        title.value = 'Error';
-        rawData.value = [];
-        message.value = result.error;
-        error.value = result.error;
-      } else if (!result.data.length) {
-        title.value = 'Free Cash Flow — No data';
-        rawData.value = [];
-        message.value = `No FCF data for '${t}'.`;
-      } else {
-        title.value = 'Free Cash Flow';
-        rawData.value = result.data;
-      }
-    } catch (e) {
-      title.value = 'Error';
-      rawData.value = [];
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
-    }
-  }
+  }, { immediate: true })
 
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true });
-  watch(period, () => refresh());
+  // Manual refresh function (forces batch data refresh)
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
+  }
 
   return { period, viewMode, series, compactSeries, title, message, loading, error, refresh };
 }

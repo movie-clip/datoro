@@ -1,15 +1,33 @@
 import { ref, watch, computed } from 'vue'
-import { getRevenueSeries, getRevenueSegments } from '../services/financials'
+import { useTickerData } from './useTickerData.js'
+import { getRevenueSeriesFromBatch, getRevenueSegmentsFromBatch } from '../services/financials/batchChartService.js'
 
 export function useRevenueSeries(tickerRef) {
   const period  = ref('annual');   // 'annual' | 'quarterly'
   const selectedSegments = ref(['total']);   // Array of selected segment names
-  const totalRevenue = ref([]);
-  const segmentData = ref({ segments: [], series: {} });
   const title   = ref('Revenue');
   const message = ref('');
-  const loading = ref(false);
-  const error   = ref(null);
+
+  // Use batch data composable (shares single API call with tables)
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract revenue data from batch
+  const totalRevenue = computed(() => 
+    getRevenueSeriesFromBatch(batchData.value, period.value)
+  )
+
+  const segmentData = computed(() => 
+    getRevenueSegmentsFromBatch(batchData.value)
+  )
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && totalRevenue.value.length === 0) {
+      return `No revenue data for '${t}'`
+    }
+    return null
+  })
 
   // Computed series - return stacked multi-series based on selectedSegments
   const series = computed(() => {
@@ -102,63 +120,39 @@ export function useRevenueSeries(tickerRef) {
       .trim();
   }
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    // Reset to total revenue when refreshing
-    selectedSegments.value = ['total'];
-    const t = (tickerRef?.value || '').toUpperCase();
-    if (!t) {
-      title.value = 'Revenue — Empty';
-      totalRevenue.value = [];
-      segmentData.value = { segments: [], series: {} };
-      message.value = 'Enter a ticker';
-      return;
+  // Update title based on ticker
+  watch(() => tickerRef?.value, (t) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
+      title.value = 'Revenue — Empty'
+      message.value = 'Enter a ticker'
+    } else if (error.value) {
+      title.value = 'Error'
+      message.value = error.value
+    } else if (totalRevenue.value.length === 0 && !loading.value) {
+      title.value = 'Revenue — No data'
+      message.value = `No revenue data for '${ticker}'`
+    } else {
+      title.value = 'Revenue'
+      message.value = ''
     }
-    loading.value = true;
-    try {
-      // Fetch both total revenue and segment data in parallel
-      const [totalResult, segmentResult] = await Promise.all([
-        getRevenueSeries(t, period.value),
-        getRevenueSegments(t, period.value)
-      ]);
+  }, { immediate: true })
 
-      console.log('[Revenue] Segment data for', t, ':', segmentResult.data);
-
-      if (totalResult.error) {
-        title.value = 'Error';
-        totalRevenue.value = [];
-        segmentData.value = { segments: [], series: {} };
-        message.value = totalResult.error;
-        error.value = totalResult.error;
-      } else if (!totalResult.data.length) {
-        title.value = 'Revenue — No data';
-        totalRevenue.value = [];
-        segmentData.value = { segments: [], series: {} };
-        message.value = `No revenue data for '${t}'.`;
-      } else {
-        totalRevenue.value = totalResult.data;
-        segmentData.value = segmentResult.data || { segments: [], series: {} };
-        title.value = 'Revenue';
-      }
-    } catch (e) {
-      title.value = 'Error';
-      totalRevenue.value = [];
-      segmentData.value = { segments: [], series: {} };
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
-    }
-  }
+  // Reset to total revenue when period changes
+  watch(period, () => {
+    selectedSegments.value = ['total']
+  })
 
   // Computed series for compact view - always show Total Revenue only
   const compactSeries = computed(() => {
     return totalRevenue.value || [];
   });
 
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true });
-  watch(period, () => refresh());
+  // Manual refresh function (forces batch data refresh)
+  function refresh() {
+    selectedSegments.value = ['total']
+    // Batch data will auto-refresh via useTickerData
+  }
 
   return { period, selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error, refresh };
 }

@@ -1,13 +1,26 @@
 import { ref, computed, watch } from 'vue'
-import { getCapitalReturnedSeries } from '../services/financials'
+import { useTickerData } from './useTickerData.js'
+import { getCapitalReturnedSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useCapitalReturnedSeries(tickerRef) {
-  const rawData = ref([]);
   const title = ref('Capital Returned to Shareholders — Empty');
   const message = ref('');
-  const loading = ref(false);
-  const error = ref(null);
   const selectedSegments = ref(['dividends', 'buybacks']); // Default: show both
+
+  // Use batch data composable
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract capital returned data from batch (always annual)
+  const rawData = computed(() => getCapitalReturnedSeriesFromBatch(batchData.value, 'annual'))
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && rawData.value.length === 0) {
+      return `No capital return data for '${t}'`
+    }
+    return null
+  })
 
   // Transform raw data into chart series based on selected segments
   const series = computed(() => {
@@ -38,43 +51,27 @@ export function useCapitalReturnedSeries(tickerRef) {
     return chartSeries
   })
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    const t = (tickerRef?.value || '').toUpperCase();
-    if (!t) {
-      title.value = 'Capital Returned to Shareholders — Empty';
-      rawData.value = [];
-      message.value = 'Enter a ticker';
-      return;
+  // Update title based on ticker
+  watch([() => tickerRef?.value, rawData, loading], ([t]) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
+      title.value = 'Capital Returned to Shareholders — Empty'
+      message.value = 'Enter a ticker'
+    } else if (error.value) {
+      title.value = 'Error'
+      message.value = error.value
+    } else if (rawData.value.length === 0 && !loading.value) {
+      title.value = 'Capital Returned — No data'
+      message.value = `No capital return data for '${ticker}'`
+    } else {
+      title.value = 'Capital Returned to Shareholders'
+      message.value = ''
     }
-    loading.value = true;
-    try {
-      const result = await getCapitalReturnedSeries(t, 'annual'); // Always use annual data
-      if (result.error) {
-        title.value = 'Error';
-        rawData.value = [];
-        message.value = result.error;
-        error.value = result.error;
-      } else if (!result.data.length) {
-        title.value = 'Capital Returned — No data';
-        rawData.value = [];
-        message.value = `No capital return data for '${t}'.`;
-      } else {
-        title.value = `Capital Returned to Shareholders`;
-        rawData.value = result.data;
-      }
-    } catch (e) {
-      title.value = 'Error';
-      rawData.value = [];
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
-    }
-  }
+  }, { immediate: true })
 
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true });
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
+  }
 
   return { series, title, message, loading, error, refresh, selectedSegments };
 }

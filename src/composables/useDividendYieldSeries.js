@@ -1,58 +1,53 @@
 import { ref, watch, computed } from 'vue'
-import { getDividendYieldSeries } from '../services/company/dividendService'
+import { useTickerData } from './useTickerData.js'
+import { getDividendYieldSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useDividendYieldSeries(tickerRef) {
   const period = ref('annual')
-  const rawData = ref([])
   const title = ref('Dividend Yield — Empty')
   const message = ref('')
-  const loading = ref(false)
-  const error = ref(null)
+
+  // Use batch data composable
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract dividend yield data from batch
+  const rawData = computed(() => getDividendYieldSeriesFromBatch(batchData.value, period.value))
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && rawData.value.length === 0) {
+      return `No dividend data for '${t}'`
+    }
+    return null
+  })
 
   const series = computed(() => {
     if (!rawData.value.length) return []
     return rawData.value
   })
 
-  async function refresh() {
-    message.value = ''
-    error.value = null
-    const t = (tickerRef?.value || '').toUpperCase()
-    if (!t) {
+  // Update title based on ticker
+  watch([() => tickerRef?.value, rawData, loading], ([t]) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
       title.value = 'Dividend Yield — Empty'
-      rawData.value = []
       message.value = 'Enter a ticker'
-      return
-    }
-    
-    loading.value = true
-    try {
-      const result = await getDividendYieldSeries(t, period.value)
-      if (result.error) {
-        title.value = 'Error'
-        rawData.value = []
-        message.value = result.error
-        error.value = result.error
-      } else if (!result.data.length) {
-        title.value = 'Dividend Yield — No data'
-        rawData.value = []
-        message.value = `No dividend data for '${t}'`
-      } else {
-        title.value = 'Dividend Yield'
-        rawData.value = result.data
-      }
-    } catch (e) {
+    } else if (error.value) {
       title.value = 'Error'
-      rawData.value = []
-      message.value = 'Failed to load data'
-      error.value = e?.message || 'Unknown error'
-    } finally {
-      loading.value = false
+      message.value = error.value
+    } else if (rawData.value.length === 0 && !loading.value) {
+      title.value = 'Dividend Yield — No data'
+      message.value = `No dividend data for '${ticker}'`
+    } else {
+      title.value = 'Dividend Yield'
+      message.value = ''
     }
-  }
+  }, { immediate: true })
 
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true })
-  watch(period, () => refresh())
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
+  }
 
   return { period, series, title, message, loading, error, refresh }
 }

@@ -1,14 +1,27 @@
 import { ref, watch, computed } from 'vue'
-import { getExpensesSeries } from '../services/company/expensesService'
+import { useTickerData } from './useTickerData.js'
+import { getExpensesSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useExpensesSeries(tickerRef) {
   const period = ref('annual')
   const selectedSegments = ref(['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']) // Show all by default
-  const rawData = ref([])
   const title = ref('Operating Expenses — Empty')
   const message = ref('')
-  const loading = ref(false)
-  const error = ref(null)
+
+  // Use batch data composable
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract expenses data from batch
+  const rawData = computed(() => getExpensesSeriesFromBatch(batchData.value, period.value))
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && rawData.value.length === 0) {
+      return `No expense data for '${t}'`
+    }
+    return null
+  })
 
   const segmentLabels = {
     total: 'Total Expenses',
@@ -73,48 +86,30 @@ export function useExpensesSeries(tickerRef) {
     selectedSegments.value = ['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']
   }
 
-  async function refresh() {
-    message.value = ''
-    error.value = null
-    const t = (tickerRef?.value || '').toUpperCase()
-    if (!t) {
+  // Update title based on ticker
+  watch([() => tickerRef?.value, rawData, loading], ([t]) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
       title.value = 'Operating Expenses — Empty'
-      rawData.value = []
       message.value = 'Enter a ticker'
-      return
-    }
-    
-    loading.value = true
-    try {
-      const result = await getExpensesSeries(t, period.value)
-      if (result.error) {
-        title.value = 'Error'
-        rawData.value = []
-        message.value = result.error
-        error.value = result.error
-      } else if (!result.data.length) {
-        title.value = 'Operating Expenses — No data'
-        rawData.value = []
-        message.value = `No expense data for '${t}'`
-      } else {
-        title.value = 'Operating Expenses'
-        rawData.value = result.data
-      }
-    } catch (e) {
+    } else if (error.value) {
       title.value = 'Error'
-      rawData.value = []
-      message.value = 'Failed to load data'
-      error.value = e?.message || 'Unknown error'
-    } finally {
-      loading.value = false
+      message.value = error.value
+    } else if (rawData.value.length === 0 && !loading.value) {
+      title.value = 'Operating Expenses — No data'
+      message.value = `No expense data for '${ticker}'`
+    } else {
+      title.value = 'Operating Expenses'
+      message.value = ''
     }
-  }
-
-  watch(() => tickerRef?.value, () => {
-    resetSelection()
-    refresh()
   }, { immediate: true })
-  watch(period, () => refresh())
+
+  // Reset selection when ticker changes
+  watch(() => tickerRef?.value, () => resetSelection())
+
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
+  }
 
   return { 
     period, 

@@ -1,72 +1,60 @@
-// Composable for Net Income chart data
+// Migrated composable for Net Income chart data
 import { ref, watch, computed } from 'vue'
-import { getIncomeStatement } from '../services/financials'
+import { useTickerData } from './useTickerData.js'
+import { getNetIncomeSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useNetIncomeSeries(tickerRef) {
-  const rawData = ref([])
-  const loading = ref(false)
-  const error = ref(null)
-  const message = ref(null)
   const period = ref('annual')
+  const message = ref(null)
+
+  // Use batch data composable (shares single API call)
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract net income data from batch
+  const rawData = computed(() => 
+    getNetIncomeSeriesFromBatch(batchData.value, period.value)
+  )
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && rawData.value.length === 0) {
+      return `No net income data for '${t}'`
+    }
+    return null
+  })
 
   const viewModeOptions = computed(() => [
     { label: 'Annual', value: 'annual' },
-    { label: 'Quarterly', value: 'quarter' }
+    { label: 'Quarterly', value: 'quarterly' }
   ])
 
   // Process net income data into chart series
   const series = computed(() => {
     if (!rawData.value || rawData.value.length === 0) return []
     
-    const netIncomeData = rawData.value.map(item => {
-      const date = new Date(item.date).getTime()
-      const netIncome = Number(item.netIncome) || 0
-      return [date, netIncome]
-    })
-
     return [{
       name: 'Net Income',
-      data: netIncomeData,
+      data: rawData.value,
       color: '#4ade80' // green color for profit
     }]
   })
 
   const title = computed(() => 'Net Income')
 
-  async function fetchData() {
-    const t = (tickerRef.value || '').trim().toUpperCase()
-    if (!t) {
-      rawData.value = []
+  // Update message based on state
+  watch([() => tickerRef?.value, rawData, loading], ([t]) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
       message.value = null
-      error.value = null
-      return
+    } else if (error.value) {
+      message.value = error.value
+    } else if (rawData.value.length === 0 && !loading.value) {
+      message.value = `No ${period.value} net income data found for ${ticker}.`
+    } else {
+      message.value = null
     }
-
-    loading.value = true
-    error.value = null
-    message.value = null
-
-    try {
-      const data = await getIncomeStatement(t, period.value, 20)
-      
-      if (!data || data.length === 0) {
-        message.value = `No ${period.value} net income data found for ${t}.`
-        rawData.value = []
-      } else {
-        rawData.value = data.reverse() // oldest to newest
-        message.value = null
-      }
-    } catch (err) {
-      console.error('[useNetIncomeSeries] Error:', err)
-      error.value = `Failed to load net income data: ${err.message || err}`
-      rawData.value = []
-    } finally {
-      loading.value = false
-    }
-  }
-
-  // Watch ticker and period changes
-  watch([tickerRef, period], () => fetchData(), { immediate: true })
+  })
 
   return {
     series,

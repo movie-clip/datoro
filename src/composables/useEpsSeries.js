@@ -1,50 +1,47 @@
-import { ref, watch } from 'vue'
-import { getEpsSeries } from '../services/financials'
+import { ref, watch, computed } from 'vue'
+import { useTickerData } from './useTickerData.js'
+import { getEpsSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useEpsSeries(tickerRef) {
-  const series  = ref([]);
   const title   = ref('EPS — Empty');
   const message = ref('');
-  const loading = ref(false);
-  const error   = ref(null);
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    const t = (tickerRef?.value || '').toUpperCase();
-    if (!t) {
-      title.value = 'EPS — Empty';
-      series.value = [];
-      message.value = 'Enter a ticker';
-      return;
+  // Use batch data composable
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract EPS data from batch
+  const series = computed(() => getEpsSeriesFromBatch(batchData.value))
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && series.value.length === 0) {
+      return `No EPS data for '${t}'`
     }
-    loading.value = true;
-    try {
-      const result = await getEpsSeries(t);
-      if (result.error) {
-        title.value = 'Error';
-        series.value = [];
-        message.value = result.error;
-        error.value = result.error;
-      } else if (!result.data.length) {
-        title.value = 'EPS — No data';
-        series.value = [];
-        message.value = `No EPS data for '${t}'.`;
-      } else {
-        title.value = `EPS`;
-        series.value = result.data;
-      }
-    } catch (e) {
-      title.value = 'Error';
-      series.value = [];
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
+    return null
+  })
+
+  // Update title based on ticker
+  watch(() => tickerRef?.value, (t) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
+      title.value = 'EPS — Empty'
+      message.value = 'Enter a ticker'
+    } else if (error.value) {
+      title.value = 'Error'
+      message.value = error.value
+    } else if (series.value.length === 0 && !loading.value) {
+      title.value = 'EPS — No data'
+      message.value = `No EPS data for '${ticker}'`
+    } else {
+      title.value = 'EPS'
+      message.value = ''
     }
+  }, { immediate: true })
+
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
   }
-
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true });
 
   return { series, title, message, loading, error, refresh };
 }

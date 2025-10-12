@@ -1,12 +1,10 @@
 import { ref, watch, computed } from 'vue'
-import { getEbitdaSeries } from '../services/financials'
+import { useTickerData } from './useTickerData.js'
+import { getEbitdaSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useEbitdaSeries(tickerRef) {
-  const rawData = ref([]);
   const title   = ref('EBITDA — Empty');
   const message = ref('');
-  const loading = ref(false);
-  const error   = ref(null);
   const period = ref('annual');
   const chartView = ref('margin'); // 'bridge' | 'margin' - default to margin view
   
@@ -18,6 +16,21 @@ export function useEbitdaSeries(tickerRef) {
     segments: ['revenue', 'costOfRevenue', 'operatingExpenses', 'depreciationAndAmortization'],
     series: {}
   });
+
+  // Use batch data composable
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract EBITDA data from batch
+  const rawData = computed(() => getEbitdaSeriesFromBatch(batchData.value, period.value))
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && rawData.value.length === 0) {
+      return `No EBITDA data for '${t}'`
+    }
+    return null
+  })
 
   // Map segment keys to display names and data
   const segmentConfig = {
@@ -78,47 +91,27 @@ export function useEbitdaSeries(tickerRef) {
     ]
   })
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    const t = (tickerRef?.value || '').toUpperCase();
-    if (!t) {
-      title.value = 'EBITDA — Empty';
-      rawData.value = [];
-      message.value = 'Enter a ticker';
-      return;
+  // Update title based on ticker and view
+  watch([() => tickerRef?.value, chartView, rawData, loading], ([t]) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
+      title.value = 'EBITDA — Empty'
+      message.value = 'Enter a ticker'
+    } else if (error.value) {
+      title.value = 'Error'
+      message.value = error.value
+    } else if (rawData.value.length === 0 && !loading.value) {
+      title.value = 'EBITDA — No data'
+      message.value = `No EBITDA data for '${ticker}'`
+    } else {
+      title.value = chartView.value === 'margin' ? 'EBITDA & Margin' : 'EBITDA Bridge'
+      message.value = ''
     }
-    loading.value = true;
-    try {
-      const result = await getEbitdaSeries(t, period.value);
-      if (result.error) {
-        title.value = 'Error';
-        rawData.value = [];
-        message.value = result.error;
-        error.value = result.error;
-      } else if (!result.data.length) {
-        title.value = 'EBITDA — No data';
-        rawData.value = [];
-        message.value = `No EBITDA data for '${t}'.`;
-      } else {
-        title.value = chartView.value === 'margin' ? 'EBITDA & Margin' : 'EBITDA Bridge';
-        rawData.value = result.data;
-      }
-    } catch (e) {
-      title.value = 'Error';
-      rawData.value = [];
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
-    }
-  }
+  }, { immediate: true })
 
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true });
-  watch(period, () => refresh());
-  watch(chartView, () => {
-    title.value = chartView.value === 'margin' ? 'EBITDA & Margin' : 'EBITDA Bridge';
-  });
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
+  }
 
   return { 
     series, 

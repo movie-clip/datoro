@@ -1,18 +1,24 @@
 import { ref, watch, computed } from 'vue'
-import { getInsiderTradingAggregated } from '../services/company/insiderTradingService'
+import { useTickerData } from './useTickerData.js'
+import { getInsiderTradingFromBatch } from '../services/financials/batchChartService.js'
 import { getPriceSeries } from '../services/marketData'
 
 export function useInsiderTradingSeries(tickerRef) {
-  const rawInsider = ref([])
   const rawPrice = ref([])
   const title = ref('Price & Insider Trading — Empty')
   const message = ref('')
   const loading = ref(false)
   const error = ref(null)
 
+  // Use batch data composable for insider trading
+  const { data: batchData, loading: batchLoading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract insider trading data from batch
+  const insiderData = computed(() => getInsiderTradingFromBatch(batchData.value))
+
   // Compute series for ECharts (price line + insider bars)
   const series = computed(() => {
-    if (!rawPrice.value.length && !rawInsider.value.length) return []
+    if (!rawPrice.value.length && !insiderData.value.net?.length) return []
     
     const result = []
     
@@ -30,13 +36,12 @@ export function useInsiderTradingSeries(tickerRef) {
     }
     
     // Insider net shares (bar)
-    if (rawInsider.value.length) {
-      const insiderData = rawInsider.value.map(d => [d.date, d.net])
-      console.log('Insider series data sample:', insiderData.slice(0, 3))
+    if (insiderData.value.net?.length) {
+      console.log('Insider series data sample:', insiderData.value.net.slice(0, 3))
       result.push({
         name: 'Net Insider Shares',
         type: 'bar',
-        data: insiderData,
+        data: insiderData.value.net,
         yAxisIndex: 1,
         itemStyle: {
           color: (params) => params.value[1] >= 0 ? '#4caf50' : '#f44336'
@@ -54,7 +59,6 @@ export function useInsiderTradingSeries(tickerRef) {
     const t = (tickerRef?.value || '').toUpperCase()
     if (!t) {
       title.value = 'Price & Insider Trading — Empty'
-      rawInsider.value = []
       rawPrice.value = []
       message.value = 'Enter a ticker'
       return
@@ -62,40 +66,35 @@ export function useInsiderTradingSeries(tickerRef) {
     
     loading.value = true
     try {
-      // Fetch both price and insider data in parallel
-      const [priceResult, insiderResult] = await Promise.all([
-        getPriceSeries(t, 'daily'),
-        getInsiderTradingAggregated(t)
-      ])
+      // Fetch price data (insider data comes from batch)
+      const priceResult = await getPriceSeries(t, 'daily')
       
-      if (priceResult.error && insiderResult.error) {
-        title.value = 'Error'
-        message.value = 'Failed to load data'
+      if (priceResult.error) {
         error.value = priceResult.error
         rawPrice.value = []
-        rawInsider.value = []
+      } else {
+        rawPrice.value = priceResult.data || []
+      }
+      
+      console.log('Insider Trading Chart Data:', {
+        pricePoints: rawPrice.value.length,
+        insiderMonths: insiderData.value.net?.length || 0,
+        priceError: priceResult.error,
+        batchError: batchError.value
+      })
+      
+      if (!rawPrice.value.length && !insiderData.value.net?.length) {
+        title.value = 'Price & Insider Trading — No data'
+        message.value = `No data for '${t}'`
       } else {
         title.value = 'Price & Insider Trading'
-        rawPrice.value = priceResult.data || []
-        rawInsider.value = insiderResult.data || []
-        
-        console.log('Insider Trading Chart Data:', {
-          pricePoints: rawPrice.value.length,
-          insiderMonths: rawInsider.value.length,
-          priceError: priceResult.error,
-          insiderError: insiderResult.error
-        })
-        
-        if (!rawPrice.value.length && !rawInsider.value.length) {
-          message.value = `No data for '${t}'`
-        }
+        message.value = ''
       }
     } catch (e) {
       title.value = 'Error'
       message.value = 'Failed to load data'
       error.value = e?.message || 'Unknown error'
       rawPrice.value = []
-      rawInsider.value = []
     } finally {
       loading.value = false
     }

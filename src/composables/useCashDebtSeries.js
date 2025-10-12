@@ -1,12 +1,25 @@
 import { ref, watch, computed } from 'vue'
-import { getCashDebtSeries } from '../services/financials'
+import { useTickerData } from './useTickerData.js'
+import { getCashDebtSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useCashDebtSeries(tickerRef) {
-  const rawData = ref([]);
   const title   = ref('Cash & Debt — Empty');
   const message = ref('');
-  const loading = ref(false);
-  const error   = ref(null);
+
+  // Use batch data composable
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract cash/debt data from batch
+  const rawData = computed(() => getCashDebtSeriesFromBatch(batchData.value, 'annual'))
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && rawData.value.length === 0) {
+      return `No data for '${t}'`
+    }
+    return null
+  })
 
   // Transform raw data into multi-series format for dual-bar chart
   const series = computed(() => {
@@ -25,43 +38,27 @@ export function useCashDebtSeries(tickerRef) {
     ]
   });
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    const t = (tickerRef?.value || '').toUpperCase();
-    if (!t) {
-      title.value = 'Cash & Debt — Empty';
-      rawData.value = [];
-      message.value = 'Enter a ticker';
-      return;
+  // Update title based on ticker
+  watch(() => tickerRef?.value, (t) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
+      title.value = 'Cash & Debt — Empty'
+      message.value = 'Enter a ticker'
+    } else if (error.value) {
+      title.value = 'Error'
+      message.value = error.value
+    } else if (rawData.value.length === 0 && !loading.value) {
+      title.value = 'Cash & Debt — No data'
+      message.value = `No data for '${ticker}'`
+    } else {
+      title.value = 'Cash & Debt'
+      message.value = ''
     }
-    loading.value = true;
-    try {
-      const result = await getCashDebtSeries(t, 'annual');
-      if (result.error) {
-        title.value = 'Error';
-        rawData.value = [];
-        message.value = result.error;
-        error.value = result.error;
-      } else if (!result.data.length) {
-        title.value = 'Cash & Debt — No data';
-        rawData.value = [];
-        message.value = `No data for '${t}'.`;
-      } else {
-        title.value = `Cash & Debt`;
-        rawData.value = result.data;
-      }
-    } catch (e) {
-      title.value = 'Error';
-      rawData.value = [];
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
-    }
-  }
+  }, { immediate: true })
 
-  watch(() => tickerRef?.value, () => refresh(), { immediate: true });
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
+  }
 
   return { series, title, message, loading, error, refresh };
 }

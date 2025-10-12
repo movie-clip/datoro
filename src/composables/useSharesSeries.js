@@ -1,51 +1,50 @@
-import { ref, watch } from 'vue'
-import { getSharesSeries } from '../services/financials'
+import { ref, watch, computed } from 'vue'
+import { useTickerData } from './useTickerData.js'
+import { getSharesSeriesFromBatch } from '../services/financials/batchChartService.js'
 
 export function useSharesSeries(tickerRef, periodRef) {
-  const series  = ref([]);
   const title   = ref('Shares Outstanding — Empty');
   const message = ref('');
-  const loading = ref(false);
-  const error   = ref(null);
 
-  async function refresh() {
-    message.value = '';
-    error.value = null;
-    const t = (tickerRef?.value || '').toUpperCase();
-    if (!t) {
-      title.value = 'Shares Outstanding — Empty';
-      series.value = [];
-      message.value = 'Enter a ticker';
-      return;
+  // Use batch data composable
+  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+
+  // Extract shares data from batch
+  const series = computed(() => {
+    const period = periodRef?.value || 'annual'
+    return getSharesSeriesFromBatch(batchData.value, period)
+  })
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (tickerRef?.value || '').toUpperCase()
+    if (t && series.value.length === 0) {
+      return `No shares data for '${t}'`
     }
-    loading.value = true;
-    try {
-      const period = periodRef?.value || 'annual';
-      const result = await getSharesSeries(t, period);
-      if (result.error) {
-        title.value = 'Error';
-        series.value = [];
-        message.value = result.error;
-        error.value = result.error;
-      } else if (!result.data.length) {
-        title.value = 'Shares Outstanding — No data';
-        series.value = [];
-        message.value = `No shares data for '${t}'.`;
-      } else {
-        title.value = `Shares Outstanding`;
-        series.value = result.data;
-      }
-    } catch (e) {
-      title.value = 'Error';
-      series.value = [];
-      message.value = 'Failed to load data.';
-      error.value = e?.message || 'Unknown error';
-    } finally {
-      loading.value = false;
+    return null
+  })
+
+  // Update title based on ticker
+  watch(() => [tickerRef?.value, periodRef?.value], ([t]) => {
+    const ticker = (t || '').toUpperCase()
+    if (!ticker) {
+      title.value = 'Shares Outstanding — Empty'
+      message.value = 'Enter a ticker'
+    } else if (error.value) {
+      title.value = 'Error'
+      message.value = error.value
+    } else if (series.value.length === 0 && !loading.value) {
+      title.value = 'Shares Outstanding — No data'
+      message.value = `No shares data for '${ticker}'`
+    } else {
+      title.value = 'Shares Outstanding'
+      message.value = ''
     }
+  }, { immediate: true })
+
+  function refresh() {
+    // Batch data will auto-refresh via useTickerData
   }
-
-  watch(() => [tickerRef?.value, periodRef?.value], () => refresh(), { immediate: true });
 
   return { series, title, message, loading, error, refresh };
 }
