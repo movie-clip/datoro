@@ -49,6 +49,7 @@ import {
   requestLogger,
   createError 
 } from './middleware/errorHandler.js'
+import { requestId } from './middleware/requestId.js'
 
 // Load environment variables from .env first, then .env.local (overrides)
 const __filename = fileURLToPath(import.meta.url)
@@ -86,12 +87,15 @@ sentryService.initSentry()
 app.use(sentryService.requestHandler())
 app.use(sentryService.tracingHandler())
 
+// Request ID middleware (must be early for logging)
+app.use(requestId())
+
 // Security headers (helmet) - protect against common attacks
 import { securityHeaders, customSecurityHeaders } from './middleware/security.js'
 app.use(securityHeaders())
 app.use(customSecurityHeaders)
 
-// Request logging with monitoring
+// Request logging with monitoring (after request ID for correlation)
 app.use(requestLogger(monitoring))
 
 // Response compression (gzip/brotli) - 70-80% bandwidth reduction
@@ -107,8 +111,27 @@ app.use(compression({
   }
 }))
 
-// CORS and body parsing
-app.use(cors({ origin: DEV_ORIGIN, credentials: false }))
+// CORS configuration (supports multiple origins for production)
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [DEV_ORIGIN];
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 app.use(express.json())
 
 // Speed limiter (slows down heavy users)
@@ -867,12 +890,69 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
 })
 
 // -------------------- Health & Monitoring --------------------
+// Basic health check (fast, no external dependencies)
 app.get('/api/health', (_req, res) => {
   const summary = monitoring.getSummary()
   res.json({ 
     ok: true,
     ...summary
   })
+})
+
+// Readiness check (validates database and Redis connectivity)
+// Use this for Docker/k8s health checks with longer timeout
+app.get('/api/readiness', async (_req, res) => {
+  const checks = {
+    server: 'ok',
+    database: 'unknown',
+    redis: 'unknown',
+    timestamp: new Date().toISOString()
+  }
+
+  try {
+    // Check database connectivity (with 2s timeout)
+    if (isDatabaseAvailable) {
+      try {
+        const { testDatabaseConnection } = await import('./services/databaseService.js')
+        const dbTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database timeout')), 2000)
+        )
+        await Promise.race([testDatabaseConnection(), dbTimeout])
+        checks.database = 'connected'
+      } catch (dbError) {
+        checks.database = 'disconnected'
+        console.warn('[Health] Database check failed:', dbError.message)
+      }
+    } else {
+      checks.database = 'disabled'
+    }
+
+    // Check Redis connectivity
+    try {
+      const isConnected = await cache.ping()
+      checks.redis = isConnected ? 'connected' : 'disconnected'
+    } catch (redisError) {
+      checks.redis = cache.isMemoryOnly() ? 'memory-fallback' : 'disconnected'
+      console.warn('[Health] Redis check failed:', redisError.message)
+    }
+
+    // Overall health status
+    const isHealthy = checks.server === 'ok' && 
+                      (checks.database === 'connected' || checks.database === 'disabled') &&
+                      (checks.redis === 'connected' || checks.redis === 'memory-fallback')
+
+    res.status(isHealthy ? 200 : 503).json({
+      ok: isHealthy,
+      checks,
+      uptime: monitoring.getSummary().uptime
+    })
+  } catch (error) {
+    res.status(503).json({
+      ok: false,
+      checks,
+      error: error.message
+    })
+  }
 })
 
 // Admin endpoints with strict rate limiting

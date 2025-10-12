@@ -1,7 +1,7 @@
 {
   "name": "finance-vue",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -54,8 +54,10 @@
     "lru-cache": "^11.2.2",
     "node-fetch": "^3.3.2",
     "tough-cookie": "^6.0.0",
+    "uuid": "^13.0.0",
     "vue": "^3.5.22",
-    "vue-echarts": "^8.0.0"
+    "vue-echarts": "^8.0.0",
+    "winston": "^3.18.3"
   },
   "devDependencies": {
     "@types/supertest": "^6.0.3",

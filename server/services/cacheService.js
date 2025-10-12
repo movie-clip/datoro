@@ -293,6 +293,29 @@ class CacheService {
       console.log('[CacheService] Disconnected from Redis');
     }
   }
+
+  /**
+   * Ping Redis to check connectivity (for health checks)
+   */
+  async ping() {
+    if (!this.redisEnabled || !this.connected) {
+      return false;
+    }
+    try {
+      const result = await this.redis.ping();
+      return result === 'PONG';
+    } catch (error) {
+      console.error('[CacheService] Ping failed:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Check if running in memory-only mode (Redis disabled/unavailable)
+   */
+  isMemoryOnly() {
+    return !this.redisEnabled || !this.connected;
+  }
 }
 
 // TTL constants (in seconds) - Optimized for paid FMP plan

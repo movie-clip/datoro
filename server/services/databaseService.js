@@ -16,6 +16,15 @@ let prisma;
 
 /**
  * Get or create Prisma client instance
+ * 
+ * Connection pooling configured for optimal performance:
+ * - connection_limit: Max concurrent connections
+ * - pool_timeout: Max time to wait for connection (seconds)
+ * - connect_timeout: Initial connection timeout (seconds)
+ * 
+ * Recommended for Supabase:
+ * - Free tier: connection_limit=5
+ * - Paid tier: connection_limit=10-20 depending on plan
  */
 export function getPrismaClient() {
   if (!prisma) {
@@ -23,6 +32,13 @@ export function getPrismaClient() {
       log: process.env.NODE_ENV === 'development' 
         ? ['query', 'error', 'warn'] 
         : ['error'],
+      // Connection pool configuration
+      // Set these in DATABASE_URL: ?connection_limit=10&pool_timeout=10&connect_timeout=5
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      }
     });
 
     // Handle graceful shutdown
@@ -589,6 +605,9 @@ export async function checkDatabaseHealth() {
     return false;
   }
 }
+
+// Alias for health check endpoint
+export const testDatabaseConnection = checkDatabaseHealth;
 
 // ============================================
 // Cleanup & Maintenance

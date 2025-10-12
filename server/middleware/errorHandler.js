@@ -80,38 +80,43 @@ export function errorHandler(monitoringService = null) {
       monitoringService.trackError(err, req);
     }
 
-    // Log error (will be captured by Sentry if initialized)
+    // Log error with request ID (will be captured by Sentry if initialized)
+    const logData = {
+      requestId: req.id,
+      message: err.message,
+      code,
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+      isOperational
+    };
+
     if (statusCode >= 500) {
       console.error('[ERROR]', {
-        message: err.message,
-        code,
-        stack: err.stack,
-        path: req.path,
-        method: req.method,
-        ip: req.ip,
-        isOperational
+        ...logData,
+        stack: err.stack
       });
+      
+      // Add request ID to Sentry context
+      if (req.id && global.Sentry) {
+        global.Sentry.setTag('request_id', req.id);
+      }
     } else {
-      console.warn('[WARN]', {
-        message: err.message,
-        code,
-        path: req.path,
-        method: req.method,
-        ip: req.ip
-      });
+      console.warn('[WARN]', logData);
     }
 
     // Don't leak error details in production for non-operational errors
     const isProd = process.env.NODE_ENV === 'production';
     const shouldHideDetails = isProd && !isOperational;
 
-    // Build error response
+    // Build error response with request ID for debugging
     const errorResponse = {
       error: {
         message: shouldHideDetails ? 'Internal server error' : err.message,
         code,
         timestamp: new Date().toISOString(),
-        path: req.path
+        path: req.path,
+        requestId: req.id // Include request ID for support/debugging
       }
     };
 
