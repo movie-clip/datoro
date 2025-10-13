@@ -151,8 +151,8 @@ const createOption = (isLarge = false) => {
   
   // In modal view with useLegend, show legend at top
   const showLegendAtTop = isLarge && props.useLegend
-  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : (isMobile ? 36 : 44))
-  const bottomPadding = isLarge ? 60 : (isMobile ? 40 : 50)
+  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : (isMobile ? 30 : 44))
+  const bottomPadding = isLarge ? 60 : (isMobile ? 28 : 50)
   
   // Build legend selection: only first series (typically 'Total Revenue') selected by default
   // Apply this whenever useLegend is true, not just in modal view
@@ -186,8 +186,8 @@ const createOption = (isLarge = false) => {
       selected: legendSelected
     } : { show: false },
     grid: { 
-      left: isMobile ? 12 : 24, 
-      right: isMobile ? 12 : 24, 
+      left: isMobile ? 8 : 24, 
+      right: isMobile ? 8 : 24, 
       top: topPadding, 
       bottom: bottomPadding, 
       containLabel: true 
@@ -492,9 +492,11 @@ const modalOption = computed(() => createOption(true))
 
 /* Mobile responsive styles */
 @media (max-width: 768px) {
-  /* Make charts more square-shaped on mobile (2-column layout ~175px wide each) */
+  /* Portrait mode: Make charts same height as width (square aspect ratio) */
   .echart {
-    height: 170px;
+    aspect-ratio: 1 / 1; /* Square aspect ratio - width equals height */
+    height: auto; /* Let aspect-ratio control height */
+    max-height: 180px; /* Prevent too tall on very wide screens */
   }
 
   /* Smaller expand hint on mobile */
@@ -532,7 +534,7 @@ const modalOption = computed(() => createOption(true))
 /* Very small phones */
 @media (max-width: 400px) {
   .echart {
-    height: 160px; /* More square on smaller screens */
+    max-height: 160px; /* Slightly smaller max height on tiny screens */
   }
 
   .modal-title {
@@ -545,10 +547,11 @@ const modalOption = computed(() => createOption(true))
   }
 }
 
-/* Landscape orientation - more square for 3-column layout */
+/* Landscape orientation - keep square aspect ratio */
 @media (max-width: 768px) and (orientation: landscape) {
   .echart {
-    height: 150px; /* Square-ish for 3 columns (~260px wide each on 844px screen) */
+    aspect-ratio: 1 / 1; /* Keep square aspect ratio */
+    max-height: 150px; /* Prevent too tall in landscape */
   }
 
   .modal-title {
