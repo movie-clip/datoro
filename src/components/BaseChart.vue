@@ -151,8 +151,9 @@ const createOption = (isLarge = false) => {
   
   // In modal view with useLegend, show legend at top
   const showLegendAtTop = isLarge && props.useLegend
-  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : (isMobile ? 36 : 44))
-  const bottomPadding = isLarge ? 60 : (isMobile ? 40 : 50)
+  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : (isMobile ? 30 : 44))
+  // Add extra bottom padding if showLegend is enabled (for multi-series charts)
+  const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile ? 45 : 55) : (isMobile ? 28 : 50)
   
   // Build legend selection: only first series (typically 'Total Revenue') selected by default
   // Apply this whenever useLegend is true, not just in modal view
@@ -171,20 +172,35 @@ const createOption = (isLarge = false) => {
       left: 'center', 
       textStyle: { color: '#fff', fontSize: 14 } 
     },
-    // Show legend at top in modal if using legend mode
+    // Legend configuration
     legend: showLegendAtTop ? {
+      // Modal view with useLegend (single-select)
       show: true,
-      type: 'plain', // Use plain instead of scroll for multi-line wrapping
+      type: 'plain',
       orient: 'horizontal',
       top: 10,
       left: 'center',
       textStyle: { color: '#ddd', fontSize: 12 },
-      selectedMode: 'single', // Only one item can be selected at a time (radio button style)
-      selected: legendSelected // Set default selection
-    } : props.useLegend ? {
-      show: false, // Hide legend in compact view, but still apply selection
+      selectedMode: 'single',
       selected: legendSelected
-    } : { show: false },
+    } : props.showLegend ? {
+      // Multi-series legend (all items shown at once, e.g., EPS chart)
+      show: true,
+      type: 'plain',
+      orient: 'horizontal',
+      bottom: 5,
+      left: 'center',
+      textStyle: { color: '#ddd', fontSize: isMobile ? 11 : 12 },
+      selectedMode: 'multiple', // Allow toggling individual series
+      itemGap: isMobile ? 8 : 12
+    } : props.useLegend ? {
+      // Compact view with useLegend - hide legend but apply selection
+      show: false,
+      selected: legendSelected
+    } : { 
+      // No legend
+      show: false 
+    },
     grid: { 
       left: isMobile ? 12 : 24, 
       right: isMobile ? 12 : 24, 

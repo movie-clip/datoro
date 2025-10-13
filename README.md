@@ -1,4 +1,4 @@
-# Finance View
+# Factorly
 
 ![CI Status](https://github.com/movie-clip/finance-view/workflows/CI%2FCD%20Pipeline/badge.svg)
 ![Tests](https://github.com/movie-clip/finance-view/workflows/Pull%20Request%20Checks/badge.svg)

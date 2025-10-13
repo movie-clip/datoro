@@ -1,4 +1,4 @@
-# Copilot Instructions for `finance-view`
+# Copilot Instructions for `Factorly`
 
 ## Project Overview
 - **Stack:** Vue 3 (script setup), Vite, ESM Node.js server (Express), Chart.js, ECharts, FMP (Financial Modeling Prep) API.

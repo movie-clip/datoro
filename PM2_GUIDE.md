@@ -12,10 +12,10 @@
 ┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
 │ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
 ├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
-│ 0  │ finance-view-api   │ cluster  │ 0    │ online    │ 0%       │ 83.2mb   │
-│ 1  │ finance-view-api   │ cluster  │ 0    │ online    │ 0%       │ 83.4mb   │
-│ 2  │ finance-view-api   │ cluster  │ 0    │ online    │ 0%       │ 79.7mb   │
-│ 3  │ finance-view-api   │ cluster  │ 0    │ online    │ 0%       │ 79.8mb   │
+│ 0  │ factorly-api   │ cluster  │ 0    │ online    │ 0%       │ 83.2mb   │
+│ 1  │ factorly-api   │ cluster  │ 0    │ online    │ 0%       │ 83.4mb   │
+│ 2  │ factorly-api   │ cluster  │ 0    │ online    │ 0%       │ 79.7mb   │
+│ 3  │ factorly-api   │ cluster  │ 0    │ online    │ 0%       │ 79.8mb   │
 └────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
 ```
 
@@ -49,7 +49,7 @@ pm2 logs --lines 50
 pm2 logs --err
 
 # Specific instance
-pm2 logs finance-view-api --lines 20
+pm2 logs factorly-api --lines 20
 ```
 
 **Monitor Resources**:
@@ -58,13 +58,13 @@ pm2 logs finance-view-api --lines 20
 pm2 monit
 
 # One-time process info
-pm2 show finance-view-api
+pm2 show factorly-api
 ```
 
 **Stop Application**:
 ```powershell
 # Stop all instances
-pm2 stop finance-view-api
+pm2 stop factorly-api
 
 # Stop specific instance
 pm2 stop 0
@@ -73,10 +73,10 @@ pm2 stop 0
 **Restart Application**:
 ```powershell
 # Graceful restart (zero downtime)
-pm2 reload finance-view-api
+pm2 reload factorly-api
 
 # Hard restart
-pm2 restart finance-view-api
+pm2 restart factorly-api
 
 # Restart specific instance
 pm2 restart 0
@@ -85,7 +85,7 @@ pm2 restart 0
 **Delete Application**:
 ```powershell
 # Remove from PM2 (stops first)
-pm2 delete finance-view-api
+pm2 delete factorly-api
 
 # Delete all
 pm2 delete all
@@ -114,7 +114,7 @@ pm2 start ecosystem.config.cjs --env development
 
 ```powershell
 # Stop any running instances first
-pm2 delete finance-view-api
+pm2 delete factorly-api
 
 # Start in production mode
 pm2 start ecosystem.config.cjs --env production
@@ -152,7 +152,7 @@ pm2 unstartup
 
 ```javascript
 {
-  name: 'finance-view-api',
+  name: 'factorly-api',
   script: './server/server.mjs',
   instances: 4,              // 4 worker processes
   exec_mode: 'cluster',      // Load balancing enabled
@@ -208,7 +208,7 @@ Shows:
 
 **Detailed Process Info**:
 ```powershell
-pm2 show finance-view-api
+pm2 show factorly-api
 ```
 Shows:
 - Uptime
@@ -247,7 +247,7 @@ pm2 set pm2-logrotate:retain 7
 pm2 list
 
 # Detailed metrics
-pm2 show finance-view-api
+pm2 show factorly-api
 
 # Export metrics (JSON)
 pm2 jlist
@@ -287,7 +287,7 @@ choco install redis-64
 REDIS_URL=redis://localhost:6379
 
 # Restart PM2
-pm2 reload finance-view-api
+pm2 reload factorly-api
 ```
 
 ### Memory Management
@@ -334,12 +334,12 @@ git pull
 npm install
 
 # Reload (graceful restart)
-pm2 reload finance-view-api
+pm2 reload factorly-api
 ```
 
 **Hard Restart** (if reload doesn't work):
 ```powershell
-pm2 restart finance-view-api
+pm2 restart factorly-api
 ```
 
 ### Troubleshooting
@@ -365,7 +365,7 @@ pm2 list
 pm2 restart 2  # Replace 2 with high-memory worker ID
 
 # Reload all (graceful)
-pm2 reload finance-view-api
+pm2 reload factorly-api
 ```
 
 **Workers Crashing**:
@@ -377,7 +377,7 @@ pm2 status
 pm2 logs --err
 
 # If max_restarts exceeded, delete and restart
-pm2 delete finance-view-api
+pm2 delete factorly-api
 pm2 start ecosystem.config.cjs --env production
 ```
 
@@ -455,7 +455,7 @@ pm2 start ecosystem.config.cjs --env development
 pm2 logs
 
 # Stop when done
-pm2 stop finance-view-api
+pm2 stop factorly-api
 ```
 
 ### Staging/Testing
@@ -506,16 +506,16 @@ pm2 start ecosystem.config.cjs --env production
 **Memory leak suspected**:
 ```powershell
 # Restart all workers gracefully
-pm2 reload finance-view-api
+pm2 reload factorly-api
 
 # If that doesn't help, hard restart
-pm2 restart finance-view-api
+pm2 restart factorly-api
 ```
 
 **Need to check specific worker**:
 ```powershell
 # Show detailed info
-pm2 show finance-view-api
+pm2 show factorly-api
 
 # Restart just one worker
 pm2 restart 2  # Replace 2 with worker ID
@@ -541,7 +541,7 @@ pm2 restart 2  # Replace 2 with worker ID
 - [ ] Monitor performance: `pm2 monit`
 
 **After Deployment**:
-- [ ] Reload: `pm2 reload finance-view-api`
+- [ ] Reload: `pm2 reload factorly-api`
 - [ ] Check logs: `pm2 logs --err --lines 50`
 - [ ] Verify: `Invoke-RestMethod http://localhost:7071/api/health`
 
@@ -555,3 +555,4 @@ pm2 restart 2  # Replace 2 with worker ID
 **Status**: ✅ PM2 running successfully with 4 workers  
 **Next**: Consider enabling Redis for shared rate limiting  
 **Monitoring**: http://localhost:7071/api/health
+

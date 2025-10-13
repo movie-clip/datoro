@@ -47,11 +47,11 @@ function handleImageError(event) {
         <!-- Replace /logo.svg with your icon path: /logo.png, /logo.jpg, etc. -->
         <img 
           src="/logo.png" 
-          alt="Kazoku Logo" 
+          alt="Factorly Logo" 
           class="brand-logo"
           @error="handleImageError"
         >
-        <span class="brand">Kazoku</span>
+        <span class="brand">Factorly</span>
       </h1>
     </header>
 

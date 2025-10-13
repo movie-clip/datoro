@@ -3,7 +3,7 @@
 
 module.exports = {
   apps: [{
-    name: 'finance-view-api',
+    name: 'factorly-api',
     script: './server/server.mjs',
     
     // Cluster mode: run multiple instances
