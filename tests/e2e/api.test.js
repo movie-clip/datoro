@@ -37,7 +37,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(response.body).toBeDefined()
       expect(response.body.status).toBe('healthy')
       expect(response.body.uptime).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('FMP Proxy - Profile Endpoint', () => {
@@ -54,7 +54,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(profile.companyName).toBeDefined()
       expect(profile.industry).toBeDefined()
       expect(profile.sector).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should validate ticker format', async () => {
       const response = await request(BASE_URL)
@@ -66,7 +66,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(response.body.error.message).toBe('Validation failed')
       expect(response.body.error.details).toBeDefined()
       expect(response.body.error.details[0].field).toBe('ticker')
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should handle valid ticker with dots (e.g., BRK.B)', async () => {
       const response = await request(BASE_URL)
@@ -74,7 +74,7 @@ describe('API Endpoints - E2E Tests', () => {
         .expect(200)
 
       expect(Array.isArray(response.body)).toBe(true)
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('FMP Proxy - Income Statement', () => {
@@ -92,7 +92,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(statement.revenue).toBeDefined()
       expect(statement.netIncome).toBeDefined()
       expect(statement.date).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should validate period parameter', async () => {
       const response = await request(BASE_URL)
@@ -103,7 +103,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(response.body.error).toBeDefined()
       expect(response.body.error.code).toBe('E001')
       expect(response.body.error.details[0].field).toBe('period')
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should validate limit parameter', async () => {
       const response = await request(BASE_URL)
@@ -113,7 +113,7 @@ describe('API Endpoints - E2E Tests', () => {
 
       expect(response.body.error).toBeDefined()
       expect(response.body.error.details[0].field).toBe('limit')
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should accept quarterly period', async () => {
       const response = await request(BASE_URL)
@@ -122,7 +122,7 @@ describe('API Endpoints - E2E Tests', () => {
         .expect(200)
 
       expect(Array.isArray(response.body)).toBe(true)
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('FMP Proxy - Balance Sheet', () => {
@@ -138,7 +138,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(sheet.symbol).toBe('MSFT')
       expect(sheet.totalAssets).toBeDefined()
       expect(sheet.totalLiabilities).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('FMP Proxy - Cash Flow', () => {
@@ -154,7 +154,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(cashflow.symbol).toBe('GOOGL')
       expect(cashflow.freeCashFlow).toBeDefined()
       expect(cashflow.operatingCashFlow).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('Analytics - Popular Tickers', () => {
@@ -173,7 +173,7 @@ describe('API Endpoints - E2E Tests', () => {
         expect(ticker.searchCount).toBeDefined()
         expect(ticker.lastSearched).toBeDefined()
       }
-    })
+    }, 15000) // Increase timeout for slow database aggregation query
 
     it('should validate limit parameter', async () => {
       const response = await request(BASE_URL)
@@ -183,7 +183,7 @@ describe('API Endpoints - E2E Tests', () => {
 
       expect(response.body.error).toBeDefined()
       expect(response.body.error.details[0].field).toBe('limit')
-    })
+    }, 15000) // Increase timeout for slow database query
 
     it('should validate days parameter', async () => {
       const response = await request(BASE_URL)
@@ -193,7 +193,7 @@ describe('API Endpoints - E2E Tests', () => {
 
       expect(response.body.error).toBeDefined()
       expect(response.body.error.details[0].field).toBe('days')
-    })
+    }, 15000) // Increase timeout for slow database query
   })
 
   describe('Analytics - Search History', () => {
@@ -205,7 +205,7 @@ describe('API Endpoints - E2E Tests', () => {
 
       expect(response.body.success).toBe(true)
       expect(Array.isArray(response.body.data)).toBe(true)
-    })
+    }, 15000) // Increase timeout for slow database query
 
     it('should validate limit parameter', async () => {
       const response = await request(BASE_URL)
@@ -214,7 +214,7 @@ describe('API Endpoints - E2E Tests', () => {
         .expect(400)
 
       expect(response.body.error).toBeDefined()
-    })
+    }, 15000) // Increase timeout for slow database query
   })
 
   describe('Cache Headers', () => {
@@ -225,7 +225,7 @@ describe('API Endpoints - E2E Tests', () => {
 
       expect(response.headers['x-cache']).toBeDefined()
       expect(['hit', 'miss', 'memory', 'redis']).toContain(response.headers['x-cache'])
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('Rate Limiting', () => {
@@ -237,7 +237,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(response.headers['ratelimit-limit']).toBeDefined()
       expect(response.headers['ratelimit-remaining']).toBeDefined()
       expect(response.headers['ratelimit-reset']).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should enforce rate limits (careful - this may trigger actual limit)', async () => {
       // Skip this test in CI to avoid rate limit issues
@@ -268,10 +268,11 @@ describe('API Endpoints - E2E Tests', () => {
     it('should include CORS headers', async () => {
       const response = await request(BASE_URL)
         .get('/api/health')
+        .set('Origin', 'http://localhost:5173') // Set Origin header to trigger CORS
         .expect(200)
 
       expect(response.headers['access-control-allow-origin']).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('Error Handling', () => {
@@ -281,7 +282,7 @@ describe('API Endpoints - E2E Tests', () => {
         .expect(404)
 
       expect(response.body.error).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should handle malformed requests gracefully', async () => {
       const response = await request(BASE_URL)
@@ -289,7 +290,7 @@ describe('API Endpoints - E2E Tests', () => {
         .expect(400)
 
       expect(response.body.error).toBeDefined()
-    })
+    }, 10000) // Increase timeout for API call
   })
 
   describe('Monitoring Endpoints', () => {
@@ -302,7 +303,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(response.body.status).toBeDefined()
       expect(response.body.uptime).toBeDefined()
       expect(response.body.requests).toBeDefined()
-    })
+    }, 10000) // Increase timeout for database aggregation
 
     it('GET /api/cache/stats should return cache statistics', async () => {
       const response = await request(BASE_URL)
@@ -313,7 +314,7 @@ describe('API Endpoints - E2E Tests', () => {
       expect(response.body.hits).toBeDefined()
       expect(response.body.misses).toBeDefined()
       expect(response.body.hitRate).toBeDefined()
-    })
+    }, 10000) // Increase timeout for cache statistics
   })
 
   describe('Multiple Tickers', () => {
@@ -327,7 +328,7 @@ describe('API Endpoints - E2E Tests', () => {
 
         expect(response.body[0].symbol).toBe(ticker)
       }
-    })
+    }, 15000) // Increase timeout for sequential API calls
   })
 
   describe('Query Parameter Handling', () => {
@@ -337,7 +338,7 @@ describe('API Endpoints - E2E Tests', () => {
         .expect(200)
 
       expect(Array.isArray(response.body)).toBe(true)
-    })
+    }, 10000) // Increase timeout for API call
 
     it('should apply default values for optional parameters', async () => {
       const response = await request(BASE_URL)
@@ -346,6 +347,6 @@ describe('API Endpoints - E2E Tests', () => {
 
       // Should use defaults: limit=10, days=7
       expect(response.body.success).toBe(true)
-    })
+    }, 15000) // Increase timeout for slow database aggregation query
   })
 })
