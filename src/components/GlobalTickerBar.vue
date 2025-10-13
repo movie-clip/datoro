@@ -192,4 +192,53 @@ watch(() => model.value, (newVal) => {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .toolbar {
+    gap: 8px;
+  }
+
+  .ticker-input-section {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .label {
+    font-size: 11px;
+  }
+
+  .input {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .error-message {
+    font-size: 10px;
+    margin-left: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .ticker-input-section {
+    width: 100%;
+  }
+
+  .input {
+    min-width: 0; /* Allow input to shrink */
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
 </style>

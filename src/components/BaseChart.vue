@@ -119,10 +119,13 @@ const yFormatter = (v, mode) => {
 }
 
 const createOption = (isLarge = false) => {
+  // Detect mobile device
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+  
   // In modal view with useLegend, show legend at top
   const showLegendAtTop = isLarge && props.useLegend
-  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : 44)
-  const bottomPadding = isLarge ? 60 : 50
+  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : (isMobile ? 36 : 44))
+  const bottomPadding = isLarge ? 60 : (isMobile ? 40 : 50)
   
   // Build legend selection: only first series (typically 'Total Revenue') selected by default
   // Apply this whenever useLegend is true, not just in modal view
@@ -156,14 +159,17 @@ const createOption = (isLarge = false) => {
       selected: legendSelected
     } : { show: false },
     grid: { 
-      left: 24, 
-      right: 24, 
+      left: isMobile ? 12 : 24, 
+      right: isMobile ? 12 : 24, 
       top: topPadding, 
       bottom: bottomPadding, 
       containLabel: true 
     },
     tooltip: { 
       trigger: 'axis',
+      confine: isMobile, // Keep tooltip within chart bounds on mobile
+      triggerOn: isMobile ? 'click' : 'mousemove|click', // Tap to show on mobile
+      position: isMobile ? 'top' : undefined, // Fixed position on mobile
       formatter: props.dualAxis ? (params) => {
         if (!params || params.length === 0) return ''
         const date = new Date(params[0].value[0]).toLocaleDateString()
@@ -183,7 +189,12 @@ const createOption = (isLarge = false) => {
     xAxis: {
       type: 'time', 
       boundaryGap: props.kind === 'bar' || props.dualAxis ? true : false,
-      axisLabel: { color: '#ddd', fontSize: isLarge ? 14 : 12 },
+      axisLabel: { 
+        color: '#ddd', 
+        fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
+        rotate: isMobile && !isLarge ? 45 : 0, // Rotate labels on mobile for better fit
+        hideOverlap: true // Hide overlapping labels
+      },
       axisLine: { lineStyle: { color: '#aaa' } },
       splitLine: { show: false }
     },
@@ -195,7 +206,7 @@ const createOption = (isLarge = false) => {
         position: 'left',
         axisLabel: { 
           color: '#ddd', 
-          fontSize: isLarge ? 14 : 12,
+          fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
           formatter: (val) => yFormatter(val, props.yFormat) 
         },
         axisLine: { lineStyle: { color: '#aaa' } },
@@ -220,7 +231,7 @@ const createOption = (isLarge = false) => {
         splitNumber: 4, // Force 4 split lines for better centering
         axisLabel: { 
           color: '#ddd', 
-          fontSize: isLarge ? 14 : 12,
+          fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
           formatter: (val) => {
             if (Math.abs(val) >= 1000) {
               return (val / 1000).toFixed(1) + 'K'
@@ -263,12 +274,20 @@ const createOption = (isLarge = false) => {
       },
       axisLabel: { 
         color: '#ddd', 
-        fontSize: isLarge ? 14 : 12,
+        fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
         formatter: (val) => yFormatter(val, props.yFormat) 
       },
       axisLine: { lineStyle: { color: '#aaa' } },
       splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
     },
+  }
+  
+  // Mobile-specific touch enhancements
+  if (isMobile && !isLarge) {
+    base.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.85)'
+    base.tooltip.borderColor = '#666'
+    base.tooltip.textStyle = { fontSize: 12 }
+    base.tooltip.padding = 8
   }
 
   // Use compactSeries for compact view if provided, otherwise use series
@@ -442,5 +461,71 @@ const modalOption = computed(() => createOption(true))
 
 .loading-chart {
   opacity: 0.5;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  /* Reduce chart height on mobile for 2-column layout */
+  .echart {
+    height: 220px;
+  }
+
+  /* Smaller expand hint on mobile */
+  .expand-hint {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    top: 4px;
+    right: 4px;
+  }
+
+  /* Modal takes more screen space on mobile */
+  .echart-modal {
+    height: 60vh;
+    min-height: 300px;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    margin: 0 0 12px 0;
+  }
+
+  /* Stack view mode buttons on very small screens */
+  .view-mode-buttons {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .view-mode-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 400px) {
+  .echart {
+    height: 200px;
+  }
+
+  .modal-title {
+    font-size: 16px;
+  }
+
+  .view-mode-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+
+/* Landscape orientation - smaller height for 3-column layout */
+@media (max-width: 768px) and (orientation: landscape) {
+  .echart {
+    height: 180px;
+  }
+
+  .modal-title {
+    font-size: 16px;
+  }
 }
 </style>

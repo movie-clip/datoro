@@ -241,4 +241,92 @@ watch(() => props.ticker, () => {
   color: #888;
   font-size: 14px;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .company-header {
+    padding: 8px 12px;
+    gap: 10px;
+  }
+
+  .company-logo,
+  .company-logo-placeholder {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .company-name {
+    font-size: 14px;
+  }
+
+  .current-price {
+    font-size: 18px;
+  }
+
+  .price-change {
+    font-size: 13px;
+  }
+
+  .earnings-label {
+    font-size: 10px;
+  }
+
+  .earnings-date {
+    font-size: 13px;
+  }
+
+  .bottom-row {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .company-header {
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .company-logo,
+  .company-logo-placeholder {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .company-name {
+    font-size: 13px;
+  }
+
+  .current-price {
+    font-size: 16px;
+  }
+
+  .price-change {
+    font-size: 12px;
+  }
+
+  .earnings-section {
+    display: none; /* Hide earnings on very small screens to save space */
+  }
+}
+
+/* Landscape mode - show earnings again, more horizontal space */
+@media (max-width: 768px) and (orientation: landscape) {
+  .company-header {
+    padding: 6px 12px;
+  }
+
+  .earnings-section {
+    display: flex; /* Show earnings in landscape */
+  }
+
+  .company-name {
+    font-size: 13px;
+  }
+
+  .current-price {
+    font-size: 17px;
+  }
+}
 </style>

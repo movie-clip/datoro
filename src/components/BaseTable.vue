@@ -136,4 +136,44 @@ defineProps({
   background: rgba(255, 107, 107, 0.2);
   border-color: #ff8787;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .head {
+    font-size: 14px;
+    padding: 6px 0;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    width: 140px;
+  }
+
+  .error-container {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .retry-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 400px) {
+  .data-table th,
+  .data-table td {
+    padding: 6px 4px;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    width: 120px;
+  }
+}
 </style>
