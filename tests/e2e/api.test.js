@@ -1,5 +1,11 @@
 // tests/e2e/api.test.js
 // End-to-end tests for API endpoints
+// 
+// ⚠️  REQUIRES SERVER RUNNING
+// Before running these tests, start the server:
+//   npm run server  (or)  npm run pm2:dev
+// 
+// Run with: npm run test:e2e
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import request from 'supertest'
@@ -15,10 +21,33 @@ config({ path: join(__dirname, '..', '..', '.env.local') })
 // Base URL for API tests
 const BASE_URL = process.env.TEST_API_URL || 'http://localhost:7071'
 
+// Check if server is running before running tests
+async function checkServerRunning() {
+  try {
+    const response = await request(BASE_URL).get('/api/health').timeout(2000)
+    return response.status === 200
+  } catch (error) {
+    return false
+  }
+}
+
 describe('API Endpoints - E2E Tests', () => {
   beforeAll(async () => {
     console.log('\n🌐 Starting E2E API Tests...')
     console.log(`📍 Testing against: ${BASE_URL}\n`)
+    
+    // Check if server is running
+    const isServerRunning = await checkServerRunning()
+    if (!isServerRunning) {
+      console.log('❌ Server is not running!')
+      console.log('   Start the server first:')
+      console.log('     npm run server  (or)')
+      console.log('     npm run pm2:dev')
+      console.log('')
+      throw new Error('Server not running - cannot run E2E tests')
+    }
+    
+    console.log('✅ Server is running - proceeding with tests\n')
   })
 
   afterAll(async () => {

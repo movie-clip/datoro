@@ -17,14 +17,24 @@ let prisma;
 /**
  * Get or create Prisma client instance
  * 
- * Connection pooling configured for optimal performance:
- * - connection_limit: Max concurrent connections
- * - pool_timeout: Max time to wait for connection (seconds)
- * - connect_timeout: Initial connection timeout (seconds)
+ * ⚡ OPTIMIZED CONNECTION POOLING FOR PM2 CLUSTER MODE (4 workers)
  * 
- * Recommended for Supabase:
- * - Free tier: connection_limit=5
- * - Paid tier: connection_limit=10-20 depending on plan
+ * Connection pooling parameters (set in DATABASE_URL):
+ * - connection_limit: Max concurrent connections per worker
+ *   • Supabase Free (60 total): 14 per worker (56 + 4 buffer)
+ *   • Supabase Paid (200+ total): 45 per worker (180 + 20 buffer)
+ *   • Render PostgreSQL (97 total): 22 per worker (88 + 9 buffer)
+ * 
+ * - pool_timeout: 10s (max wait for available connection)
+ * - connect_timeout: 5s (initial connection timeout)
+ * - statement_timeout: 10000ms (max query execution time)
+ * 
+ * Query Timeout Strategy:
+ * - Standard queries: 5s (user operations, real-time data)
+ * - Analytics queries: 10s (popular tickers, search history)
+ * - Batch operations: 30s (migrations, data processing)
+ * 
+ * 📖 Full documentation: docs/DATABASE_OPTIMIZATION.md
  */
 export function getPrismaClient() {
   if (!prisma) {
@@ -32,8 +42,8 @@ export function getPrismaClient() {
       log: process.env.NODE_ENV === 'development' 
         ? ['query', 'error', 'warn'] 
         : ['error'],
-      // Connection pool configuration
-      // Set these in DATABASE_URL: ?connection_limit=10&pool_timeout=10&connect_timeout=5
+      // Connection pool and timeout configuration
+      // All parameters should be in DATABASE_URL connection string
       datasources: {
         db: {
           url: process.env.DATABASE_URL
@@ -47,6 +57,45 @@ export function getPrismaClient() {
     });
   }
   return prisma;
+}
+
+/**
+ * Query timeout configuration helper
+ * 
+ * PostgreSQL statement_timeout is set globally in DATABASE_URL (default: 10s).
+ * For operations that need different timeouts, use these wrappers.
+ * 
+ * Note: These require raw query execution. Most operations should use
+ * the global timeout set in DATABASE_URL connection string.
+ */
+const QueryTimeout = {
+  FAST: 5000,      // 5s - User operations, real-time data
+  STANDARD: 10000, // 10s - Analytics, popular tickers (default in DATABASE_URL)
+  SLOW: 30000      // 30s - Batch operations, migrations
+};
+
+/**
+ * Execute query with custom timeout (for special cases only)
+ * Most queries should use the default timeout from DATABASE_URL
+ * 
+ * @param {Function} queryFn - Async function that executes the query
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @returns {Promise<any>} Query result
+ */
+async function executeWithTimeout(queryFn, timeoutMs = QueryTimeout.STANDARD) {
+  const db = getPrismaClient();
+  
+  try {
+    // Set transaction-level timeout
+    await db.$executeRaw`SET LOCAL statement_timeout = ${timeoutMs}`;
+    return await queryFn(db);
+  } catch (error) {
+    if (error.message?.includes('statement timeout')) {
+      console.error(`[Database] Query timeout after ${timeoutMs}ms:`, error.message);
+      throw new Error(`Database query exceeded ${timeoutMs}ms timeout. Try optimizing the query or adding indexes.`);
+    }
+    throw error;
+  }
 }
 
 // ============================================
