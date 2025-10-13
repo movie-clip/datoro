@@ -26,7 +26,7 @@ async function checkServerRunning() {
   try {
     const response = await request(BASE_URL).get('/api/health').timeout(2000)
     return response.status === 200
-  } catch (error) {
+  } catch {
     return false
   }
 }

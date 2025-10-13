@@ -78,11 +78,14 @@ const QueryTimeout = {
  * Execute query with custom timeout (for special cases only)
  * Most queries should use the default timeout from DATABASE_URL
  * 
+ * TODO: Integrate this into high-risk queries (analytics endpoints, batch operations)
+ * 
  * @param {Function} queryFn - Async function that executes the query
  * @param {number} timeoutMs - Timeout in milliseconds
  * @returns {Promise<any>} Query result
  */
-async function executeWithTimeout(queryFn, timeoutMs = QueryTimeout.STANDARD) {
+// eslint-disable-next-line no-unused-vars
+async function _executeWithTimeout(queryFn, timeoutMs = QueryTimeout.STANDARD) {
   const db = getPrismaClient();
   
   try {
