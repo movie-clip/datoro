@@ -1,24 +1,43 @@
 
 <template>
   <div style="position:relative; min-height:240px;">
-    <div v-if="loading && series.length === 0" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
+    <div
+      v-if="loading && series.length === 0"
+      class="spinner"
+      aria-live="polite"
+      aria-busy="true"
+      tabindex="0"
+    >
+      Loading…
+    </div>
     <BaseChart
       v-else
       :key="`revenue-${ticker}`"
       :title="title"
       :series="series"
-      :compactSeries="compactSeries"
+      :compact-series="compactSeries"
       kind="bar"
-      yFormat="short"
+      y-format="short"
       :loading="loading"
       aria-label="Revenue chart"
-      :selectedSegments="selectedSegments"
-      :viewModeOptions="viewModeOptions"
-      @update:selectedSegments="selectedSegments = $event"
+      :selected-segments="selectedSegments"
+      :view-mode-options="viewModeOptions"
+      @update:selected-segments="selectedSegments = $event"
       @modal-closed="resetSelection"
     />
-    <p v-if="error" class="msg error" role="alert">{{ error }}</p>
-    <p v-else-if="message" class="msg">{{ message }}</p>
+    <p
+      v-if="error"
+      class="msg error"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="message"
+      class="msg"
+    >
+      {{ message }}
+    </p>
   </div>
 </template>
 

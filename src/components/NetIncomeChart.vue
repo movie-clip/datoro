@@ -1,20 +1,39 @@
 <template>
   <div style="position:relative; min-height:240px;">
-    <div v-if="loading && series.length === 0" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
+    <div
+      v-if="loading && series.length === 0"
+      class="spinner"
+      aria-live="polite"
+      aria-busy="true"
+      tabindex="0"
+    >
+      Loading…
+    </div>
     <BaseChart
       v-else
       :key="`netincome-${ticker}`"
+      v-model:period="period"
       :title="title"
       :series="series"
       kind="bar"
-      yFormat="currency"
+      y-format="currency"
       :loading="loading"
       aria-label="Net Income chart"
-      :periodOptions="viewModeOptions"
-      v-model:period="period"
+      :period-options="viewModeOptions"
     />
-    <p v-if="error" class="msg error" role="alert">{{ error }}</p>
-    <p v-else-if="message" class="msg">{{ message }}</p>
+    <p
+      v-if="error"
+      class="msg error"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="message"
+      class="msg"
+    >
+      {{ message }}
+    </p>
   </div>
 </template>
 

@@ -1,6 +1,5 @@
 // Test compression bandwidth savings
 import fetch from 'node-fetch';
-import zlib from 'zlib';
 
 const API_URL = 'http://localhost:7071';
 

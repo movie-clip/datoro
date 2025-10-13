@@ -1,9 +1,14 @@
 <template>
   <section class="table-panel">
-    <div class="head">{{ title }}</div>
+    <div class="head">
+      {{ title }}
+    </div>
     
     <!-- Skeleton loader -->
-    <div v-if="loading" class="skeleton-rows">
+    <div
+      v-if="loading"
+      class="skeleton-rows"
+    >
       <SkeletonLoader 
         v-for="i in 5" 
         :key="i" 
@@ -12,9 +17,20 @@
       />
     </div>
     
-    <div v-else-if="error" class="error-container" role="alert" aria-live="assertive">
-      <p class="error">{{ error }}</p>
-      <button v-if="onRetry" class="retry-btn" @click="onRetry">
+    <div
+      v-else-if="error"
+      class="error-container"
+      role="alert"
+      aria-live="assertive"
+    >
+      <p class="error">
+        {{ error }}
+      </p>
+      <button
+        v-if="onRetry"
+        class="retry-btn"
+        @click="onRetry"
+      >
         ↻ Retry
       </button>
     </div>
@@ -26,9 +42,16 @@
       tabindex="0"
     >
       <tbody>
-        <tr v-for="row in rows" :key="row.label">
-          <th scope="row">{{ row.label }}</th>
-          <td :style="row.color ? { color: row.color, fontWeight: '600' } : {}">{{ row.value }}</td>
+        <tr
+          v-for="row in rows"
+          :key="row.label"
+        >
+          <th scope="row">
+            {{ row.label }}
+          </th>
+          <td :style="row.color ? { color: row.color, fontWeight: '600' } : {}">
+            {{ row.value }}
+          </td>
         </tr>
       </tbody>
     </table>

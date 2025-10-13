@@ -1,26 +1,44 @@
 <template>
   <div class="toolbar">
-    <div class="ticker-input-section" :class="{ 'has-error': validationError }">
-      <label class="label" for="ticker">Ticker</label>
+    <div
+      class="ticker-input-section"
+      :class="{ 'has-error': validationError }"
+    >
+      <label
+        class="label"
+        for="ticker"
+      >Ticker</label>
       <div class="input-wrapper">
         <input
           id="ticker"
-          class="input"
           v-model.trim="localInput"
+          class="input"
           type="text"
           placeholder="e.g., AAPL"
           maxlength="10"
-          @keyup.enter="handleSubmit"
-          @input="validateInput"
           :aria-invalid="!!validationError"
           :aria-describedby="validationError ? 'ticker-error' : undefined"
-        />
-        <span v-if="validationError" class="error-icon" title="Invalid ticker">⚠️</span>
+          @keyup.enter="handleSubmit"
+          @input="validateInput"
+        >
+        <span
+          v-if="validationError"
+          class="error-icon"
+          title="Invalid ticker"
+        >⚠️</span>
       </div>
-      <button class="btn" @click="handleSubmit" :disabled="!!validationError">
+      <button
+        class="btn"
+        :disabled="!!validationError"
+        @click="handleSubmit"
+      >
         Search
       </button>
-      <span v-if="validationError" id="ticker-error" class="error-message">
+      <span
+        v-if="validationError"
+        id="ticker-error"
+        class="error-message"
+      >
         {{ validationError }}
       </span>
     </div>
@@ -28,7 +46,7 @@
     <CompanyHeader 
       v-if="confirmedTicker" 
       :ticker="confirmedTicker" 
-      @update:companyName="$emit('update:companyName', $event)"
+      @update:company-name="$emit('update:companyName', $event)"
     />
   </div>
 </template>
@@ -37,6 +55,8 @@
 import { ref, watch } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
 
+// Props used in template (ESLint can't detect template usage)
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   confirmedTicker: { type: String, default: '' }
 })

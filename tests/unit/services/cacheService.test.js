@@ -390,7 +390,7 @@ describe('Cache Service', () => {
       const fetchFn = vi.fn().mockResolvedValue(freshValue);
 
       // First call - should fetch
-      const result1 = await cache.getOrFetch(key, fetchFn, 3600);
+      await cache.getOrFetch(key, fetchFn, 3600);
       expect(fetchFn).toHaveBeenCalledTimes(1);
 
       // Second call - should use cache

@@ -69,7 +69,7 @@ export const createError = {
  * Can accept monitoring service for tracking
  */
 export function errorHandler(monitoringService = null) {
-  return (err, req, res, next) => {
+  return (err, req, res) => {
     // Default to 500 if not specified
     const statusCode = err.statusCode || 500;
     const code = err.code || ErrorCodes.INTERNAL_ERROR;

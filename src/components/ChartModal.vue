@@ -1,9 +1,22 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click="close">
-        <div class="modal-container" @click.stop>
-          <button class="close-btn" @click="close" aria-label="Close">×</button>
+      <div
+        v-if="isOpen"
+        class="modal-overlay"
+        @click="close"
+      >
+        <div
+          class="modal-container"
+          @click.stop
+        >
+          <button
+            class="close-btn"
+            aria-label="Close"
+            @click="close"
+          >
+            ×
+          </button>
           <div class="modal-content">
             <slot />
           </div>

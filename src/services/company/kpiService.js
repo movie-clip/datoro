@@ -7,10 +7,6 @@ function fmtPct(n) {
   if (Math.abs(v) >= 100) return v.toFixed(0) + '%'
   return v.toFixed(2) + '%'
 }
-function fmtRatio(n) {
-  if (n == null || !Number.isFinite(n)) return '—'
-  return n >= 100 ? n.toFixed(0) : n.toFixed(2)
-}
 function pick(obj, keys = []) {
   for (const k of keys) {
     const v = Number(obj?.[k])
@@ -42,9 +38,6 @@ async function getMetricAll(t) {
 }
 async function getFinancials(t, statement, freq) {
   return jget(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=${statement}&freq=${freq}`)
-}
-async function getEpsEstimatesAnnual(t) {
-  return jget(`/api/finnhub/stock/eps-estimate?symbol=${encodeURIComponent(t)}&freq=annual`)
 }
 
 /* -----------------------------------------------

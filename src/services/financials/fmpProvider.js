@@ -284,7 +284,8 @@ async function getRevenueSeries(ticker, period = 'annual') {
   }
 }
 
-async function getRevenueSegments(ticker, period = 'annual') {
+// eslint-disable-next-line no-unused-vars
+async function getRevenueSegments(ticker, _period = 'annual') {
   const t = (ticker || '').trim().toUpperCase()
   if (!t) return { data: { segments: [], series: {} }, error: 'No ticker provided' }
   

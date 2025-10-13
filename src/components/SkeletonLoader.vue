@@ -1,6 +1,10 @@
 <template>
-  <div class="skeleton-loader" :class="variant" :style="customStyle">
-    <div class="skeleton-shimmer"></div>
+  <div
+    class="skeleton-loader"
+    :class="variant"
+    :style="customStyle"
+  >
+    <div class="skeleton-shimmer" />
   </div>
 </template>
 

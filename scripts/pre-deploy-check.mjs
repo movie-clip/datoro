@@ -92,7 +92,7 @@ try {
   execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
   checks.passed.push('Production Build');
   console.log('✅ Production Build successful');
-} catch (error) {
+} catch {
   checks.failed.push({ name: 'Production Build', error: 'Build failed' });
   console.log('❌ Production Build failed');
 }
@@ -103,7 +103,7 @@ try {
   execSync('npx prisma validate', { cwd: rootDir, stdio: 'pipe' });
   checks.passed.push('Prisma Schema');
   console.log('✅ Prisma Schema valid');
-} catch (error) {
+} catch {
   checks.failed.push({ name: 'Prisma Schema', error: 'Invalid schema' });
   console.log('❌ Prisma Schema invalid');
 }
@@ -141,7 +141,7 @@ try {
     checks.passed.push('Git Clean');
     console.log('✅ No uncommitted changes');
   }
-} catch (error) {
+} catch {
   warn('Git Status', 'Could not check git status');
 }
 
@@ -154,7 +154,7 @@ try {
   } else {
     warn('GitHub Remote', 'Not using GitHub. Render.com works best with GitHub.');
   }
-} catch (error) {
+} catch {
   warn('GitHub Remote', 'No remote repository configured. Run: git remote add origin <url>');
 }
 

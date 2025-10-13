@@ -7,7 +7,7 @@
     :message="message"
     kind="mixed"
     :dual-axis="true"
-    :barMaxWidth="40"
+    :bar-max-width="40"
   />
 </template>
 

@@ -4,37 +4,65 @@
       <h3>{{ title }}</h3>
       <button 
         v-if="!loading && data" 
-        @click="refresh" 
-        class="refresh-btn"
+        class="refresh-btn" 
         title="Refresh analysis"
+        @click="refresh"
       >
         ↻
       </button>
     </div>
     
-    <div v-if="loading" class="loading">
-      <div class="loading-spinner"></div>
+    <div
+      v-if="loading"
+      class="loading"
+    >
+      <div class="loading-spinner" />
       <p>Analyzing...</p>
     </div>
     
-    <div v-else-if="error" class="error">
+    <div
+      v-else-if="error"
+      class="error"
+    >
       <p>{{ error }}</p>
-      <button @click="refresh" class="retry-btn">Try Again</button>
+      <button
+        class="retry-btn"
+        @click="refresh"
+      >
+        Try Again
+      </button>
     </div>
     
-    <div v-else-if="data" class="content">
-      <div class="analysis-text" v-html="formattedData"></div>
+    <div
+      v-else-if="data"
+      class="content"
+    >
+      <div
+        class="analysis-text"
+        v-html="formattedData"
+      />
       <div class="footer-info">
-        <div v-if="cached" class="cache-indicator" title="Loaded from cache">
+        <div
+          v-if="cached"
+          class="cache-indicator"
+          title="Loaded from cache"
+        >
           📌 Cached (expires in {{ daysUntilExpiry }} days)
         </div>
-        <div v-if="provider" class="provider-indicator" :title="`Using ${provider === 'ollama' ? 'local Ollama' : 'OpenAI API'}`">
+        <div
+          v-if="provider"
+          class="provider-indicator"
+          :title="`Using ${provider === 'ollama' ? 'local Ollama' : 'OpenAI API'}`"
+        >
           🤖 {{ provider === 'ollama' ? 'Ollama' : 'OpenAI' }}
         </div>
       </div>
     </div>
     
-    <div v-else class="empty">
+    <div
+      v-else
+      class="empty"
+    >
       <p>AI analysis temporarily disabled</p>
     </div>
   </section>
@@ -42,7 +70,9 @@
 
 <script setup>
 import { ref, watch, toRef, computed } from 'vue'
-import { getCompetitiveAdvantages, getInvestmentRisks } from '../services/ai/chatgptService'
+// AI features temporarily disabled - keeping imports for future use
+// eslint-disable-next-line no-unused-vars
+import { getCompetitiveAdvantages as _getCompetitiveAdvantages, getInvestmentRisks as _getInvestmentRisks } from '../services/ai/chatgptService'
 
 const props = defineProps({
   ticker: { type: String, required: true },
@@ -96,7 +126,9 @@ const daysUntilExpiry = computed(() => {
   return 30
 })
 
-async function fetchAnalysis(clearCache = false) {
+// AI feature temporarily disabled - parameter marked as unused
+// eslint-disable-next-line no-unused-vars
+async function fetchAnalysis(_clearCache = false) {
   // AI feature disabled - show message without making API call
   const t = (tickerRef.value || '').trim().toUpperCase()
   if (!t) {

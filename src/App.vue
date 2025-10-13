@@ -50,48 +50,91 @@ function handleImageError(event) {
           alt="Kazoku Logo" 
           class="brand-logo"
           @error="handleImageError"
-        />
+        >
         <span class="brand">Kazoku</span>
       </h1>
     </header>
 
-    <section class="panel" style="max-width: 900px; margin: 0 auto;">
+    <section
+      class="panel"
+      style="max-width: 900px; margin: 0 auto;"
+    >
       <GlobalTickerBar 
         v-model="inputTicker"
-        :confirmedTicker="ticker"
+        :confirmed-ticker="ticker"
         @submit="applyTicker" 
-        @update:companyName="companyName = $event"
+        @update:company-name="companyName = $event"
       />
     </section>
 
     <!-- Info cards: 4 tables in a row -->
     <section class="info-grid">
-      <section class="panel"><ValuationTable :ticker="ticker" /></section>
-      <section class="panel"><CashFlowTable :ticker="ticker" /></section>
-      <section class="panel"><MarginsGrowthTable :ticker="ticker" /></section>
-      <section class="panel"><BalanceTable :ticker="ticker" /></section>
+      <section class="panel">
+        <ValuationTable :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <CashFlowTable :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <MarginsGrowthTable :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <BalanceTable :ticker="ticker" />
+      </section>
     </section>
 
     <!-- Charts: 12 charts -->
     <section class="charts">
-      <section class="panel"><PriceChart          :ticker="ticker" /></section>
-      <section class="panel"><RevenueChart        :ticker="ticker" /></section>
-      <section class="panel"><NetIncomeChart      :ticker="ticker" /></section>
-      <section class="panel"><FcfChart            :ticker="ticker" /></section>
-      <section class="panel"><EpsChart            :ticker="ticker" /></section>
-      <section class="panel"><EbitdaChart         :ticker="ticker" /></section>
-      <section class="panel"><ExpensesChart       :ticker="ticker" /></section>
-      <section class="panel"><CashDebtChart       :ticker="ticker" /></section>
-      <section class="panel"><SharesChart         :ticker="ticker" /></section>
-      <section class="panel"><CapitalReturnedChart :ticker="ticker" /></section>
-      <section class="panel"><DividendYieldChart  :ticker="ticker" /></section>
-      <section class="panel"><InsiderTradingChart :ticker="ticker" /></section>
+      <section class="panel">
+        <PriceChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <RevenueChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <NetIncomeChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <FcfChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <EpsChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <EbitdaChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <ExpensesChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <CashDebtChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <SharesChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <CapitalReturnedChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <DividendYieldChart :ticker="ticker" />
+      </section>
+      <section class="panel">
+        <InsiderTradingChart :ticker="ticker" />
+      </section>
     </section>
 
     <!-- AI Analysis: 2 panels in a row -->
     <section class="ai-analysis-grid">
-      <AIAnalysisPanel :ticker="ticker" :companyName="companyName" type="advantages" />
-      <AIAnalysisPanel :ticker="ticker" :companyName="companyName" type="risks" />
+      <AIAnalysisPanel
+        :ticker="ticker"
+        :company-name="companyName"
+        type="advantages"
+      />
+      <AIAnalysisPanel
+        :ticker="ticker"
+        :company-name="companyName"
+        type="risks"
+      />
     </section>
   </main>
 </template>

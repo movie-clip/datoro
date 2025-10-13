@@ -6,8 +6,8 @@
     :error="error"
     :message="message"
     kind="bar"
-    yFormat="percent"
-    :barMaxWidth="40"
+    y-format="percent"
+    :bar-max-width="40"
   />
 </template>
 

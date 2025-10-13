@@ -11,8 +11,7 @@ import {
   checkDatabaseHealth,
   getPrismaClient,
   trackSearch,
-  getPopularTickers,
-  findOrCreateUser 
+  getPopularTickers
 } from './server/services/databaseService.js';
 
 async function testDatabase() {

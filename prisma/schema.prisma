@@ -45,6 +45,9 @@ model Search {
   @@index([ticker])
   @@index([userId])
   @@index([createdAt])
+  // Composite indexes for common query patterns (performance optimization)
+  @@index([ticker, createdAt(sort: Desc)])  // Popular tickers over time
+  @@index([userId, createdAt(sort: Desc)])  // User search history
 }
 
 // ============================================
@@ -87,6 +90,10 @@ model ApiRequest {
   @@index([statusCode])
   @@index([createdAt])
   @@index([userId])
+  // Composite indexes for analytics queries (performance optimization)
+  @@index([endpoint, createdAt(sort: Desc)])     // Endpoint statistics
+  @@index([statusCode, createdAt(sort: Desc)])   // Error rate calculations
+  @@index([userId, createdAt(sort: Desc)])       // User activity tracking
 }
 
 // ============================================

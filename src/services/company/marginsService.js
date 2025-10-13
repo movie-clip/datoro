@@ -27,7 +27,7 @@ export async function fetchMarginsGrowth(ticker){
       // find matching quarter 1 year earlier: same month/day but year-1; fallback rows[4]
       const curPeriod = String(cur?.period||''); // e.g., "2025-06-30"
       const targetY = curPeriod.slice(5); // "-06-30"
-      let prev = rows.find(r => String(r?.period||'').endsWith(targetY) && String(r?.period||'') !== curPeriod) || rows[4];
+      const prev = rows.find(r => String(r?.period||'').endsWith(targetY) && String(r?.period||'') !== curPeriod) || rows[4];
       // Use netIncome and revenue fields
       const ni0 = Number(cur?.netIncome),   ni1 = Number(prev?.netIncome);
       const rv0 = Number(cur?.revenue),     rv1 = Number(prev?.revenue);

@@ -1,18 +1,26 @@
 <template>
-  <div v-if="ticker && !loading" class="company-header">
+  <div
+    v-if="ticker && !loading"
+    class="company-header"
+  >
     <img 
       v-if="profile.image" 
       :src="profile.image" 
       :alt="profile.companyName"
       class="company-logo"
       @error="handleImageError"
-    />
-    <div v-else class="company-logo-placeholder">
+    >
+    <div
+      v-else
+      class="company-logo-placeholder"
+    >
       {{ ticker.substring(0, 2).toUpperCase() }}
     </div>
     
     <div class="company-info">
-      <div class="company-name">{{ profile.companyName || ticker }}</div>
+      <div class="company-name">
+        {{ profile.companyName || ticker }}
+      </div>
       <div class="bottom-row">
         <div class="price-info">
           <span class="current-price">${{ formatPrice(quote.price) }}</span>
@@ -24,20 +32,30 @@
             ({{ quote.change >= 0 ? '+' : '' }}{{ quote.changesPercentage?.toFixed(2) }}%)
           </span>
         </div>
-        <div v-if="earningsDate" class="earnings-section">
-          <div class="earnings-label">Next Earnings</div>
-          <div class="earnings-date">{{ formatEarningsDate(earningsDate) }}</div>
+        <div
+          v-if="earningsDate"
+          class="earnings-section"
+        >
+          <div class="earnings-label">
+            Next Earnings
+          </div>
+          <div class="earnings-date">
+            {{ formatEarningsDate(earningsDate) }}
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <div v-else-if="loading" class="company-header loading-placeholder">
+  <div
+    v-else-if="loading"
+    class="company-header loading-placeholder"
+  >
     Loading company info...
   </div>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 
 // Get API base URL from environment variable
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''

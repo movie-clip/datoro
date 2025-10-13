@@ -1,44 +1,63 @@
 
 <template>
   <div style="position:relative; min-height:240px;">
-    <div v-if="loading && series.length === 0" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
+    <div
+      v-if="loading && series.length === 0"
+      class="spinner"
+      aria-live="polite"
+      aria-busy="true"
+      tabindex="0"
+    >
+      Loading…
+    </div>
     <BaseChart
       v-else
       :title="title"
       :series="chartView === 'margin' ? ebitdaWithMargin : series"
-      :compactSeries="ebitdaWithMargin"
+      :compact-series="ebitdaWithMargin"
       kind="bar"
-      yFormat="currency"
+      y-format="currency"
       :loading="loading"
       :stacked="chartView === 'bridge'"
-      :dualAxis="chartView === 'margin'"
-      :selectedSegments="chartView === 'bridge' ? selectedSegments : undefined"
-      :viewModeOptions="chartView === 'bridge' ? viewModeOptions : undefined"
-      @update:selectedSegments="selectedSegments = $event"
+      :dual-axis="chartView === 'margin'"
+      :selected-segments="chartView === 'bridge' ? selectedSegments : undefined"
+      :view-mode-options="chartView === 'bridge' ? viewModeOptions : undefined"
       aria-label="EBITDA chart"
+      @update:selected-segments="selectedSegments = $event"
       @modal-closed="resetView"
     >
       <template #controls>
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
           <button 
-            @click="chartView = 'margin'" 
-            :class="{ active: chartView === 'margin' }"
+            :class="{ active: chartView === 'margin' }" 
             class="view-toggle"
+            @click="chartView = 'margin'"
           >
             EBITDA & Margin
           </button>
           <button 
-            @click="chartView = 'bridge'" 
-            :class="{ active: chartView === 'bridge' }"
+            :class="{ active: chartView === 'bridge' }" 
             class="view-toggle"
+            @click="chartView = 'bridge'"
           >
             Bridge View
           </button>
         </div>
       </template>
     </BaseChart>
-    <p v-if="error" class="msg error" role="alert">{{ error }}</p>
-    <p v-else-if="message" class="msg">{{ message }}</p>
+    <p
+      v-if="error"
+      class="msg error"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="message"
+      class="msg"
+    >
+      {{ message }}
+    </p>
   </div>
 </template>
 
@@ -60,8 +79,7 @@ const {
   error,
   chartView,
   selectedSegments, 
-  viewModeOptions,
-  segmentData
+  viewModeOptions
 } = useEbitdaSeries(toRef(props, 'ticker'));
 
 // Combined EBITDA bars with margin line for dual-axis view

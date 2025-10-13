@@ -7,15 +7,34 @@
       autoresize 
       @click="openModal"
     />
-    <div v-if="loading" class="chart-loading-overlay">
-      <div class="loading-spinner">Loading...</div>
+    <div
+      v-if="loading"
+      class="chart-loading-overlay"
+    >
+      <div class="loading-spinner">
+        Loading...
+      </div>
     </div>
-    <div class="expand-hint" @click="openModal" title="Click to expand">⛶</div>
+    <div
+      class="expand-hint"
+      title="Click to expand"
+      @click="openModal"
+    >
+      ⛶
+    </div>
     
-    <ChartModal :is-open="showModal" @close="closeModal">
-      <h2 class="modal-title">{{ title }}</h2>
+    <ChartModal
+      :is-open="showModal"
+      @close="closeModal"
+    >
+      <h2 class="modal-title">
+        {{ title }}
+      </h2>
       <!-- Segment checkboxes -->
-      <div v-if="viewModeOptions.length > 0" class="segment-checkboxes">
+      <div
+        v-if="viewModeOptions.length > 0"
+        class="segment-checkboxes"
+      >
         <label
           v-for="option in viewModeOptions"
           :key="option.value"
@@ -26,11 +45,15 @@
             :value="option.value"
             :checked="selectedSegments.includes(option.value)"
             @change="toggleSegment(option.value)"
-          />
+          >
           <span>{{ option.label }}</span>
         </label>
       </div>
-      <VChart class="echart-modal" :option="modalOption" autoresize />
+      <VChart
+        class="echart-modal"
+        :option="modalOption"
+        autoresize
+      />
     </ChartModal>
   </div>
 </template>

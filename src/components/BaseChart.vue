@@ -1,6 +1,9 @@
 <template>
   <div class="chart-wrapper">
-    <SkeletonLoader v-if="loading && !option.series?.length" variant="chart" />
+    <SkeletonLoader
+      v-if="loading && !option.series?.length"
+      variant="chart"
+    />
     <VChart 
       v-else
       class="echart" 
@@ -9,15 +12,35 @@
       autoresize 
       @click="handleClick"
     />
-    <div v-if="loading && option.series?.length" class="chart-loading-overlay">
-      <div class="loading-spinner">Updating...</div>
+    <div
+      v-if="loading && option.series?.length"
+      class="chart-loading-overlay"
+    >
+      <div class="loading-spinner">
+        Updating...
+      </div>
     </div>
-    <div v-if="!isModal && !loading" class="expand-hint" @click="handleClick" title="Click to expand">⛶</div>
+    <div
+      v-if="!isModal && !loading"
+      class="expand-hint"
+      title="Click to expand"
+      @click="handleClick"
+    >
+      ⛶
+    </div>
     
-    <ChartModal :is-open="showModal" @close="closeModal">
-      <h2 class="modal-title">{{ title }}</h2>
+    <ChartModal
+      :is-open="showModal"
+      @close="closeModal"
+    >
+      <h2 class="modal-title">
+        {{ title }}
+      </h2>
       <!-- Show toggle buttons - support both single-select (viewMode) and multi-select (selectedSegments) -->
-      <div v-if="viewModeOptions.length > 0 && !useLegend" class="view-mode-buttons">
+      <div
+        v-if="viewModeOptions.length > 0 && !useLegend"
+        class="view-mode-buttons"
+      >
         <button
           v-for="option in viewModeOptions"
           :key="option.value"
@@ -34,7 +57,11 @@
           {{ option.label }}
         </button>
       </div>
-      <VChart class="echart-modal" :option="modalOption" autoresize />
+      <VChart
+        class="echart-modal"
+        :option="modalOption"
+        autoresize
+      />
     </ChartModal>
   </div>
 </template>
@@ -302,7 +329,7 @@ const createOption = (isLarge = false) => {
       series = dataSource
     } else {
       // Otherwise, apply default configuration
-      series = dataSource.map((s, idx) => ({
+      series = dataSource.map((s) => ({
         type: props.kind,
         name: s.name,
         data: s.data,

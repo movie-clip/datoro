@@ -168,7 +168,7 @@ export function setupDefaultMocks() {
     return entry
   })
   
-  mockPrismaClient.search.findMany.mockImplementation(async ({ where, take, orderBy }) => {
+  mockPrismaClient.search.findMany.mockImplementation(async ({ where, take }) => {
     // Return searches for this user
     return searchStore
       .filter(s => !where?.userId || s.userId === where.userId)
@@ -195,7 +195,7 @@ export function setupDefaultMocks() {
     return entry
   })
   
-  mockPrismaClient.apiRequest.findMany.mockImplementation(async ({ where, take, orderBy }) => {
+  mockPrismaClient.apiRequest.findMany.mockImplementation(async ({ where, take }) => {
     let filtered = apiRequestStore
     
     // Apply where filters
@@ -221,13 +221,13 @@ export function setupDefaultMocks() {
   })
   
   // Error log
-  mockPrismaClient.errorLog.deleteMany.mockImplementation(async ({ where }) => {
+  mockPrismaClient.errorLog.deleteMany.mockImplementation(async () => {
     // Mock deletion - always return success
     return { count: 0 }
   })
   
   // Raw queries for stats
-  mockPrismaClient.$queryRaw.mockImplementation(async (query) => {
+  mockPrismaClient.$queryRaw.mockImplementation(async () => {
     // Mock API request stats
     const requests = apiRequestStore
     const totalRequests = requests.length

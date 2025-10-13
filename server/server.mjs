@@ -22,11 +22,9 @@ import {
   validateFinancialScores,
   validateHistoricalPrice,
   validateSearch,
-  validateAIAnalysis,
   validateAnalyticsPopular,
   validateAnalyticsHistory,
-  validateAnalyticsStats,
-  sanitizeString
+  validateAnalyticsStats
 } from './middleware/validation.js'
 import { 
   trackSearch, 
@@ -37,7 +35,6 @@ import {
   getApiRequestStats
 } from './services/databaseService.js'
 import { 
-  generalLimiter, 
   fmpLimiter, 
   adminLimiter, 
   aiLimiter, 
@@ -46,8 +43,7 @@ import {
 import { 
   errorHandler, 
   notFoundHandler, 
-  requestLogger,
-  createError 
+  requestLogger
 } from './middleware/errorHandler.js'
 import { requestId } from './middleware/requestId.js'
 
@@ -173,7 +169,6 @@ async function fetchWithDeduplication(key, fetchFn) {
 app.use('/api/fmp', fmpLimiter, async (req, res) => {
   const startTime = Date.now()
   let ticker = null
-  let wasCached = false
   
   try {
     if (!FMP_API_KEY) {
@@ -189,7 +184,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     try {
       // Profile endpoint: /api/v3/profile/:ticker
       if (path.includes('/profile/')) {
-        const profileMatch = path.match(/\/profile\/([^\/\?]+)/)
+        const profileMatch = path.match(/\/profile\/([^/?]+)/)
         if (!profileMatch || !profileMatch[1]) {
           return res.status(400).json({
             error: {
@@ -207,7 +202,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       
       // Income statement: /api/v3/income-statement/:ticker?period=annual&limit=10
       else if (path.includes('/income-statement/')) {
-        const incomeMatch = path.match(/\/income-statement\/([^\/\?]+)/)
+        const incomeMatch = path.match(/\/income-statement\/([^/?]+)/)
         if (!incomeMatch || !incomeMatch[1]) {
           return res.status(400).json({
             error: {
@@ -238,7 +233,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       
       // Balance sheet: /api/v3/balance-sheet-statement/:ticker?period=annual&limit=10
       else if (path.includes('/balance-sheet')) {
-        const balanceMatch = path.match(/\/balance-sheet[^\/]*\/([^\/\?]+)/)
+        const balanceMatch = path.match(/\/balance-sheet[^/]*\/([^/?]+)/)
         if (!balanceMatch || !balanceMatch[1]) {
           return res.status(400).json({
             error: {
@@ -268,7 +263,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       
       // Cash flow: /api/v3/cash-flow-statement/:ticker?period=annual&limit=10
       else if (path.includes('/cash-flow')) {
-        const cashflowMatch = path.match(/\/cash-flow[^\/]*\/([^\/\?]+)/)
+        const cashflowMatch = path.match(/\/cash-flow[^/]*\/([^/?]+)/)
         if (!cashflowMatch || !cashflowMatch[1]) {
           return res.status(400).json({
             error: {
@@ -324,7 +319,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       
       // Historical price: /api/v3/historical-price-full/:ticker?from=2023-01-01&to=2023-12-31
       else if (path.includes('/historical-price')) {
-        const priceMatch = path.match(/\/historical-price[^\/]*\/([^\/\?]+)/)
+        const priceMatch = path.match(/\/historical-price[^/]*\/([^/?]+)/)
         if (!priceMatch || !priceMatch[1]) {
           return res.status(400).json({
             error: {
@@ -414,7 +409,6 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       if (cached.data) {
         console.log(`[FMP] ${subpath} → CACHE HIT (${cached.source})`)
         res.setHeader('X-Cache', cached.source)
-        wasCached = true
         
         // Track search in database (in background) - skip if database offline
         if (isDatabaseAvailable && ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {

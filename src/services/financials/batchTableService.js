@@ -24,7 +24,7 @@ export function getValuationFromBatch(batchData) {
   if (!batchData?.data) return out
   
   try {
-    const { profile, ratiosAnnual, keyMetrics, quote } = batchData.data
+    const { profile, ratiosAnnual, keyMetrics } = batchData.data
     
     // Market Cap from profile
     if (profile && Array.isArray(profile) && profile[0]?.mktCap) {

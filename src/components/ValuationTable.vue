@@ -4,13 +4,13 @@
     :rows="rows"
     :loading="loading"
     :error="error"
-    :onRetry="retry"
+    :on-retry="retry"
     aria-label="Valuation metrics"
   />
 </template>
 
 <script setup>
-import { toRef, computed, watch } from 'vue'
+import { toRef, computed } from 'vue'
 import { useTickerData } from '../composables/useTickerData.js'
 import { getValuationFromBatch } from '../services/financials/batchTableService.js'
 import BaseTable from './BaseTable.vue'

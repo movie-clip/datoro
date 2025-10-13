@@ -1,7 +1,16 @@
 <template>
   <div>
-    <VChart class="chart" :option="chartOption" autoresize />
-    <p v-if="message" class="msg">{{ message }}</p>
+    <VChart
+      class="chart"
+      :option="chartOption"
+      autoresize
+    />
+    <p
+      v-if="message"
+      class="msg"
+    >
+      {{ message }}
+    </p>
   </div>
 </template>
 

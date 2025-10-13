@@ -4,6 +4,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import { mockPrismaClient, setupDefaultMocks, resetMockDatabase } from '../__mocks__/prisma.js'
 
+// Utility function for async delays in tests
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
 // Mock the Prisma Client before importing the service
 vi.mock('@prisma/client', () => ({
   PrismaClient: vi.fn(() => mockPrismaClient),
@@ -24,8 +27,8 @@ import {
 } from '../../server/services/databaseService.js'
 
 describe('Database Service', () => {
-  let testIpAddress = '127.0.0.1'
-  let testUserAgent = 'Vitest Test Runner'
+  const testIpAddress = '127.0.0.1'
+  const testUserAgent = 'Vitest Test Runner'
   
   beforeAll(async () => {
     console.log('\n🧪 Starting Database Service Tests...\n')

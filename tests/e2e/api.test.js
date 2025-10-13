@@ -3,7 +3,6 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import request from 'supertest'
-import express from 'express'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { config } from 'dotenv'
@@ -17,8 +16,6 @@ config({ path: join(__dirname, '..', '..', '.env.local') })
 const BASE_URL = process.env.TEST_API_URL || 'http://localhost:7071'
 
 describe('API Endpoints - E2E Tests', () => {
-  let app
-
   beforeAll(async () => {
     console.log('\n🌐 Starting E2E API Tests...')
     console.log(`📍 Testing against: ${BASE_URL}\n`)

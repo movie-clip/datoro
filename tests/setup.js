@@ -24,9 +24,6 @@ process.env.NODE_ENV = 'test'
 //   error: vi.fn()
 // }
 
-// Set test timeouts
-const TEST_TIMEOUT = 10000 // 10 seconds for integration tests
-
 // Global test utilities
 global.sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 

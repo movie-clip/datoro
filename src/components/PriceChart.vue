@@ -1,25 +1,48 @@
 
 <template>
   <div style="position:relative; min-height:240px;">
-    <div v-if="loading && series.length === 0" class="spinner" aria-live="polite" aria-busy="true" tabindex="0">Loading…</div>
+    <div
+      v-if="loading && series.length === 0"
+      class="spinner"
+      aria-live="polite"
+      aria-busy="true"
+      tabindex="0"
+    >
+      Loading…
+    </div>
     <BaseChart
       v-else
+      v-model:view-mode="tfKey"
       :title="title"
       :series="series"
       kind="line"
-      yFormat="int"
-      v-model:viewMode="tfKey"
-      :viewModeOptions="timeframeOptions"
+      y-format="int"
+      :view-mode-options="timeframeOptions"
       :loading="loading"
       aria-label="Price chart"
     />
-    <div v-if="error" class="error-container" role="alert">
-      <p class="msg error">{{ error }}</p>
-      <button class="retry-btn" @click="retry" :disabled="loading">
+    <div
+      v-if="error"
+      class="error-container"
+      role="alert"
+    >
+      <p class="msg error">
+        {{ error }}
+      </p>
+      <button
+        class="retry-btn"
+        :disabled="loading"
+        @click="retry"
+      >
         {{ loading ? 'Retrying...' : '↻ Retry' }}
       </button>
     </div>
-    <p v-else-if="message" class="msg">{{ message }}</p>
+    <p
+      v-else-if="message"
+      class="msg"
+    >
+      {{ message }}
+    </p>
   </div>
 </template>
 
