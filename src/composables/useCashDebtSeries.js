@@ -49,8 +49,8 @@ export function useCashDebtSeries(tickerRef) {
       title.value = 'Cash & Debt'
       message.value = ''
     } else if (error.value && !loading.value) {
-      // Error and not loading - show error
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'Cash & Debt'
       message.value = error.value
     } else if (!loading.value) {
       // No data and not loading

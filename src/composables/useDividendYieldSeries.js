@@ -34,7 +34,8 @@ export function useDividendYieldSeries(tickerRef) {
       title.value = 'Dividend Yield — Empty'
       message.value = 'Enter a ticker'
     } else if (error.value) {
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'Dividend Yield'
       message.value = error.value
     } else if (rawData.value.length === 0 && !loading.value) {
       title.value = 'Dividend Yield — No data'

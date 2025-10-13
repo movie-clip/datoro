@@ -60,7 +60,8 @@ export function useInsiderTradingSeries(tickerRef) {
       message.value = 'Enter a ticker'
       error.value = null
     } else if (batchError.value) {
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'Price & Insider Trading'
       message.value = 'Failed to load data'
       error.value = batchError.value
     } else if (!priceData.value.length && !insiderData.value.net?.length && !loading.value) {

@@ -64,7 +64,8 @@ export function useFcfSeries(tickerRef) {
       title.value = 'Free Cash Flow'
       message.value = ''
     } else if (error.value && !loading.value) {
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'Free Cash Flow'
       message.value = error.value
     } else if (!loading.value) {
       title.value = 'Free Cash Flow — No data'

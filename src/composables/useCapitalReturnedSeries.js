@@ -58,7 +58,8 @@ export function useCapitalReturnedSeries(tickerRef) {
       title.value = 'Capital Returned to Shareholders — Empty'
       message.value = 'Enter a ticker'
     } else if (error.value) {
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'Capital Returned to Shareholders'
       message.value = error.value
     } else if (rawData.value.length === 0 && !loading.value) {
       title.value = 'Capital Returned — No data'

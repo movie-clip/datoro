@@ -31,7 +31,8 @@ export function useSharesSeries(tickerRef, periodRef) {
       title.value = 'Shares Outstanding — Empty'
       message.value = 'Enter a ticker'
     } else if (error.value) {
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'Shares Outstanding'
       message.value = error.value
     } else if (series.value.length === 0 && !loading.value) {
       title.value = 'Shares Outstanding — No data'

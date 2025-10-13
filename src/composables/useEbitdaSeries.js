@@ -98,7 +98,8 @@ export function useEbitdaSeries(tickerRef) {
       title.value = 'EBITDA — Empty'
       message.value = 'Enter a ticker'
     } else if (error.value) {
-      title.value = 'Error'
+      // Keep original title based on current view, show error in message
+      title.value = chartView.value === 'margin' ? 'EBITDA & Margin' : 'EBITDA Bridge'
       message.value = error.value
     } else if (rawData.value.length === 0 && !loading.value) {
       title.value = 'EBITDA — No data'

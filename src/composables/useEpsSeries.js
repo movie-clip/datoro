@@ -31,7 +31,8 @@ export function useEpsSeries(tickerRef) {
       title.value = 'EPS'
       message.value = ''
     } else if (error.value && !loading.value) {
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'EPS'
       message.value = error.value
     } else if (!loading.value) {
       title.value = 'EPS — No data'

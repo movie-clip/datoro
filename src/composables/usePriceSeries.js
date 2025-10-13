@@ -47,8 +47,8 @@ export function usePriceSeries(tickerRef) {
       message.value = ''
       error.value = null
     } else if (batchError.value && !loading.value) {
-      // Error and not loading - show error
-      title.value = 'Error'
+      // Error and not loading - keep original title, show error in message
+      title.value = `${t} ${cfg.title}`
       message.value = batchError.value
       error.value = batchError.value
     } else if (!loading.value) {

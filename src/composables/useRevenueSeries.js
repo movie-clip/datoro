@@ -130,7 +130,8 @@ export function useRevenueSeries(tickerRef) {
       title.value = 'Revenue'
       message.value = ''
     } else if (error.value && !loading.value) {
-      title.value = 'Error'
+      // Keep original title, just show error in message
+      title.value = 'Revenue'
       message.value = error.value
     } else if (!loading.value) {
       title.value = 'Revenue — No data'

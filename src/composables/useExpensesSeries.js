@@ -93,7 +93,8 @@ export function useExpensesSeries(tickerRef) {
       title.value = 'Operating Expenses — Empty'
       message.value = 'Enter a ticker'
     } else if (error.value) {
-      title.value = 'Error'
+      // Keep original title, show error in message
+      title.value = 'Operating Expenses'
       message.value = error.value
     } else if (rawData.value.length === 0 && !loading.value) {
       title.value = 'Operating Expenses — No data'
