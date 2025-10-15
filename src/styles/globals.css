@@ -299,7 +299,7 @@ body {
 
   /* Charts grid: 2 columns on mobile (iPhone-friendly) */
   .charts {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 8px;
     margin-top: 8px;
   }

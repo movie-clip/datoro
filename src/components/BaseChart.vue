@@ -525,9 +525,9 @@ const modalOption = computed(() => createOption(true))
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   /* Make charts more square-shaped on mobile (2-column layout ~175px wide each) */
-  .echart {
+  /* .echart {
     height: 170px;
-  }
+  } */
 
   /* Smaller expand hint on mobile */
   .expand-hint {
