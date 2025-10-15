@@ -525,9 +525,9 @@ const modalOption = computed(() => createOption(true))
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   /* Make charts more square-shaped on mobile (2-column layout ~175px wide each) */
-  /* .echart {
-    height: 170px;
-  } */
+  .echart {
+    height: 230px;
+  }
 
   /* Smaller expand hint on mobile */
   .expand-hint {
@@ -540,20 +540,20 @@ const modalOption = computed(() => createOption(true))
 
   /* Modal takes more screen space on mobile */
   .echart-modal {
-    height: 60vh;
+    height: 70vh;
     min-height: 300px;
   }
 
   .modal-title {
     font-size: 18px;
-    margin: 0 0 12px 0;
+    margin: 0 0 1px 0;
   }
 
   /* Stack view mode buttons on very small screens */
-  .view-mode-buttons {
+  /* .view-mode-buttons {
     flex-wrap: wrap;
     gap: 6px;
-  }
+  } */
 
   .view-mode-btn {
     padding: 6px 12px;
@@ -564,7 +564,7 @@ const modalOption = computed(() => createOption(true))
 /* Very small phones */
 @media (max-width: 400px) {
   .echart {
-    height: 160px; /* More square on smaller screens */
+    height: 230px; /* More square on smaller screens */
   }
 
   .modal-title {
@@ -580,7 +580,7 @@ const modalOption = computed(() => createOption(true))
 /* Landscape orientation - more square for 3-column layout */
 @media (max-width: 768px) and (orientation: landscape) {
   .echart {
-    height: 150px; /* Square-ish for 3 columns (~260px wide each on 844px screen) */
+    height: 240px; /* Square-ish for 3 columns (~260px wide each on 844px screen) */
   }
 
   .modal-title {

@@ -368,10 +368,10 @@ body {
 /* Landscape orientation on mobile devices */
 @media (max-width: 768px) and (orientation: landscape) {
   /* Use 3 columns in landscape for better use of horizontal space */
-  .charts {
+  /* .charts {
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
-  }
+  } */
 
   /* Info grid can show 2 columns in landscape */
   .info-grid {

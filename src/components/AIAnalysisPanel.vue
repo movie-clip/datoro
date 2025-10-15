@@ -74,6 +74,10 @@ import { ref, watch, toRef, computed } from 'vue'
 // eslint-disable-next-line no-unused-vars
 import { getCompetitiveAdvantages as _getCompetitiveAdvantages, getInvestmentRisks as _getInvestmentRisks } from '../services/ai/chatgptService'
 
+// Re-enable AI functions by assigning to expected names
+const getCompetitiveAdvantages = _getCompetitiveAdvantages
+const getInvestmentRisks = _getInvestmentRisks
+
 const props = defineProps({
   ticker: { type: String, required: true },
   companyName: { type: String, default: '' },
@@ -143,7 +147,7 @@ async function fetchAnalysis(_clearCache = false) {
   
   // Show disabled message instead of making API call
   // Uncomment the code below to re-enable AI features:
-  /*
+  
   loading.value = true
   error.value = null
   data.value = null
@@ -165,7 +169,7 @@ async function fetchAnalysis(_clearCache = false) {
   
   try {
     const fetchFn = props.type === 'advantages' ? getCompetitiveAdvantages : getInvestmentRisks
-    const result = await fetchFn(t, company || t, clearCache)
+  const result = await fetchFn(t, company || t, _clearCache)
     
     if (result.error) {
       // Check if it's an API key error and show a friendly message
@@ -193,7 +197,7 @@ async function fetchAnalysis(_clearCache = false) {
   } finally {
     loading.value = false
   }
-  */
+  
 }
 
 // Manual refresh - clears cache and fetches fresh
