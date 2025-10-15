@@ -153,7 +153,7 @@ const createOption = (isLarge = false) => {
   const showLegendAtTop = isLarge && props.useLegend
   const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : (isMobile ? 30 : 44))
   // Add extra bottom padding if showLegend is enabled (for multi-series charts)
-  const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile ? 45 : 55) : (isMobile ? 28 : 50)
+  const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile ? 15 : 55) : (isMobile ? 15 : 50)
   
   // Build legend selection: only first series (typically 'Total Revenue') selected by default
   // Apply this whenever useLegend is true, not just in modal view
