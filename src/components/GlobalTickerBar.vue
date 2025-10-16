@@ -1,59 +1,67 @@
 <template>
-  <div class="toolbar">
-    <div
-      class="ticker-input-section"
-      :class="{ 'has-error': validationError }"
-    >
-      <label
-        class="label"
-        for="ticker"
-      >Ticker</label>
-      <div class="input-wrapper">
-        <input
-          id="ticker"
-          v-model.trim="localInput"
-          class="input"
-          type="text"
-          placeholder="e.g., AAPL"
-          maxlength="10"
-          :aria-invalid="!!validationError"
-          :aria-describedby="validationError ? 'ticker-error' : undefined"
-          @keyup.enter="handleSubmit"
-          @input="validateInput"
+  <div>
+    <div class="toolbar">
+      <div
+        class="ticker-input-section"
+        :class="{ 'has-error': validationError }"
+      >
+        <label
+          class="label"
+          for="ticker"
+        >Ticker</label>
+        <div class="input-wrapper">
+          <input
+            id="ticker"
+            v-model.trim="localInput"
+            class="input"
+            type="text"
+            placeholder="e.g., AAPL"
+            maxlength="10"
+            :aria-invalid="!!validationError"
+            :aria-describedby="validationError ? 'ticker-error' : undefined"
+            @keyup.enter="handleSubmit"
+            @input="validateInput"
+          >
+          <span
+            v-if="validationError"
+            class="error-icon"
+            title="Invalid ticker"
+          >⚠️</span>
+        </div>
+        <button
+          class="btn"
+          :disabled="!!validationError"
+          @click="handleSubmit"
         >
+          Search
+        </button>
         <span
           v-if="validationError"
-          class="error-icon"
-          title="Invalid ticker"
-        >⚠️</span>
+          id="ticker-error"
+          class="error-message"
+        >
+          {{ validationError }}
+        </span>
       </div>
-      <button
-        class="btn"
-        :disabled="!!validationError"
-        @click="handleSubmit"
-      >
-        Search
-      </button>
-      <span
-        v-if="validationError"
-        id="ticker-error"
-        class="error-message"
-      >
-        {{ validationError }}
-      </span>
+      <CompanyHeader 
+        v-if="confirmedTicker" 
+        :ticker="confirmedTicker" 
+        @update:company-name="$emit('update:companyName', $event)"
+        @update:companyProfile="companyProfile = $event"
+      />
     </div>
-    
-    <CompanyHeader 
-      v-if="confirmedTicker" 
-      :ticker="confirmedTicker" 
-      @update:company-name="$emit('update:companyName', $event)"
-    />
+    <!-- TODO: uncomment to show company description  -->
+    <!-- <div v-if="companyProfile && companyProfile.description" class="company-description">
+      {{ companyProfile.description }}
+    </div> -->
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
+
+const companyProfile = ref(null)
 
 // Props used in template (ESLint can't detect template usage)
 // eslint-disable-next-line no-unused-vars

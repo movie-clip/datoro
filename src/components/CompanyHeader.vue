@@ -118,6 +118,8 @@ async function fetchCompanyData() {
       if (profile.value.companyName) {
         emit('update:companyName', profile.value.companyName)
       }
+      // Always emit profile to parent so description can be shown
+      emit('update:companyProfile', profile.value)
     }
 
     if (quoteRes.ok) {
