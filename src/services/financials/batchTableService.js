@@ -206,7 +206,7 @@ export function getBalanceFromBatch(batchData) {
     
     out.cash = fmtNumber(totalCash)
     out.debt = fmtNumber(totalDebt)
-    out.net = (totalCash / totalDebt).toFixed(2) + '%'
+    out.net = fmtNumber(netDebt)
     
     // Process Altman Z-Score
     if (financialScores && Array.isArray(financialScores) && financialScores.length > 0) {
