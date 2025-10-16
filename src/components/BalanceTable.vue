@@ -33,7 +33,7 @@ const rows = computed(() => {
   return [
     { label: 'Cash', value: data.value.cash },
     { label: 'Debt', value: data.value.debt },
-    { label: 'Net', value: data.value.net },
+    { label: 'Ratio', value: data.value.net },
     { 
       label: 'Altman Z-Score', 
       value: data.value.altmanZScore,
