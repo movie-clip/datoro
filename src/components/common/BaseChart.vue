@@ -687,13 +687,13 @@ const modalOption = computed(() => createOption(true))
 }
 
 .growth-label.positive {
-  background: #05885e;
-  color: white;
+  background: #91cc75c0;
+  color: #1e3812;
 }
 
 .growth-label.negative {
-  background: #c02323;
-  color: white;
+  background: #ee6666bb;
+  color: #502222;
 }
 
 .label-period {
