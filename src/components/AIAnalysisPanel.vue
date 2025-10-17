@@ -148,10 +148,10 @@ async function fetchAnalysis(_clearCache = false) {
   // Show disabled message instead of making API call
   // Uncomment the code below to re-enable AI features:
   
-  loading.value = true
-  error.value = null
-  data.value = null
-  cached.value = false
+  // loading.value = true
+  // error.value = null
+  // data.value = null
+  // cached.value = false
   
   // Wait for company name to be available (max 3 seconds)
   let company = props.companyName
