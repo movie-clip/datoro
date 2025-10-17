@@ -300,7 +300,7 @@ export async function getPopularTickers(limit = 10, daysAgo = 30) {
 }
 
 /**
- * Update company name for a ticker
+ * Update company name for a ticker (upsert: create if not exists)
  * 
  * @param {string} ticker - Stock ticker
  * @param {string} companyName - Company name
@@ -310,15 +310,17 @@ export async function updateTickerCompanyName(ticker, companyName) {
   const db = getPrismaClient();
   
   try {
-    await db.popularTicker.update({
+    await db.popularTicker.upsert({
       where: { ticker: ticker.toUpperCase() },
-      data: { companyName }
+      update: { companyName },
+      create: { 
+        ticker: ticker.toUpperCase(),
+        companyName,
+        searchCount: 0 // Will be incremented by trackSearch
+      }
     });
   } catch (error) {
-    // Ignore if ticker doesn't exist yet
-    if (!error.code || error.code !== 'P2025') {
-      console.error('[Database] Error updating company name:', error.message);
-    }
+    console.error('[Database] Error updating company name:', error.message);
   }
 }
 
