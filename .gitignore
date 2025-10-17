@@ -40,6 +40,5 @@ coverage
 .env
 
 # AI Insights - individual files (development only)
-# Keep the bundle for production
-public/ai-insights/*.json
-!public/ai-insights.json
+# The bundle file (ai-insights.json in public root) is committed
+public/ai-insights/
