@@ -613,10 +613,11 @@ const modalOption = computed(() => createOption(true))
     right: 4px;
   }
 
-  /* Modal takes more screen space on mobile */
+  /* Modal - smaller on mobile, not full screen */
   .echart-modal {
-    height: 70vh;
+    height: 55vh;
     min-height: 300px;
+    max-height: 500px;
   }
 
   .modal-title {
@@ -633,6 +634,26 @@ const modalOption = computed(() => createOption(true))
   .view-mode-btn {
     padding: 6px 12px;
     font-size: 13px;
+  }
+}
+
+/* iPhone 13 / iPhone 14 (390px width) specific styles */
+@media (max-width: 414px) and (min-width: 375px) {
+  /* Slightly smaller modal for iPhone 13 */
+  .echart-modal {
+    height: 50vh;
+    max-height: 450px;
+  }
+  
+  /* Growth labels closer to chart */
+  .growth-labels {
+    margin-top: 8px !important;
+    gap: 6px;
+  }
+  
+  .growth-label {
+    padding: 4px 8px !important;
+    min-width: 50px !important;
   }
 }
 
@@ -714,8 +735,8 @@ const modalOption = computed(() => createOption(true))
 @media (max-width: 768px) {
   .growth-labels {
     gap: 6px;
-    margin-top: 10px;
-    padding: 6px;
+    margin-top: 4px;
+    padding: 4px;
   }
 
   .growth-label {
