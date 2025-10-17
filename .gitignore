@@ -38,3 +38,8 @@ coverage
 
 # Environment files with real credentials
 .env
+
+# AI Insights - individual files (development only)
+# Keep the bundle for production
+public/ai-insights/*.json
+!public/ai-insights.json

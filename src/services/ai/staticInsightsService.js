@@ -1,8 +1,43 @@
 // Service for loading pre-generated AI insights from static JSON files
 // Zero cost, fast CDN delivery, no API calls needed
 
+// In-memory cache for the bundle
+let insightsBundle = null
+let bundleLoadPromise = null
+
 /**
- * Load AI insights from static JSON file
+ * Load the entire insights bundle (lazy loaded, cached in memory)
+ */
+async function loadBundle() {
+  if (insightsBundle) {
+    return insightsBundle
+  }
+  
+  if (bundleLoadPromise) {
+    return bundleLoadPromise
+  }
+  
+  bundleLoadPromise = (async () => {
+    try {
+      const response = await fetch('/ai-insights.json')
+      if (!response.ok) {
+        throw new Error(`Failed to load bundle: HTTP ${response.status}`)
+      }
+      insightsBundle = await response.json()
+      console.log(`✓ Loaded AI insights bundle (${Object.keys(insightsBundle).length} tickers)`)
+      return insightsBundle
+    } catch (error) {
+      console.error('Error loading insights bundle:', error)
+      bundleLoadPromise = null
+      throw error
+    }
+  })()
+  
+  return bundleLoadPromise
+}
+
+/**
+ * Load AI insights for a ticker from the bundle
  * @param {string} ticker - Stock ticker symbol
  * @returns {Promise<Object>} Insights data with competitive advantages and investment risks
  */
@@ -13,26 +48,22 @@ export async function getInsights(ticker) {
   }
 
   try {
-    const response = await fetch(`/ai-insights/${t.toLowerCase()}.json`)
+    const bundle = await loadBundle()
     
-    if (!response.ok) {
-      if (response.status === 404) {
-        // File doesn't exist - return graceful error
-        throw new Error('NOT_AVAILABLE')
-      }
-      throw new Error(`Failed to load insights: HTTP ${response.status}`)
-    }
-
-    // Check if response is JSON (not HTML error page)
-    const contentType = response.headers.get('content-type')
-    if (!contentType || !contentType.includes('application/json')) {
+    if (!bundle[t]) {
       throw new Error('NOT_AVAILABLE')
     }
-
-    const data = await response.json()
-    console.log(`✓ Loaded AI insights for ${t} from static file`)
     
-    return data
+    // Return in same format as individual files
+    return {
+      ticker: t,
+      insights: {
+        competitiveAdvantages: bundle[t].advantages,
+        investmentRisks: bundle[t].risks
+      },
+      lastUpdated: bundle[t].updated,
+      provider: bundle[t].provider || 'static'
+    }
   } catch (error) {
     console.error(`Error loading insights for ${t}:`, error)
     throw error

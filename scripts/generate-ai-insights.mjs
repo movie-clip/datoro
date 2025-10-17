@@ -256,6 +256,18 @@ async function main() {
   console.log('\n✅ Done!')
   console.log(`\n💡 Files saved to: ${OUTPUT_DIR}`)
   console.log('   Test in browser: npm run dev, then search for a ticker')
+  
+  // Build bundle if we have successful generations
+  if (successful > 0) {
+    console.log('\n📦 Building optimized bundle...')
+    try {
+      const { execSync } = await import('child_process')
+      execSync('node scripts/build-insights-bundle.mjs', { stdio: 'inherit' })
+    } catch (bundleError) {
+      console.error('⚠️  Bundle build failed:', bundleError.message)
+      console.log('   Run manually: node scripts/build-insights-bundle.mjs')
+    }
+  }
 }
 
 // Run
