@@ -1,20 +1,22 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getEpsSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useEpsSeries(tickerRef) {
+export function useEpsSeries() {
   const title   = ref('EPS — Empty');
   const message = ref('');
 
-  // Use batch data composable
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract EPS data from batch
   const series = computed(() => getEpsSeriesFromBatch(batchData.value))
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = (currentTicker.value || '').toUpperCase()
     if (t && series.value.length === 0) {
       return `No EPS data for '${t}'`
     }
@@ -22,8 +24,7 @@ export function useEpsSeries(tickerRef) {
   })
 
   // Update title based on ticker
-  watch(() => tickerRef?.value, (t) => {
-    const ticker = (t || '').toUpperCase()
+  watch(currentTicker, (ticker) => {
     if (!ticker) {
       title.value = 'EPS — Empty'
       message.value = 'Enter a ticker'

@@ -1,15 +1,17 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getFcfSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useFcfSeries(tickerRef) {
+export function useFcfSeries() {
   const period  = ref('annual');
   const viewMode = ref('fcfAndSbc'); // Default to showing both FCF & SBC
   const title   = ref('Free Cash Flow — Empty');
   const message = ref('');
 
-  // Use batch data composable (shares single API call with tables)
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract FCF data from batch
   const rawData = computed(() => 
@@ -18,7 +20,7 @@ export function useFcfSeries(tickerRef) {
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = (currentTicker.value || '').toUpperCase()
     if (t && rawData.value.length === 0) {
       return `No FCF data for '${t}'`
     }
@@ -55,8 +57,7 @@ export function useFcfSeries(tickerRef) {
   })
 
   // Update title based on ticker
-  watch(() => tickerRef?.value, (t) => {
-    const ticker = (t || '').toUpperCase()
+  watch(currentTicker, (ticker) => {
     if (!ticker) {
       title.value = 'Free Cash Flow — Empty'
       message.value = 'Enter a ticker'

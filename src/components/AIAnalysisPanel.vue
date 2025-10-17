@@ -69,7 +69,9 @@
 </template>
 
 <script setup>
-import { ref, watch, toRef, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 // AI features temporarily disabled - keeping imports for future use
 // eslint-disable-next-line no-unused-vars
 import { getCompetitiveAdvantages as _getCompetitiveAdvantages, getInvestmentRisks as _getInvestmentRisks } from '../services/ai/chatgptService'
@@ -79,12 +81,13 @@ const getCompetitiveAdvantages = _getCompetitiveAdvantages
 const getInvestmentRisks = _getInvestmentRisks
 
 const props = defineProps({
-  ticker: { type: String, required: true },
   companyName: { type: String, default: '' },
   type: { type: String, required: true, validator: (v) => ['advantages', 'risks'].includes(v) }
 })
 
-const tickerRef = toRef(props, 'ticker')
+// Use Pinia store for ticker with storeToRefs to maintain reactivity
+const tickerStore = useTickerStore()
+const { currentTicker } = storeToRefs(tickerStore)
 const data = ref(null)
 const loading = ref(false)
 const error = ref(null)
@@ -134,7 +137,7 @@ const daysUntilExpiry = computed(() => {
 // eslint-disable-next-line no-unused-vars
 async function fetchAnalysis(_clearCache = false) {
   // AI feature disabled - show message without making API call
-  const t = (tickerRef.value || '').trim().toUpperCase()
+  const t = (currentTicker.value || '').trim().toUpperCase()
   if (!t) {
     return
   }
@@ -206,7 +209,7 @@ async function refresh() {
 }
 
 // Auto-refresh when ticker changes - uses cache
-watch(tickerRef, () => fetchAnalysis(false), { immediate: true })
+watch(currentTicker, () => fetchAnalysis(false), { immediate: true })
 </script>
 
 <style scoped>

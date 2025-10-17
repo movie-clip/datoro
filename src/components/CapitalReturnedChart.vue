@@ -40,12 +40,11 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
 import { useCapitalReturnedSeries } from '../composables/useCapitalReturnedSeries';
 import BaseChart from './BaseChart.vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
-const { series, title, message, loading, error, selectedSegments } = useCapitalReturnedSeries(toRef(props, 'ticker'));
+// No ticker prop - using Pinia store
+const { series, title, message, loading, error, selectedSegments } = useCapitalReturnedSeries();
 
 const segmentOptions = [
   { value: 'dividends', label: 'Dividends' },

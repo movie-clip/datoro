@@ -1,23 +1,25 @@
 // Migrated composable for Net Income chart data
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getNetIncomeSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useNetIncomeSeries(tickerRef) {
+export function useNetIncomeSeries() {
   const period = ref('annual')
   const message = ref(null)
 
-  // Use batch data composable (shares single API call)
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract net income data from batch
-  const rawData = computed(() => 
+  const rawData = computed(() =>
     getNetIncomeSeriesFromBatch(batchData.value, period.value)
   )
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = currentTicker.value
     if (t && rawData.value.length === 0) {
       return `No net income data for '${t}'`
     }
@@ -43,8 +45,8 @@ export function useNetIncomeSeries(tickerRef) {
   const title = computed(() => 'Net Income')
 
   // Update message based on state
-  watch([() => tickerRef?.value, rawData, loading], ([t]) => {
-    const ticker = (t || '').toUpperCase()
+  watch([() => currentTicker, rawData, loading], () => {
+    const ticker = currentTicker
     if (!ticker) {
       message.value = null
     } else if (error.value) {

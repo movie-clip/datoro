@@ -1,23 +1,25 @@
 import { ref, computed, watch } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getCapitalReturnedSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useCapitalReturnedSeries(tickerRef) {
+export function useCapitalReturnedSeries() {
   const title = ref('Capital Returned to Shareholders — Empty');
   const message = ref('');
   const selectedSegments = ref(['dividends', 'buybacks']); // Default: show both
 
-  // Use batch data composable
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract capital returned data from batch (always annual)
   const rawData = computed(() => getCapitalReturnedSeriesFromBatch(batchData.value, 'annual'))
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = (currentTicker.value || '').toUpperCase()
     if (t && rawData.value.length === 0) {
-      return `No capital return data for '${t}'`
+      return `No capital returned data for '${t}'`
     }
     return null
   })
@@ -52,8 +54,8 @@ export function useCapitalReturnedSeries(tickerRef) {
   })
 
   // Update title based on ticker
-  watch([() => tickerRef?.value, rawData, loading], ([t]) => {
-    const ticker = (t || '').toUpperCase()
+  watch([() => currentTicker, rawData, loading], () => {
+    const ticker = currentTicker
     if (!ticker) {
       title.value = 'Capital Returned to Shareholders — Empty'
       message.value = 'Enter a ticker'

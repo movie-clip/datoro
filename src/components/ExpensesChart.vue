@@ -1,6 +1,6 @@
 <template>
   <BaseChart
-    :key="`expenses-${ticker}`"
+    :key="`expenses-${tickerStore.currentTicker}`"
     :title="title"
     :series="series"
     :compact-series="compactSeries"
@@ -19,15 +19,12 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue'
 import BaseChart from './BaseChart.vue'
 import { useExpensesSeries } from '../composables/useExpensesSeries.js'
+import { useTickerStore } from '../stores/tickerStore'
 
-const props = defineProps({
-  ticker: { type: String, required: true }
-})
-
-const tickerRef = toRef(props, 'ticker')
+// No ticker prop - using Pinia store
+const tickerStore = useTickerStore()
 const { 
   selectedSegments, 
   series, 
@@ -38,5 +35,5 @@ const {
   error, 
   message,
   resetSelection
-} = useExpensesSeries(tickerRef)
+} = useExpensesSeries()
 </script>

@@ -1,13 +1,15 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getSharesSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useSharesSeries(tickerRef, periodRef) {
+export function useSharesSeries(periodRef) {
   const title   = ref('Shares Outstanding — Empty');
   const message = ref('');
 
-  // Use batch data composable
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract shares data from batch
   const series = computed(() => {
@@ -17,7 +19,7 @@ export function useSharesSeries(tickerRef, periodRef) {
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = (currentTicker.value || '').toUpperCase()
     if (t && series.value.length === 0) {
       return `No shares data for '${t}'`
     }
@@ -25,8 +27,7 @@ export function useSharesSeries(tickerRef, periodRef) {
   })
 
   // Update title based on ticker
-  watch(() => [tickerRef?.value, periodRef?.value], ([t]) => {
-    const ticker = (t || '').toUpperCase()
+  watch(() => [currentTicker.value, periodRef?.value], ([ticker]) => {
     if (!ticker) {
       title.value = 'Shares Outstanding — Empty'
       message.value = 'Enter a ticker'

@@ -36,12 +36,11 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
 import { useCashDebtSeries } from '../composables/useCashDebtSeries';
 import BaseChart from './BaseChart.vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
-const { series, title, message, loading, error } = useCashDebtSeries(toRef(props, 'ticker'));
+// No ticker prop - using Pinia store
+const { series, title, message, loading, error } = useCashDebtSeries();
 </script>
 
 <style scoped>

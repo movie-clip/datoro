@@ -12,14 +12,9 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue'
 import BaseChart from './BaseChart.vue'
 import { useInsiderTradingSeries } from '../composables/useInsiderTradingSeries.js'
 
-const props = defineProps({
-  ticker: { type: String, required: true }
-})
-
-const tickerRef = toRef(props, 'ticker')
-const { series, title, loading, error, message } = useInsiderTradingSeries(tickerRef)
+// No ticker prop - using Pinia store
+const { series, title, loading, error, message } = useInsiderTradingSeries()
 </script>

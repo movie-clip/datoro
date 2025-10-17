@@ -12,7 +12,7 @@
     </div>
     <BaseChart
       v-else
-      :key="`fcf-${ticker}`"
+      :key="`fcf-${tickerStore.currentTicker}`"
       v-model:view-mode="viewMode"
       :title="title"
       :series="series"
@@ -41,12 +41,13 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
 import { useFcfSeries } from '../composables/useFcfSeries';
+import { useTickerStore } from '../stores/tickerStore';
 import BaseChart from './BaseChart.vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
-const { viewMode, series, compactSeries, title, message, loading, error } = useFcfSeries(toRef(props, 'ticker'));
+// No ticker prop - using Pinia store
+const tickerStore = useTickerStore();
+const { viewMode, series, compactSeries, title, message, loading, error } = useFcfSeries();
 
 const viewModeOptions = [
   { label: 'FCF', value: 'fcf' },

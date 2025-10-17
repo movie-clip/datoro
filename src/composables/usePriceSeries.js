@@ -1,20 +1,23 @@
-import { ref, watch, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { TIMEFRAMES, DEFAULT_TF } from '../models/timeframe'
-import { useTickerData } from './useTickerData.js'
+import { useTickerStore } from '../stores/tickerStore'
 import { getPriceSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function usePriceSeries(tickerRef) {
+export function usePriceSeries() {
   const tfKey   = ref(DEFAULT_TF);
   const title   = ref('Empty Chart');
   const message = ref('');
   const error   = ref(null);
 
-  // Use batch data composable for price history
-  const { data: batchData, loading, error: batchError, refresh } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { refresh } = tickerStore
 
   // Extract and filter price series based on timeframe
   const series = computed(() => {
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = currentTicker
     if (!t) return []
     
     const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M']
@@ -33,8 +36,8 @@ export function usePriceSeries(tickerRef) {
   })
 
   // Update title when ticker or timeframe changes
-  watch([() => tickerRef?.value, tfKey, batchData], () => {
-    const t = (tickerRef?.value || '').toUpperCase()
+  watch([() => currentTicker, tfKey, () => batchData], () => {
+    const t = currentTicker
     const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M']
     
     if (!t) {

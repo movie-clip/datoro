@@ -64,7 +64,7 @@ const props = defineProps({
   ticker: { type: String, required: true }
 })
 
-const emit = defineEmits(['update:companyName'])
+const emit = defineEmits(['update:companyName', 'update:companyProfile'])
 
 const loading = ref(false)
 const profile = ref({})

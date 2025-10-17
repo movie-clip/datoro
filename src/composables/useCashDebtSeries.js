@@ -1,22 +1,24 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getCashDebtSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useCashDebtSeries(tickerRef) {
+export function useCashDebtSeries() {
   const title   = ref('Cash & Debt — Empty');
   const message = ref('');
 
-  // Use batch data composable
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract cash/debt data from batch
   const rawData = computed(() => getCashDebtSeriesFromBatch(batchData.value, 'annual'))
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = (currentTicker.value || '').toUpperCase()
     if (t && rawData.value.length === 0) {
-      return `No data for '${t}'`
+      return `No cash/debt data for '${t}'`
     }
     return null
   })
@@ -39,8 +41,7 @@ export function useCashDebtSeries(tickerRef) {
   });
 
   // Update title based on ticker
-  watch(() => tickerRef?.value, (t) => {
-    const ticker = (t || '').toUpperCase()
+  watch(currentTicker, (ticker) => {
     if (!ticker) {
       title.value = 'Cash & Debt — Empty'
       message.value = 'Enter a ticker'

@@ -36,12 +36,11 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
 import { useEpsSeries } from '../composables/useEpsSeries';
 import BaseChart from './BaseChart.vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
-const { series, title, message, loading, error } = useEpsSeries(toRef(props, 'ticker'));
+// No ticker prop - using Pinia store
+const { series, title, message, loading, error } = useEpsSeries();
 </script>
 
 <style scoped>

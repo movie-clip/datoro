@@ -1,22 +1,24 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getExpensesSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useExpensesSeries(tickerRef) {
+export function useExpensesSeries() {
   const period = ref('annual')
   const selectedSegments = ref(['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']) // Show all by default
   const title = ref('Operating Expenses — Empty')
   const message = ref('')
 
-  // Use batch data composable
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract expenses data from batch
   const rawData = computed(() => getExpensesSeriesFromBatch(batchData.value, period.value))
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = (currentTicker.value || '').toUpperCase()
     if (t && rawData.value.length === 0) {
       return `No expense data for '${t}'`
     }
@@ -87,8 +89,8 @@ export function useExpensesSeries(tickerRef) {
   }
 
   // Update title based on ticker
-  watch([() => tickerRef?.value, rawData, loading], ([t]) => {
-    const ticker = (t || '').toUpperCase()
+  watch([() => currentTicker, rawData, loading], () => {
+    const ticker = currentTicker
     if (!ticker) {
       title.value = 'Operating Expenses — Empty'
       message.value = 'Enter a ticker'
@@ -106,7 +108,7 @@ export function useExpensesSeries(tickerRef) {
   }, { immediate: true })
 
   // Reset selection when ticker changes
-  watch(() => tickerRef?.value, () => resetSelection())
+  watch(currentTicker, () => resetSelection())
 
   function refresh() {
     // Batch data will auto-refresh via useTickerData

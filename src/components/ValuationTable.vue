@@ -10,16 +10,16 @@
 </template>
 
 <script setup>
-import { toRef, computed } from 'vue'
-import { useTickerData } from '../composables/useTickerData.js'
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getValuationFromBatch } from '../services/financials/batchTableService.js'
 import BaseTable from './BaseTable.vue'
 
-const props = defineProps({ ticker: { type: String, required: true } })
-const tRef = toRef(props, 'ticker')
-
-// Use batch data composable (single API call for all data)
-const { data: batchData, loading, error, refresh: retry } = useTickerData(tRef)
+// Use Pinia store instead of prop
+const tickerStore = useTickerStore()
+const { batchData, loading, error } = storeToRefs(tickerStore)
+const { refresh: retry } = tickerStore
 
 // Process batch data into valuation metrics
 const data = computed(() => getValuationFromBatch(batchData.value))

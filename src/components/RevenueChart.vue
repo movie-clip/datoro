@@ -12,7 +12,7 @@
     </div>
     <BaseChart
       v-else
-      :key="`revenue-${ticker}`"
+      :key="`revenue-${tickerStore.currentTicker}`"
       :title="title"
       :series="series"
       :compact-series="compactSeries"
@@ -42,12 +42,13 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
 import { useRevenueSeries } from '../composables/useRevenueSeries';
+import { useTickerStore } from '../stores/tickerStore';
 import BaseChart from './BaseChart.vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
-const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error } = useRevenueSeries(toRef(props, 'ticker'));
+// No ticker prop - using Pinia store
+const tickerStore = useTickerStore();
+const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error } = useRevenueSeries();
 
 const resetSelection = () => {
   selectedSegments.value = ['total'];

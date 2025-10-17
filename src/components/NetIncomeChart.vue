@@ -11,7 +11,7 @@
     </div>
     <BaseChart
       v-else
-      :key="`netincome-${ticker}`"
+      :key="`netincome-${tickerStore.currentTicker}`"
       v-model:period="period"
       :title="title"
       :series="series"
@@ -38,12 +38,13 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue'
 import { useNetIncomeSeries } from '../composables/useNetIncomeSeries'
+import { useTickerStore } from '../stores/tickerStore'
 import BaseChart from './BaseChart.vue'
 
-const props = defineProps({ ticker: { type: String, required: true } })
-const { series, title, message, loading, error, period, viewModeOptions } = useNetIncomeSeries(toRef(props, 'ticker'))
+// No ticker prop - using Pinia store
+const tickerStore = useTickerStore()
+const { series, title, message, loading, error, period, viewModeOptions } = useNetIncomeSeries()
 </script>
 
 <style scoped>

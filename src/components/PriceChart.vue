@@ -47,13 +47,13 @@
 </template>
 
 <script setup>
-import { toRef, computed } from 'vue';
+import { computed } from 'vue';
 import { TF_ORDER } from '../models/timeframe';
 import { usePriceSeries } from '../composables/usePriceSeries';
 import BaseChart from './BaseChart.vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
-const { tfKey, series, title, message, loading, error, retry } = usePriceSeries(toRef(props, 'ticker'));
+// No ticker prop needed - using Pinia store
+const { tfKey, series, title, message, loading, error, retry } = usePriceSeries();
 
 const timeframeOptions = computed(() => 
   TF_ORDER.map(key => ({ label: key, value: key }))

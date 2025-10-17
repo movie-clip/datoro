@@ -1,15 +1,17 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getRevenueSeriesFromBatch, getRevenueSegmentsFromBatch } from '../services/financials/batchChartService.js'
 
-export function useRevenueSeries(tickerRef) {
+export function useRevenueSeries() {
   const period  = ref('annual');   // 'annual' | 'quarterly'
   const selectedSegments = ref(['total']);   // Array of selected segment names
   const title   = ref('Revenue');
   const message = ref('');
 
-  // Use batch data composable (shares single API call with tables)
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract revenue data from batch
   const totalRevenue = computed(() => 
@@ -22,7 +24,7 @@ export function useRevenueSeries(tickerRef) {
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = currentTicker.value
     if (t && totalRevenue.value.length === 0) {
       return `No revenue data for '${t}'`
     }
@@ -121,8 +123,7 @@ export function useRevenueSeries(tickerRef) {
   }
 
   // Update title based on ticker
-  watch(() => tickerRef?.value, (t) => {
-    const ticker = (t || '').toUpperCase()
+  watch(currentTicker, (ticker) => {
     if (!ticker) {
       title.value = 'Revenue — Empty'
       message.value = 'Enter a ticker'

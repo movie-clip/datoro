@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useTickerStore } from './stores/tickerStore'
 import GlobalTickerBar from './components/GlobalTickerBar.vue'
 
 import ValuationTable from './components/ValuationTable.vue'
@@ -21,14 +22,23 @@ import DividendYieldChart from './components/DividendYieldChart.vue'
 import ExpensesChart from './components/ExpensesChart.vue'
 import AIAnalysisPanel from './components/AIAnalysisPanel.vue'
 
+// Use Pinia store for centralized state
+const tickerStore = useTickerStore()
+
 const inputTicker = ref('AAPL')
-const ticker = ref('AAPL')
 const companyName = ref('Apple Inc.')
+
+// Watch ticker changes and update store
+watch(() => inputTicker.value, (newTicker) => {
+  if (newTicker && newTicker.trim()) {
+    tickerStore.setTicker(newTicker.trim().toUpperCase())
+  }
+}, { immediate: true })
 
 function applyTicker(){ 
   const t=(inputTicker.value||'').trim().toUpperCase()
   if(t) {
-    ticker.value=t
+    tickerStore.setTicker(t)
     // Reset company name when ticker changes - it will be updated by CompanyHeader
     companyName.value = ''
   }
@@ -61,77 +71,75 @@ function handleImageError(event) {
     >
       <GlobalTickerBar 
         v-model="inputTicker"
-        :confirmed-ticker="ticker"
+        :confirmed-ticker="tickerStore.currentTicker"
         @submit="applyTicker" 
         @update:company-name="companyName = $event"
       />
     </section>
 
-    <!-- Info cards: 4 tables in a row -->
+    <!-- Info cards: 4 tables in a row (no longer need ticker prop - use store) -->
     <section class="info-grid">
       <section class="panel">
-        <ValuationTable :ticker="ticker" />
+        <ValuationTable />
       </section>
       <section class="panel">
-        <CashFlowTable :ticker="ticker" />
+        <CashFlowTable />
       </section>
       <section class="panel">
-        <MarginsGrowthTable :ticker="ticker" />
+        <MarginsGrowthTable />
       </section>
       <section class="panel">
-        <BalanceTable :ticker="ticker" />
+        <BalanceTable />
       </section>
     </section>
 
-    <!-- Charts: 12 charts -->
+    <!-- Charts: 12 charts (no longer need ticker prop - use store) -->
     <section class="charts">
       <section class="panel">
-        <PriceChart :ticker="ticker" />
+        <PriceChart />
       </section>
       <section class="panel">
-        <RevenueChart :ticker="ticker" />
+        <RevenueChart />
       </section>
       <section class="panel">
-        <NetIncomeChart :ticker="ticker" />
+        <NetIncomeChart />
       </section>
       <section class="panel">
-        <FcfChart :ticker="ticker" />
+        <FcfChart />
       </section>
       <section class="panel">
-        <EpsChart :ticker="ticker" />
+        <EpsChart />
       </section>
       <section class="panel">
-        <EbitdaChart :ticker="ticker" />
+        <EbitdaChart />
       </section>
       <section class="panel">
-        <ExpensesChart :ticker="ticker" />
+        <ExpensesChart />
       </section>
       <section class="panel">
-        <CashDebtChart :ticker="ticker" />
+        <CashDebtChart />
       </section>
       <section class="panel">
-        <SharesChart :ticker="ticker" />
+        <SharesChart />
       </section>
       <section class="panel">
-        <CapitalReturnedChart :ticker="ticker" />
+        <CapitalReturnedChart />
       </section>
       <section class="panel">
-        <DividendYieldChart :ticker="ticker" />
+        <DividendYieldChart />
       </section>
       <section class="panel">
-        <InsiderTradingChart :ticker="ticker" />
+        <InsiderTradingChart />
       </section>
     </section>
 
     <!-- AI Analysis: 2 panels in a row -->
     <section class="ai-analysis-grid">
       <AIAnalysisPanel
-        :ticker="ticker"
         :company-name="companyName"
         type="advantages"
       />
       <AIAnalysisPanel
-        :ticker="ticker"
         :company-name="companyName"
         type="risks"
       />

@@ -1,8 +1,9 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getEbitdaSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useEbitdaSeries(tickerRef) {
+export function useEbitdaSeries() {
   const title   = ref('EBITDA — Empty');
   const message = ref('');
   const period = ref('annual');
@@ -17,15 +18,16 @@ export function useEbitdaSeries(tickerRef) {
     series: {}
   });
 
-  // Use batch data composable
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract EBITDA data from batch
   const rawData = computed(() => getEbitdaSeriesFromBatch(batchData.value, period.value))
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (tickerRef?.value || '').toUpperCase()
+    const t = (currentTicker.value || '').toUpperCase()
     if (t && rawData.value.length === 0) {
       return `No EBITDA data for '${t}'`
     }
@@ -92,8 +94,8 @@ export function useEbitdaSeries(tickerRef) {
   })
 
   // Update title based on ticker and view
-  watch([() => tickerRef?.value, chartView, rawData, loading], ([t]) => {
-    const ticker = (t || '').toUpperCase()
+  watch([() => currentTicker, chartView, rawData, loading], () => {
+    const ticker = currentTicker
     if (!ticker) {
       title.value = 'EBITDA — Empty'
       message.value = 'Enter a ticker'

@@ -1,14 +1,16 @@
-import { ref, watch, computed } from 'vue'
-import { useTickerData } from './useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { getInsiderTradingFromBatch, getPriceSeriesFromBatch } from '../services/financials/batchChartService.js'
 
-export function useInsiderTradingSeries(tickerRef) {
+export function useInsiderTradingSeries() {
   const title = ref('Price & Insider Trading — Empty')
   const message = ref('')
   const error = ref(null)
 
-  // Use batch data composable for both insider trading AND price
-  const { data: batchData, loading, error: batchError } = useTickerData(tickerRef)
+  // Use Pinia store with storeToRefs to maintain reactivity
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Extract insider trading data from batch
   const insiderData = computed(() => getInsiderTradingFromBatch(batchData.value))
@@ -52,8 +54,8 @@ export function useInsiderTradingSeries(tickerRef) {
   })
 
   // Update title and messages when data changes
-  watch([() => tickerRef?.value, batchData, batchError], () => {
-    const t = (tickerRef?.value || '').toUpperCase()
+  watch([() => currentTicker.value, batchData, batchError], () => {
+    const t = (currentTicker.value || '').toUpperCase()
     
     if (!t) {
       title.value = 'Price & Insider Trading — Empty'

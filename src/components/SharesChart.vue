@@ -36,13 +36,13 @@
 </template>
 
 <script setup>
-import { toRef, ref } from 'vue';
+import { ref } from 'vue';
 import { useSharesSeries } from '../composables/useSharesSeries';
 import BaseChart from './BaseChart.vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
+// No ticker prop - using Pinia store
 const period = ref('annual');
-const { series, title, message, loading, error } = useSharesSeries(toRef(props, 'ticker'), period);
+const { series, title, message, loading, error } = useSharesSeries(period);
 </script>
 
 <style scoped>

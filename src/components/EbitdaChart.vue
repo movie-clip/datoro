@@ -62,13 +62,12 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
 import { useEbitdaSeries } from '../composables/useEbitdaSeries';
 import BaseChart from './BaseChart.vue';
 
 import { computed } from 'vue';
 
-const props = defineProps({ ticker: { type: String, required: true } });
+// No ticker prop - using Pinia store
 const { 
   series, 
   compactSeries,
@@ -80,7 +79,7 @@ const {
   chartView,
   selectedSegments, 
   viewModeOptions
-} = useEbitdaSeries(toRef(props, 'ticker'));
+} = useEbitdaSeries();
 
 // Combined EBITDA bars with margin line for dual-axis view
 const ebitdaWithMargin = computed(() => {
