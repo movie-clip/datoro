@@ -32,7 +32,8 @@ import {
   trackApiRequest,
   getPopularTickers,
   getUserSearchHistory,
-  getApiRequestStats
+  getApiRequestStats,
+  getPrismaClient
 } from './services/databaseService.js'
 import { 
   fmpLimiter, 
@@ -921,6 +922,64 @@ app.get('/api/health', (_req, res) => {
 
 app.head('/api/health', (_req, res) => {
   res.status(200).end()
+})
+
+// Database connection pool health check
+app.get('/api/health/database', async (req, res) => {
+  try {
+    const prisma = getPrismaClient()
+    
+    // Test database connectivity with simple query
+    const testStart = Date.now()
+    await prisma.$queryRaw`SELECT 1 as connected`
+    const queryDuration = Date.now() - testStart
+    
+    // Get connection pool statistics
+    const poolStats = await prisma.$queryRaw`
+      SELECT 
+        count(*) FILTER (WHERE state = 'active') as active_connections,
+        count(*) FILTER (WHERE state = 'idle') as idle_connections,
+        count(*) as total_connections,
+        max(EXTRACT(EPOCH FROM (now() - query_start)) * 1000)::int as longest_query_ms
+      FROM pg_stat_activity
+      WHERE datname = current_database()
+    `
+    
+    const stats = poolStats[0]
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      worker_pid: process.pid,
+      query_duration_ms: queryDuration,
+      connections: {
+        active: Number(stats.active_connections),
+        idle: Number(stats.idle_connections),
+        total: Number(stats.total_connections)
+      },
+      longest_query_ms: stats.longest_query_ms || 0
+    }
+    
+    // Add warnings for concerning metrics
+    if (health.connections.total > 50) {
+      health.warning = 'High connection count (>50). Consider reducing connection_limit per worker.'
+    }
+    if (health.longest_query_ms > 5000) {
+      health.warning = 'Long-running query detected (>5s). Check query performance.'
+    }
+    if (queryDuration > 100) {
+      health.warning = 'Slow database response (>100ms). Check database health.'
+    }
+    
+    res.json(health)
+  } catch (err) {
+    console.error('[Health] Database check failed:', err)
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      worker_pid: process.pid,
+      error: err.message
+    })
+  }
 })
 
 // Cache management endpoint (for debugging/maintenance)

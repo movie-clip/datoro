@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { buildDatabaseUrl, getPoolConfig } from '../config/database.config.js';
 
 /**
  * Database Service - User tracking, analytics, popular tickers
@@ -9,6 +10,9 @@ import { PrismaClient } from '@prisma/client';
  * - API request analytics
  * - Performance metrics
  * - Error tracking
+ * 
+ * Connection pooling configured automatically via database.config.js
+ * No manual .env configuration needed!
  */
 
 // Singleton Prisma client
@@ -38,23 +42,48 @@ let prisma;
  */
 export function getPrismaClient() {
   if (!prisma) {
+    // Build optimized DATABASE_URL with connection pooling parameters
+    const baseUrl = process.env.DATABASE_URL
+    const optimizedUrl = buildDatabaseUrl(baseUrl)
+    
     prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' 
         ? ['query', 'error', 'warn'] 
         : ['error'],
-      // Connection pool and timeout configuration
-      // All parameters should be in DATABASE_URL connection string
+      // Use optimized URL with connection pooling configured automatically
       datasources: {
         db: {
-          url: process.env.DATABASE_URL
+          url: optimizedUrl
         }
       }
     });
 
+    // Monitor connection pool health
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Database] Prisma client initialized');
+      console.log(`[Database] Worker PID: ${process.pid}`);
+      
+      const poolConfig = getPoolConfig()
+      console.log('[Database] Connection pool:')
+      console.log(`  - Provider: ${poolConfig.provider}`)
+      console.log(`  - Per worker: ${poolConfig.connectionsPerWorker}`)
+      console.log(`  - Total: ${poolConfig.totalConnections} (${poolConfig.utilization} utilization)`)
+    }
+
     // Handle graceful shutdown
-    process.on('beforeExit', async () => {
-      await prisma.$disconnect();
-    });
+    const gracefulShutdown = async (signal) => {
+      console.log(`[Database] ${signal} received. Disconnecting Prisma...`);
+      try {
+        await prisma.$disconnect();
+        console.log('[Database] Disconnected successfully');
+      } catch (err) {
+        console.error('[Database] Error during disconnect:', err);
+      }
+    };
+
+    process.on('beforeExit', () => gracefulShutdown('beforeExit'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   }
   return prisma;
 }
