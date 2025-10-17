@@ -1,0 +1,37 @@
+{
+  "ticker": "TSM",
+  "companyName": "Taiwan Semiconductor Manufacturing Company",
+  "lastUpdated": "2025-10-17",
+  "version": "1.0",
+  "provider": "ollama",
+  "insights": {
+    "competitiveAdvantages": [
+      {
+        "title": "Leading Edge Technology",
+        "description": "TSMC's cutting-edge manufacturing technology and investments in emerging technologies provide a competitive edge."
+      },
+      {
+        "title": "Strong Market Position",
+        "description": "As the world's largest independent semiconductor foundry, TSMC enjoys a dominant market position."
+      },
+      {
+        "title": "Network Effects through Customers",
+        "description": "TSMC's extensive customer base creates network effects, with customers relying on its ecosystem for complex chip designs."
+      }
+    ],
+    "investmentRisks": [
+      {
+        "title": "Competition from Nantong TSMC",
+        "description": "Nantong TSMC's growing presence in China poses a threat to TSM's market share."
+      },
+      {
+        "title": "Regulatory Scrutiny from US",
+        "description": "TSM's dependence on the US market exposes it to regulatory changes and trade tensions."
+      },
+      {
+        "title": "Valuation Concerns due to Memory Sales Decline",
+        "description": "Declining memory sales contribute to concerns about TSM's revenue growth and valuation."
+      }
+    ]
+  }
+}

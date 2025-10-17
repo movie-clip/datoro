@@ -72,13 +72,8 @@
 import { ref, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
-// AI features temporarily disabled - keeping imports for future use
-// eslint-disable-next-line no-unused-vars
-import { getCompetitiveAdvantages as _getCompetitiveAdvantages, getInvestmentRisks as _getInvestmentRisks } from '../../services/ai/chatgptService'
-
-// Re-enable AI functions by assigning to expected names
-const getCompetitiveAdvantages = _getCompetitiveAdvantages
-const getInvestmentRisks = _getInvestmentRisks
+// AI insights from static JSON files (zero cost, fast CDN delivery)
+import { getCompetitiveAdvantages, getInvestmentRisks } from '../../services/ai/staticInsightsService'
 
 const props = defineProps({
   companyName: { type: String, default: '' },
