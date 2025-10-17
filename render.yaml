@@ -5,7 +5,7 @@
 services:
   # Backend API Server
   - type: web
-    name: finance-view-api
+    name: factorly-api
     runtime: node
     region: oregon # or frankfurt, singapore (choose closest to users)
     plan: free # free tier (sleeps after 15min inactivity) - upgrade to starter ($7/mo) for 24/7
@@ -31,11 +31,11 @@ services:
         sync: false # Set manually in Render dashboard
       - key: DATABASE_URL
         fromDatabase:
-          name: finance-view-db
+          name: factorly-db
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: finance-view-redis
+          name: factorly-redis
           type: keyvalue
           property: connectionString
       - key: SENTRY_DSN
@@ -45,13 +45,13 @@ services:
       - key: VITE_AI_PROVIDER
         value: openai
       - key: ALLOWED_ORIGINS
-        value: https://finance-view.onrender.com
+        value: https://factorly.onrender.com
       - key: DEV_ORIGIN
-        value: https://finance-view.onrender.com
+        value: https://factorly.onrender.com
 
   # Redis Cache (Key Value Instance)
   - type: keyvalue
-    name: finance-view-redis
+    name: factorly-redis
     region: oregon
     plan: free # 25MB free
     maxmemoryPolicy: allkeys-lru # Evict least recently used keys when full
@@ -59,7 +59,7 @@ services:
 
   # Frontend Static Site
   - type: web
-    name: finance-view
+    name: factorly
     runtime: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
@@ -82,18 +82,18 @@ services:
         value: public, max-age=3600 # Cache static assets for 1 hour
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://finance-view-api.onrender.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://factorly-api.onrender.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://finance-view-api.onrender.com
+        value: https://factorly-api.onrender.com
 
 # PostgreSQL Database
 databases:
-  - name: finance-view-db
+  - name: factorly-db
     databaseName: financeview
     user: financeview
     plan: free # 90 days free, then $7/month
