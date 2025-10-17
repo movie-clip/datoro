@@ -44,7 +44,17 @@ export function getPrismaClient() {
   if (!prisma) {
     // Build optimized DATABASE_URL with connection pooling parameters
     const baseUrl = process.env.DATABASE_URL
-    const optimizedUrl = buildDatabaseUrl(baseUrl)
+    
+    // In test environment, DATABASE_URL might not be set (using mock)
+    let optimizedUrl
+    if (baseUrl) {
+      optimizedUrl = buildDatabaseUrl(baseUrl)
+    } else if (process.env.NODE_ENV === 'test') {
+      // Use a dummy URL for tests (will be mocked anyway)
+      optimizedUrl = 'postgresql://test:test@localhost:5432/test'
+    } else {
+      throw new Error('DATABASE_URL environment variable is required')
+    }
     
     prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' 
