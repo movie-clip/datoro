@@ -893,6 +893,19 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
 })
 
 // -------------------- Health & Monitoring --------------------
+// Root path handler (for HEAD requests from monitoring tools)
+app.get('/', (_req, res) => {
+  res.json({ 
+    name: 'Factorly API',
+    status: 'ok',
+    version: '1.0.0'
+  })
+})
+
+app.head('/', (_req, res) => {
+  res.status(200).end()
+})
+
 // Basic health check (fast, no external dependencies)
 app.get('/api/health', (_req, res) => {
   const summary = monitoring.getSummary()
@@ -900,6 +913,10 @@ app.get('/api/health', (_req, res) => {
     ok: true,
     ...summary
   })
+})
+
+app.head('/api/health', (_req, res) => {
+  res.status(200).end()
 })
 
 // Readiness check (validates database and Redis connectivity)
