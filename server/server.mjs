@@ -923,6 +923,26 @@ app.head('/api/health', (_req, res) => {
   res.status(200).end()
 })
 
+// Cache management endpoint (for debugging/maintenance)
+app.post('/api/cache/clear', async (req, res) => {
+  try {
+    await cache.clear()
+    console.log('[Cache] Manual cache flush requested')
+    res.json({ 
+      ok: true, 
+      message: 'Cache cleared successfully',
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('[Cache] Clear error:', error)
+    res.status(500).json({ 
+      ok: false, 
+      error: 'Failed to clear cache',
+      message: error.message 
+    })
+  }
+})
+
 // Readiness check (validates database and Redis connectivity)
 // Use this for Docker/k8s health checks with longer timeout
 app.get('/api/readiness', async (_req, res) => {
