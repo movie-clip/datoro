@@ -677,6 +677,11 @@ function parseAndValidateJSON(rawResponse) {
 }
 
 // Apply AI rate limiter to AI endpoints
+// Handle HEAD requests (CORS preflight/health checks)
+app.head('/api/ai/analysis', (req, res) => {
+  res.status(200).end()
+})
+
 app.post('/api/ai/analysis', aiLimiter, async (req, res) => {
   try {
     const { ticker, companyName, type, systemPrompt, clearCache } = req.body
