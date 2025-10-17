@@ -17,7 +17,7 @@
       kind="bar"
       y-format="short"
       :loading="loading"
-      aria-label="Cash and Debt chart"
+      aria-label="Shares Outstanding chart"
     />
     <p
       v-if="error"
@@ -36,11 +36,13 @@
 </template>
 
 <script setup>
-import { useCashDebtSeries } from '../composables/useCashDebtSeries';
-import BaseChart from './BaseChart.vue';
+import { ref } from 'vue';
+import { useSharesSeries } from '../../composables/useSharesSeries';
+import BaseChart from '../common/BaseChart.vue';
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error } = useCashDebtSeries();
+const period = ref('annual');
+const { series, title, message, loading, error } = useSharesSeries(period);
 </script>
 
 <style scoped>

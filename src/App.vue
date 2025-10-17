@@ -1,26 +1,30 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
-import GlobalTickerBar from './components/GlobalTickerBar.vue'
 
-import ValuationTable from './components/ValuationTable.vue'
-import CashFlowTable from './components/CashFlowTable.vue'
-import MarginsGrowthTable from './components/MarginsGrowthTable.vue'
-import BalanceTable from './components/BalanceTable.vue'
+// Layout components
+import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
+import AIAnalysisPanel from './components/layout/AIAnalysisPanel.vue'
 
-import PriceChart from './components/PriceChart.vue'
-import RevenueChart from './components/RevenueChart.vue'
-import NetIncomeChart from './components/NetIncomeChart.vue'
-import FcfChart from './components/FcfChart.vue'
-import EpsChart from './components/EpsChart.vue'
-import EbitdaChart from './components/EbitdaChart.vue'
-import CapitalReturnedChart from './components/CapitalReturnedChart.vue'
-import CashDebtChart from './components/CashDebtChart.vue'
-import SharesChart from './components/SharesChart.vue'
-import InsiderTradingChart from './components/InsiderTradingChart.vue'
-import DividendYieldChart from './components/DividendYieldChart.vue'
-import ExpensesChart from './components/ExpensesChart.vue'
-import AIAnalysisPanel from './components/AIAnalysisPanel.vue'
+// Table components
+import ValuationTable from './components/tables/ValuationTable.vue'
+import CashFlowTable from './components/tables/CashFlowTable.vue'
+import MarginsGrowthTable from './components/tables/MarginsGrowthTable.vue'
+import BalanceTable from './components/tables/BalanceTable.vue'
+
+// Chart components
+import PriceChart from './components/charts/PriceChart.vue'
+import RevenueChart from './components/charts/RevenueChart.vue'
+import NetIncomeChart from './components/charts/NetIncomeChart.vue'
+import FcfChart from './components/charts/FcfChart.vue'
+import EpsChart from './components/charts/EpsChart.vue'
+import EbitdaChart from './components/charts/EbitdaChart.vue'
+import CapitalReturnedChart from './components/charts/CapitalReturnedChart.vue'
+import CashDebtChart from './components/charts/CashDebtChart.vue'
+import SharesChart from './components/charts/SharesChart.vue'
+import InsiderTradingChart from './components/charts/InsiderTradingChart.vue'
+import DividendYieldChart from './components/charts/DividendYieldChart.vue'
+import ExpensesChart from './components/charts/ExpensesChart.vue'
 
 // Use Pinia store for centralized state
 const tickerStore = useTickerStore()

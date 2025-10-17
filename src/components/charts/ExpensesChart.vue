@@ -19,9 +19,9 @@
 </template>
 
 <script setup>
-import BaseChart from './BaseChart.vue'
-import { useExpensesSeries } from '../composables/useExpensesSeries.js'
-import { useTickerStore } from '../stores/tickerStore'
+import BaseChart from '../common/BaseChart.vue'
+import { useExpensesSeries } from '../../composables/useExpensesSeries.js'
+import { useTickerStore } from '../../stores/tickerStore'
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()

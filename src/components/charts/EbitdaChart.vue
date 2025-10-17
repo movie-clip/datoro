@@ -62,8 +62,8 @@
 </template>
 
 <script setup>
-import { useEbitdaSeries } from '../composables/useEbitdaSeries';
-import BaseChart from './BaseChart.vue';
+import { useEbitdaSeries } from '../../composables/useEbitdaSeries';
+import BaseChart from '../common/BaseChart.vue';
 
 import { computed } from 'vue';
 

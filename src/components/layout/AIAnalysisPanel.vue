@@ -71,10 +71,10 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../stores/tickerStore'
+import { useTickerStore } from '../../stores/tickerStore'
 // AI features temporarily disabled - keeping imports for future use
 // eslint-disable-next-line no-unused-vars
-import { getCompetitiveAdvantages as _getCompetitiveAdvantages, getInvestmentRisks as _getInvestmentRisks } from '../services/ai/chatgptService'
+import { getCompetitiveAdvantages as _getCompetitiveAdvantages, getInvestmentRisks as _getInvestmentRisks } from '../../services/ai/chatgptService'
 
 // Re-enable AI functions by assigning to expected names
 const getCompetitiveAdvantages = _getCompetitiveAdvantages

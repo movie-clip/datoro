@@ -12,12 +12,17 @@
     </div>
     <BaseChart
       v-else
+      :key="`fcf-${tickerStore.currentTicker}`"
+      v-model:view-mode="viewMode"
       :title="title"
       :series="series"
+      :compact-series="compactSeries"
       kind="bar"
-      y-format="int"
+      y-format="short"
       :loading="loading"
-      aria-label="EPS chart"
+      aria-label="Free Cash Flow chart"
+      :view-mode-options="viewModeOptions"
+      @modal-closed="resetViewMode"
     />
     <p
       v-if="error"
@@ -36,11 +41,23 @@
 </template>
 
 <script setup>
-import { useEpsSeries } from '../composables/useEpsSeries';
-import BaseChart from './BaseChart.vue';
+import { useFcfSeries } from '../../composables/useFcfSeries';
+import { useTickerStore } from '../../stores/tickerStore';
+import BaseChart from '../common/BaseChart.vue';
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error } = useEpsSeries();
+const tickerStore = useTickerStore();
+const { viewMode, series, compactSeries, title, message, loading, error } = useFcfSeries();
+
+const viewModeOptions = [
+  { label: 'FCF', value: 'fcf' },
+  { label: 'FCF Per Share', value: 'fcfPerShare' },
+  { label: 'FCF & SBC', value: 'fcfAndSbc' },
+];
+
+const resetViewMode = () => {
+  viewMode.value = 'fcfAndSbc'; // Reset to showing both FCF and SBC
+};
 </script>
 
 <style scoped>

@@ -1,3 +1,4 @@
+
 <template>
   <div style="position:relative; min-height:240px;">
     <div
@@ -11,15 +12,18 @@
     </div>
     <BaseChart
       v-else
-      :key="`netincome-${tickerStore.currentTicker}`"
-      v-model:period="period"
+      :key="`revenue-${tickerStore.currentTicker}`"
       :title="title"
       :series="series"
+      :compact-series="compactSeries"
       kind="bar"
-      y-format="currency"
+      y-format="short"
       :loading="loading"
-      aria-label="Net Income chart"
-      :period-options="viewModeOptions"
+      aria-label="Revenue chart"
+      :selected-segments="selectedSegments"
+      :view-mode-options="viewModeOptions"
+      @update:selected-segments="selectedSegments = $event"
+      @modal-closed="resetSelection"
     />
     <p
       v-if="error"
@@ -38,13 +42,17 @@
 </template>
 
 <script setup>
-import { useNetIncomeSeries } from '../composables/useNetIncomeSeries'
-import { useTickerStore } from '../stores/tickerStore'
-import BaseChart from './BaseChart.vue'
+import { useRevenueSeries } from '../../composables/useRevenueSeries';
+import { useTickerStore } from '../../stores/tickerStore';
+import BaseChart from '../common/BaseChart.vue';
 
 // No ticker prop - using Pinia store
-const tickerStore = useTickerStore()
-const { series, title, message, loading, error, period, viewModeOptions } = useNetIncomeSeries()
+const tickerStore = useTickerStore();
+const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error } = useRevenueSeries();
+
+const resetSelection = () => {
+  selectedSegments.value = ['total'];
+};
 </script>
 
 <style scoped>

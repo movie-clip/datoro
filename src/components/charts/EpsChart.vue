@@ -10,18 +10,14 @@
     >
       Loading…
     </div>
-    
     <BaseChart
-      v-if="!loading || series.length > 0"
-      v-model:selected-segments="selectedSegments"
+      v-else
       :title="title"
       :series="series"
       kind="bar"
-      y-format="currency"
+      y-format="int"
       :loading="loading"
-      :stacked="true"
-      :view-mode-options="segmentOptions"
-      aria-label="Capital returned to shareholders chart"
+      aria-label="EPS chart"
     />
     <p
       v-if="error"
@@ -40,16 +36,11 @@
 </template>
 
 <script setup>
-import { useCapitalReturnedSeries } from '../composables/useCapitalReturnedSeries';
-import BaseChart from './BaseChart.vue';
+import { useEpsSeries } from '../../composables/useEpsSeries';
+import BaseChart from '../common/BaseChart.vue';
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error, selectedSegments } = useCapitalReturnedSeries();
-
-const segmentOptions = [
-  { value: 'dividends', label: 'Dividends' },
-  { value: 'buybacks', label: 'Buybacks' }
-];
+const { series, title, message, loading, error } = useEpsSeries();
 </script>
 
 <style scoped>

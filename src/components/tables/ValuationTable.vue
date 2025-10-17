@@ -12,9 +12,9 @@
 <script setup>
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../stores/tickerStore'
-import { getValuationFromBatch } from '../services/financials/batchTableService.js'
-import BaseTable from './BaseTable.vue'
+import { useTickerStore } from '../../stores/tickerStore'
+import { getValuationFromBatch } from '../../services/financials/batchTableService.js'
+import BaseTable from '../common/BaseTable.vue'
 
 // Use Pinia store instead of prop
 const tickerStore = useTickerStore()
@@ -26,7 +26,7 @@ const data = computed(() => getValuationFromBatch(batchData.value))
 
 const rows = computed(() => [
   { label: 'Market Cap', value: data.value.marketCap },
-  { label: 'PE / FPE', value: `${data.value.pe}/${data.value.fpe}` },
+  { label: 'P/E Ratio', value: data.value.pe },
   { label: 'Price to Sales', value: data.value.ps },
   { label: 'Price to Book', value: data.value.pb },
   { label: 'EV To EBITDA', value: data.value.evEbitda },

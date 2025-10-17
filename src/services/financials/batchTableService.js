@@ -24,7 +24,7 @@ export function getValuationFromBatch(batchData) {
   if (!batchData?.data) return out
   
   try {
-    const { profile, ratiosAnnual, keyMetrics } = batchData.data
+    const { profile, quote, ratiosAnnual, keyMetrics } = batchData.data
     
     // Market Cap from profile
     if (profile && Array.isArray(profile) && profile[0]?.mktCap) {
@@ -49,15 +49,40 @@ export function getValuationFromBatch(batchData) {
       }
     }
     
-    // Fallback to key metrics for EV/EBITDA
-    if (out.evEbitda === '—' && keyMetrics && Array.isArray(keyMetrics) && keyMetrics[0]?.evToEBITDA) {
-      out.evEbitda = keyMetrics[0].evToEBITDA.toFixed(2)
+    // Try to get Forward P/E from keyMetrics
+    if (keyMetrics && Array.isArray(keyMetrics) && keyMetrics.length > 0) {
+      const metrics = keyMetrics[0]
+      
+      // Check various possible field names for forward PE
+      if (metrics.forwardPE) {
+        out.fpe = metrics.forwardPE.toFixed(2)
+      } else if (metrics.peForward) {
+        out.fpe = metrics.peForward.toFixed(2)
+      } else if (metrics.forwardPeRatio) {
+        out.fpe = metrics.forwardPeRatio.toFixed(2)
+      }
+      
+      // Fallback to EV/EBITDA from keyMetrics if not in ratios
+      if (out.evEbitda === '—' && metrics.evToEBITDA) {
+        out.evEbitda = metrics.evToEBITDA.toFixed(2)
+      }
     }
     
-    // Calculate Forward P/E if we have analyst estimates (from batch)
-    // Note: Batch endpoint includes earningsCalendar, not analyst-estimates
-    // This is a limitation - FPE calculation requires separate endpoint
-    // For now, leave as '—' or fetch separately if needed
+    // Try to get Forward P/E from quote (some APIs include it here)
+    if (out.fpe === '—' && quote && Array.isArray(quote) && quote.length > 0) {
+      const q = quote[0]
+      if (q.forwardPE) {
+        out.fpe = q.forwardPE.toFixed(2)
+      } else if (q.eps && q.price) {
+        // Calculate trailing P/E as fallback if not available
+        // (This is NOT forward PE, but better than nothing)
+        const calculatedPE = (q.price / q.eps).toFixed(2)
+        // Only use if we don't have regular PE
+        if (out.pe === '—' && !isNaN(calculatedPE) && isFinite(calculatedPE)) {
+          out.pe = calculatedPE
+        }
+      }
+    }
     
   } catch (error) {
     console.error('[BatchTableService] getValuationFromBatch error:', error)

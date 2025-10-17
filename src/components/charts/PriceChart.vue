@@ -48,9 +48,9 @@
 
 <script setup>
 import { computed } from 'vue';
-import { TF_ORDER } from '../models/timeframe';
-import { usePriceSeries } from '../composables/usePriceSeries';
-import BaseChart from './BaseChart.vue';
+import { TF_ORDER } from '../../models/timeframe';
+import { usePriceSeries } from '../../composables/usePriceSeries';
+import BaseChart from '../common/BaseChart.vue';
 
 // No ticker prop needed - using Pinia store
 const { tfKey, series, title, message, loading, error, retry } = usePriceSeries();

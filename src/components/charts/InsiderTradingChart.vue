@@ -12,8 +12,8 @@
 </template>
 
 <script setup>
-import BaseChart from './BaseChart.vue'
-import { useInsiderTradingSeries } from '../composables/useInsiderTradingSeries.js'
+import BaseChart from '../common/BaseChart.vue'
+import { useInsiderTradingSeries } from '../../composables/useInsiderTradingSeries.js'
 
 // No ticker prop - using Pinia store
 const { series, title, loading, error, message } = useInsiderTradingSeries()

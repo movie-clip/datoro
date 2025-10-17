@@ -40,23 +40,20 @@ export function usePriceSeries() {
     const t = currentTicker
     const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M']
     
+    title.value = 'Price'
     if (!t) {
-      title.value = 'Empty Chart'
       message.value = 'Enter a ticker'
       error.value = null
     } else if (series.value.length > 0) {
       // Have data - show it (ignore any old errors)
-      title.value = `${t} ${cfg.title}`
       message.value = ''
       error.value = null
     } else if (batchError.value && !loading.value) {
       // Error and not loading - keep original title, show error in message
-      title.value = `${t} ${cfg.title}`
       message.value = batchError.value
       error.value = batchError.value
     } else if (!loading.value) {
       // No data and not loading - show no data
-      title.value = 'No data'
       message.value = `No data for '${t}'.`
       error.value = null
     } else {

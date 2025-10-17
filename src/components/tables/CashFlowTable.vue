@@ -11,9 +11,9 @@
 <script setup>
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../stores/tickerStore'
-import { getCashFlowFactsFromBatch } from '../services/financials/batchTableService.js'
-import BaseTable from './BaseTable.vue'
+import { useTickerStore } from '../../stores/tickerStore'
+import { getCashFlowFactsFromBatch } from '../../services/financials/batchTableService.js'
+import BaseTable from '../common/BaseTable.vue'
 
 // Use Pinia store
 const tickerStore = useTickerStore()
