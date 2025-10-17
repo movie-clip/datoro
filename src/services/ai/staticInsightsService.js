@@ -17,9 +17,16 @@ export async function getInsights(ticker) {
     
     if (!response.ok) {
       if (response.status === 404) {
-        throw new Error(`No AI insights available for ${t}. Insights are only available for S&P 500 companies.`)
+        // File doesn't exist - return graceful error
+        throw new Error('NOT_AVAILABLE')
       }
       throw new Error(`Failed to load insights: HTTP ${response.status}`)
+    }
+
+    // Check if response is JSON (not HTML error page)
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('NOT_AVAILABLE')
     }
 
     const data = await response.json()
@@ -57,16 +64,19 @@ export async function getCompetitiveAdvantages(ticker, companyName = null, clear
       lastUpdated: insights.lastUpdated
     }
   } catch (error) {
+    // Check if it's a "not available" error
+    const isNotAvailable = error.message === 'NOT_AVAILABLE' || error.message.includes('Unexpected token')
+    
     return {
       data: {
         success: false,
         data: [{ 
-          title: 'Not Available', 
-          description: error.message 
+          title: 'Feature Temporarily Unavailable', 
+          description: 'AI insights are currently being generated for this company. Please check back soon or try another ticker.'
         }],
-        error: error.message
+        error: isNotAvailable ? 'AI insights not yet available for this ticker' : error.message
       },
-      error: error.message,
+      error: isNotAvailable ? null : error.message,
       cached: false,
       provider: 'static'
     }
@@ -98,16 +108,19 @@ export async function getInvestmentRisks(ticker, companyName = null, clearCache 
       lastUpdated: insights.lastUpdated
     }
   } catch (error) {
+    // Check if it's a "not available" error
+    const isNotAvailable = error.message === 'NOT_AVAILABLE' || error.message.includes('Unexpected token')
+    
     return {
       data: {
         success: false,
         data: [{ 
-          title: 'Not Available', 
-          description: error.message 
+          title: 'Feature Temporarily Unavailable', 
+          description: 'AI insights are currently being generated for this company. Please check back soon or try another ticker.'
         }],
-        error: error.message
+        error: isNotAvailable ? 'AI insights not yet available for this ticker' : error.message
       },
-      error: error.message,
+      error: isNotAvailable ? null : error.message,
       cached: false,
       provider: 'static'
     }
