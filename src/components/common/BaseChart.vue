@@ -227,7 +227,7 @@ const createOption = (isLarge = false) => {
   // In modal view with useLegend, show legend at top
   const showLegendAtTop = isLarge && props.useLegend
   // Increased top padding on mobile modal (50 instead of 30) for toggle buttons
-  const topPadding = showLegendAtTop ? 60 : (isLarge ? (isMobile ? 50 : 30) : (isMobile ? 30 : 44))
+  const topPadding = showLegendAtTop ? 60 : (isLarge ? (isMobile ? 50 : 30) : 45)
   // Add extra bottom padding if showLegend is enabled (for multi-series charts)
   const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile ? 15 : 55) : (isMobile ? 15 : 50)
   
@@ -386,13 +386,14 @@ const createOption = (isLarge = false) => {
     ] : {
       type: 'value',
       scale: true,
+      splitNumber: 4, // Limit to 4 intervals (5 lines total) for cleaner axis
       min: (v) => {
         const r = v.max - v.min
         if (r === 0) {
           const p = Math.abs(v.min) * 0.05 || 1
           return v.min - p
         }
-        const calculated = v.min - r * 0.06
+        const calculated = v.min - r * 0.03 // Reduced padding from 0.06 to 0.03
         // If all data is positive, don't let axis go negative
         if (v.min >= 0 && calculated < 0) {
           return 0
@@ -405,7 +406,7 @@ const createOption = (isLarge = false) => {
           const p = Math.abs(v.max) * 0.05 || 1
           return v.max + p
         }
-        return v.max + r * 0.06
+        return v.max + r * 0.03 // Reduced padding from 0.06 to 0.03
       },
       axisLabel: { 
         color: '#ddd', 
@@ -485,7 +486,7 @@ const modalOption = computed(() => createOption(true))
   position: relative;
 }
 
-.echart { 
+.echart {
   width: 100%; 
   height: 340px;
   display: block; 
