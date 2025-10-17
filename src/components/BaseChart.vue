@@ -247,7 +247,7 @@ const createOption = (isLarge = false) => {
     },
     xAxis: {
       type: 'time', 
-      boundaryGap: props.kind === 'bar' || props.dualAxis ? true : false,
+      boundaryGap: props.kind === 'bar' || props.dualAxis ? ['5%', '5%'] : false,
       axisLabel: { 
         color: '#ddd', 
         fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
