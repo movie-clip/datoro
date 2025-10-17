@@ -1,4 +1,68 @@
 {
+  "AAPL": {
+    "advantages": [
+      {
+        "title": "Brand Loyalty",
+        "description": "Apple has cultivated exceptional brand loyalty with a retention rate above 90%, creating predictable recurring revenue."
+      },
+      {
+        "title": "Ecosystem Lock-in",
+        "description": "The seamless integration across devices creates high switching costs for customers."
+      },
+      {
+        "title": "Network Effects",
+        "description": "With over 1 billion active users, Apple's ecosystem benefits from increasing user base, driving growth and increasing customer value."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Valuation Concerns",
+        "description": "Apple's high valuation and P/E ratio make it vulnerable to a decline in earnings or a change in market sentiment."
+      },
+      {
+        "title": "Market Concentration",
+        "description": "As a leader in the premium smartphone segment, Apple is heavily dependent on a limited group of customers and channels."
+      },
+      {
+        "title": "Technological Disruption",
+        "description": "The rise of 5G technology and emerging players like Xiaomi could disrupt Apple's wireless business and ecosystem."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "MSFT": {
+    "advantages": [
+      {
+        "title": "Strong Brand Loyalty",
+        "description": "Microsoft has invested heavily in its Surface brand, creating a loyal customer base that drives repeat business and positive word-of-mouth."
+      },
+      {
+        "title": "Network Effects",
+        "description": "With over 1 billion active users on Microsoft 365, the company benefits from economies of scale and increased user engagement."
+      },
+      {
+        "title": "Patented Technology",
+        "description": "Microsoft holds numerous patents in AI and machine learning, providing a competitive edge in developing innovative products and services."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Valuation Concerns",
+        "description": "Microsoft's high price-to-earnings ratio makes it vulnerable to market fluctuations and investor sentiment shifts."
+      },
+      {
+        "title": "Technological Disruption",
+        "description": "The shift to cloud computing and software-as-a-service models poses risks to Microsoft's traditional business model."
+      },
+      {
+        "title": "Market Concentration",
+        "description": "Microsoft's dominance in the PC and gaming markets exposes it to potential competition from emerging players."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
   "TW": {
     "advantages": [
       {
