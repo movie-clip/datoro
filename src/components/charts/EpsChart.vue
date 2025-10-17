@@ -18,6 +18,7 @@
       y-format="int"
       :loading="loading"
       aria-label="EPS chart"
+      :show-growth-labels="true"
     />
     <p
       v-if="error"

@@ -62,6 +62,37 @@
         :option="modalOption"
         autoresize
       />
+      
+      <!-- Growth Labels Section -->
+      <div
+        v-if="showGrowthLabels && growthData"
+        class="growth-labels"
+      >
+        <div
+          v-if="growthData.oneYear !== null"
+          class="growth-label"
+          :class="growthData.oneYear >= 0 ? 'positive' : 'negative'"
+        >
+          <span class="label-period">1Y</span>
+          <span class="label-value">{{ formatGrowth(growthData.oneYear) }}</span>
+        </div>
+        <div
+          v-if="growthData.twoYear !== null"
+          class="growth-label"
+          :class="growthData.twoYear >= 0 ? 'positive' : 'negative'"
+        >
+          <span class="label-period">2Y</span>
+          <span class="label-value">{{ formatGrowth(growthData.twoYear) }}</span>
+        </div>
+        <div
+          v-if="growthData.fiveYear !== null"
+          class="growth-label"
+          :class="growthData.fiveYear >= 0 ? 'positive' : 'negative'"
+        >
+          <span class="label-period">5Y</span>
+          <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
+        </div>
+      </div>
     </ChartModal>
   </div>
 </template>
@@ -71,6 +102,7 @@ import { computed, ref } from 'vue'
 import VChart from 'vue-echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
+import { calculateGrowthRates, formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator.js'
 
 const props = defineProps({
   title:      { type: String, default: '' },
@@ -89,6 +121,7 @@ const props = defineProps({
   stacked:    { type: Boolean, default: false },
   useLegend:  { type: Boolean, default: false },
   dualAxis:   { type: Boolean, default: false },
+  showGrowthLabels: { type: Boolean, default: false },
 })
 
 const showModal = ref(false)
@@ -143,6 +176,48 @@ const yFormatter = (v, mode) => {
   if (mode === 'percent') return v.toFixed(2) + '%'
   if (mode === 'int') return Math.round(v).toLocaleString()
   return Math.round(v).toString()
+}
+
+// Calculate growth data for the chart
+const growthData = computed(() => {
+  if (!props.showGrowthLabels) return null
+  
+  // Handle both simple array and multi-series object
+  let dataToAnalyze = []
+  
+  if (Array.isArray(props.series)) {
+    if (props.series.length > 0 && Array.isArray(props.series[0])) {
+      // Simple array of [timestamp, value] pairs
+      dataToAnalyze = props.series
+    } else if (props.series.length > 0 && props.series[0]?.data) {
+      // Multi-series: use the first series or sum all series
+      // For stacked charts, we should sum all series values at each timestamp
+      if (props.stacked && props.series.length > 1) {
+        // Sum all series values at each timestamp
+        const dateMap = new Map()
+        props.series.forEach(s => {
+          if (s.data && Array.isArray(s.data)) {
+            s.data.forEach(([date, value]) => {
+              dateMap.set(date, (dateMap.get(date) || 0) + value)
+            })
+          }
+        })
+        dataToAnalyze = Array.from(dateMap.entries()).sort((a, b) => a[0] - b[0])
+      } else {
+        // Use first series
+        dataToAnalyze = props.series[0].data || []
+      }
+    }
+  }
+  
+  if (dataToAnalyze.length < 2) return null
+  
+  return calculateGrowthRates(dataToAnalyze)
+})
+
+// Format growth for display
+const formatGrowth = (growth) => {
+  return formatGrowthUtil(growth)
 }
 
 const createOption = (isLarge = false) => {
@@ -587,4 +662,74 @@ const modalOption = computed(() => createOption(true))
     font-size: 16px;
   }
 }
+
+/* Growth Labels Styles */
+.growth-labels {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 0px;
+  padding: 2px;
+  flex-wrap: wrap;
+}
+
+.growth-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 1px;
+  border-radius: 6px;
+  min-width: 60px;
+}
+
+.growth-label:hover {
+  transform: scale(1.05);
+}
+
+.growth-label.positive {
+  background: #05885e;
+  color: white;
+}
+
+.growth-label.negative {
+  background: #c02323;
+  color: white;
+}
+
+.label-period {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.label-value {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+@media (max-width: 768px) {
+  .growth-labels {
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px;
+  }
+
+  .growth-label {
+    padding: 5px 10px;
+    min-width: 55px;
+  }
+
+  .label-period {
+    font-size: 9px;
+  }
+
+  .label-value {
+    font-size: 12px;
+  }
+}
 </style>
+

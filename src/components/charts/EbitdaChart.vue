@@ -23,6 +23,7 @@
       :selected-segments="chartView === 'bridge' ? selectedSegments : undefined"
       :view-mode-options="chartView === 'bridge' ? viewModeOptions : undefined"
       aria-label="EBITDA chart"
+      :show-growth-labels="chartView !== 'bridge'"
       @update:selected-segments="selectedSegments = $event"
       @modal-closed="resetView"
     >

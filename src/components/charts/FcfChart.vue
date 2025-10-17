@@ -22,6 +22,7 @@
       :loading="loading"
       aria-label="Free Cash Flow chart"
       :view-mode-options="viewModeOptions"
+      :show-growth-labels="true"
       @modal-closed="resetViewMode"
     />
     <p

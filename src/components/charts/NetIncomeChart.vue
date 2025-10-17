@@ -20,6 +20,7 @@
       :loading="loading"
       aria-label="Net Income chart"
       :period-options="viewModeOptions"
+      :show-growth-labels="true"
     />
     <p
       v-if="error"

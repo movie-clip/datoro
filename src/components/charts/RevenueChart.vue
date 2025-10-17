@@ -22,6 +22,8 @@
       aria-label="Revenue chart"
       :selected-segments="selectedSegments"
       :view-mode-options="viewModeOptions"
+      :stacked="selectedSegments.length > 1 && !selectedSegments.includes('total')"
+      :show-growth-labels="true"
       @update:selected-segments="selectedSegments = $event"
       @modal-closed="resetSelection"
     />
