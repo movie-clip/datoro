@@ -125,12 +125,16 @@ app.use(cors({
       callback(null, true);
     } else {
       console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      console.warn(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: false,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Cache', 'X-Request-Id'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }))
 app.use(express.json())
 
