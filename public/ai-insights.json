@@ -31,6 +31,134 @@
     "updated": "2025-10-17",
     "provider": "ollama"
   },
+  "CRM": {
+    "advantages": [
+      {
+        "title": "Market Position Leadership",
+        "description": "Salesforce is a pioneer in cloud-based CRM, maintaining its market position through strong brand recognition and continuous innovation."
+      },
+      {
+        "title": "Network Effects",
+        "description": "Its expansive ecosystem of integrated apps and tools leverages user engagement to enhance customer value, fostering network effects that drive growth."
+      },
+      {
+        "title": "Unique Assets (AI-Powered Platform)",
+        "description": "Salesforce's proprietary Einstein AI platform provides predictive analytics capabilities, driving business insights and decision-making, and cementing its market dominance."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Valuation Concerns",
+        "description": "Salesforce's stock price has historically been volatile and may be overvalued due to its high growth rate."
+      },
+      {
+        "title": "Market Concentration",
+        "description": "The company operates primarily in the cloud-based software market, making it vulnerable to disruptions from competitors."
+      },
+      {
+        "title": "Cyclicality",
+        "description": "Salesforce's revenue is heavily influenced by the economic cycle, with fluctuations in enterprise spending affecting its top line."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "GOOGL": {
+    "advantages": [
+      {
+        "title": "Dominant Search Market",
+        "description": "Alphabet's search engine is the most widely used in the world, providing a significant moat through its market position."
+      },
+      {
+        "title": "Network Effects",
+        "description": "Google's advertising business benefits from network effects, as more users increase the value to advertisers and attract even more users."
+      },
+      {
+        "title": "Innovation Pipeline",
+        "description": "Alphabet's diverse portfolio of technologies, including autonomous vehicles and life sciences, provides a strong foundation for future innovation and growth."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Google Dominance",
+        "description": "The company's dominant position in search and online advertising creates significant competition risks, particularly from emerging players."
+      },
+      {
+        "title": "Regulatory Scrutiny",
+        "description": "Google faces increasing regulatory scrutiny over antitrust concerns, data privacy, and intellectual property issues."
+      },
+      {
+        "title": "Cyclicality of Ad Revenue",
+        "description": "The company's ad revenue is highly cyclical, being heavily influenced by economic trends and seasonal fluctuations."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "MA": {
+    "advantages": [
+      {
+        "title": "Strong Brand Loyalty",
+        "description": "MA Corp.'s brand has a strong presence in the technology sector, with a loyal customer base that drives repeat business."
+      },
+      {
+        "title": "Network Effects",
+        "description": "MA Corp.'s diverse product portfolio creates a network effect, where each product's value increases as more users join the platform."
+      },
+      {
+        "title": "Moat of Innovation",
+        "description": "MA Corp. invests heavily in research and development, maintaining a competitive edge through innovative products and services."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Competition from FAANGs",
+        "description": "MA Corp competes with tech giants like Apple, Amazon, Facebook, and Google for market share."
+      },
+      {
+        "title": "Regulatory Scrutiny",
+        "description": "Changes in data privacy laws or antitrust regulations could impact MA Corp's business models."
+      },
+      {
+        "title": "Valuation Concerns",
+        "description": "MA Corp's stock price has historically been volatile, with a high price-to-earnings ratio that may attract market volatility."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "MSCI": {
+    "advantages": [
+      {
+        "title": "Diversified ESG Indexes",
+        "description": "MSCI's broad range of ESG indexes provides a comprehensive framework for investors to measure environmental, social, and governance performance."
+      },
+      {
+        "title": "Market Leadership",
+        "description": "As the largest provider of ESG research and data, MSCI maintains a dominant market position, influencing investment decisions worldwide."
+      },
+      {
+        "title": "Strong Brand Recognition",
+        "description": "MSCI's trusted brand name is synonymous with ESG excellence, facilitating seamless adoption by institutional investors."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Regulatory Risk",
+        "description": "The company's focus on ESG metrics may be subject to regulatory changes and interpretations."
+      },
+      {
+        "title": "Market Concentration",
+        "description": "MSCI's business is heavily dependent on a few large clients, increasing the risk of concentration."
+      },
+      {
+        "title": "Valuation Concerns",
+        "description": "The company's valuation multiple has been high in recent years, making it vulnerable to market fluctuations."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
   "MSFT": {
     "advantages": [
       {
@@ -58,6 +186,70 @@
       {
         "title": "Market Concentration",
         "description": "Microsoft's dominance in the PC and gaming markets exposes it to potential competition from emerging players."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "SPGI": {
+    "advantages": [
+      {
+        "title": "Moat of Data",
+        "description": "S&P Global's extensive data network and proprietary methodologies provide a strong barrier to entry for competitors."
+      },
+      {
+        "title": "Brand Strength",
+        "description": "Established reputation as a trusted authority in credit ratings and market intelligence"
+      },
+      {
+        "title": "Network Effects",
+        "description": "Growing demand for S&P Global's services from financial institutions creates a self-reinforcing cycle of adoption"
+      }
+    ],
+    "risks": [
+      {
+        "title": "Global Economic Downturn",
+        "description": "S&P Global's revenue is highly correlated with global economic trends, making it vulnerable to recession and downturns."
+      },
+      {
+        "title": "Regulatory Scrutiny",
+        "description": "As a major credit rating agency, S&P Global faces regulatory scrutiny from government bodies, which can impact its ratings and business."
+      },
+      {
+        "title": "Valuation Uncertainty",
+        "description": "S&P Global's valuation is sensitive to changes in interest rates and market sentiment, which can lead to fluctuations in its stock price."
+      }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "TSM": {
+    "advantages": [
+      {
+        "title": "Moat through Technology Leadership",
+        "description": "As the world's largest independent semiconductor foundry, TSM enjoys a moat of technological expertise and scale."
+      },
+      {
+        "title": "Brand Strength in Supply Chain",
+        "description": "TSM's long-standing relationships with major tech companies provide a strong brand reputation in the supply chain."
+      },
+      {
+        "title": "Network Effects through Customer Base",
+        "description": "With a large and diverse customer base, TSM benefits from network effects, enabling it to maintain market position."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Competition from China",
+        "description": "TSMC faces intense competition from Chinese semiconductor manufacturers such as SMIC and Huawei's chip arm."
+      },
+      {
+        "title": "Regulatory Compliance Risks",
+        "description": "TSMC must navigate complex regulations related to export control, data privacy, and intellectual property protection."
+      },
+      {
+        "title": "Valuation Concerns due to Dependence on Smartphone Sales",
+        "description": "TSMC's revenue is heavily dependent on smartphone sales, making it vulnerable to fluctuations in the global smartphone market."
       }
     ],
     "updated": "2025-10-17",
