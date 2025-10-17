@@ -21,8 +21,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  searches      Search[]
-  apiRequests   ApiRequest[]
+  searches    Search[]
+  apiRequests ApiRequest[]
 
   @@map("users")
 }
@@ -41,13 +41,15 @@ model Search {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("searches")
   @@index([ticker])
   @@index([userId])
   @@index([createdAt])
   // Composite indexes for common query patterns (performance optimization)
-  @@index([ticker, createdAt(sort: Desc)])  // Popular tickers over time
-  @@index([userId, createdAt(sort: Desc)])  // User search history
+  @@index([ticker, createdAt(sort: Desc)]) // Popular tickers over time
+  @@index([userId, createdAt(sort: Desc)]) // User search history
+  @@index([userId, ticker, createdAt(sort: Desc)]) // User-specific ticker history
+  @@index([source, createdAt(sort: Desc)]) // Search source analytics
+  @@map("searches")
 }
 
 // ============================================
@@ -63,9 +65,9 @@ model PopularTicker {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@map("popular_tickers")
   @@index([searchCount(sort: Desc)])
   @@index([lastSearched(sort: Desc)])
+  @@map("popular_tickers")
 }
 
 // ============================================
@@ -85,15 +87,18 @@ model ApiRequest {
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@map("api_requests")
   @@index([endpoint])
   @@index([statusCode])
   @@index([createdAt])
   @@index([userId])
   // Composite indexes for analytics queries (performance optimization)
-  @@index([endpoint, createdAt(sort: Desc)])     // Endpoint statistics
-  @@index([statusCode, createdAt(sort: Desc)])   // Error rate calculations
-  @@index([userId, createdAt(sort: Desc)])       // User activity tracking
+  @@index([endpoint, createdAt(sort: Desc)]) // Endpoint statistics
+  @@index([statusCode, createdAt(sort: Desc)]) // Error rate calculations
+  @@index([userId, createdAt(sort: Desc)]) // User activity tracking
+  @@index([endpoint, statusCode, createdAt(sort: Desc)]) // Endpoint error analysis
+  @@index([cached, createdAt(sort: Desc)]) // Cache effectiveness tracking
+  @@index([userId, endpoint, createdAt(sort: Desc)]) // User request patterns per endpoint
+  @@map("api_requests")
 }
 
 // ============================================
@@ -101,20 +106,20 @@ model ApiRequest {
 // ============================================
 
 model DailyAnalytics {
-  id                String   @id @default(uuid())
-  date              DateTime @unique @db.Date
-  totalRequests     Int      @default(0) @map("total_requests")
-  uniqueUsers       Int      @default(0) @map("unique_users")
-  cacheHitRate      Float    @default(0) @map("cache_hit_rate")
-  avgResponseTime   Int      @default(0) @map("avg_response_time")
-  errorRate         Float    @default(0) @map("error_rate")
-  topTicker         String?  @map("top_ticker")
-  topEndpoint       String?  @map("top_endpoint")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(uuid())
+  date            DateTime @unique @db.Date
+  totalRequests   Int      @default(0) @map("total_requests")
+  uniqueUsers     Int      @default(0) @map("unique_users")
+  cacheHitRate    Float    @default(0) @map("cache_hit_rate")
+  avgResponseTime Int      @default(0) @map("avg_response_time")
+  errorRate       Float    @default(0) @map("error_rate")
+  topTicker       String?  @map("top_ticker")
+  topEndpoint     String?  @map("top_endpoint")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  @@map("daily_analytics")
   @@index([date(sort: Desc)])
+  @@map("daily_analytics")
 }
 
 // ============================================
@@ -122,24 +127,28 @@ model DailyAnalytics {
 // ============================================
 
 model ErrorLog {
-  id           String   @id @default(uuid())
-  errorCode    String   @map("error_code")
-  message      String
-  endpoint     String?
-  ticker       String?
-  stackTrace   String?  @map("stack_trace") @db.Text
-  userId       String?  @map("user_id")
-  ipAddress    String?  @map("ip_address")
-  count        Int      @default(1) // For grouping same errors
-  firstSeen    DateTime @default(now()) @map("first_seen")
-  lastSeen     DateTime @default(now()) @map("last_seen")
-  resolved     Boolean  @default(false)
-  resolvedAt   DateTime? @map("resolved_at")
+  id         String    @id @default(uuid())
+  errorCode  String    @map("error_code")
+  message    String
+  endpoint   String?
+  ticker     String?
+  stackTrace String?   @map("stack_trace") @db.Text
+  userId     String?   @map("user_id")
+  ipAddress  String?   @map("ip_address")
+  count      Int       @default(1) // For grouping same errors
+  firstSeen  DateTime  @default(now()) @map("first_seen")
+  lastSeen   DateTime  @default(now()) @map("last_seen")
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime? @map("resolved_at")
 
-  @@map("error_logs")
   @@index([errorCode])
   @@index([endpoint])
   @@index([ticker])
   @@index([resolved])
   @@index([firstSeen(sort: Desc)])
+  // Composite indexes for error analysis
+  @@index([errorCode, resolved, lastSeen(sort: Desc)]) // Active errors by type
+  @@index([endpoint, errorCode, lastSeen(sort: Desc)]) // Endpoint-specific errors
+  @@index([ticker, errorCode, lastSeen(sort: Desc)]) // Ticker-specific errors
+  @@map("error_logs")
 }
