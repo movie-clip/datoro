@@ -226,7 +226,8 @@ const createOption = (isLarge = false) => {
   
   // In modal view with useLegend, show legend at top
   const showLegendAtTop = isLarge && props.useLegend
-  const topPadding = showLegendAtTop ? 60 : (isLarge ? 30 : (isMobile ? 30 : 44))
+  // Increased top padding on mobile modal (50 instead of 30) for toggle buttons
+  const topPadding = showLegendAtTop ? 60 : (isLarge ? (isMobile ? 50 : 30) : (isMobile ? 30 : 44))
   // Add extra bottom padding if showLegend is enabled (for multi-series charts)
   const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile ? 15 : 55) : (isMobile ? 15 : 50)
   

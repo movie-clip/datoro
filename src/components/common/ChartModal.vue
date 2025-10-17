@@ -120,4 +120,15 @@ watch(() => props.isOpen, (isOpen) => {
 .modal-leave-to .modal-container {
   transform: scale(0.95);
 }
+
+/* Mobile responsive - smaller close button */
+@media (max-width: 768px) {
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 24px;
+    top: 8px;
+    right: 8px;
+  }
+}
 </style>
