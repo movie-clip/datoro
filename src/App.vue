@@ -14,6 +14,7 @@ import BalanceTable from './components/tables/BalanceTable.vue'
 
 // Chart components
 import PriceChart from './components/charts/PriceChart.vue'
+import PriceTargetBar from './components/charts/PriceTargetBar.vue'
 import RevenueChart from './components/charts/RevenueChart.vue'
 import NetIncomeChart from './components/charts/NetIncomeChart.vue'
 import FcfChart from './components/charts/FcfChart.vue'
@@ -97,7 +98,7 @@ function handleImageError(event) {
       </section>
     </section>
 
-    <!-- Charts: 12 charts (no longer need ticker prop - use store) -->
+    <!-- Charts: 12 charts -->
     <section class="charts">
       <section class="panel">
         <PriceChart />
@@ -134,6 +135,13 @@ function handleImageError(event) {
       </section>
       <section class="panel">
         <InsiderTradingChart />
+      </section>
+    </section>
+
+    <!-- Price Target Bar: Full width section -->
+    <section class="price-target-section">
+      <section class="panel">
+        <PriceTargetBar />
       </section>
     </section>
 
@@ -197,9 +205,22 @@ function handleImageError(event) {
   margin: 12px auto 24px;
 }
 
+.price-target-section {
+  max-width: 1200px;
+  margin: 24px auto;
+}
+
+.price-target-section > .panel {
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .ai-analysis-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .price-target-section {
+    margin: 16px auto;
   }
 }
 </style>
