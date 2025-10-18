@@ -1,41 +1,71 @@
 # Voice Generation for Factorly
 
-Generate AI voiceovers for company analysis scripts using ElevenLabs API.
+Generate AI voiceovers for company analysis scripts using ElevenLabs or OpenAI APIs.
 
-## 🎯 Quick Start
+## �️ Available Scripts
 
-### 1. Install Dependencies
+### 1. `generate_voiceovers.py` - Standard Voice (ElevenLabs)
+- Professional narration style
+- High-quality voice cloning
+- Multiple voice options
+
+### 2. `generate_rap_style.py` - Rap/Music Style (OpenAI) 🎤
+- Rhythmic, rap-style delivery
+- Speed control for flow
+- Emphasis and pauses
+- Great for creative content
+
+## �🎯 Quick Start
+
+### Standard Voice (ElevenLabs)
+
+#### 1. Install Dependencies
 ```powershell
 cd scripts/voice-generation
 pip install elevenlabs
 ```
 
-### 2. Set API Key
+#### 2. Set API Key
 ```powershell
 $env:ELEVEN_API_KEY = "your_elevenlabs_api_key"
 ```
 Get your key from: https://elevenlabs.io/app/speech-synthesis
 
-### 3. Add Scripts
-Place your `.txt` files in the `scripts/` folder:
-- Example: `scripts/AAPL.txt`
-- Example: `scripts/MSFT.txt`
-
-### 4. Generate Audio
-
-**Generate for specific ticker:**
+#### 3. Generate Audio
 ```powershell
+# Single ticker
 python generate_voiceovers.py AAPL
-```
 
-**Generate for all tickers:**
-```powershell
+# All tickers
 python generate_voiceovers.py
 ```
 
-Output will be in `voiceovers/` folder as `.mp3` files.
+### Rap Style (OpenAI) 🎤
+
+#### 1. Install OpenAI
+```powershell
+pip install openai
+```
+
+#### 2. Set API Key
+```powershell
+$env:OPENAI_API_KEY = "your_openai_api_key"
+```
+
+#### 3. Generate Rap-Style Audio
+```powershell
+# Single ticker
+python generate_rap_style.py TSLA
+
+# All tickers
+python generate_rap_style.py
+```
+
+Output: `voiceovers/TSLA_rap.mp3`
 
 ## ⚙️ Configuration
+
+### Standard Voice (generate_voiceovers.py)
 
 Edit `generate_voiceovers.py` to customize:
 
@@ -56,6 +86,23 @@ ACCENT_DESCRIPTION = "British accent"
 MODEL = "eleven_multilingual_v2"  # Best quality
 ```
 
+### Rap Style (generate_rap_style.py) 🎤
+
+Edit `generate_rap_style.py` to customize:
+
+```python
+# Voice Selection for rap
+# Options: alloy, echo, fable, onyx, nova, shimmer
+# Best for rap: onyx (deep), echo (resonant), fable (expressive)
+VOICE = "onyx"
+
+# Speed control (0.25 to 4.0)
+SPEED = 1.1  # 0.8-1.0 = Slow rap, 1.0-1.2 = Normal, 1.2-1.5 = Fast rap
+
+# Model
+MODEL = "gpt-4o-audio-preview"  # Better prosody and musicality
+```
+
 ## 🎙️ Voice Cloning (Optional)
 
 To use your own voice:
@@ -66,7 +113,7 @@ USE_VOICE_CLONING = True
 ```
 
 2. Add voice samples:
-   - Place `.mp3` or `.wav` files in `voice_samples/`
+   - Place `.mp3`, `.wav`, `.ogg`, `.flac`, or `.m4a` files in `voice_samples/`
    - At least 1-3 minutes of clear audio
    - Multiple samples recommended
 
