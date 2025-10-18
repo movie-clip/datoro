@@ -375,8 +375,16 @@ const createOption = (isLarge = false) => {
           minute: '{yyyy}'
         }
       },
+      axisTick: {
+        alignWithLabel: true // Align ticks with bars
+      },
       axisLine: { lineStyle: { color: '#aaa' } },
-      splitLine: { show: false }
+      splitLine: { show: false },
+      // For bar charts, align axis labels with data points
+      ...(props.kind === 'bar' ? {
+        splitNumber: 10,
+        minInterval: 365 * 24 * 3600 * 1000 // Minimum 1 year between labels
+      } : {})
     },
     yAxis: props.dualAxis ? [
       // Left axis (for price/primary data)
