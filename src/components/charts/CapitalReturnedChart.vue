@@ -21,6 +21,7 @@
       :loading="loading"
       :stacked="true"
       :view-mode-options="segmentOptions"
+      :show-growth-labels="true"
       aria-label="Capital returned to shareholders chart"
     />
     <p

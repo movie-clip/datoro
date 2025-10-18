@@ -8,6 +8,7 @@
     kind="bar"
     y-format="percent"
     :bar-max-width="40"
+    :show-growth-labels="true"
   />
 </template>
 

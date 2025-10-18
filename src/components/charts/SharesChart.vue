@@ -17,6 +17,8 @@
       kind="bar"
       y-format="short"
       :loading="loading"
+      :show-growth-labels="true"
+      :invert-growth="true"
       aria-label="Shares Outstanding chart"
     />
     <p

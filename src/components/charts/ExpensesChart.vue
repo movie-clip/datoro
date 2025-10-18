@@ -13,6 +13,8 @@
     :stacked="true"
     :selected-segments="selectedSegments"
     :view-mode-options="viewModeOptions"
+    :show-growth-labels="true"
+    :invert-growth="true"
     @update:selected-segments="selectedSegments = $event"
     @modal-closed="resetSelection"
   />

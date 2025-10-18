@@ -71,7 +71,7 @@
         <div
           v-if="growthData.oneYear !== null"
           class="growth-label"
-          :class="growthData.oneYear >= 0 ? 'positive' : 'negative'"
+          :class="getGrowthClass(growthData.oneYear)"
         >
           <span class="label-period">1Y</span>
           <span class="label-value">{{ formatGrowth(growthData.oneYear) }}</span>
@@ -79,7 +79,7 @@
         <div
           v-if="growthData.twoYear !== null"
           class="growth-label"
-          :class="growthData.twoYear >= 0 ? 'positive' : 'negative'"
+          :class="getGrowthClass(growthData.twoYear)"
         >
           <span class="label-period">2Y</span>
           <span class="label-value">{{ formatGrowth(growthData.twoYear) }}</span>
@@ -87,7 +87,7 @@
         <div
           v-if="growthData.fiveYear !== null"
           class="growth-label"
-          :class="growthData.fiveYear >= 0 ? 'positive' : 'negative'"
+          :class="getGrowthClass(growthData.fiveYear)"
         >
           <span class="label-period">5Y</span>
           <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
@@ -122,6 +122,7 @@ const props = defineProps({
   useLegend:  { type: Boolean, default: false },
   dualAxis:   { type: Boolean, default: false },
   showGrowthLabels: { type: Boolean, default: false },
+  invertGrowth: { type: Boolean, default: false }, // For expenses: decreases are positive
 })
 
 const showModal = ref(false)
@@ -217,7 +218,22 @@ const growthData = computed(() => {
 
 // Format growth for display
 const formatGrowth = (growth) => {
+  // Don't invert the actual number - show the real growth percentage
+  // The inversion only affects the CSS class (color)
   return formatGrowthUtil(growth)
+}
+
+// Get CSS class for growth label (handling inversion)
+const getGrowthClass = (growth) => {
+  if (growth === null || growth === undefined || isNaN(growth)) return ''
+  
+  // For inverted growth (expenses), negative is good (positive class)
+  if (props.invertGrowth) {
+    return growth <= 0 ? 'positive' : 'negative'
+  }
+  
+  // Normal growth: positive is good
+  return growth >= 0 ? 'positive' : 'negative'
 }
 
 const createOption = (isLarge = false) => {
@@ -350,7 +366,14 @@ const createOption = (isLarge = false) => {
         color: '#ddd', 
         fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
         rotate: isMobile && !isLarge ? 45 : 0, // Rotate labels on mobile for better fit
-        hideOverlap: true // Hide overlapping labels
+        hideOverlap: true, // Hide overlapping labels
+        formatter: {
+          year: '{yyyy}',
+          month: '{yyyy}',
+          day: '{yyyy}',
+          hour: '{yyyy}',
+          minute: '{yyyy}'
+        }
       },
       axisLine: { lineStyle: { color: '#aaa' } },
       splitLine: { show: false }
