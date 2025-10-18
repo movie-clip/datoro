@@ -20,16 +20,16 @@ from elevenlabs import ElevenLabs, VoiceSettings
 # ─────────────────────────────
 #  CONFIGURATION
 # ─────────────────────────────
-ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY", "")  # Set via environment variable for security
+ELEVEN_API_KEY = "sk_734965751b4ac48fa1cc94ef32e5851d06d6bb3b72f32f65"  # Set via environment variable for security
 
 # Voice cloning settings
-USE_VOICE_CLONING = True  # Set to True to use voice cloning
-VOICE_NAME = "MyWifesVoice"  # Name for your cloned voice
+USE_VOICE_CLONING = False  # Set to True to use voice cloning
+VOICE_NAME = "wife"  # Name for your cloned voice
 VOICE_SAMPLES_DIR = Path("voice_samples")  # Folder with your voice samples (.mp3, .wav)
 
 # Preset voice ID (used if USE_VOICE_CLONING = False)
 # Popular voices: "21m00Tcm4TlvDq8ikWAM" (Rachel), "29vD33N1CtxCmqQRPOHJ" (Drew)
-PRESET_VOICE_ID = "BemBu07D7GfcaxbSR6uG"
+PRESET_VOICE_ID = "3CIN7JGA9faDzDSRhhVP"
 
 # Voice settings
 STABILITY = 0.5  # 0.0-1.0: Lower = more expressive, Higher = more stable
@@ -53,52 +53,28 @@ MODEL = "eleven_multilingual_v2"
 def get_or_create_cloned_voice(client: ElevenLabs, voice_name: str) -> str:
     """
     Get existing cloned voice ID or create new one from samples.
-    Returns the voice ID to use for generation.
+    For FREE PLAN: This will look for voices you created manually in the web interface.
+    API voice creation requires a paid plan.
     """
     try:
-        # Check if voice already exists
+        # Check if voice already exists in your account
+        print(f"🔍 Looking for voice: {voice_name}")
         voices = client.voices.get_all()
         for voice in voices.voices:
             if voice.name == voice_name:
-                print(f"✅ Found existing cloned voice: {voice_name} (ID: {voice.voice_id})")
+                print(f"✅ Found existing voice: {voice_name} (ID: {voice.voice_id})")
                 return voice.voice_id
         
-        # Create new cloned voice from samples
-        print(f"🎤 Creating new cloned voice: {voice_name}")
-        
-        if not VOICE_SAMPLES_DIR.exists():
-            raise FileNotFoundError(
-                f"Voice samples directory not found: {VOICE_SAMPLES_DIR}\n"
-                f"Please create this folder and add your voice samples (.mp3, .wav, .ogg, .flac, .m4a files)"
-            )
-        
-        # Collect audio samples (support multiple formats)
-        sample_files = []
-        for ext in ['*.mp3', '*.wav', '*.ogg', '*.flac', '*.m4a', '*.aac']:
-            sample_files.extend(list(VOICE_SAMPLES_DIR.glob(ext)))
-        
-        if not sample_files:
-            raise FileNotFoundError(
-                f"No audio samples found in {VOICE_SAMPLES_DIR}\n"
-                f"Please add audio files (.mp3, .wav, .ogg, .flac, .m4a) of your voice (at least 1 minute total)"
-            )
-        
-        print(f"📁 Found {len(sample_files)} voice sample(s)")
-        
-        # Prepare files for upload
-        from elevenlabs import Voice
-        
-        # Create voice using add method with file paths
-        voice = client.voices.add(
-            name=voice_name,
-            files=[str(f) for f in sample_files[:25]]  # Pass file paths as strings
-        )
-        
-        print(f"✅ Voice cloned successfully! ID: {voice.voice_id}")
-        return voice.voice_id
+        # Voice not found
+        print(f"⚠️  Voice '{voice_name}' not found in your account")
+        print(f"💡 To use custom voice on FREE plan:")
+        print(f"   1. Go to https://elevenlabs.io/app/voice-lab")
+        print(f"   2. Create/clone your voice manually using web interface")
+        print(f"   3. Name it '{voice_name}' or update VOICE_NAME in script")
+        raise Exception(f"Voice '{voice_name}' not found")
         
     except Exception as e:
-        print(f"❌ Error creating cloned voice: {e}")
+        print(f"❌ Error: {e}")
         raise
 
 

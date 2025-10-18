@@ -1,2 +1,14 @@
+# Cloud-based voice generation (Python 3.12+ compatible)
 elevenlabs>=1.0.0
 openai>=1.0.0
+
+# Local voice generation with Bark (Python 3.12 compatible)
+suno-bark
+scipy>=1.9.0
+numpy>=1.22.0
+
+# Alternative: Coqui TTS (requires Python 3.9-3.11)
+# See LOCAL_TTS_GUIDE.md for Python 3.11 installation
+# Uncomment if using Python 3.11:
+# TTS>=0.22.0
+# torch>=2.0.0
