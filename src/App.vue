@@ -2,9 +2,6 @@
 import { ref, watch } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 
-// NEW: Company Overview Dashboard
-import CompanyOverview from './components/dashboard/CompanyOverview.vue'
-
 // Layout components
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
 import AIAnalysisPanel from './components/layout/AIAnalysisPanel.vue'
@@ -35,9 +32,6 @@ const tickerStore = useTickerStore()
 const inputTicker = ref('AAPL')
 const companyName = ref('Apple Inc.')
 
-// Toggle between old and new UI
-const showNewUI = ref(false) // Set to false to style old dashboard
-
 // Watch ticker changes and update store
 watch(() => inputTicker.value, (newTicker) => {
   if (newTicker && newTicker.trim()) {
@@ -61,20 +55,7 @@ function handleImageError(event) {
 </script>
 
 <template>
-  <!-- NEW: Company Overview Dashboard (toggle with button) -->
-  <CompanyOverview v-if="showNewUI" />
-
-  <!-- OLD: Original Dashboard -->
-  <main v-else class="page">
-    <!-- Toggle Button (floating) -->
-    <button 
-      class="ui-toggle-btn"
-      @click="showNewUI = !showNewUI"
-      title="Switch to new UI"
-    >
-      New UI
-    </button>
-
+  <main class="page">
     <header class="app-header">
       <h1 class="brand-title">
         <!-- Replace /logo.svg with your icon path: /logo.png, /logo.jpg, etc. -->
@@ -171,29 +152,6 @@ function handleImageError(event) {
 </template>
 
 <style>
-/* UI Toggle Button (floating) */
-.ui-toggle-btn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s ease;
-}
-
-.ui-toggle-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-}
-
 /* Header */
 .app-header {
   text-align: center;

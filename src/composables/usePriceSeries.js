@@ -17,10 +17,10 @@ export function usePriceSeries() {
 
   // Extract and filter price series based on timeframe
   const series = computed(() => {
-    const t = currentTicker
+    const t = currentTicker.value
     if (!t) return []
     
-    const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M']
+    const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['YTD']
     const rawPrices = getPriceSeriesFromBatch(batchData.value)
     
     if (!rawPrices.length) return []
@@ -29,16 +29,104 @@ export function usePriceSeries() {
     const maxDays = mapTimeframeToMaxDays(cfg.range)
     if (maxDays) {
       const cutoffTime = Date.now() - (maxDays * 24 * 60 * 60 * 1000)
-      return rawPrices.filter(point => point[0] >= cutoffTime)
+      const filtered = rawPrices.filter(point => point[0] >= cutoffTime)
+      
+      // Calculate if price is up or down from start
+      if (filtered.length >= 2) {
+        const startPrice = filtered[0][1]
+        const endPrice = filtered[filtered.length - 1][1]
+        const isUp = endPrice >= startPrice
+        
+        // Return as ECharts series with dynamic color and gradient
+        return {
+          type: 'line',
+          data: filtered,
+          smooth: 0.15,
+          showSymbol: false,
+          emphasis: { disabled: true },
+          lineStyle: { 
+            width: 2,
+            color: isUp ? '#00A88E' : '#ef4444'
+          },
+          // Gradient area fill from line to bottom, transparent at 50%
+          areaStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                {
+                  offset: 0,
+                  color: isUp ? 'rgba(0, 168, 142, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+                },
+                {
+                  offset: 0.5,
+                  color: isUp ? 'rgba(0, 168, 142, 0)' : 'rgba(239, 68, 68, 0)'
+                },
+                {
+                  offset: 1,
+                  color: 'rgba(0, 0, 0, 0)'
+                }
+              ]
+            }
+          }
+        }
+      }
+      
+      return filtered
+    }
+    
+    // For 'ALL' timeframe - show full history
+    if (rawPrices.length >= 2) {
+      const startPrice = rawPrices[0][1]
+      const endPrice = rawPrices[rawPrices.length - 1][1]
+      const isUp = endPrice >= startPrice
+      
+      return {
+        type: 'line',
+        data: rawPrices,
+        smooth: 0.15,
+        showSymbol: false,
+        emphasis: { disabled: true },
+        lineStyle: { 
+          width: 2,
+          color: isUp ? '#00A88E' : '#ef4444'
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              {
+                offset: 0,
+                color: isUp ? 'rgba(0, 168, 142, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+              },
+              {
+                offset: 0.5,
+                color: isUp ? 'rgba(0, 168, 142, 0)' : 'rgba(239, 68, 68, 0)'
+              },
+              {
+                offset: 1,
+                color: 'rgba(0, 0, 0, 0)'
+              }
+            ]
+          }
+        }
+      }
     }
     
     return rawPrices
   })
 
   // Update title when ticker or timeframe changes
-  watch([() => currentTicker, tfKey, () => batchData], () => {
-    const t = currentTicker
-    const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['1M']
+  watch([() => currentTicker.value, tfKey, () => batchData.value], () => {
+    const t = currentTicker.value
+    const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['YTD']
     
     title.value = 'Price'
     if (!t) {

@@ -445,7 +445,12 @@ const createOption = (isLarge = false) => {
   
   // Handle both single series array and multi-series array
   let series
-  if (Array.isArray(dataSource) && dataSource.length > 0 && dataSource[0]?.name) {
+  
+  // Check if dataSource is already a fully configured series object (e.g., from PriceChart)
+  if (dataSource && !Array.isArray(dataSource) && dataSource.type) {
+    // Single fully configured series object - wrap in array
+    series = [dataSource]
+  } else if (Array.isArray(dataSource) && dataSource.length > 0 && dataSource[0]?.name) {
     // Multi-series format: [{ name: 'FCF', data: [...] }, { name: 'SBC', data: [...] }]
     // If series already has 'type' property, it's a fully configured series - use as-is
     if (dataSource[0].type) {
