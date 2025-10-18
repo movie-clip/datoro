@@ -302,9 +302,9 @@ body {
     overflow: hidden; /* Prevent content overflow from panel */
   }
 
-  /* Charts grid: 2 columns on mobile (iPhone-friendly) */
+  /* Charts grid: 1 column on mobile for better readability */
   .charts {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 8px;
     margin-top: 8px;
   }
@@ -314,6 +314,12 @@ body {
     grid-template-columns: 1fr;
     gap: 8px;
     margin: 8px auto 0;
+  }
+
+  /* AI Analysis grid: single column on mobile */
+  .ai-analysis-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   /* Reduce header size on mobile */

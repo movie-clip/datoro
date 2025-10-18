@@ -1,5 +1,5 @@
 <template>
-  <section class="analysis-panel">
+  <section class="analysis-panel panel">
     <div class="analysis-header">
       <h3>{{ title }}</h3>
       <button 
@@ -209,11 +209,13 @@ watch(currentTicker, () => fetchAnalysis(false), { immediate: true })
 
 <style scoped>
 .analysis-panel {
-  background: #1f1f1f;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  padding: 16px;
+  /* Inherits styling from .panel class in globals.css:
+     - gradient background: linear-gradient(135deg, #151518 0%, #1E1E22 100%)
+     - border: 1px solid #2A2A2E with hover effect
+     - box-shadow: 0 4px 12px rgba(0,0,0,0.3)
+     - border-radius: 12px
+     - padding: 1.5rem
+     - hover effects with Aston Martin green glow */
   height: 100%;
   display: flex;
   flex-direction: column;
