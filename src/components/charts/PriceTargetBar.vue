@@ -347,7 +347,7 @@ const analysisMessage = computed(() => {
 }
 
 .analysis-text {
-  margin-top: 5rem;
+  margin-top: 1rem;
   padding: 0.5rem 0.5rem;
   border-radius: 6px;
   font-size: 12px;
