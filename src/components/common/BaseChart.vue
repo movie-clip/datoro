@@ -576,7 +576,10 @@ const modalOption = computed(() => createOption(true))
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
   transition: all 0.2s;
+  min-width: fit-content;
+  white-space: nowrap;
 }
 
 .view-mode-btn:hover {
@@ -589,7 +592,7 @@ const modalOption = computed(() => createOption(true))
   background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%);
   border-color: #00C27A;
   color: #0F0F10;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .chart-loading-overlay {
