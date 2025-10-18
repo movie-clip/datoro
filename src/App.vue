@@ -218,14 +218,14 @@ function handleImageError(event) {
   width: 48px;
   height: 48px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.3));
+  filter: drop-shadow(0 2px 8px rgba(0, 89, 76, 0.5));
 }
 
-/* Branding - Updated to match new UI colors */
+/* Branding - Aston Martin British Racing Green */
 .brand {
-  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #00594C;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
   background-clip: text;
   font-weight: 700;
   letter-spacing: -0.02em;

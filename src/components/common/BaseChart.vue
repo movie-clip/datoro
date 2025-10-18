@@ -540,10 +540,10 @@ const modalOption = computed(() => createOption(true))
 
 .expand-hint:hover {
   background: rgba(15, 15, 16, 0.9);
-  border-color: #38BDF8;
+  border-color: #00594C;
   color: #E5E5E5;
   transform: scale(1.1);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 12px rgba(0, 89, 76, 0.4);
 }
 
 .echart-modal {
@@ -583,15 +583,15 @@ const modalOption = computed(() => createOption(true))
 }
 
 .view-mode-btn:hover {
-  border-color: #38BDF8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+  border-color: #00594C;
+  box-shadow: 0 0 12px rgba(0, 89, 76, 0.3);
   transform: translateY(-1px);
 }
 
 .view-mode-btn.active {
-  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%);
-  border-color: #00C27A;
-  color: #0F0F10;
+  background: #00594C;
+  border-color: #00594C;
+  color: #E5E5E5;
   font-weight: 500;
 }
 
@@ -734,9 +734,9 @@ const modalOption = computed(() => createOption(true))
 }
 
 .growth-label.positive {
-  background: rgba(0, 194, 122, 0.15);
-  border: 1px solid #00C27A;
-  color: #00C27A;
+  background: rgba(0, 89, 76, 0.15);
+  border: 1px solid #00594C;
+  color: #00A88E;
 }
 
 .growth-label.negative {

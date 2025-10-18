@@ -148,8 +148,8 @@ watch(() => model.value, (newVal) => {
 }
 
 .ticker-input-section:hover {
-  border-color: #38BDF8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+  border-color: #00594C;
+  box-shadow: 0 0 12px rgba(0, 89, 76, 0.2);
 }
 
 .ticker-input-section.has-error {
@@ -185,8 +185,8 @@ watch(() => model.value, (newVal) => {
 }
 
 .input:focus { 
-  border-color: #38BDF8; 
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); 
+  border-color: #00594C; 
+  box-shadow: 0 0 0 3px rgba(0, 89, 76, 0.3); 
   background: rgba(15, 15, 16, 0.8);
 }
 
@@ -213,9 +213,9 @@ watch(() => model.value, (newVal) => {
 .btn {
   padding: 10px 20px; 
   border-radius: 10px; 
-  border: 1px solid #00C27A;
-  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%); 
-  color: #0F0F10; 
+  border: 1px solid #00594C;
+  background: #00594C; 
+  color: #E5E5E5; 
   cursor: pointer;
   font-weight: 600;
   white-space: nowrap;
@@ -224,7 +224,8 @@ watch(() => model.value, (newVal) => {
 
 .btn:hover:not(:disabled) { 
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 194, 122, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 89, 76, 0.5);
+  background: #007060;
 }
 
 .btn:disabled {

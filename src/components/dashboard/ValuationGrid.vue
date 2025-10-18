@@ -90,8 +90,8 @@ const formatValue = (value) => {
 }
 
 .metric-card:hover {
-  border-color: #00C27A;
-  box-shadow: 0 4px 20px rgba(0, 194, 122, 0.1);
+  border-color: #00594C;
+  box-shadow: 0 4px 20px rgba(0, 89, 76, 0.2);
   transform: translateY(-2px);
 }
 

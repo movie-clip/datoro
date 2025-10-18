@@ -166,8 +166,8 @@ watch(() => props.ticker, () => {
 }
 
 .company-header:hover {
-  border-color: #38BDF8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+  border-color: #00594C;
+  box-shadow: 0 0 12px rgba(0, 89, 76, 0.2);
 }
 
 .company-logo {
@@ -184,13 +184,13 @@ watch(() => props.ticker, () => {
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%);
+  background: #00594C;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   font-weight: bold;
-  color: #0F0F10;
+  color: #E5E5E5;
 }
 
 .company-info {
@@ -235,7 +235,7 @@ watch(() => props.ticker, () => {
 }
 
 .price-change.positive {
-  color: #00C27A;
+  color: #00A88E;
 }
 
 .price-change.negative {
@@ -260,7 +260,7 @@ watch(() => props.ticker, () => {
 .earnings-date {
   font-size: 14px;
   font-weight: 600;
-  color: #38BDF8;
+  color: #00A88E;
   white-space: nowrap;
 }
 

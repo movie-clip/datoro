@@ -33,7 +33,7 @@ const props = defineProps({
   },
   color: {
     type: String,
-    default: '#00C27A'
+    default: '#00A88E'
   },
   chartId: {
     type: String,
@@ -154,7 +154,7 @@ watch(() => props.data, () => {
 }
 
 .chart-panel:hover {
-  border-color: #38BDF8;
+  border-color: #00594C;
   box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1);
 }
 

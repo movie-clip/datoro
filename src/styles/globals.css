@@ -33,15 +33,15 @@ body {
 
 /* Hover effect for all panels */
 .panel:hover {
-  border-color: #38BDF8;
-  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1);
+  border-color: #00594C;
+  box-shadow: 0 4px 20px rgba(0, 89, 76, 0.3);
   transform: translateY(-2px);
 }
 
-/* Charts specific hover with teal glow */
+/* Charts specific hover with Aston Martin green glow */
 .charts > .panel:hover {
-  border-color: #00C27A;
-  box-shadow: 0 4px 20px rgba(0, 194, 122, 0.1);
+  border-color: #00594C;
+  box-shadow: 0 4px 20px rgba(0, 89, 76, 0.3);
 }
 
 .charts {

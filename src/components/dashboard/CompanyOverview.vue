@@ -21,7 +21,7 @@
             title="Quarterly Revenue (5Y)"
             :data="revenueData"
             yAxisLabel="Revenue (USD Millions)"
-            color="#00C27A"
+            color="#00A88E"
             chartId="revenue-chart"
           />
           <ChartPanel

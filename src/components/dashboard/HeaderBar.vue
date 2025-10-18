@@ -115,7 +115,7 @@ const handleSearch = () => {
 
 .search-input:focus {
   outline: none;
-  border-color: #38BDF8;
+  border-color: #00594C;
   background: #1E1E22;
 }
 
@@ -125,8 +125,8 @@ const handleSearch = () => {
 
 .search-button {
   padding: 0.625rem 1.25rem;
-  background: #38BDF8;
-  color: #000;
+  background: #00594C;
+  color: #E5E5E5;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -155,7 +155,7 @@ const handleSearch = () => {
 
 .ticker-symbol {
   font-weight: 700;
-  color: #00C27A;
+  color: #00A88E;
   font-size: 1rem;
 }
 
