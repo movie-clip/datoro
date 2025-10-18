@@ -48,25 +48,26 @@ export function usePriceSeries() {
             width: 2,
             color: isUp ? '#00A88E' : '#ef4444'
           },
-          // Gradient area fill from line to bottom, transparent at 50%
+          // Gradient area fill from line to bottom, using origin to make it relative to line
           areaStyle: {
+            origin: 'auto', // Makes gradient follow the line
             color: {
               type: 'linear',
               x: 0,
-              y: 0,
+              y: 0, // Start at the line
               x2: 0,
-              y2: 1,
+              y2: 1, // End at bottom
               colorStops: [
                 {
-                  offset: 0,
-                  color: isUp ? 'rgba(0, 168, 142, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+                  offset: 0, // At the line
+                  color: isUp ? 'rgba(0, 168, 142, 0.4)' : 'rgba(239, 68, 68, 0.4)'
                 },
                 {
-                  offset: 0.5,
-                  color: isUp ? 'rgba(0, 168, 142, 0)' : 'rgba(239, 68, 68, 0)'
+                  offset: 0.5, // Halfway to bottom
+                  color: isUp ? 'rgba(0, 168, 142, 0.1)' : 'rgba(239, 68, 68, 0.1)'
                 },
                 {
-                  offset: 1,
+                  offset: 1, // At bottom
                   color: 'rgba(0, 0, 0, 0)'
                 }
               ]
@@ -95,6 +96,7 @@ export function usePriceSeries() {
           color: isUp ? '#00A88E' : '#ef4444'
         },
         areaStyle: {
+          origin: 'auto', // Makes gradient follow the line
           color: {
             type: 'linear',
             x: 0,
@@ -104,11 +106,11 @@ export function usePriceSeries() {
             colorStops: [
               {
                 offset: 0,
-                color: isUp ? 'rgba(0, 168, 142, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+                color: isUp ? 'rgba(0, 168, 142, 0.4)' : 'rgba(239, 68, 68, 0.4)'
               },
               {
                 offset: 0.5,
-                color: isUp ? 'rgba(0, 168, 142, 0)' : 'rgba(239, 68, 68, 0)'
+                color: isUp ? 'rgba(0, 168, 142, 0.1)' : 'rgba(239, 68, 68, 0.1)'
               },
               {
                 offset: 1,
