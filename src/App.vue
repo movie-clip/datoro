@@ -181,8 +181,8 @@ function handleImageError(event) {
 }
 
 .brand-logo {
-  width: 48px;
-  height: 48px;
+  width: 70px;
+  height: 70px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(0, 89, 76, 0.5));
 }
@@ -215,13 +215,4 @@ function handleImageError(event) {
   width: 100%;
 }
 
-@media (max-width: 768px) {
-  .ai-analysis-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .price-target-section {
-    margin: 16px auto;
-  }
-}
 </style>
