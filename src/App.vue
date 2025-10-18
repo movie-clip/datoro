@@ -2,6 +2,9 @@
 import { ref, watch } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 
+// NEW: Company Overview Dashboard
+import CompanyOverview from './components/dashboard/CompanyOverview.vue'
+
 // Layout components
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
 import AIAnalysisPanel from './components/layout/AIAnalysisPanel.vue'
@@ -32,6 +35,9 @@ const tickerStore = useTickerStore()
 const inputTicker = ref('AAPL')
 const companyName = ref('Apple Inc.')
 
+// Toggle between old and new UI
+const showNewUI = ref(false) // Set to false to style old dashboard
+
 // Watch ticker changes and update store
 watch(() => inputTicker.value, (newTicker) => {
   if (newTicker && newTicker.trim()) {
@@ -55,7 +61,20 @@ function handleImageError(event) {
 </script>
 
 <template>
-  <main class="page">
+  <!-- NEW: Company Overview Dashboard (toggle with button) -->
+  <CompanyOverview v-if="showNewUI" />
+
+  <!-- OLD: Original Dashboard -->
+  <main v-else class="page">
+    <!-- Toggle Button (floating) -->
+    <button 
+      class="ui-toggle-btn"
+      @click="showNewUI = !showNewUI"
+      title="Switch to new UI"
+    >
+      New UI
+    </button>
+
     <header class="app-header">
       <h1 class="brand-title">
         <!-- Replace /logo.svg with your icon path: /logo.png, /logo.jpg, etc. -->
@@ -152,10 +171,34 @@ function handleImageError(event) {
 </template>
 
 <style>
+/* UI Toggle Button (floating) */
+.ui-toggle-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.ui-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
 /* Header */
 .app-header {
   text-align: center;
-  padding: 24px 0 16px;
+  padding: 2rem 0 1.5rem;
+  background: linear-gradient(180deg, #0F0F10 0%, rgba(15, 15, 16, 0.95) 100%);
 }
 
 .brand-title {
@@ -164,22 +207,28 @@ function handleImageError(event) {
   gap: 12px;
   margin: 0;
   font-size: 2.5rem;
+  transition: transform 0.3s ease;
+}
+
+.brand-title:hover {
+  transform: scale(1.02);
 }
 
 .brand-logo {
   width: 48px;
   height: 48px;
   object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.3));
 }
 
-/* Branding */
+/* Branding - Updated to match new UI colors */
 .brand {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
 }
 
 .ai-analysis-grid {

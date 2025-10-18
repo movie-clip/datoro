@@ -138,23 +138,31 @@ watch(() => model.value, (newVal) => {
   gap: 10px;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
   border-radius: 10px;
-  border: 1px solid #444;
+  border: 1px solid #2A2A2E;
   flex: 1;
   position: relative;
   flex-wrap: wrap;
+  transition: all 0.2s;
+}
+
+.ticker-input-section:hover {
+  border-color: #38BDF8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
 }
 
 .ticker-input-section.has-error {
-  border-color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.05);
+  border-color: #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
 }
 
 .label { 
   font-size: 12px; 
+  color: #E5E5E5;
   opacity: 0.85; 
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .input-wrapper {
@@ -168,21 +176,23 @@ watch(() => model.value, (newVal) => {
   flex: 1;
   padding: 10px 12px; 
   border-radius: 10px;
-  border: 1px solid #444; 
-  background: #2a2a2a; 
-  color: #fff;
+  border: 1px solid #2A2A2E; 
+  background: rgba(15, 15, 16, 0.5); 
+  color: #E5E5E5;
   outline: none; 
-  transition: box-shadow .15s, border-color .15s;
+  transition: all 0.2s;
   text-transform: uppercase;
 }
 
 .input:focus { 
-  border-color: #9bd6ff; 
-  box-shadow: 0 0 0 3px rgba(155,214,255,0.25); 
+  border-color: #38BDF8; 
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); 
+  background: rgba(15, 15, 16, 0.8);
 }
 
 .input[aria-invalid="true"] {
-  border-color: #ff6b6b;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
 }
 
 .error-icon {
@@ -195,7 +205,7 @@ watch(() => model.value, (newVal) => {
 .error-message {
   width: 100%;
   font-size: 11px;
-  color: #ff6b6b;
+  color: #ef4444;
   margin-top: -6px;
   margin-left: 60px;
 }
@@ -203,22 +213,24 @@ watch(() => model.value, (newVal) => {
 .btn {
   padding: 10px 20px; 
   border-radius: 10px; 
-  border: 1px solid #444;
-  background: #3a7bd5; 
-  color: #fff; 
+  border: 1px solid #00C27A;
+  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%); 
+  color: #0F0F10; 
   cursor: pointer;
   font-weight: 600;
   white-space: nowrap;
-  transition: background 0.2s, opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .btn:hover:not(:disabled) { 
-  background: #2d66b8; 
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 194, 122, 0.3);
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* Mobile responsive styles */

@@ -157,11 +157,17 @@ watch(() => props.ticker, () => {
   gap: 12px;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
   border-radius: 10px;
-  border: 1px solid #444;
+  border: 1px solid #2A2A2E;
   flex: 1;
   min-width: 0;
+  transition: all 0.2s;
+}
+
+.company-header:hover {
+  border-color: #38BDF8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
 }
 
 .company-logo {
@@ -170,19 +176,21 @@ watch(() => props.ticker, () => {
   border-radius: 8px;
   object-fit: contain;
   padding: 4px;
+  background: rgba(229, 229, 229, 0.05);
+  border: 1px solid #2A2A2E;
 }
 
 .company-logo-placeholder {
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  background: #3a7bd5;
+  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   font-weight: bold;
-  color: #fff;
+  color: #0F0F10;
 }
 
 .company-info {
@@ -196,7 +204,7 @@ watch(() => props.ticker, () => {
 .company-name {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: #E5E5E5;
 }
 
 .bottom-row {
@@ -218,7 +226,7 @@ watch(() => props.ticker, () => {
 .current-price {
   font-size: 20px;
   font-weight: bold;
-  color: #fff;
+  color: #E5E5E5;
 }
 
 .price-change {
@@ -227,11 +235,11 @@ watch(() => props.ticker, () => {
 }
 
 .price-change.positive {
-  color: #4caf50;
+  color: #00C27A;
 }
 
 .price-change.negative {
-  color: #f44336;
+  color: #ef4444;
 }
 
 .earnings-section {
@@ -244,7 +252,7 @@ watch(() => props.ticker, () => {
 
 .earnings-label {
   font-size: 11px;
-  color: #888;
+  color: rgba(229, 229, 229, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -252,13 +260,13 @@ watch(() => props.ticker, () => {
 .earnings-date {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: #38BDF8;
   white-space: nowrap;
 }
 
 .loading-placeholder {
   justify-content: center;
-  color: #888;
+  color: rgba(229, 229, 229, 0.5);
   font-size: 14px;
 }
 

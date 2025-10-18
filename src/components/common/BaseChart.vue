@@ -284,15 +284,23 @@ const createOption = (isLarge = false) => {
       bottom: bottomPadding, 
       containLabel: true 
     },
-    tooltip: { 
+    tooltip: isLarge ? { 
+      // Modal view - enable rich tooltips for all devices
       trigger: 'axis',
       confine: isMobile, // Keep tooltip within chart bounds on mobile
-      triggerOn: isMobile ? 'click' : 'mousemove|click', // Tap to show on mobile
+      triggerOn: isMobile ? 'click' : 'mousemove|click', // Tap to show on mobile, hover on desktop
       position: isMobile ? 'top' : undefined, // Fixed position on mobile
+      backgroundColor: 'rgba(21, 21, 24, 0.95)',
+      borderColor: '#2A2A2E',
+      borderWidth: 1,
+      textStyle: {
+        color: '#E5E5E5',
+        fontSize: 13
+      },
       formatter: props.dualAxis ? (params) => {
         if (!params || params.length === 0) return ''
         const date = new Date(params[0].value[0]).toLocaleDateString()
-        let html = `<div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${date}</div>`
+        let html = `<div style="font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #E5E5E5;">${date}</div>`
         params.forEach(item => {
           const marker = item.marker
           const name = item.seriesName || ''
@@ -316,10 +324,24 @@ const createOption = (isLarge = false) => {
             // Fallback to yFormat configuration (e.g., currency for EBITDA)
             formatted = yFormatter(value, props.yFormat)
           }
-          html += `<div>${marker} ${name}: ${formatted}</div>`
+          html += `<div style="color: #E5E5E5;">${marker} ${name}: ${formatted}</div>`
         })
         return html
       } : undefined
+    } : !isMobile ? { 
+      // Compact view - enable tooltips for desktop only
+      trigger: 'axis',
+      triggerOn: 'mousemove', // Hover only, no click
+      backgroundColor: 'rgba(21, 21, 24, 0.95)',
+      borderColor: '#2A2A2E',
+      borderWidth: 1,
+      textStyle: {
+        color: '#E5E5E5',
+        fontSize: 12
+      }
+    } : { 
+      // Compact view on mobile - disable tooltips to prevent persistence bug
+      show: false
     },
     xAxis: {
       type: 'time', 
@@ -417,14 +439,6 @@ const createOption = (isLarge = false) => {
       splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
     },
   }
-  
-  // Mobile-specific touch enhancements
-  if (isMobile && !isLarge) {
-    base.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.85)'
-    base.tooltip.borderColor = '#666'
-    base.tooltip.textStyle = { fontSize: 12 }
-    base.tooltip.padding = 8
-  }
 
   // Use compactSeries for compact view if provided, otherwise use series
   const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
@@ -508,14 +522,15 @@ const modalOption = computed(() => createOption(true))
   right: 8px;
   width: 24px;
   height: 24px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 15, 16, 0.6);
+  border: 1px solid #2A2A2E;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(229, 229, 229, 0.6);
   cursor: pointer;
   transition: all 0.2s;
   backdrop-filter: blur(4px);
@@ -524,9 +539,11 @@ const modalOption = computed(() => createOption(true))
 }
 
 .expand-hint:hover {
-  background: rgba(0, 0, 0, 0.8);
-  color: rgba(255, 255, 255, 1);
+  background: rgba(15, 15, 16, 0.9);
+  border-color: #38BDF8;
+  color: #E5E5E5;
   transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
 }
 
 .echart-modal {
@@ -537,7 +554,7 @@ const modalOption = computed(() => createOption(true))
 
 .modal-title {
   text-align: center;
-  color: #fff;
+  color: #E5E5E5;
   font-size: 22px;
   font-weight: 600;
   margin: 0 0 16px 0;
@@ -553,9 +570,9 @@ const modalOption = computed(() => createOption(true))
 
 .view-mode-btn {
   padding: 8px 16px;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  color: #E5E5E5;
+  border: 1px solid #2A2A2E;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
@@ -563,14 +580,16 @@ const modalOption = computed(() => createOption(true))
 }
 
 .view-mode-btn:hover {
-  background: #333;
-  border-color: #555;
+  border-color: #38BDF8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+  transform: translateY(-1px);
 }
 
 .view-mode-btn.active {
-  background: #3a7bd5;
-  border-color: #3a7bd5;
-  color: #fff;
+  background: linear-gradient(135deg, #38BDF8 0%, #00C27A 100%);
+  border-color: #00C27A;
+  color: #0F0F10;
+  font-weight: 600;
 }
 
 .chart-loading-overlay {
@@ -579,7 +598,7 @@ const modalOption = computed(() => createOption(true))
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 15, 16, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -589,10 +608,12 @@ const modalOption = computed(() => createOption(true))
 
 .loading-spinner {
   padding: 12px 24px;
-  background: rgba(0, 0, 0, 0.8);
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
   border-radius: 6px;
-  color: #fff;
+  color: #E5E5E5;
   font-size: 14px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
 }
 
 .loading-chart {
@@ -710,13 +731,15 @@ const modalOption = computed(() => createOption(true))
 }
 
 .growth-label.positive {
-  background: #91cc75c0;
-  color: #1e3812;
+  background: rgba(0, 194, 122, 0.15);
+  border: 1px solid #00C27A;
+  color: #00C27A;
 }
 
 .growth-label.negative {
-  background: #ee6666bb;
-  color: #502222;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #ef4444;
 }
 
 .label-period {

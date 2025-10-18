@@ -15,28 +15,33 @@ html {
 }
 
 body { 
-  background: #121212; 
-  color: #fff;
+  background: #0F0F10; 
+  color: #E5E5E5;
   overflow-x: hidden;
   overflow-y: auto;
+  font-family: 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .panel {
-  background: #1f1f1f;
-  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  padding: 1.5rem;
+  transition: all 0.3s ease;
 }
 
-/* Hover effect only on charts, not tables or search bar */
-.charts > .panel {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.charts > .panel:hover {
+/* Hover effect for all panels */
+.panel:hover {
+  border-color: #38BDF8;
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+}
+
+/* Charts specific hover with teal glow */
+.charts > .panel:hover {
+  border-color: #00C27A;
+  box-shadow: 0 4px 20px rgba(0, 194, 122, 0.1);
 }
 
 .charts {
