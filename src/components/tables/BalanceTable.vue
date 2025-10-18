@@ -24,8 +24,8 @@ const data = computed(() => getBalanceFromBatch(batchData.value))
 
 const rows = computed(() => {
   const colorMap = {
-    green: '#4caf50',
-    red: '#f44336',
+    green: '#00A88E',
+    red: '#ef4444',
     grey: '#aaa'
   }
   

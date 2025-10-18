@@ -206,7 +206,7 @@ function handleImageError(event) {
 }
 
 .price-target-section {
-  max-width: 600px;
+  max-width: 940px;
   margin: 24px;
   padding: 0 12px;
 }

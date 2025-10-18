@@ -377,7 +377,7 @@ const analysisMessage = computed(() => {
 @media (max-width: 768px) {
   .price-target-container {
     min-height: 280px;
-    padding: 1.5rem 1rem;
+    padding: 1.5rem 0.5rem;
   }
 
   .chart-title {
