@@ -1,6 +1,7 @@
 # Cloud-based voice generation (Python 3.12+ compatible)
 elevenlabs>=1.0.0
 openai>=1.0.0
+requests>=2.28.0  # For NaturalReader API
 
 # Local voice generation with Bark (Python 3.12 compatible)
 suno-bark

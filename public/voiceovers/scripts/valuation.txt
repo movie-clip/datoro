@@ -1,0 +1,19 @@
+Market Cap
+
+“Market cap is the total value of a company’s shares — basically, what the market thinks the whole business is worth. Big cap means stability, small cap means potential and risk.”
+
+P/E Ratio
+
+“The P/E ratio compares price to earnings. High P/E means investors expect future growth; low P/E can mean the stock’s cheap — or that growth’s slowing down.”
+
+Price to Sales (P/S)
+
+“Price to sales shows how much investors pay for every dollar of revenue. Lower can signal undervalued, but for fast-growing tech, a high number isn’t always bad.”
+
+Price to Book (P/B)
+
+“Price to book compares a company’s market value to its net assets. Under one looks cheap — over three usually means investors expect strong returns or intangible value.”
+
+EV to EBITDA
+
+“EV to EBITDA measures a company’s total value against its core profits. It’s a cleaner version of P/E — great for comparing firms with different debt levels.”

@@ -1,25 +1,147 @@
 # Voice Generation for Factorly
 
-Generate AI voiceovers for company analysis scripts using ElevenLabs or OpenAI APIs.
+Generate AI voiceovers for company analysis scripts using multiple TTS providers.
 
-## �️ Available Scripts
+## 🎙️ Available Solutions
 
-### 1. `generate_voiceovers.py` - Standard Voice (ElevenLabs)
-- Professional narration style
-- High-quality voice cloning
-- Multiple voice options
+### 1. **ElevenLabs** - `generate_voiceovers.py`
+- ✅ Voice cloning (manual setup via web)
+- ✅ Premium quality
+- 💰 $5-11/month subscription
+- 📖 See: `QUICKSTART_ELEVENLABS.md`
 
-### 2. `generate_rap_style.py` - Rap/Music Style (OpenAI) 🎤
-- Rhythmic, rap-style delivery
-- Speed control for flow
-- Emphasis and pauses
-- Great for creative content
+### 2. **NaturalReader** - `generate_voiceovers_naturalreader.py` ⭐ **RECOMMENDED**
+- ✅ Professional neural voices
+- ✅ Pay-as-you-go ($9 per 1M chars)
+- ✅ 40% cheaper than OpenAI
+- ✅ Multiple voice options
+- 📖 See: `NATURALREADER_GUIDE.md`
 
-## �🎯 Quick Start
+### 3. **OpenAI TTS** - `generate_rap_style.py`
+- ✅ Rap/rhythmic style
+- ✅ High quality
+- 💰 $15 per 1M chars
+- 📖 See: `RAP_STYLE_GUIDE.md`
+
+### 4. **Bark (Local)** - `generate_voiceovers_bark.py`
+- ✅ 100% FREE
+- ✅ Runs locally
+- ❌ No voice cloning
+- ⚠️ Slower on CPU
+- 📖 See: `BARK_GUIDE.md`
+
+## 💰 Cost Comparison
+
+For your 4 scripts (2,144 characters):
+
+| Solution | Cost | Best For |
+|----------|------|----------|
+| **NaturalReader** | **$0.02** | 💰 Best value |
+| **OpenAI** | $0.03 | Creative style |
+| **ElevenLabs** | $5/month | Voice cloning |
+| **Bark (Local)** | **$0** | Zero cost |
+
+## 🚀 Quick Start - NaturalReader (Recommended)
+
+## 🚀 Quick Start - NaturalReader (Recommended)
+
+### 1. Get API Key
+- Visit: https://www.naturalreaders.com/online/
+- Sign up and get your API key
+- Add credits to your account
+
+### 2. Set Environment Variable
+```powershell
+$env:NATURALREADER_API_KEY = "your-api-key-here"
+```
+
+### 3. Generate Audio
+```powershell
+cd scripts/voice-generation
+
+# Single ticker
+python generate_voiceovers_naturalreader.py AAPL
+
+# All tickers
+python generate_voiceovers_naturalreader.py
+```
+
+**Output:** `voiceovers_naturalreader/AAPL.mp3`
+
+**Cost:** ~$0.02 for all 4 scripts (2 cents!)
+
+---
+
+## 📚 Detailed Guides
+
+- **NaturalReader:** See `NATURALREADER_GUIDE.md` ⭐
+- **ElevenLabs:** See `QUICKSTART_ELEVENLABS.md`
+- **OpenAI Rap Style:** See `RAP_STYLE_GUIDE.md`
+- **Bark Local TTS:** See `BARK_GUIDE.md`
+- **Voice Cloning (ElevenLabs):** See `VOICE_CLONING_GUIDE.md`
+
+---
+
+## 🎯 Which Solution to Choose?
+
+### For Cost-Effectiveness: NaturalReader ⭐
+```powershell
+python generate_voiceovers_naturalreader.py AAPL
+```
+- **Cost:** $0.02 for 4 scripts
+- **Quality:** Professional neural voices
+- **Speed:** Fast (2-5 seconds per file)
+
+### For Voice Cloning: ElevenLabs
+```powershell
+python generate_voiceovers.py AAPL
+```
+- **Cost:** $5-11/month subscription
+- **Quality:** Best (can clone your wife's voice)
+- **Speed:** Very fast
+
+### For Creative/Rap Style: OpenAI
+```powershell
+python generate_rap_style.py AAPL
+```
+- **Cost:** $0.03 for 4 scripts
+- **Quality:** High quality, rhythmic
+- **Speed:** Fast
+
+### For Zero Cost: Bark (Local)
+```powershell
+python generate_voiceovers_bark.py AAPL
+```
+- **Cost:** $0 forever
+- **Quality:** Good
+- **Speed:** Slow on CPU (30-60s per file)
+
+---
+
+## ⚙️ Configuration (NaturalReader)
+
+Edit `generate_voiceovers_naturalreader.py`:
+
+```python
+# Voice Selection
+VOICE_NAME = "en-US-madison"  # Professional female
+
+# Other options:
+# "en-US-davis"  - Professional male
+# "en-US-aria"   - Warm female
+# "en-GB-sonia"  - British female
+
+# Audio Settings
+AUDIO_FORMAT = "mp3"  # mp3, wav, ogg
+SPEED = 0             # -3 to +3 (0 = normal)
+PITCH = 0             # -12 to +12 (0 = normal)
+```
+
+---
+
+## 🎤 Old Configurations
 
 ### Standard Voice (ElevenLabs)
-
-#### 1. Install Dependencies
 ```powershell
 cd scripts/voice-generation
 pip install elevenlabs

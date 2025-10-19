@@ -4,6 +4,7 @@
     :rows="rows"
     :loading="loading"
     :error="error"
+    audio-name="Balance"
     aria-label="Balance sheet metrics"
   />
 </template>

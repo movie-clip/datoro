@@ -29,7 +29,9 @@ VOICE_SAMPLES_DIR = Path("voice_samples")  # Folder with your voice samples (.mp
 
 # Preset voice ID (used if USE_VOICE_CLONING = False)
 # Popular voices: "21m00Tcm4TlvDq8ikWAM" (Rachel), "29vD33N1CtxCmqQRPOHJ" (Drew)
-PRESET_VOICE_ID = "3CIN7JGA9faDzDSRhhVP"
+# self voice "pU6T98N0nNOVluKPfsLU"
+# wife voice "3CIN7JGA9faDzDSRhhVP"
+PRESET_VOICE_ID = "pU6T98N0nNOVluKPfsLU"
 
 # Voice settings
 STABILITY = 0.5  # 0.0-1.0: Lower = more expressive, Higher = more stable

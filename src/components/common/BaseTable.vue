@@ -1,7 +1,17 @@
 <template>
   <section class="table-panel">
-    <div class="head">
-      {{ title }}
+    <div class="table-header">
+      <div class="head">
+        {{ title }}
+      </div>
+      <button
+        v-if="audioName && !loading && !error"
+        class="audio-btn"
+        :title="isPlaying ? 'Pause audio' : 'Play audio explanation'"
+        @click="toggleAudio"
+      >
+        {{ isPlaying ? '⏸' : '🔊' }}
+      </button>
     </div>
     
     <!-- Skeleton loader -->
@@ -55,13 +65,21 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Hidden audio element -->
+    <audio
+      v-if="audioName"
+      ref="audioPlayer"
+      @ended="onAudioEnded"
+    />
   </section>
 </template>
 
 <script setup>
+import { ref, watch } from 'vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 
-defineProps({
+const props = defineProps({
   title: {
     type: String,
     required: true
@@ -86,14 +104,99 @@ defineProps({
   onRetry: {
     type: Function,
     default: null
+  },
+  audioName: {
+    type: String,
+    default: null
+  }
+})
+
+// Audio playback
+const audioPlayer = ref(null)
+const isPlaying = ref(false)
+
+function toggleAudio() {
+  if (!audioPlayer.value || !props.audioName) return
+
+  // Load audio source if not already loaded
+  if (!audioPlayer.value.src || !audioPlayer.value.src.includes(props.audioName)) {
+    const audioPath = `/voiceovers/${props.audioName}.mp3`
+    console.log('Loading audio from:', audioPath)
+    audioPlayer.value.src = audioPath
+  }
+
+  if (isPlaying.value) {
+    audioPlayer.value.pause()
+    isPlaying.value = false
+  } else {
+    audioPlayer.value.play()
+      .then(() => {
+        isPlaying.value = true
+      })
+      .catch((err) => {
+        console.error('Audio playback failed:', err)
+        console.error('Attempted path:', audioPlayer.value.src)
+        alert(`Audio file not found for ${props.audioName}. Please generate voiceover first.\nPath: ${audioPlayer.value.src}`)
+      })
+  }
+}
+
+function onAudioEnded() {
+  isPlaying.value = false
+}
+
+// Reset playing state when loading or error changes
+watch(() => props.loading, (newLoading) => {
+  if (newLoading && audioPlayer.value) {
+    audioPlayer.value.pause()
+    isPlaying.value = false
+  }
+})
+
+watch(() => props.error, (newError) => {
+  if (newError && audioPlayer.value) {
+    audioPlayer.value.pause()
+    isPlaying.value = false
   }
 })
 </script>
 
 <style scoped>
+.table-panel {
+  position: relative;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .head {
   font-weight: 600;
-  margin-bottom: 8px;
+}
+
+.audio-btn {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.audio-btn:hover {
+  border-color: #00594C;
+  box-shadow: 0 0 12px rgba(0, 89, 76, 0.4);
+  transform: scale(1.1);
 }
 
 .data-table {

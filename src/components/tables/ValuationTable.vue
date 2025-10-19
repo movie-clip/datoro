@@ -5,6 +5,7 @@
     :loading="loading"
     :error="error"
     :on-retry="retry"
+    audio-name="Valuation"
     aria-label="Valuation metrics"
   />
 </template>
@@ -20,6 +21,9 @@ import BaseTable from '../common/BaseTable.vue'
 const tickerStore = useTickerStore()
 const { batchData, loading, error } = storeToRefs(tickerStore)
 const { refresh: retry } = tickerStore
+
+// Get current ticker
+const currentTicker = computed(() => tickerStore.currentTicker)
 
 // Process batch data into valuation metrics
 const data = computed(() => getValuationFromBatch(batchData.value))

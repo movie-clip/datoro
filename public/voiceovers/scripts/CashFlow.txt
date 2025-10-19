@@ -1,0 +1,15 @@
+Cash Flow
+
+“Cash flow shows how much real money moves through a company — not accounting tricks, but actual cash in and out. Strong cash flow means the business can fund itself without begging investors.”
+
+Free Cash Flow (FCF) Yield
+
+“Free cash flow yield shows how much cash a company generates compared to its market value. High FCF yield means it’s producing strong returns — like dividends, but without paying them out.”
+
+FCF Yield (Adjusted for SBC)
+
+“Adjusted free cash flow yield removes stock-based compensation — the shares given to employees. It reveals how much true cash the business makes without hiding costs behind dilution.”
+
+SBC Impact
+
+“SBC impact shows how much stock-based pay reduces shareholder value. The bigger it is, the more your ownership gets diluted — it’s silent, but it hits your returns over time.”

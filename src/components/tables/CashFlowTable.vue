@@ -4,6 +4,7 @@
     :rows="rows"
     :loading="loading"
     :error="error"
+    audio-name="CashFlow"
     aria-label="Cash flow metrics"
   />
 </template>

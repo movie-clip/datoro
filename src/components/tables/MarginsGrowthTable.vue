@@ -4,6 +4,7 @@
     :rows="rows"
     :loading="loading"
     :error="error"
+    audio-name="MarginsGrowth"
     aria-label="Margins and growth metrics"
   />
 </template>
