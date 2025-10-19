@@ -564,9 +564,23 @@ const createOption = (isLarge = false) => {
     series = [dataSource]
   } else if (Array.isArray(dataSource) && dataSource.length > 0 && dataSource[0]?.name) {
     // Multi-series format: [{ name: 'FCF', data: [...] }, { name: 'SBC', data: [...] }]
-    // If series already has 'type' property, it's a fully configured series - use as-is
+    // If series already has 'type' property, it's a fully configured series
     if (dataSource[0].type) {
-      series = dataSource
+      // For bar charts with category axis, we still need to convert the data
+      if (props.kind === 'bar' && yearsList.length > 0) {
+        console.log('[BaseChart] Converting fully-configured series to category data:', {
+          seriesCount: dataSource.length,
+          yearsList
+        })
+        series = dataSource.map((s) => ({
+          ...s,
+          // Convert time-series data to category values for ALL series (bars and lines)
+          data: convertToCategoryData(s.data, yearsList)
+        }))
+      } else {
+        // Use as-is for line charts (time axis)
+        series = dataSource
+      }
     } else {
       // Otherwise, apply default configuration
       series = dataSource.map((s) => {
