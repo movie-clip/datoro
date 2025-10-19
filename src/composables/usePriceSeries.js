@@ -134,25 +134,30 @@ export function usePriceSeries() {
     if (!t) {
       message.value = 'Enter a ticker'
       error.value = null
-    } else if (series.value.length > 0) {
-      // Have data - show it (ignore any old errors)
-      message.value = ''
-      error.value = null
-    } else if (batchError.value && !loading.value) {
-      // Error and not loading - keep original title, show error in message
-      message.value = batchError.value
-      error.value = batchError.value
-    } else if (!loading.value) {
-      // No data and not loading - show no data
-      message.value = `No data for '${t}'.`
-      error.value = null
     } else {
-      // Loading - keep previous title or show loading state
-      if (!title.value || title.value === 'Empty Chart') {
-        title.value = `${t} ${cfg.title}`
+      const rawPrices = getPriceSeriesFromBatch(batchData.value)
+      const hasData = rawPrices && rawPrices.length > 0
+      
+      if (hasData) {
+        // Have data - show it (ignore any old errors)
+        message.value = ''
+        error.value = null
+      } else if (batchError.value && !loading.value) {
+        // Error and not loading - keep original title, show error in message
+        message.value = batchError.value
+        error.value = batchError.value
+      } else if (!loading.value) {
+        // No data and not loading - show no data
+        message.value = `No data for '${t}'.`
+        error.value = null
+      } else {
+        // Loading - keep previous title or show loading state
+        if (!title.value || title.value === 'Empty Chart') {
+          title.value = `${t} ${cfg.title}`
+        }
+        message.value = ''
+        error.value = null
       }
-      message.value = ''
-      error.value = null
     }
   }, { immediate: true })
 

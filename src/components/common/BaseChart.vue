@@ -29,6 +29,21 @@
       ⛶
     </div>
     
+    <!-- Error and message display (compact mode) -->
+    <p
+      v-if="error && !isModal"
+      class="msg error"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="message && !isModal"
+      class="msg"
+    >
+      {{ message }}
+    </p>
+    
     <ChartModal
       :is-open="showModal"
       @close="closeModal"
@@ -123,6 +138,8 @@ const props = defineProps({
   dualAxis:   { type: Boolean, default: false },
   showGrowthLabels: { type: Boolean, default: false },
   invertGrowth: { type: Boolean, default: false }, // For expenses: decreases are positive
+  error:      { type: String, default: null },
+  message:    { type: String, default: null },
 })
 
 const showModal = ref(false)
@@ -815,6 +832,17 @@ const modalOption = computed(() => createOption(true))
   .label-value {
     font-size: 12px;
   }
+}
+
+/* Error and message styles */
+.msg { 
+  margin: 6px 0 0; 
+  opacity: 0.85; 
+}
+
+.msg.error { 
+  color: #ff6b6b; 
+  font-weight: bold; 
 }
 </style>
 
