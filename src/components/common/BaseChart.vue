@@ -257,6 +257,59 @@ const createOption = (isLarge = false) => {
   // Detect mobile device
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
   
+  // For bar charts, extract years and create category axis
+  // For line charts, use time axis
+  let uniqueYears = null
+  let yearsList = []
+  let categoryData = []
+  
+  // Use compactSeries for compact view if provided, otherwise use series
+  const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
+  
+  if (props.kind === 'bar') {
+    // Get all data points from series
+    const allDataPoints = []
+    
+    // Handle different data formats
+    if (Array.isArray(dataSource)) {
+      if (dataSource.length > 0 && Array.isArray(dataSource[0]) && dataSource[0].length === 2) {
+        // Simple array format: [[timestamp, value], ...]
+        allDataPoints.push(...dataSource)
+      } else if (dataSource.length > 0 && dataSource[0]?.data) {
+        // Multi-series format: [{ name: 'X', data: [...] }, ...]
+        dataSource.forEach(s => {
+          if (s?.data && Array.isArray(s.data)) {
+            allDataPoints.push(...s.data)
+          }
+        })
+      }
+    }
+    
+    // Extract unique years and sort
+    if (allDataPoints.length > 0) {
+      const years = new Set()
+      allDataPoints.forEach(point => {
+        if (Array.isArray(point) && point[0]) {
+          const year = new Date(point[0]).getFullYear()
+          years.add(year)
+        }
+      })
+      yearsList = Array.from(years).sort((a, b) => a - b)
+      uniqueYears = yearsList.length
+      
+      // For bar charts, create category data (year strings)
+      categoryData = yearsList.map(y => String(y))
+      
+      console.log('[BaseChart] Bar chart category setup:', {
+        dataPoints: allDataPoints.length,
+        uniqueYears,
+        yearsList,
+        categoryData,
+        isLarge
+      })
+    }
+  }
+  
   // In modal view with useLegend, show legend at top
   const showLegendAtTop = isLarge && props.useLegend
   // Increased top padding on mobile modal (50 instead of 30) for toggle buttons
@@ -377,31 +430,26 @@ const createOption = (isLarge = false) => {
       show: false
     },
     xAxis: {
-      type: 'time', 
-      boundaryGap: props.kind === 'bar' || props.dualAxis ? ['5%', '5%'] : false,
+      type: props.kind === 'bar' ? 'category' : 'time',
+      data: props.kind === 'bar' ? categoryData : undefined,
+      boundaryGap: props.kind === 'bar' ? true : false,
       axisLabel: { 
         color: '#ddd', 
         fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
-        rotate: isMobile && !isLarge ? 45 : 0, // Rotate labels on mobile for better fit
-        hideOverlap: true, // Hide overlapping labels
-        formatter: {
-          year: '{yyyy}',
-          month: '{yyyy}',
-          day: '{yyyy}',
-          hour: '{yyyy}',
-          minute: '{yyyy}'
-        }
+        rotate: 0,
+        hideOverlap: false,
+        showMinLabel: true,
+        showMaxLabel: true,
+        formatter: props.kind === 'bar' ? undefined : '{yyyy}', // Category axis shows data as-is
+        // For bar charts with category axis, show all labels in expanded mode
+        interval: (props.kind === 'bar' && isLarge) ? 0 : 'auto'
       },
       axisTick: {
-        alignWithLabel: true // Align ticks with bars
+        alignWithLabel: true,
+        show: true
       },
       axisLine: { lineStyle: { color: '#aaa' } },
-      splitLine: { show: false },
-      // For bar charts, align axis labels with data points
-      ...(props.kind === 'bar' ? {
-        splitNumber: 10,
-        minInterval: 365 * 24 * 3600 * 1000 // Minimum 1 year between labels
-      } : {})
+      splitLine: { show: false }
     },
     yAxis: props.dualAxis ? [
       // Left axis (for price/primary data)
@@ -488,9 +536,25 @@ const createOption = (isLarge = false) => {
     },
   }
 
-  // Use compactSeries for compact view if provided, otherwise use series
-  const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
-  
+  // Helper function: Convert time-series data to category-aligned values for bar charts
+  const convertToCategoryData = (timeSeriesData, categoryYears) => {
+    if (!timeSeriesData || !Array.isArray(timeSeriesData) || timeSeriesData.length === 0) {
+      return []
+    }
+    
+    // Create a map: year -> value
+    const yearValueMap = new Map()
+    timeSeriesData.forEach(point => {
+      if (Array.isArray(point) && point.length >= 2) {
+        const year = new Date(point[0]).getFullYear()
+        yearValueMap.set(year, point[1])
+      }
+    })
+    
+    // Return values in the same order as categoryYears
+    return categoryYears.map(year => yearValueMap.get(year) || 0)
+  }
+
   // Handle both single series array and multi-series array
   let series
   
@@ -505,43 +569,69 @@ const createOption = (isLarge = false) => {
       series = dataSource
     } else {
       // Otherwise, apply default configuration
-      series = dataSource.map((s) => ({
-        type: props.kind,
-        name: s.name,
-        data: s.data,
-        // Use stack property from series object if provided
-        stack: s.stack || undefined,
-        barMaxWidth: props.barMaxWidth,
-        itemStyle: { opacity: 0.9, ...(s.itemStyle || {}) },
-        smooth: props.kind === 'line' ? props.smooth : undefined,
-        showSymbol: props.kind === 'line' ? false : undefined,
-        emphasis: props.kind === 'line' ? { disabled: true } : undefined,
-        lineStyle: props.kind === 'line' ? { width: isLarge ? 3 : 2 } : undefined,
-      }))
+      series = dataSource.map((s) => {
+        // For bar charts with category axis, convert time-series to category values
+        const seriesData = (props.kind === 'bar' && yearsList.length > 0) 
+          ? convertToCategoryData(s.data, yearsList)
+          : s.data
+        
+        return {
+          type: props.kind,
+          name: s.name,
+          data: seriesData,
+          // Use stack property from series object if provided
+          stack: s.stack || undefined,
+          barMaxWidth: props.barMaxWidth,
+          itemStyle: { opacity: 0.9, ...(s.itemStyle || {}) },
+          smooth: props.kind === 'line' ? props.smooth : undefined,
+          showSymbol: props.kind === 'line' ? false : undefined,
+          emphasis: props.kind === 'line' ? { disabled: true } : undefined,
+          lineStyle: props.kind === 'line' ? { width: isLarge ? 3 : 2 } : undefined,
+        }
+      })
     }
   } else {
     // Single series format: [[timestamp, value], ...]
-    series = props.kind === 'bar'
-      ? [{ 
-          type: 'bar', 
-          name: props.title || 'Series', 
-          data: dataSource, 
-          barMaxWidth: props.barMaxWidth, 
-          itemStyle: { opacity: 0.9 } 
-        }]
-      : [{ 
-          type: 'line', 
-          name: props.title || 'Series', 
-          data: dataSource, 
-          smooth: props.smooth, 
-          showSymbol: false, 
-          emphasis: { disabled: true }, 
-          lineStyle: { width: isLarge ? 3 : 2 } 
-        }]
+    if (props.kind === 'bar') {
+      // For bar charts with category axis, convert time-series to category values
+      const barData = yearsList.length > 0 
+        ? convertToCategoryData(dataSource, yearsList)
+        : dataSource
+      
+      series = [{ 
+        type: 'bar', 
+        name: props.title || 'Series', 
+        data: barData, 
+        barMaxWidth: props.barMaxWidth, 
+        itemStyle: { opacity: 0.9 } 
+      }]
+    } else {
+      series = [{ 
+        type: 'line', 
+        name: props.title || 'Series', 
+        data: dataSource, 
+        smooth: props.smooth, 
+        showSymbol: false, 
+        emphasis: { disabled: true }, 
+        lineStyle: { width: isLarge ? 3 : 2 } 
+      }]
+    }
   }
 
   // Don't show legend - we have view mode buttons for switching
-  return { ...base, series }
+  const finalOption = { ...base, series }
+  
+  if (props.kind === 'bar') {
+    console.log('[BaseChart] Final xAxis config:', {
+      type: finalOption.xAxis.type,
+      data: finalOption.xAxis.data,
+      dataLength: finalOption.xAxis.data?.length,
+      axisLabel: finalOption.xAxis.axisLabel,
+      isLarge
+    })
+  }
+  
+  return finalOption
 }
 
 const option = computed(() => createOption(false))
@@ -841,7 +931,7 @@ const modalOption = computed(() => createOption(true))
 }
 
 .msg.error { 
-  color: #ff6b6b; 
+  color: #ff6b6b !important; 
   font-weight: bold; 
 }
 </style>
