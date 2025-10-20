@@ -87,21 +87,44 @@ function handleImageError(event) {
 <template>
   <main class="page">
     <header class="app-header">
-      <h1 class="brand-title">
-        <!-- Replace /logo.svg with your icon path: /logo.png, /logo.jpg, etc. -->
-        <img 
-          src="/logo.png" 
-          alt="Factorly Logo" 
-          class="brand-logo"
-          @error="handleImageError"
-        >
-        <span class="brand">Factorly</span>
-      </h1>
+      <div class="header-container">
+        <div class="header-left">
+          <img 
+            src="/logo.png" 
+            alt="Factorly Logo" 
+            class="brand-logo"
+            @error="handleImageError"
+          >
+          <span class="brand-text">Factorly</span>
+        </div>
+        
+        <div class="header-right">
+          <button 
+            class="icon-button" 
+            title="Settings"
+            aria-label="Settings"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v6m0 6v6m-7-7h6m6 0h6" />
+              <path d="M20.4 8.4l-4.2 4.2m-8.4 0L3.6 8.4M3.6 15.6l4.2-4.2m8.4 0l4.2 4.2" />
+            </svg>
+          </button>
+          <button 
+            class="icon-button" 
+            title="Theme"
+            aria-label="Theme toggle"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </header>
 
     <section
-      class="panel"
-      style="max-width: 900px; margin: 0 auto;"
+      class="ticker-bar-section"
     >
       <GlobalTickerBar 
         v-model="inputTicker"
@@ -229,39 +252,165 @@ function handleImageError(event) {
 <style>
 /* Header */
 .app-header {
-  text-align: center;
-  padding: 2rem 0 1.5rem;
-  background: linear-gradient(180deg, #0F0F10 0%, rgba(15, 15, 16, 0.95) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0.875rem 1.5rem;
+  background: rgba(15, 15, 16, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #2A2A2E;
+  transition: all 0.3s ease;
 }
 
-.brand-title {
-  display: inline-flex;
+.app-header:hover {
+  border-bottom-color: rgba(0, 89, 76, 0.3);
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0;
-  font-size: 2.5rem;
-  transition: transform 0.3s ease;
 }
 
-.brand-title:hover {
-  transform: scale(1.02);
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .brand-logo {
-  width: 70px;
-  height: 70px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0, 89, 76, 0.5));
+  filter: drop-shadow(0 2px 6px rgba(0, 89, 76, 0.4));
+  transition: transform 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
 }
 
 /* Branding - Aston Martin British Racing Green */
-.brand {
-  color: #00594C;
-  -webkit-background-clip: unset;
-  -webkit-text-fill-color: unset;
-  background-clip: text;
+.brand-text {
+  font-size: 1.5rem;
   font-weight: 700;
+  color: #00594C;
   letter-spacing: -0.02em;
+  transition: color 0.3s ease;
+}
+
+.brand-text:hover {
+  color: #00755F;
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid #2A2A2E;
+  border-radius: 8px;
+  color: #9E9E9E;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover {
+  background: rgba(0, 89, 76, 0.1);
+  border-color: #00594C;
+  color: #00A88E;
+  transform: translateY(-1px);
+}
+
+.icon-button:active {
+  transform: translateY(0);
+}
+
+.icon-button svg {
+  flex-shrink: 0;
+}
+
+/* Ticker Bar Section - spacing after header */
+.ticker-bar-section {
+  max-width: 900px;
+  margin: 1.5rem auto 0;
+  padding: 0 12px;
+}
+
+/* Header responsive */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-text {
+    font-size: 1.25rem;
+  }
+
+  .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .ticker-bar-section {
+    margin-top: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .brand-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brand-text {
+    font-size: 1.125rem;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .icon-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .ticker-bar-section {
+    margin-top: 1rem;
+  }
 }
 
 .ai-analysis-grid {

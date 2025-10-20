@@ -14,35 +14,23 @@
       v-else
       class="company-logo-placeholder"
     >
-      {{ ticker.substring(0, 2).toUpperCase() }}
+      {{ ticker.substring(0, 1).toUpperCase() }}
     </div>
     
     <div class="company-info">
-      <div class="company-name">
-        {{ profile.companyName || ticker }}
+      <div class="company-identity">
+        <span class="company-name">{{ profile.companyName || ticker }}</span>
+        <span class="company-ticker">({{ ticker }})</span>
       </div>
-      <div class="bottom-row">
-        <div class="price-info">
-          <span class="current-price">${{ formatPrice(quote.price) }}</span>
-          <span 
-            class="price-change" 
-            :class="{ positive: quote.change >= 0, negative: quote.change < 0 }"
-          >
-            {{ quote.change >= 0 ? '+' : '' }}${{ formatPrice(Math.abs(quote.change)) }} 
-            ({{ quote.change >= 0 ? '+' : '' }}{{ quote.changesPercentage?.toFixed(2) }}%)
-          </span>
-        </div>
-        <div
-          v-if="earningsDate"
-          class="earnings-section"
+      <div class="price-info">
+        <span class="current-price">${{ formatPrice(quote.price) }}</span>
+        <span 
+          class="price-change" 
+          :class="{ positive: quote.change >= 0, negative: quote.change < 0 }"
         >
-          <div class="earnings-label">
-            Next Earnings
-          </div>
-          <div class="earnings-date">
-            {{ formatEarningsDate(earningsDate) }}
-          </div>
-        </div>
+          {{ quote.change >= 0 ? '+' : '' }}${{ formatPrice(Math.abs(quote.change)) }} 
+          ({{ quote.change >= 0 ? '+' : '' }}{{ quote.changesPercentage?.toFixed(2) }}%)
+        </span>
       </div>
     </div>
   </div>
@@ -89,6 +77,15 @@ const formatEarningsDate = (date) => {
     month: 'short', 
     day: 'numeric' 
   })
+}
+
+const formatMarketCap = (mktCap) => {
+  if (!mktCap) return 'N/A'
+  const num = Number(mktCap)
+  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`
+  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`
+  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`
+  return `$${num.toLocaleString()}`
 }
 
 async function fetchCompanyData() {
@@ -182,14 +179,20 @@ watch(() => props.ticker, () => {
 .company-logo-placeholder {
   width: 48px;
   height: 48px;
-  border-radius: 8px;
-  background: #00594C;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00594C 0%, #00755F 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 700;
   color: #E5E5E5;
+  box-shadow: 0 2px 8px rgba(0, 89, 76, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.company-logo-placeholder:hover {
+  transform: scale(1.05);
 }
 
 .company-info {
@@ -200,17 +203,23 @@ watch(() => props.ticker, () => {
   min-width: 0;
 }
 
+.company-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .company-name {
   font-size: 16px;
   font-weight: 600;
   color: #E5E5E5;
 }
 
-.bottom-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+.company-ticker {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(229, 229, 229, 0.6);
 }
 
 .price-info {
@@ -241,28 +250,6 @@ watch(() => props.ticker, () => {
   color: #ef4444;
 }
 
-.earnings-section {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.earnings-label {
-  font-size: 11px;
-  color: rgba(229, 229, 229, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.earnings-date {
-  font-size: 14px;
-  font-weight: 600;
-  color: #00A88E;
-  white-space: nowrap;
-}
-
 .loading-placeholder {
   justify-content: center;
   color: rgba(229, 229, 229, 0.5);
@@ -287,24 +274,16 @@ watch(() => props.ticker, () => {
     font-size: 14px;
   }
 
+  .company-ticker {
+    font-size: 12px;
+  }
+
   .current-price {
     font-size: 18px;
   }
 
   .price-change {
     font-size: 13px;
-  }
-
-  .earnings-label {
-    font-size: 10px;
-  }
-
-  .earnings-date {
-    font-size: 13px;
-  }
-
-  .bottom-row {
-    gap: 12px;
   }
 }
 
