@@ -9,13 +9,6 @@ import HeroSection from './components/layout/HeroSection.vue'
 import TabNavigation from './components/layout/TabNavigation.vue'
 import TabPanel from './components/layout/TabPanel.vue'
 
-// Icon components
-import IconValuation from './components/icons/IconValuation.vue'
-import IconPerformance from './components/icons/IconPerformance.vue'
-import IconBalance from './components/icons/IconBalance.vue'
-import IconReturns from './components/icons/IconReturns.vue'
-import IconAI from './components/icons/IconAI.vue'
-
 // Chart components
 import PriceChart from './components/charts/PriceChart.vue'
 import PriceTargetBar from './components/charts/PriceTargetBar.vue'
@@ -40,13 +33,13 @@ const companyName = ref('Apple Inc.')
 // Tab state with localStorage persistence
 const activeTab = ref('valuation')
 
-// Tab configuration
+// Tab configuration with PNG icon paths
 const tabs = [
-  { id: 'valuation', label: 'Valuation', icon: IconValuation, badge: null },
-  { id: 'performance', label: 'Performance', icon: IconPerformance, badge: null },
-  { id: 'balance', label: 'Balance', icon: IconBalance, badge: null },
-  { id: 'profitability', label: 'Returns', icon: IconReturns, badge: null },
-  { id: 'insights', label: 'AI Insights', icon: IconAI, badge: null }
+  { id: 'valuation', label: 'Valuation', icon: '/icons/valuation.png', badge: null },
+  { id: 'performance', label: 'Performance', icon: '/icons/performance.png', badge: null },
+  { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null },
+  { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null },
+  { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null }
 ]
 
 // Load saved tab preference

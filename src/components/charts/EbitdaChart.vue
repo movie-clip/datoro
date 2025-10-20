@@ -113,7 +113,7 @@ const ebitdaWithMargin = computed(() => {
       type: 'bar'
     },
     {
-      name: 'EBITDA Margin %',
+      name: 'EBITDA Margin',
       data: marginData.value,
       type: 'line',
       yAxisIndex: 1

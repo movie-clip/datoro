@@ -16,7 +16,7 @@
         class="description-toggle"
         @click="toggleExpanded"
       >
-        {{ isExpanded ? 'Show less' : '...more' }}
+        {{ isExpanded ? 'less' : 'more' }}
       </button>
     </div>
   </div>

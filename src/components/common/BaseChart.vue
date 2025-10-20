@@ -459,37 +459,49 @@ const createOption = (isLarge = false) => {
         color: '#E5E5E5',
         fontSize: 13
       },
-      formatter: props.dualAxis ? (params) => {
+      formatter: (params) => {
         if (!params || params.length === 0) return ''
-        const date = new Date(params[0].value[0]).toLocaleDateString()
+        
+        // For bar charts, params[0].value is the data value, not an array
+        // For line charts, params[0].value is [timestamp, value]
+        const isBarChart = props.kind === 'bar'
+        const date = isBarChart 
+          ? params[0].name // Bar chart uses category name (year)
+          : new Date(params[0].value[0]).toLocaleDateString()
+        
         let html = `<div style="font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #E5E5E5;">${date}</div>`
+        
         params.forEach(item => {
           const marker = item.marker
           const name = item.seriesName || ''
-          const value = Number(item.value[1])
+          const value = isBarChart ? Number(item.value) : Number(item.value[1])
           const lname = String(name).toLowerCase()
           let formatted
-          if (lname.includes('price')) {
-            // Price line
-            formatted = `$${value.toFixed(2)}`
-          } else if (lname.includes('margin') || lname.includes('%')) {
-            // Percentage series (e.g., EBITDA Margin)
-            formatted = `${value.toFixed(1)}%`
-          } else if (lname.includes('share')) {
-            // Insider trading shares
-            const sign = value >= 0 ? '+' : ''
-            const abs = Math.abs(value)
-            formatted = abs >= 1000 
-              ? `${sign}${(value / 1000).toFixed(1)}K shares`
-              : `${sign}${value.toFixed(0)} shares`
+          
+          if (props.dualAxis) {
+            // Dual axis specific formatting
+            if (lname.includes('price')) {
+              formatted = `$${value.toFixed(2)}`
+            } else if (lname.includes('margin') || lname.includes('%')) {
+              formatted = `${value.toFixed(1)}%`
+            } else if (lname.includes('share')) {
+              const sign = value >= 0 ? '+' : ''
+              const abs = Math.abs(value)
+              formatted = abs >= 1000 
+                ? `${sign}${(value / 1000).toFixed(1)}K shares`
+                : `${sign}${value.toFixed(0)} shares`
+            } else {
+              formatted = yFormatter(value, props.yFormat)
+            }
           } else {
-            // Fallback to yFormat configuration (e.g., currency for EBITDA)
+            // Use yFormat prop for consistent formatting
             formatted = yFormatter(value, props.yFormat)
           }
+          
           html += `<div style="color: #E5E5E5;">${marker} ${name}: ${formatted}</div>`
         })
         return html
-      } : undefined
+      }
     } : !isMobile ? { 
       // Compact view - enable tooltips for desktop only
       trigger: 'axis',
