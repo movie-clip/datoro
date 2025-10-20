@@ -298,15 +298,23 @@ describe('Batch Chart Service', () => {
   });
 
   describe('getEpsSeriesFromBatch', () => {
-    it('should extract quarterly EPS series', () => {
+    it('should extract annual EPS series by default', () => {
       const result = getEpsSeriesFromBatch(mockBatchData);
+      
+      expect(result).toHaveLength(3);
+      expect(result[0]).toEqual([Date.parse('2023-09-30'), 6.13]);
+      expect(result[1][1]).toBe(6.15);
+    });
+
+    it('should extract quarterly EPS series when specified', () => {
+      const result = getEpsSeriesFromBatch(mockBatchData, 'quarterly');
       
       expect(result).toHaveLength(4);
       expect(result[0]).toEqual([Date.parse('2023-12-30'), 2.18]);
       expect(result[1][1]).toBe(1.46);
     });
 
-    it('should return empty array if no quarterly data', () => {
+    it('should return empty array if no annual data', () => {
       const noData = { data: { incomeAnnual: [] } };
       const result = getEpsSeriesFromBatch(noData);
       
@@ -316,13 +324,14 @@ describe('Batch Chart Service', () => {
     it('should handle zero EPS', () => {
       const zeroEps = {
         data: {
-          incomeQuarter: [
-            { date: '2023-12-30', eps: 0 }
+          incomeAnnual: [
+            { date: '2023-09-30', eps: 0 }
           ]
         }
       };
       const result = getEpsSeriesFromBatch(zeroEps);
       
+      expect(result).toHaveLength(1);
       expect(result[0][1]).toBe(0);
     });
   });
