@@ -75,12 +75,11 @@ body {
   }
 }
 
-/* Only animate charts, not tables */
-.charts > .panel {
+/* Chart animations disabled - conflicts with tab transitions */
+/* .charts > .panel {
   animation: fadeInUp 0.5s ease-out backwards;
 }
 
-/* Stagger delays for charts only */
 .charts > .panel:nth-child(1) { animation-delay: 0.1s; }
 .charts > .panel:nth-child(2) { animation-delay: 0.15s; }
 .charts > .panel:nth-child(3) { animation-delay: 0.2s; }
@@ -92,7 +91,7 @@ body {
 .charts > .panel:nth-child(9) { animation-delay: 0.5s; }
 .charts > .panel:nth-child(10) { animation-delay: 0.55s; }
 .charts > .panel:nth-child(11) { animation-delay: 0.6s; }
-.charts > .panel:nth-child(12) { animation-delay: 0.65s; }
+.charts > .panel:nth-child(12) { animation-delay: 0.65s; } */
 
 /* ==============================================
    PRINT STYLES

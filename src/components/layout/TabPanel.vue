@@ -1,24 +1,18 @@
 <template>
-  <Transition 
-    :name="transitionName"
-    mode="out-in"
-    @before-enter="onBeforeEnter"
-    @enter="onEnter"
+  <div
+    v-if="shouldRender"
+    :id="`panel-${id}`"
+    class="tab-panel"
+    :class="{ 'is-active': active }"
+    role="tabpanel"
+    :aria-labelledby="`tab-${id}`"
   >
-    <div
-      v-show="active"
-      :id="`panel-${id}`"
-      class="tab-panel"
-      role="tabpanel"
-      :aria-labelledby="`tab-${id}`"
-    >
-      <slot />
-    </div>
-  </Transition>
+    <slot />
+  </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 const props = defineProps({
   id: {
@@ -35,7 +29,6 @@ const props = defineProps({
   }
 })
 
-const transitionName = ref('fade-slide')
 const hasBeenActivated = ref(false)
 
 watch(() => props.active, (newVal) => {
@@ -44,57 +37,31 @@ watch(() => props.active, (newVal) => {
   }
 })
 
-// Animation hooks
-const onBeforeEnter = (el) => {
-  el.style.opacity = '0'
-  el.style.transform = 'translateY(20px)'
-}
-
-const onEnter = (el, done) => {
-  el.offsetHeight // Trigger reflow
-  el.style.transition = 'opacity 0.3s ease, transform 0.3s ease'
-  el.style.opacity = '1'
-  el.style.transform = 'translateY(0)'
-  setTimeout(done, 300)
-}
+// Only render if active or if lazy load is disabled and has been activated
+const shouldRender = computed(() => {
+  if (props.lazyLoad) {
+    return props.active || hasBeenActivated.value
+  }
+  return true
+})
 </script>
 
 <style scoped>
 .tab-panel {
   width: 100%;
   padding: 0 12px;
-  animation: fadeIn 0.3s ease;
-}
-
-/* Fade slide transitions */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.fade-slide-enter-from {
   opacity: 0;
-  transform: translateY(20px);
+  transition: opacity 0.15s ease-in-out;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Prevent layout shift during transitions */
-.tab-panel {
-  min-height: 200px;
+.tab-panel.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
 }
 </style>

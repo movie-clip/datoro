@@ -299,6 +299,8 @@ function handleImageError(event) {
   margin: 0 auto;
   padding: 0;
   width: 100%;
+  position: relative;
+  min-height: 500px;
 }
 
 /* Mobile-specific sections */
