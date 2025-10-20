@@ -1,14 +1,24 @@
 <template>
   <section class="table-panel">
-    <div class="table-header">
+    <div 
+      class="table-header"
+      :class="{ 'clickable-header': rows.length > 3 }"
+      @click="rows.length > 3 ? toggleExpanded() : null"
+    >
       <div class="head">
         {{ title }}
+        <span 
+          v-if="rows.length > 3" 
+          class="expand-indicator"
+        >
+          {{ isExpanded ? '▼' : '▶' }}
+        </span>
       </div>
       <button
         v-if="audioName && !loading && !error"
         class="audio-btn"
         :title="isPlaying ? 'Pause audio' : 'Play audio explanation'"
-        @click="toggleAudio"
+        @click.stop="toggleAudio"
       >
         {{ isPlaying ? '⏸' : '🔊' }}
       </button>
@@ -53,7 +63,7 @@
     >
       <tbody>
         <tr
-          v-for="row in rows"
+          v-for="(row, index) in displayedRows"
           :key="row.label"
           :class="{ 'clickable-row': clickable }"
           @click="clickable ? $emit('row-click', row) : null"
@@ -78,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 
 const props = defineProps({
@@ -119,6 +129,21 @@ const props = defineProps({
 
 const emit = defineEmits(['row-click'])
 
+// Expand/collapse state
+const isExpanded = ref(false)
+
+// Show only first 3 rows when collapsed, all rows when expanded
+const displayedRows = computed(() => {
+  if (props.rows.length <= 3) {
+    return props.rows
+  }
+  return isExpanded.value ? props.rows : props.rows.slice(0, 3)
+})
+
+function toggleExpanded() {
+  isExpanded.value = !isExpanded.value
+}
+
 // Audio playback
 const audioPlayer = ref(null)
 const isPlaying = ref(false)
@@ -129,7 +154,6 @@ function toggleAudio() {
   // Load audio source if not already loaded
   if (!audioPlayer.value.src || !audioPlayer.value.src.includes(props.audioName)) {
     const audioPath = `/voiceovers/${props.audioName}.mp3`
-    console.log('Loading audio from:', audioPath)
     audioPlayer.value.src = audioPath
   }
 
@@ -179,10 +203,33 @@ watch(() => props.error, (newError) => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  transition: background-color 0.2s;
+}
+
+.table-header.clickable-header {
+  cursor: pointer;
+  padding: 4px 8px;
+  margin: -4px -8px 8px -8px;
+  border-radius: 6px;
+}
+
+.table-header.clickable-header:hover {
+  background-color: rgba(0, 89, 76, 0.1);
 }
 
 .head {
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expand-indicator {
+  font-size: 10px;
+  color: #aaa;
+  transition: transform 0.2s;
+  display: inline-block;
+  min-width: 12px;
 }
 
 .audio-btn {
