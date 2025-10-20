@@ -778,6 +778,99 @@ app.post('/api/ai/analysis', aiLimiter, async (req, res) => {
   }
 })
 
+// -------------------- Ticker Search Endpoint --------------------
+// Search for tickers by symbol or company name
+app.get('/api/search', fmpLimiter, async (req, res) => {
+  const { query } = req.query
+  
+  if (!query || query.trim().length === 0) {
+    return res.status(400).json({
+      error: {
+        message: 'Search query is required',
+        code: 'E_SEARCH_001'
+      }
+    })
+  }
+  
+  const searchQuery = query.trim().toUpperCase()
+  
+  // Check cache first
+  const cacheKey = cache.generateKey('search', searchQuery, '')
+  
+  try {
+    const cached = await cache.get(cacheKey)
+    
+    if (cached && cached.data) {
+      console.log(`[Search] Cache hit for query: ${searchQuery}`)
+      return res.json(cached.data)
+    }
+  } catch (cacheError) {
+    console.error(`[Search] Cache read error for "${searchQuery}":`, cacheError)
+    // Continue to API call if cache fails
+  }
+  
+  try {
+    // Use FMP's search endpoint
+    const fmpUrl = `https://financialmodelingprep.com/api/v3/search?query=${encodeURIComponent(searchQuery)}&limit=10&apikey=${process.env.FMP_API_KEY}`
+    
+    const response = await fetch(fmpUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`FMP API error: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // Filter and format results - prioritize exact ticker matches, limit to 5
+    const results = (data || [])
+      .filter(item => item.symbol && item.name) // Only items with symbol and name
+      .sort((a, b) => {
+        // Exact match first
+        if (a.symbol === searchQuery) return -1
+        if (b.symbol === searchQuery) return 1
+        
+        // Starts with query next
+        const aStarts = a.symbol.startsWith(searchQuery)
+        const bStarts = b.symbol.startsWith(searchQuery)
+        if (aStarts && !bStarts) return -1
+        if (!aStarts && bStarts) return 1
+        
+        // Then alphabetically
+        return a.symbol.localeCompare(b.symbol)
+      })
+      .slice(0, 5) // Limit to 5 results
+      .map(item => ({
+        symbol: item.symbol,
+        name: item.name,
+        exchange: item.exchangeShortName || item.stockExchange || ''
+      }))
+    
+    // Cache for 7 days (search results don't change frequently)
+    try {
+      await cache.set(cacheKey, results, CacheTTL.LONG) // 7 days
+    } catch (cacheError) {
+      console.error(`[Search] Cache write error for "${searchQuery}":`, cacheError)
+      // Continue even if cache fails
+    }
+    
+    console.log(`[Search] Found ${results.length} results for query: ${searchQuery}`)
+    res.json(results)
+    
+  } catch (error) {
+    console.error(`[Search] Error searching for "${searchQuery}":`, error)
+    res.status(500).json({
+      error: {
+        message: 'Failed to search tickers',
+        code: 'E_SEARCH_002'
+      }
+    })
+  }
+})
+
 // -------------------- Batch Data Endpoint --------------------
 // Fetch all ticker data in one optimized request (reduces 30+ calls to 1)
 app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {

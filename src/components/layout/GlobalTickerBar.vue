@@ -20,13 +20,37 @@
             :aria-invalid="!!validationError"
             :aria-describedby="validationError ? 'ticker-error' : undefined"
             @keyup.enter="handleSubmit"
-            @input="validateInput"
+            @input="handleInputChange"
+            @focus="showDropdown = true"
+            @blur="handleBlur"
           >
           <span
             v-if="validationError"
             class="error-icon"
             title="Invalid ticker"
           >⚠️</span>
+          
+          <!-- Search Results Dropdown -->
+          <div
+            v-if="showDropdown && (searching || searchResults.length > 0)"
+            class="search-dropdown"
+            @mousedown.prevent
+          >
+            <div v-if="searching" class="search-loading">
+              Searching...
+            </div>
+            <div
+              v-else
+              v-for="result in searchResults"
+              :key="result.symbol"
+              class="search-result"
+              @click="selectTicker(result.symbol)"
+            >
+              <div class="result-symbol">{{ result.symbol }}</div>
+              <div class="result-name">{{ result.name }}</div>
+              <div v-if="result.exchange" class="result-exchange">{{ result.exchange }}</div>
+            </div>
+          </div>
         </div>
         <button
           class="btn"
@@ -60,6 +84,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
+import { useTickerSearch } from '../../composables/useTickerSearch'
 
 const companyProfile = ref(null)
 
@@ -74,6 +99,10 @@ const emit = defineEmits(['submit', 'update:companyName'])
 
 const localInput = ref(model.value || '')
 const validationError = ref('')
+const showDropdown = ref(false)
+
+// Search functionality
+const { searchResults, searching, searchTickers, clearSearch } = useTickerSearch()
 
 // Validate ticker format: 1-10 uppercase letters/numbers, no special chars except dots
 const validateInput = () => {
@@ -101,6 +130,35 @@ const validateInput = () => {
   validationError.value = ''
 }
 
+const handleInputChange = () => {
+  validateInput()
+  
+  // Trigger search if input is valid and at least 1 character
+  const value = localInput.value.trim()
+  if (value.length >= 1 && !validationError.value) {
+    searchTickers(value)
+    showDropdown.value = true
+  } else {
+    clearSearch()
+    showDropdown.value = false
+  }
+}
+
+const selectTicker = (symbol) => {
+  localInput.value = symbol
+  model.value = symbol
+  showDropdown.value = false
+  clearSearch()
+  emit('submit')
+}
+
+const handleBlur = () => {
+  // Delay hiding dropdown to allow click events to fire
+  setTimeout(() => {
+    showDropdown.value = false
+  }, 200)
+}
+
 const handleSubmit = () => {
   const value = localInput.value.trim().toUpperCase()
   
@@ -115,6 +173,8 @@ const handleSubmit = () => {
   
   model.value = value
   localInput.value = value
+  showDropdown.value = false
+  clearSearch()
   emit('submit')
 }
 
@@ -188,6 +248,65 @@ watch(() => model.value, (newVal) => {
   border-color: #00594C; 
   box-shadow: 0 0 0 3px rgba(0, 89, 76, 0.3); 
   background: rgba(15, 15, 16, 0.8);
+}
+
+/* Search Dropdown */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #151518 0%, #1A1A1D 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search-loading {
+  padding: 12px 16px;
+  color: #9E9E9E;
+  font-size: 14px;
+  text-align: center;
+}
+
+.search-result {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(42, 42, 46, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-result:last-child {
+  border-bottom: none;
+}
+
+.search-result:hover {
+  background: rgba(0, 168, 142, 0.1);
+  border-color: rgba(0, 168, 142, 0.2);
+}
+
+.result-symbol {
+  font-weight: 600;
+  font-size: 14px;
+  color: #00A88E;
+}
+
+.result-name {
+  font-size: 13px;
+  color: #E5E5E5;
+  opacity: 0.85;
+}
+
+.result-exchange {
+  font-size: 11px;
+  color: #9E9E9E;
+  text-transform: uppercase;
 }
 
 .input[aria-invalid="true"] {
