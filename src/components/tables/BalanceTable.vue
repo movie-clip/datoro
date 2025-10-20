@@ -7,6 +7,7 @@
     audio-name="Balance"
     aria-label="Balance sheet metrics"
     :clickable="true"
+    :collapsible="isMobile"
     @row-click="handleRowClick"
   />
   
@@ -24,6 +25,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { getBalanceFromBatch } from '../../services/financials/batchTableService.js'
+import { useIsMobile } from '../../composables/useIsMobile'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 
@@ -33,6 +35,9 @@ import CashDebtChart from '../charts/CashDebtChart.vue'
 // Use Pinia store
 const tickerStore = useTickerStore()
 const { batchData, loading, error } = storeToRefs(tickerStore)
+
+// Mobile detection for collapsible behavior
+const { isMobile } = useIsMobile()
 
 // Process batch data into balance sheet metrics
 const data = computed(() => getBalanceFromBatch(batchData.value))

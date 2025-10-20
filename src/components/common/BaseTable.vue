@@ -2,13 +2,13 @@
   <section class="table-panel">
     <div 
       class="table-header"
-      :class="{ 'clickable-header': rows.length > 3 }"
-      @click="rows.length > 3 ? toggleExpanded() : null"
+      :class="{ 'clickable-header': collapsible && rows.length > 3 }"
+      @click="collapsible && rows.length > 3 ? toggleExpanded() : null"
     >
       <div class="head">
         {{ title }}
         <span 
-          v-if="rows.length > 3" 
+          v-if="collapsible && rows.length > 3" 
           class="expand-indicator"
         >
           {{ isExpanded ? '▼' : '▶' }}
@@ -124,6 +124,10 @@ const props = defineProps({
   clickable: {
     type: Boolean,
     default: false
+  },
+  collapsible: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -132,9 +136,9 @@ const emit = defineEmits(['row-click'])
 // Expand/collapse state
 const isExpanded = ref(false)
 
-// Show only first 3 rows when collapsed, all rows when expanded
+// Show only first 3 rows when collapsed, all rows when expanded (if collapsible)
 const displayedRows = computed(() => {
-  if (props.rows.length <= 3) {
+  if (!props.collapsible || props.rows.length <= 3) {
     return props.rows
   }
   return isExpanded.value ? props.rows : props.rows.slice(0, 3)

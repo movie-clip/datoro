@@ -7,6 +7,7 @@
     audio-name="CapitalReturned"
     aria-label="Capital returned metrics"
     :clickable="true"
+    :collapsible="isMobile"
     @row-click="handleRowClick"
   />
   
@@ -23,6 +24,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
+import { useIsMobile } from '../../composables/useIsMobile'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 
@@ -34,6 +36,9 @@ import SharesChart from '../charts/SharesChart.vue'
 // Use Pinia store
 const tickerStore = useTickerStore()
 const { batchData, loading, error } = storeToRefs(tickerStore)
+
+// Mobile detection for collapsible behavior
+const { isMobile } = useIsMobile()
 
 // Modal state
 const showChartModal = ref(false)

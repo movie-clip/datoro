@@ -8,6 +8,7 @@
     audio-name="Valuation"
     aria-label="Valuation metrics"
     :clickable="true"
+    :collapsible="isMobile"
     @row-click="handleRowClick"
   />
   
@@ -25,6 +26,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { getValuationFromBatch } from '../../services/financials/batchTableService.js'
+import { useIsMobile } from '../../composables/useIsMobile'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 
@@ -38,6 +40,9 @@ import InsiderTradingChart from '../charts/InsiderTradingChart.vue'
 const tickerStore = useTickerStore()
 const { batchData, loading, error } = storeToRefs(tickerStore)
 const { refresh: retry } = tickerStore
+
+// Mobile detection for collapsible behavior
+const { isMobile } = useIsMobile()
 
 // Get current ticker
 const currentTicker = computed(() => tickerStore.currentTicker)

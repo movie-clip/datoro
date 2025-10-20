@@ -16,6 +16,17 @@ import CapitalReturnedTable from './components/tables/CapitalReturnedTable.vue'
 // Chart components
 import PriceChart from './components/charts/PriceChart.vue'
 import PriceTargetBar from './components/charts/PriceTargetBar.vue'
+import RevenueChart from './components/charts/RevenueChart.vue'
+import NetIncomeChart from './components/charts/NetIncomeChart.vue'
+import EpsChart from './components/charts/EpsChart.vue'
+import FcfChart from './components/charts/FcfChart.vue'
+import EbitdaChart from './components/charts/EbitdaChart.vue'
+import ExpensesChart from './components/charts/ExpensesChart.vue'
+import InsiderTradingChart from './components/charts/InsiderTradingChart.vue'
+import CapitalReturnedChart from './components/charts/CapitalReturnedChart.vue'
+import DividendYieldChart from './components/charts/DividendYieldChart.vue'
+import SharesChart from './components/charts/SharesChart.vue'
+import CashDebtChart from './components/charts/CashDebtChart.vue'
 
 // Use Pinia store for centralized state
 const tickerStore = useTickerStore()
@@ -91,21 +102,57 @@ function handleImageError(event) {
       </section>
     </section>
 
-    <!-- Chart: Price chart only -->
-    <section class="charts desktop-only">
+    <!-- Charts: All in one grid -->
+    <section class="charts">
+      <!-- Price Chart: Always visible -->
       <section class="panel">
         <PriceChart />
       </section>
+      
+      <!-- Other Charts: Desktop only -->
+      <section class="panel desktop-only">
+        <RevenueChart />
+      </section>
+      <section class="panel desktop-only">
+        <NetIncomeChart />
+      </section>
+      <section class="panel desktop-only">
+        <FcfChart />
+      </section>
+      <section class="panel desktop-only">
+        <EpsChart />
+      </section>
+      <section class="panel desktop-only">
+        <EbitdaChart />
+      </section>
+      <section class="panel desktop-only">
+        <ExpensesChart />
+      </section>
+      <section class="panel desktop-only">
+        <CashDebtChart />
+      </section>
+      <section class="panel desktop-only">
+        <CapitalReturnedChart />
+      </section>
+      <section class="panel desktop-only">
+        <DividendYieldChart />
+      </section>
+      <section class="panel desktop-only">
+        <SharesChart />
+      </section>
+      <section class="panel desktop-only">
+        <InsiderTradingChart />
+      </section>
     </section>
 
-    <!-- Price Target Bar: Full width section -->
+    <!-- Price Target Bar: Visible on all devices -->
     <section class="price-target-section">
       <section class="panel">
         <PriceTargetBar />
       </section>
     </section>
 
-    <!-- AI Analysis: 2 panels in a row -->
+    <!-- AI Analysis: Visible on all devices -->
     <section class="ai-analysis-grid">
       <AIAnalysisPanel
         :company-name="companyName"
@@ -181,6 +228,12 @@ function handleImageError(event) {
 }
 
 .desktop-only {
+  display: block;
+}
+
+/* Special display for grid-based desktop-only sections */
+.charts.desktop-only,
+.ai-analysis-grid.desktop-only {
   display: grid;
 }
 
@@ -197,7 +250,7 @@ function handleImageError(event) {
   }
   
   .desktop-only {
-    display: none;
+    display: none !important;
   }
 }
 

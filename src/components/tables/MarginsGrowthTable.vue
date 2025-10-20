@@ -7,6 +7,7 @@
     audio-name="MarginsGrowth"
     aria-label="Margins and growth metrics"
     :clickable="true"
+    :collapsible="isMobile"
     @row-click="handleRowClick"
   />
   
@@ -24,6 +25,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { getMarginsGrowthFromBatch } from '../../services/financials/batchTableService.js'
+import { useIsMobile } from '../../composables/useIsMobile'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 
@@ -35,6 +37,9 @@ import ExpensesChart from '../charts/ExpensesChart.vue'
 // Use Pinia store
 const tickerStore = useTickerStore()
 const { batchData, loading, error } = storeToRefs(tickerStore)
+
+// Mobile detection for collapsible behavior
+const { isMobile } = useIsMobile()
 
 // Process batch data into margins and growth metrics
 const data = computed(() => getMarginsGrowthFromBatch(batchData.value))
