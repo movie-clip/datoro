@@ -1,0 +1,197 @@
+<template>
+  <div class="tab-navigation">
+    <div class="tab-list" role="tablist">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        :class="['tab-button', { active: modelValue === tab.id }]"
+        :aria-selected="modelValue === tab.id"
+        :aria-controls="`panel-${tab.id}`"
+        role="tab"
+        @click="$emit('update:modelValue', tab.id)"
+      >
+        <span class="tab-icon">{{ tab.icon }}</span>
+        <span class="tab-label">{{ tab.label }}</span>
+        <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  tabs: {
+    type: Array,
+    required: true,
+    // Expected format: [{ id: 'performance', label: 'Performance', icon: '📊', badge: null }]
+  },
+  modelValue: {
+    type: String,
+    required: true
+  }
+})
+
+defineEmits(['update:modelValue'])
+</script>
+
+<style scoped>
+.tab-navigation {
+  width: 100%;
+  margin: 24px auto;
+  max-width: 1200px;
+}
+
+.tab-list {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  background: linear-gradient(135deg, #151518 0%, #1A1A1D 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #2A2A2E #151518;
+}
+
+.tab-list::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tab-list::-webkit-scrollbar-track {
+  background: #151518;
+  border-radius: 3px;
+}
+
+.tab-list::-webkit-scrollbar-thumb {
+  background: #2A2A2E;
+  border-radius: 3px;
+}
+
+.tab-list::-webkit-scrollbar-thumb:hover {
+  background: #3A3A3E;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #9E9E9E;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  position: relative;
+  outline: none;
+}
+
+.tab-button:hover {
+  background: rgba(0, 89, 76, 0.1);
+  color: #E5E5E5;
+  border-color: rgba(0, 89, 76, 0.3);
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, rgba(0, 89, 76, 0.2) 0%, rgba(0, 89, 76, 0.15) 100%);
+  border-color: #00594C;
+  color: #00A88E;
+  box-shadow: 0 2px 8px rgba(0, 89, 76, 0.2);
+}
+
+.tab-button:focus-visible {
+  outline: 2px solid #00594C;
+  outline-offset: 2px;
+}
+
+.tab-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.tab-label {
+  font-weight: 500;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: #FF4976;
+  border-radius: 10px;
+  color: #FFF;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .tab-navigation {
+    margin: 16px auto;
+  }
+
+  .tab-list {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .tab-button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  .tab-icon {
+    font-size: 1.1rem;
+  }
+
+  /* Hide labels on very small screens, show icons only */
+  @media (max-width: 480px) {
+    .tab-label {
+      display: none;
+    }
+
+    .tab-button {
+      padding: 10px 12px;
+    }
+  }
+}
+
+/* Smooth scroll for tab navigation */
+.tab-list {
+  scroll-behavior: smooth;
+}
+
+/* Animation for active tab indicator */
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: #00A88E;
+  border-radius: 2px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    width: 0%;
+    opacity: 0;
+  }
+  to {
+    width: 60%;
+    opacity: 1;
+  }
+}
+</style>

@@ -49,7 +49,10 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(300px, 450px));
   justify-content: center;
   gap: 12px;
-  margin-top: 12px;
+  margin: 12px auto;
+  max-width: 1400px;
+  width: 100%;
+  padding: 0;
 }
 
 .info-grid {

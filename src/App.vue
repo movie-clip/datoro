@@ -1,20 +1,15 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 
 // Layout components
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
 import AIAnalysisPanel from './components/layout/AIAnalysisPanel.vue'
-
-// Table components
-import ValuationTable from './components/tables/ValuationTable.vue'
-import CashFlowTable from './components/tables/CashFlowTable.vue'
-import MarginsGrowthTable from './components/tables/MarginsGrowthTable.vue'
-import BalanceTable from './components/tables/BalanceTable.vue'
-import CapitalReturnedTable from './components/tables/CapitalReturnedTable.vue'
+import HeroSection from './components/layout/HeroSection.vue'
+import TabNavigation from './components/layout/TabNavigation.vue'
+import TabPanel from './components/layout/TabPanel.vue'
 
 // Chart components
-import PriceChart from './components/charts/PriceChart.vue'
 import PriceTargetBar from './components/charts/PriceTargetBar.vue'
 import RevenueChart from './components/charts/RevenueChart.vue'
 import NetIncomeChart from './components/charts/NetIncomeChart.vue'
@@ -33,6 +28,31 @@ const tickerStore = useTickerStore()
 
 const inputTicker = ref('AAPL')
 const companyName = ref('Apple Inc.')
+
+// Tab state with localStorage persistence
+const activeTab = ref('valuation')
+
+// Tab configuration
+const tabs = [
+  { id: 'valuation', label: 'Valuation', icon: '💎', badge: null },
+  { id: 'performance', label: 'Performance', icon: '📊', badge: null },
+  { id: 'profitability', label: 'Profitability', icon: '💰', badge: null },
+  { id: 'balance', label: 'Balance & Returns', icon: '💵', badge: null },
+  { id: 'insights', label: 'AI Insights', icon: '🤖', badge: null }
+]
+
+// Load saved tab preference
+onMounted(() => {
+  const savedTab = localStorage.getItem('factorly_active_tab')
+  if (savedTab && tabs.some(t => t.id === savedTab)) {
+    activeTab.value = savedTab
+  }
+})
+
+// Save tab preference
+watch(activeTab, (newTab) => {
+  localStorage.setItem('factorly_active_tab', newTab)
+})
 
 // Watch ticker changes and update store
 watch(() => inputTicker.value, (newTicker) => {
@@ -83,85 +103,121 @@ function handleImageError(event) {
       />
     </section>
 
-    <!-- Info cards: 5 tables in a row (no longer need ticker prop - use store) -->
-    <section class="info-grid">
-      <section class="panel">
-        <ValuationTable />
-      </section>
-      <section class="panel">
-        <CashFlowTable />
-      </section>
-      <section class="panel">
-        <MarginsGrowthTable />
-      </section>
-      <section class="panel">
-        <BalanceTable />
-      </section>
-      <section class="panel">
-        <CapitalReturnedTable />
-      </section>
+    <!-- Hero Section: Price Chart + Key Metrics -->
+    <section class="hero-section">
+      <HeroSection />
     </section>
 
-    <!-- Charts: All in one grid -->
-    <section class="charts">
-      <!-- Price Chart: Always visible -->
-      <section class="panel">
-        <PriceChart />
-      </section>
-      
-      <!-- Other Charts: Desktop only -->
-      <section class="panel desktop-only">
-        <RevenueChart />
-      </section>
-      <section class="panel desktop-only">
-        <NetIncomeChart />
-      </section>
-      <section class="panel desktop-only">
-        <FcfChart />
-      </section>
-      <section class="panel desktop-only">
-        <EpsChart />
-      </section>
-      <section class="panel desktop-only">
-        <EbitdaChart />
-      </section>
-      <section class="panel desktop-only">
-        <ExpensesChart />
-      </section>
-      <section class="panel desktop-only">
-        <CashDebtChart />
-      </section>
-      <section class="panel desktop-only">
-        <CapitalReturnedChart />
-      </section>
-      <section class="panel desktop-only">
-        <DividendYieldChart />
-      </section>
-      <section class="panel desktop-only">
-        <SharesChart />
-      </section>
-      <section class="panel desktop-only">
-        <InsiderTradingChart />
-      </section>
-    </section>
+    <!-- Tab Navigation -->
+    <TabNavigation 
+      v-model="activeTab"
+      :tabs="tabs"
+      class="tab-navigation"
+    />
 
-    <!-- Price Target Bar: Visible on all devices -->
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Valuation Tab -->
+      <TabPanel 
+        id="valuation" 
+        :active="activeTab === 'valuation'"
+        :lazyLoad="true"
+      >
+        <section class="charts">
+          <section class="panel">
+            <EpsChart />
+          </section>
+          <section class="panel">
+            <EbitdaChart />
+          </section>
+        </section>
+      </TabPanel>
+
+      <!-- Performance Tab -->
+      <TabPanel 
+        id="performance" 
+        :active="activeTab === 'performance'"
+        :lazyLoad="true"
+      >
+        <section class="charts">
+          <section class="panel">
+            <RevenueChart />
+          </section>
+          <section class="panel">
+            <NetIncomeChart />
+          </section>
+          <section class="panel">
+            <FcfChart />
+          </section>
+        </section>
+      </TabPanel>
+
+      <!-- Profitability Tab -->
+      <TabPanel 
+        id="profitability" 
+        :active="activeTab === 'profitability'"
+        :lazyLoad="true"
+      >
+        <section class="charts">
+          <section class="panel">
+            <ExpensesChart />
+          </section>
+        </section>
+      </TabPanel>
+
+      <!-- Balance & Returns Tab -->
+      <TabPanel 
+        id="balance" 
+        :active="activeTab === 'balance'"
+        :lazyLoad="true"
+      >
+        <section class="charts">
+          <section class="panel">
+            <CashDebtChart />
+          </section>
+          <section class="panel">
+            <CapitalReturnedChart />
+          </section>
+          <section class="panel">
+            <DividendYieldChart />
+          </section>
+          <section class="panel">
+            <SharesChart />
+          </section>
+        </section>
+      </TabPanel>
+
+      <!-- AI Insights Tab -->
+      <TabPanel 
+        id="insights" 
+        :active="activeTab === 'insights'"
+        :lazyLoad="true"
+      >
+        <section class="ai-analysis-grid">
+          <AIAnalysisPanel
+            :company-name="companyName"
+            type="advantages"
+          />
+          <AIAnalysisPanel
+            :company-name="companyName"
+            type="risks"
+          />
+        </section>
+        
+        <!-- Insider Trading Chart in Insights Tab -->
+        <section class="charts" style="margin-top: 2rem;">
+          <section class="panel">
+            <InsiderTradingChart />
+          </section>
+        </section>
+      </TabPanel>
+    </div>
+
+    <!-- Price Target Bar: After all tabs -->
     <section class="price-target-section">
       <section class="panel">
         <PriceTargetBar />
       </section>
-    </section>
-
-    <!-- AI Analysis: Visible on all devices -->
-    <section class="ai-analysis-grid">
-      <AIAnalysisPanel
-        :company-name="companyName"
-        type="advantages"
-      />
-      <AIAnalysisPanel
-        :company-name="companyName"
-        type="risks"
-      />
     </section>
   </main>
 </template>
@@ -208,17 +264,40 @@ function handleImageError(event) {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 12px auto 24px;
+  padding: 0 12px;
 }
 
 .price-target-section {
-  max-width: 940px;
-  margin: 24px;
+  max-width: 1400px;
+  margin: 24px auto;
   padding: 0 12px;
 }
 
 .price-target-section > .panel {
+  width: 100%;
+}
+
+/* Hero Section */
+.hero-section {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 0 12px;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  max-width: 1400px;
+  margin: 32px auto 0;
+  padding: 0 12px;
+}
+
+/* Tab Content */
+.tab-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0;
   width: 100%;
 }
 
@@ -235,12 +314,6 @@ function handleImageError(event) {
 .charts.desktop-only,
 .ai-analysis-grid.desktop-only {
   display: grid;
-}
-
-.metrics-overview-section {
-  max-width: 940px;
-  margin: 24px auto;
-  padding: 0 12px;
 }
 
 /* Mobile responsive: show mobile-only, hide desktop-only */
