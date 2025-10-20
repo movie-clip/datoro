@@ -7,10 +7,10 @@ function fmtNumber(n) {
   if (!Number.isFinite(n)) return '—'
   const s = Math.sign(n) < 0 ? '-' : ''
   const a = Math.abs(n)
-  if (a >= 1e12) return s + (a / 1e12).toFixed(2) + 'T'
-  if (a >= 1e9 ) return s + (a / 1e9 ).toFixed(2) + 'B'
-  if (a >= 1e6 ) return s + (a / 1e6 ).toFixed(2) + 'M'
-  if (a >= 1e3 ) return s + (a / 1e3 ).toFixed(0) + 'K'
+  if (a >= 1e12) return s + (a / 1e12).toFixed(3) + 'T'
+  if (a >= 1e9 ) return s + (a / 1e9 ).toFixed(3) + 'B'
+  if (a >= 1e6 ) return s + (a / 1e6 ).toFixed(3) + 'M'
+  if (a >= 1e3 ) return s + (a / 1e3 ).toFixed(2) + 'K'
   return s + a.toFixed(0)
 }
 

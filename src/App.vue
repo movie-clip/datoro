@@ -10,6 +10,7 @@ import TabNavigation from './components/layout/TabNavigation.vue'
 import TabPanel from './components/layout/TabPanel.vue'
 
 // Chart components
+import PriceChart from './components/charts/PriceChart.vue'
 import PriceTargetBar from './components/charts/PriceTargetBar.vue'
 import RevenueChart from './components/charts/RevenueChart.vue'
 import NetIncomeChart from './components/charts/NetIncomeChart.vue'
@@ -36,8 +37,8 @@ const activeTab = ref('valuation')
 const tabs = [
   { id: 'valuation', label: 'Valuation', icon: '💎', badge: null },
   { id: 'performance', label: 'Performance', icon: '📊', badge: null },
-  { id: 'profitability', label: 'Profitability', icon: '💰', badge: null },
-  { id: 'balance', label: 'Balance & Returns', icon: '💵', badge: null },
+  { id: 'balance', label: 'Balance', icon: '💵', badge: null },
+  { id: 'profitability', label: 'Returns', icon: '💰', badge: null },
   { id: 'insights', label: 'AI Insights', icon: '🤖', badge: null }
 ]
 
@@ -130,6 +131,9 @@ function handleImageError(event) {
           <section class="panel">
             <EbitdaChart />
           </section>
+          <section class="panel">
+            <InsiderTradingChart />
+          </section>
         </section>
       </TabPanel>
 
@@ -152,7 +156,7 @@ function handleImageError(event) {
         </section>
       </TabPanel>
 
-      <!-- Profitability Tab -->
+      <!-- Returns Tab -->
       <TabPanel 
         id="profitability" 
         :active="activeTab === 'profitability'"
@@ -160,12 +164,18 @@ function handleImageError(event) {
       >
         <section class="charts">
           <section class="panel">
+            <CapitalReturnedChart />
+          </section>
+          <section class="panel">
+            <DividendYieldChart />
+          </section>
+          <section class="panel">
             <ExpensesChart />
           </section>
         </section>
       </TabPanel>
 
-      <!-- Balance & Returns Tab -->
+      <!-- Balance Tab -->
       <TabPanel 
         id="balance" 
         :active="activeTab === 'balance'"
@@ -174,12 +184,6 @@ function handleImageError(event) {
         <section class="charts">
           <section class="panel">
             <CashDebtChart />
-          </section>
-          <section class="panel">
-            <CapitalReturnedChart />
-          </section>
-          <section class="panel">
-            <DividendYieldChart />
           </section>
           <section class="panel">
             <SharesChart />
@@ -202,13 +206,6 @@ function handleImageError(event) {
             :company-name="companyName"
             type="risks"
           />
-        </section>
-        
-        <!-- Insider Trading Chart in Insights Tab -->
-        <section class="charts" style="margin-top: 2rem;">
-          <section class="panel">
-            <InsiderTradingChart />
-          </section>
         </section>
       </TabPanel>
     </div>

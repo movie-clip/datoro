@@ -87,7 +87,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
-import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch } from '../../services/financials/batchTableService.js'
+import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch, getBalanceFromBatch } from '../../services/financials/batchTableService.js'
 import PriceChart from '../charts/PriceChart.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 
@@ -99,6 +99,7 @@ const data = computed(() => {
   const valuation = getValuationFromBatch(batchData.value)
   const cashFlow = getCashFlowFactsFromBatch(batchData.value)
   const margins = getMarginsGrowthFromBatch(batchData.value)
+  const balance = getBalanceFromBatch(batchData.value)
 
   return {
     marketCap: valuation.marketCap || '—',
@@ -106,7 +107,9 @@ const data = computed(() => {
     ps: valuation.ps || '—',
     evEbitda: valuation.evEbitda || '—',
     fcfYield: cashFlow.fcfYield || '—',
-    profitMargin: margins.profitMargin || '—'
+    profitMargin: margins.profitMargin || '—',
+    altmanZScore: balance.altmanZScore || '—',
+    altmanZColor: balance.altmanZColor || 'grey'
   }
 })
 
@@ -171,27 +174,40 @@ const healthIndicators = computed(() => {
     }
   }
   
-  // Cash flow health (FCF Yield)
+  // Performance health (FCF Yield)
   const fcfYield = parseFloat(data.value.fcfYield)
   if (!isNaN(fcfYield)) {
     if (fcfYield > 5) {
-      indicators.push({ label: 'Cash Flow', status: 'good', tooltip: 'FCF Yield > 5% - Strong cash generation' })
+      indicators.push({ label: 'Performance', status: 'good', tooltip: 'FCF Yield > 5% - Strong cash generation' })
     } else if (fcfYield > 2) {
-      indicators.push({ label: 'Cash Flow', status: 'neutral', tooltip: 'FCF Yield 2-5% - Moderate cash generation' })
+      indicators.push({ label: 'Performance', status: 'neutral', tooltip: 'FCF Yield 2-5% - Moderate cash generation' })
     } else {
-      indicators.push({ label: 'Cash Flow', status: 'warning', tooltip: 'FCF Yield < 2% - Weak cash generation' })
+      indicators.push({ label: 'Performance', status: 'warning', tooltip: 'FCF Yield < 2% - Weak cash generation' })
     }
   }
   
-  // Profitability health
-  const margin = parseFloat(data.value.profitMargin)
-  if (!isNaN(margin)) {
-    if (margin > 20) {
-      indicators.push({ label: 'Profitability', status: 'good', tooltip: 'Profit Margin > 20% - Highly profitable' })
-    } else if (margin > 10) {
-      indicators.push({ label: 'Profitability', status: 'neutral', tooltip: 'Profit Margin 10-20% - Solid profitability' })
+  // Balance health (based on Altman Z-Score)
+  const altmanZ = parseFloat(data.value.altmanZScore)
+  if (!isNaN(altmanZ)) {
+    // Altman Z-Score ranges: > 2.99 = Safe, 1.81-2.99 = Grey zone, < 1.81 = Distress
+    if (altmanZ > 2.99) {
+      indicators.push({ 
+        label: 'Balance', 
+        status: 'good', 
+        tooltip: `Altman Z-Score: ${data.value.altmanZScore} - Safe zone (low bankruptcy risk)` 
+      })
+    } else if (altmanZ >= 1.81) {
+      indicators.push({ 
+        label: 'Balance', 
+        status: 'neutral', 
+        tooltip: `Altman Z-Score: ${data.value.altmanZScore} - Grey zone (moderate risk)` 
+      })
     } else {
-      indicators.push({ label: 'Profitability', status: 'warning', tooltip: 'Profit Margin < 10% - Lower profitability' })
+      indicators.push({ 
+        label: 'Balance', 
+        status: 'warning', 
+        tooltip: `Altman Z-Score: ${data.value.altmanZScore} - Distress zone (higher bankruptcy risk)` 
+      })
     }
   }
   
