@@ -167,15 +167,17 @@ export function getNetIncomeSeriesFromBatch(batchData, period = 'annual') {
  * Used by: EpsChart
  * Replaces: /api/v3/income-statement/:ticker?period=quarter (1 call)
  */
-export function getEpsSeriesFromBatch(batchData) {
+export function getEpsSeriesFromBatch(batchData, period = 'annual') {
   try {
-    const incomeQuarter = batchData?.data?.incomeQuarter
+    const statements = period === 'quarterly' 
+      ? batchData?.data?.incomeQuarter 
+      : batchData?.data?.incomeAnnual
     
-    if (!incomeQuarter || !Array.isArray(incomeQuarter) || incomeQuarter.length === 0) {
+    if (!statements || !Array.isArray(statements) || statements.length === 0) {
       return []
     }
     
-    return incomeQuarter.map(row => [
+    return statements.map(row => [
       Date.parse(row.date),
       Number(row.eps) || 0
     ])
