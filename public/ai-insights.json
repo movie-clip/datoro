@@ -31,6 +31,38 @@
     "updated": "2025-10-17",
     "provider": "ollama"
   },
+  "AMZN": {
+    "advantages": [
+      {
+        "title": "Network Effects",
+        "description": "Amazon's vast network of sellers and buyers generates significant value through economies of scale and scope."
+      },
+      {
+        "title": "Brand Strength",
+        "description": "Amazon's strong brand reputation and customer trust drive loyalty and repeat business."
+      },
+      {
+        "title": "Ecosystem Lock-in",
+        "description": "The seamless integration across devices, services, and platforms creates high switching costs for customers."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Regulatory Scrutiny",
+        "description": "Amazon faces increasing regulatory scrutiny over its market dominance and impact on small businesses."
+      },
+      {
+        "title": "Technological Disruption",
+        "description": "The rise of e-commerce alternatives and emerging technologies poses a threat to Amazon's core business model."
+      },
+      {
+        "title": "Cyclicality Concerns",
+        "description": "Amazon's dependence on seasonal demand during holidays creates a cyclical risk that can impact revenue and profitability."
+      }
+    ],
+    "updated": "2025-10-20",
+    "provider": "ollama"
+  },
   "AVGO": {
     "advantages": [
       {
