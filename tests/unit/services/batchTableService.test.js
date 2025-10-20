@@ -75,7 +75,7 @@ describe('Batch Table Service', () => {
     it('should extract all valuation metrics', () => {
       const result = getValuationFromBatch(mockBatchData);
       
-      expect(result.marketCap).toBe('$3000.00B');
+      expect(result.marketCap).toBe('$3.00T'); // 3000B = 3T
       expect(result.pe).toBe('29.45');
       expect(result.ps).toBe('7.82');
       expect(result.pb).toBe('45.23');
@@ -84,7 +84,7 @@ describe('Batch Table Service', () => {
 
     it('should format market cap correctly', () => {
       const tests = [
-        { mktCap: 3500000000000, expected: '$3500.00B' },
+        { mktCap: 3500000000000, expected: '$3.50T' }, // 3500B = 3.5T
         { mktCap: 450000000000, expected: '$450.00B' },
         { mktCap: 25000000000, expected: '$25.00B' },
         { mktCap: 500000000, expected: '$500.00M' },
@@ -139,7 +139,7 @@ describe('Batch Table Service', () => {
       };
       
       const result = getValuationFromBatch(noRatios);
-      expect(result.marketCap).toBe('$3000.00B');
+      expect(result.marketCap).toBe('$3.00T'); // 3000B = 3T
       expect(result.pe).toBe('—');
       expect(result.ps).toBe('—');
       expect(result.pb).toBe('—');
@@ -760,7 +760,7 @@ describe('Batch Table Service', () => {
   describe('Number Formatting', () => {
     it('should format billions correctly', () => {
       const tests = [
-        { value: 1000000000000, expected: '$1000.00B' },
+        { value: 1000000000000, expected: '$1.00T' }, // 1000B = 1T
         { value: 500000000000, expected: '$500.00B' },
         { value: 123456789012, expected: '$123.46B' },
         { value: 1500000000, expected: '$1.50B' }

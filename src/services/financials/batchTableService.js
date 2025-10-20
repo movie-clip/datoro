@@ -3,14 +3,14 @@
 // Instead of 12+ API calls, uses data from single batch endpoint
 
 /**
- * Format number with T/B/M/K suffix - precise (3 decimals)
+ * Format number with T/B/M/K suffix - consistent 2 decimals
  */
 function fmtNumber(num) {
   if (!num || isNaN(num)) return '—'
   const n = Number(num)
-  if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(3)}T`
-  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(3)}B`
-  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(3)}M`
+  if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(2)}T`
+  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)}B`
+  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(2)}M`
   if (Math.abs(n) >= 1e3) return `$${(n / 1e3).toFixed(2)}K`
   return `$${n.toFixed(2)}`
 }
