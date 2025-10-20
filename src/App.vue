@@ -16,17 +16,6 @@ import CapitalReturnedTable from './components/tables/CapitalReturnedTable.vue'
 // Chart components
 import PriceChart from './components/charts/PriceChart.vue'
 import PriceTargetBar from './components/charts/PriceTargetBar.vue'
-import RevenueChart from './components/charts/RevenueChart.vue'
-import NetIncomeChart from './components/charts/NetIncomeChart.vue'
-import FcfChart from './components/charts/FcfChart.vue'
-import EpsChart from './components/charts/EpsChart.vue'
-import EbitdaChart from './components/charts/EbitdaChart.vue'
-import CapitalReturnedChart from './components/charts/CapitalReturnedChart.vue'
-import CashDebtChart from './components/charts/CashDebtChart.vue'
-import SharesChart from './components/charts/SharesChart.vue'
-import InsiderTradingChart from './components/charts/InsiderTradingChart.vue'
-import DividendYieldChart from './components/charts/DividendYieldChart.vue'
-import ExpensesChart from './components/charts/ExpensesChart.vue'
 
 // Use Pinia store for centralized state
 const tickerStore = useTickerStore()
@@ -102,43 +91,10 @@ function handleImageError(event) {
       </section>
     </section>
 
-    <!-- Charts: 12 charts (hidden on mobile) -->
+    <!-- Chart: Price chart only -->
     <section class="charts desktop-only">
       <section class="panel">
         <PriceChart />
-      </section>
-      <section class="panel">
-        <RevenueChart />
-      </section>
-      <section class="panel">
-        <NetIncomeChart />
-      </section>
-      <section class="panel">
-        <FcfChart />
-      </section>
-      <section class="panel">
-        <EpsChart />
-      </section>
-      <section class="panel">
-        <EbitdaChart />
-      </section>
-      <section class="panel">
-        <ExpensesChart />
-      </section>
-      <section class="panel">
-        <CashDebtChart />
-      </section>
-      <section class="panel">
-        <SharesChart />
-      </section>
-      <section class="panel">
-        <CapitalReturnedChart />
-      </section>
-      <section class="panel">
-        <DividendYieldChart />
-      </section>
-      <section class="panel">
-        <InsiderTradingChart />
       </section>
     </section>
 
