@@ -3,6 +3,10 @@
     <div class="hero-container">
       <!-- Primary: Price Chart (60% width) -->
       <div class="price-chart-container">
+        <CompanyDescription 
+          v-if="!loading && companyDescription"
+          :description="companyDescription"
+        />
         <PriceChart />
       </div>
 
@@ -90,10 +94,17 @@ import { useTickerStore } from '../../stores/tickerStore'
 import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch, getBalanceFromBatch } from '../../services/financials/batchTableService.js'
 import { calculateAllHealthIndicators } from '../../services/health/healthIndicatorService.js'
 import PriceChart from '../charts/PriceChart.vue'
+import CompanyDescription from './CompanyDescription.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 
 const tickerStore = useTickerStore()
 const { batchData, loading, error, currentTicker } = storeToRefs(tickerStore)
+
+// Extract company description from batch data
+const companyDescription = computed(() => {
+  const profile = batchData.value?.data?.profile?.[0]
+  return profile?.description || ''
+})
 
 // Aggregate key metrics from multiple data sources
 const data = computed(() => {
