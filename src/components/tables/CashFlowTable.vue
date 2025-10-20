@@ -26,6 +26,7 @@ import { useTickerStore } from '../../stores/tickerStore'
 import { getCashFlowFactsFromBatch } from '../../services/financials/batchTableService.js'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
+import { calculateGrowthRates } from '../../utils/growthCalculator.js'
 
 // Import chart components
 import RevenueChart from '../charts/RevenueChart.vue'
@@ -68,21 +69,27 @@ const handleRowClick = (row) => {
 const getLatestRevenue = (batchData) => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
-  if (!latest?.revenue) return 'N/A'
+  if (latest?.revenue === undefined || latest?.revenue === null) return 'N/A'
   const revenue = latest.revenue
-  if (revenue >= 1e9) return `$${(revenue / 1e9).toFixed(2)}B`
-  if (revenue >= 1e6) return `$${(revenue / 1e6).toFixed(2)}M`
-  return `$${(revenue / 1e3).toFixed(2)}K`
+  // Handle negative values (rare for revenue, but consistent handling)
+  const absRevenue = Math.abs(revenue)
+  const sign = revenue < 0 ? '-' : ''
+  if (absRevenue >= 1e9) return `${sign}$${(absRevenue / 1e9).toFixed(2)}B`
+  if (absRevenue >= 1e6) return `${sign}$${(absRevenue / 1e6).toFixed(2)}M`
+  return `${sign}$${(absRevenue / 1e3).toFixed(2)}K`
 }
 
 const getLatestNetIncome = (batchData) => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
-  if (!latest?.netIncome) return 'N/A'
+  if (latest?.netIncome === undefined || latest?.netIncome === null) return 'N/A'
   const netIncome = latest.netIncome
-  if (netIncome >= 1e9) return `$${(netIncome / 1e9).toFixed(2)}B`
-  if (netIncome >= 1e6) return `$${(netIncome / 1e6).toFixed(2)}M`
-  return `$${(netIncome / 1e3).toFixed(2)}K`
+  // Handle negative values
+  const absNetIncome = Math.abs(netIncome)
+  const sign = netIncome < 0 ? '-' : ''
+  if (absNetIncome >= 1e9) return `${sign}$${(absNetIncome / 1e9).toFixed(2)}B`
+  if (absNetIncome >= 1e6) return `${sign}$${(absNetIncome / 1e6).toFixed(2)}M`
+  return `${sign}$${(absNetIncome / 1e3).toFixed(2)}K`
 }
 
 const getLatestEPS = (batchData) => {
@@ -93,19 +100,54 @@ const getLatestEPS = (batchData) => {
 }
 
 const getLatestFCF = (batchData) => {
-  if (!batchData?.data?.cashFlowQuarter) return 'N/A'
-  const latest = batchData.data.cashFlowQuarter[0]
-  if (!latest?.freeCashFlow) return 'N/A'
-  const fcf = latest.freeCashFlow
-  if (fcf >= 1e9) return `$${(fcf / 1e9).toFixed(2)}B`
-  if (fcf >= 1e6) return `$${(fcf / 1e6).toFixed(2)}M`
-  return `$${(fcf / 1e3).toFixed(2)}K`
+  // Use most recent annual FCF (same as chart default)
+  if (batchData?.data?.cashflowAnnual && Array.isArray(batchData.data.cashflowAnnual) && batchData.data.cashflowAnnual.length > 0) {
+    const latest = batchData.data.cashflowAnnual[0]
+    if (latest?.freeCashFlow !== undefined && latest?.freeCashFlow !== null) {
+      const fcf = latest.freeCashFlow
+      const absFcf = Math.abs(fcf)
+      const sign = fcf < 0 ? '-' : ''
+      if (absFcf >= 1e9) return `${sign}$${(absFcf / 1e9).toFixed(2)}B`
+      if (absFcf >= 1e6) return `${sign}$${(absFcf / 1e6).toFixed(2)}M`
+      return `${sign}$${(absFcf / 1e3).toFixed(2)}K`
+    }
+  }
+  
+  return 'N/A'
+}
+
+// Calculate growth color based on 5-year growth rate
+const getGrowthColor = (batchData, dataKey, dataSource = 'incomeAnnual') => {
+  const statements = batchData?.data?.[dataSource]
+  if (!statements || !Array.isArray(statements) || statements.length < 2) {
+    return null
+  }
+  
+  // Convert to [timestamp, value] format for growth calculator
+  const seriesData = statements.map(row => [
+    Date.parse(row.date),
+    Number(row[dataKey]) || 0
+  ])
+  
+  const growth = calculateGrowthRates(seriesData)
+  
+  // Apply color thresholds based on 5-year growth
+  if (growth.fiveYear === null) return null
+  
+  if (growth.fiveYear > 10) return '#00A88E'  // Green: >10% growth
+  if (growth.fiveYear >= 0) return '#F59E0B'  // Yellow: 0-10% growth
+  return '#ef4444'  // Red: negative growth
+}
+
+// Helper to get FCF growth color
+const getFCFGrowthColor = (batchData) => {
+  return getGrowthColor(batchData, 'freeCashFlow', 'cashflowAnnual')
 }
 
 const rows = computed(() => [
-  { label: 'Revenue', value: getLatestRevenue(batchData.value) },
-  { label: 'Net Income', value: getLatestNetIncome(batchData.value) },
-  { label: 'Free Cash Flow', value: getLatestFCF(batchData.value) },
+  { label: 'Revenue', value: getLatestRevenue(batchData.value), color: getGrowthColor(batchData.value, 'revenue', 'incomeAnnual') },
+  { label: 'Net Income', value: getLatestNetIncome(batchData.value), color: getGrowthColor(batchData.value, 'netIncome', 'incomeAnnual') },
+  { label: 'Free Cash Flow', value: getLatestFCF(batchData.value), color: getFCFGrowthColor(batchData.value) },
   { label: 'Free Cash Flow Yield', value: data.value.fcfYield ?? '—' },
   { label: 'FCF Yield (Adj. SBC)', value: data.value.fcfYieldAdjSBC ?? '—' },
   { label: 'EPS', value: getLatestEPS(batchData.value) },
