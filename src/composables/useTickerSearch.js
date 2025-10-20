@@ -50,10 +50,11 @@ export function useTickerSearch() {
       abortController = new AbortController()
 
       try {
-        const response = await fetch(
-          `/api/search?query=${encodeURIComponent(normalizedQuery)}`,
-          { signal: abortController.signal }
-        )
+        // Use environment variable in production, relative path in development
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+        const url = `${apiBaseUrl}/api/search?query=${encodeURIComponent(normalizedQuery)}`
+        
+        const response = await fetch(url, { signal: abortController.signal })
         
         if (!response.ok) {
           throw new Error('Search failed')
