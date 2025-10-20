@@ -18,6 +18,10 @@
             :src="tab.icon" 
             :alt="`${tab.label} icon`"
             class="tab-icon-img"
+            loading="eager"
+            decoding="async"
+            width="28"
+            height="28"
           />
           <template v-else>{{ tab.icon }}</template>
         </span>
@@ -127,32 +131,34 @@ defineEmits(['update:modelValue'])
   justify-content: center;
   transition: transform 0.2s ease;
   /* Fixed size container for consistent icon dimensions */
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 
 .tab-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   display: block;
   transition: all 0.3s ease;
 }
 
 /* PNG/JPG/SVG image icons - force exact size regardless of source dimensions */
 .tab-icon-img {
-  width: 20px !important;
-  height: 20px !important;
-  max-width: 20px;
-  max-height: 20px;
-  min-width: 20px;
-  min-height: 20px;
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 35px;
+  max-height: 35px;
+  min-width: 35px;
+  min-height: 35px;
   display: block;
-  object-fit: cover; /* Fill the entire 20x20 space, may crop if aspect ratio differs */
+  object-fit: cover; /* Fill the entire 28x28 space, may crop if aspect ratio differs */
   object-position: center; /* Center the image */
-  transition: all 0.3s ease;
-  /* Apply grayscale and brightness filter for default state */
-  filter: grayscale(100%) brightness(0.6);
+  /* Optimize rendering performance */
+  will-change: transform, opacity;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  /* Dimmed state for inactive tabs - use opacity instead of expensive filters */
+  opacity: 0.5;
 }
 
 /* Hover effect for icons */
@@ -160,9 +166,9 @@ defineEmits(['update:modelValue'])
   transform: translateY(-2px);
 }
 
-/* Hover effect for image icons - remove grayscale, increase brightness */
+/* Hover effect for image icons - increase opacity */
 .tab-button:hover .tab-icon-img {
-  filter: grayscale(0%) brightness(1.1);
+  opacity: 0.85;
 }
 
 /* Active tab icon color matches accent */
@@ -171,9 +177,10 @@ defineEmits(['update:modelValue'])
   filter: drop-shadow(0 0 4px rgba(0, 168, 142, 0.4));
 }
 
-/* Active tab image icon - colorful with accent glow */
+/* Active tab image icon - full opacity */
 .tab-button.active .tab-icon-img {
-  filter: grayscale(0%) brightness(1.2) drop-shadow(0 0 4px rgba(0, 168, 142, 0.4));
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(0, 168, 142, 0.4));
 }
 
 /* Default icon color */
