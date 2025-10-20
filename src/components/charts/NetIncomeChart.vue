@@ -21,6 +21,7 @@
       aria-label="Net Income chart"
       :period-options="viewModeOptions"
       :show-growth-labels="true"
+      :force-expanded="forceExpanded"
     />
     <p
       v-if="error"
@@ -42,6 +43,14 @@
 import { useNetIncomeSeries } from '../../composables/useNetIncomeSeries'
 import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()

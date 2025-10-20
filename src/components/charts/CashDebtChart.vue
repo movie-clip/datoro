@@ -18,6 +18,7 @@
       y-format="short"
       :loading="loading"
       aria-label="Cash and Debt chart"
+      :force-expanded="forceExpanded"
     />
     <p
       v-if="error"
@@ -38,6 +39,14 @@
 <script setup>
 import { useCashDebtSeries } from '../../composables/useCashDebtSeries';
 import BaseChart from '../common/BaseChart.vue';
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop - using Pinia store
 const { series, title, message, loading, error } = useCashDebtSeries();

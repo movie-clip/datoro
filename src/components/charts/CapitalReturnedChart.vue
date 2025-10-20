@@ -23,6 +23,7 @@
       :view-mode-options="segmentOptions"
       :show-growth-labels="true"
       aria-label="Capital returned to shareholders chart"
+      :force-expanded="forceExpanded"
     />
     <p
       v-if="error"
@@ -43,6 +44,14 @@
 <script setup>
 import { useCapitalReturnedSeries } from '../../composables/useCapitalReturnedSeries';
 import BaseChart from '../common/BaseChart.vue';
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop - using Pinia store
 const { series, title, message, loading, error, selectedSegments } = useCapitalReturnedSeries();

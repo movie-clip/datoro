@@ -22,6 +22,7 @@
       :error="error"
       :message="message"
       aria-label="Price chart"
+      :force-expanded="forceExpanded"
     />
   </div>
 </template>
@@ -31,6 +32,14 @@ import { computed } from 'vue';
 import { TF_ORDER } from '../../models/timeframe';
 import { usePriceSeries } from '../../composables/usePriceSeries';
 import BaseChart from '../common/BaseChart.vue';
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop needed - using Pinia store
 const { tfKey, series, title, message, loading, error, retry } = usePriceSeries();

@@ -15,6 +15,7 @@
     :view-mode-options="viewModeOptions"
     :show-growth-labels="true"
     :invert-growth="true"
+    :force-expanded="forceExpanded"
     @update:selected-segments="selectedSegments = $event"
     @modal-closed="resetSelection"
   />
@@ -24,6 +25,14 @@
 import BaseChart from '../common/BaseChart.vue'
 import { useExpensesSeries } from '../../composables/useExpensesSeries.js'
 import { useTickerStore } from '../../stores/tickerStore'
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()

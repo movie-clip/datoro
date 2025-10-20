@@ -12,7 +12,11 @@
   />
   
   <ChartModal :is-open="showChartModal" @close="showChartModal = false">
-    <component v-if="selectedMetric" :is="selectedMetric.component" />
+    <component 
+      v-if="selectedMetric" 
+      :is="selectedMetric.component"
+      force-expanded
+    />
   </ChartModal>
 </template>
 

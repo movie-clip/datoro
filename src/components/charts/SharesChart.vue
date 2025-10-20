@@ -20,6 +20,7 @@
       :show-growth-labels="true"
       :invert-growth="true"
       aria-label="Shares Outstanding chart"
+      :force-expanded="forceExpanded"
     />
     <p
       v-if="error"
@@ -41,6 +42,14 @@
 import { ref } from 'vue';
 import { useSharesSeries } from '../../composables/useSharesSeries';
 import BaseChart from '../common/BaseChart.vue';
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop - using Pinia store
 const period = ref('annual');

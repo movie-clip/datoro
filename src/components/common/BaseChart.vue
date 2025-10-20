@@ -1,57 +1,11 @@
 <template>
   <div class="chart-wrapper">
-    <SkeletonLoader
-      v-if="loading && !option.series?.length"
-      variant="chart"
-    />
-    <VChart 
-      v-else
-      class="echart" 
-      :class="{ 'clickable': !isModal, 'loading-chart': loading }" 
-      :option="option" 
-      autoresize 
-      @click="handleClick"
-    />
-    <div
-      v-if="loading && option.series?.length"
-      class="chart-loading-overlay"
-    >
-      <div class="loading-spinner">
-        Updating...
-      </div>
-    </div>
-    <div
-      v-if="!isModal && !loading"
-      class="expand-hint"
-      title="Click to expand"
-      @click="handleClick"
-    >
-      ⛶
-    </div>
-    
-    <!-- Error and message display (compact mode) -->
-    <p
-      v-if="error && !isModal"
-      class="msg error"
-      role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
-      v-else-if="message && !isModal"
-      class="msg"
-    >
-      {{ message }}
-    </p>
-    
-    <ChartModal
-      :is-open="showModal"
-      @close="closeModal"
-    >
+    <!-- Force Expanded Mode: Show modal content directly without compact view -->
+    <template v-if="forceExpanded">
       <h2 class="modal-title">
         {{ title }}
       </h2>
-      <!-- Show toggle buttons - support both single-select (viewMode) and multi-select (selectedSegments) -->
+      <!-- Show toggle buttons -->
       <div
         v-if="viewModeOptions.length > 0 && !useLegend"
         class="view-mode-buttons"
@@ -75,9 +29,17 @@
       <VChart
         class="echart-modal"
         :option="modalOption"
+        :class="{ 'loading-chart': loading }"
         autoresize
       />
-      
+      <div
+        v-if="loading && modalOption.series?.length"
+        class="chart-loading-overlay"
+      >
+        <div class="loading-spinner">
+          Updating...
+        </div>
+      </div>
       <!-- Growth Labels Section -->
       <div
         v-if="showGrowthLabels && growthData"
@@ -108,7 +70,120 @@
           <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
         </div>
       </div>
-    </ChartModal>
+    </template>
+    
+    <!-- Normal Mode: Show compact view with expand button -->
+    <template v-else>
+      <SkeletonLoader
+        v-if="loading && !option.series?.length"
+        variant="chart"
+      />
+      <VChart 
+        v-else
+        class="echart" 
+        :class="{ 'clickable': !isModal, 'loading-chart': loading }" 
+        :option="option" 
+        autoresize 
+        @click="handleClick"
+      />
+      <div
+        v-if="loading && option.series?.length"
+        class="chart-loading-overlay"
+      >
+        <div class="loading-spinner">
+          Updating...
+        </div>
+      </div>
+      <div
+        v-if="!isModal && !loading"
+        class="expand-hint"
+        title="Click to expand"
+        @click="handleClick"
+      >
+        ⛶
+      </div>
+      
+      <!-- Error and message display (compact mode) -->
+      <p
+        v-if="error && !isModal"
+        class="msg error"
+        role="alert"
+      >
+        {{ error }}
+      </p>
+      <p
+        v-else-if="message && !isModal"
+        class="msg"
+      >
+        {{ message }}
+      </p>
+      
+      <ChartModal
+        :is-open="showModal"
+        @close="closeModal"
+      >
+        <h2 class="modal-title">
+          {{ title }}
+        </h2>
+        <!-- Show toggle buttons - support both single-select (viewMode) and multi-select (selectedSegments) -->
+        <div
+          v-if="viewModeOptions.length > 0 && !useLegend"
+          class="view-mode-buttons"
+        >
+          <button
+            v-for="option in viewModeOptions"
+            :key="option.value"
+            :class="[
+              'view-mode-btn', 
+              { 
+                active: selectedSegments 
+                  ? selectedSegments.includes(option.value) 
+                  : viewMode === option.value 
+              }
+            ]"
+            @click.stop="selectedSegments ? toggleSegment(option.value) : updateViewMode(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+        <VChart
+          class="echart-modal"
+          :option="modalOption"
+          autoresize
+        />
+        
+        <!-- Growth Labels Section -->
+        <div
+          v-if="showGrowthLabels && growthData"
+          class="growth-labels"
+        >
+          <div
+            v-if="growthData.oneYear !== null"
+            class="growth-label"
+            :class="getGrowthClass(growthData.oneYear)"
+          >
+            <span class="label-period">1Y</span>
+            <span class="label-value">{{ formatGrowth(growthData.oneYear) }}</span>
+          </div>
+          <div
+            v-if="growthData.twoYear !== null"
+            class="growth-label"
+            :class="getGrowthClass(growthData.twoYear)"
+          >
+            <span class="label-period">2Y</span>
+            <span class="label-value">{{ formatGrowth(growthData.twoYear) }}</span>
+          </div>
+          <div
+            v-if="growthData.fiveYear !== null"
+            class="growth-label"
+            :class="getGrowthClass(growthData.fiveYear)"
+          >
+            <span class="label-period">5Y</span>
+            <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
+          </div>
+        </div>
+      </ChartModal>
+    </template>
   </div>
 </template>
 
@@ -128,6 +203,7 @@ const props = defineProps({
   smooth:     { type: Number, default: 0.15 },
   barMaxWidth:{ type: Number, default: 28 },
   isModal:    { type: Boolean, default: false },
+  forceExpanded: { type: Boolean, default: false }, // Show expanded version directly (for table modals)
   viewMode:   { type: String, default: null },
   selectedSegments: { type: Array, default: null },
   viewModeOptions: { type: Array, default: () => [] },
@@ -427,13 +503,13 @@ const createOption = (isLarge = false) => {
       axisLabel: { 
         color: '#ddd', 
         fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
-        rotate: 0,
+        rotate: (props.kind === 'bar' && isLarge) ? 45 : 0,
         hideOverlap: false,
         showMinLabel: true,
         showMaxLabel: true,
         formatter: props.kind === 'bar' ? undefined : '{yyyy}', // Category axis shows data as-is
-        // For bar charts with category axis, show all labels in expanded mode
-        interval: (props.kind === 'bar' && isLarge) ? 0 : 'auto'
+        // For bar charts with category axis, show every other label in expanded mode (interval: 1)
+        interval: (props.kind === 'bar' && isLarge) ? 1 : 'auto'
       },
       axisTick: {
         alignWithLabel: true,
@@ -623,7 +699,7 @@ const createOption = (isLarge = false) => {
   return { ...base, series }
 }
 
-const option = computed(() => createOption(false))
+const option = computed(() => createOption(props.forceExpanded ? true : false))
 const modalOption = computed(() => createOption(true))
 </script>
 

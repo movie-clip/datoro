@@ -24,6 +24,7 @@
       :view-mode-options="chartView === 'bridge' ? viewModeOptions : undefined"
       aria-label="EBITDA chart"
       :show-growth-labels="chartView !== 'bridge'"
+      :force-expanded="forceExpanded"
       @update:selected-segments="selectedSegments = $event"
       @modal-closed="resetView"
     >
@@ -67,6 +68,14 @@ import { useEbitdaSeries } from '../../composables/useEbitdaSeries';
 import BaseChart from '../common/BaseChart.vue';
 
 import { computed } from 'vue';
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop - using Pinia store
 const { 

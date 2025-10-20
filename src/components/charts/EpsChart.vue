@@ -19,6 +19,7 @@
       :loading="loading"
       aria-label="EPS chart"
       :show-growth-labels="true"
+      :force-expanded="forceExpanded"
     />
     <p
       v-if="error"
@@ -39,6 +40,14 @@
 <script setup>
 import { useEpsSeries } from '../../composables/useEpsSeries';
 import BaseChart from '../common/BaseChart.vue';
+
+// Accept forceExpanded prop
+const props = defineProps({
+  forceExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // No ticker prop - using Pinia store
 const { series, title, message, loading, error } = useEpsSeries();

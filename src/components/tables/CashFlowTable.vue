@@ -11,7 +11,11 @@
   />
   
   <ChartModal :is-open="showChartModal" @close="showChartModal = false">
-    <component v-if="selectedMetric" :is="selectedMetric.component" />
+    <component 
+      v-if="selectedMetric" 
+      :is="selectedMetric.component"
+      force-expanded
+    />
   </ChartModal>
 </template>
 
@@ -44,10 +48,10 @@ const selectedMetric = shallowRef(null)
 const metricChartMap = {
   'Revenue': RevenueChart,
   'Net Income': NetIncomeChart,
-  'EPS': EpsChart,
   'Free Cash Flow': FcfChart,
   'Free Cash Flow Yield': FcfChart,
   'FCF Yield (Adj. SBC)': FcfChart,
+  'EPS': EpsChart,
   'SBC Impact': FcfChart,
 }
 
@@ -101,10 +105,10 @@ const getLatestFCF = (batchData) => {
 const rows = computed(() => [
   { label: 'Revenue', value: getLatestRevenue(batchData.value) },
   { label: 'Net Income', value: getLatestNetIncome(batchData.value) },
-  { label: 'EPS', value: getLatestEPS(batchData.value) },
   { label: 'Free Cash Flow', value: getLatestFCF(batchData.value) },
   { label: 'Free Cash Flow Yield', value: data.value.fcfYield ?? '—' },
   { label: 'FCF Yield (Adj. SBC)', value: data.value.fcfYieldAdjSBC ?? '—' },
+  { label: 'EPS', value: getLatestEPS(batchData.value) },
   { label: 'SBC Impact', value: data.value.sbcImpact ?? '—' },
 ])
 </script>
