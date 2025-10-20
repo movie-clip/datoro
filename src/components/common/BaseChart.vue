@@ -508,8 +508,8 @@ const createOption = (isLarge = false) => {
         showMinLabel: true,
         showMaxLabel: true,
         formatter: props.kind === 'bar' ? undefined : '{yyyy}', // Category axis shows data as-is
-        // For bar charts with category axis, show every other label in expanded mode (interval: 1)
-        interval: (props.kind === 'bar' && isLarge) ? 1 : 'auto'
+        // For bar charts: show all labels on desktop (interval: 0), fewer on mobile (interval: 1)
+        interval: (props.kind === 'bar' && isLarge) ? (isMobile ? 1 : 0) : 'auto'
       },
       axisTick: {
         alignWithLabel: true,
