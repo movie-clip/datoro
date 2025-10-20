@@ -695,34 +695,34 @@ const modalOption = computed(() => createOption(true))
 
 .view-mode-buttons {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 12px;
   justify-content: center;
 }
 
 .view-mode-btn {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
-  color: #E5E5E5;
-  border: 1px solid #2A2A2E;
+  padding: 6px 12px;
   border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(42, 42, 42, 0.5);
+  color: rgba(229, 229, 229, 0.7);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-size: 12px;
+  font-weight: 400;
+  transition: all 0.15s;
   min-width: fit-content;
   white-space: nowrap;
 }
 
 .view-mode-btn:hover {
-  border-color: #00594C;
-  box-shadow: 0 0 12px rgba(0, 89, 76, 0.3);
-  transform: translateY(-1px);
+  background: rgba(42, 42, 42, 0.8);
+  color: rgba(229, 229, 229, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .view-mode-btn.active {
-  background: #00594C;
-  border-color: #00594C;
+  border-color: rgba(0, 89, 76, 0.4);
+  background: rgba(0, 89, 76, 0.2);
   color: #E5E5E5;
   font-weight: 500;
 }
