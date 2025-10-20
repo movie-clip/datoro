@@ -11,6 +11,7 @@ import ValuationTable from './components/tables/ValuationTable.vue'
 import CashFlowTable from './components/tables/CashFlowTable.vue'
 import MarginsGrowthTable from './components/tables/MarginsGrowthTable.vue'
 import BalanceTable from './components/tables/BalanceTable.vue'
+import CapitalReturnedTable from './components/tables/CapitalReturnedTable.vue'
 import MetricsOverviewTable from './components/tables/MetricsOverviewTable.vue'
 
 // Chart components
@@ -83,7 +84,7 @@ function handleImageError(event) {
       />
     </section>
 
-    <!-- Info cards: 4 tables in a row (no longer need ticker prop - use store) -->
+    <!-- Info cards: 5 tables in a row (no longer need ticker prop - use store) -->
     <section class="info-grid">
       <section class="panel">
         <ValuationTable />
@@ -96,6 +97,9 @@ function handleImageError(event) {
       </section>
       <section class="panel">
         <BalanceTable />
+      </section>
+      <section class="panel">
+        <CapitalReturnedTable />
       </section>
     </section>
 
