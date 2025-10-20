@@ -65,6 +65,8 @@ export function useNetIncomeSeries() {
     loading,
     error,
     period,
-    viewModeOptions
+    viewModeOptions,
+    ticker: currentTicker,  // For cached growth calculations in BaseChart
+    dataType: 'netIncome'   // Cache key identifier
   }
 }

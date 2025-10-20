@@ -21,6 +21,8 @@
       aria-label="Net Income chart"
       :period-options="viewModeOptions"
       :show-growth-labels="true"
+      :ticker="ticker"
+      :data-type="dataType"
       :force-expanded="forceExpanded"
     />
     <p
@@ -54,7 +56,7 @@ const props = defineProps({
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
-const { series, title, message, loading, error, period, viewModeOptions } = useNetIncomeSeries()
+const { series, title, message, loading, error, period, viewModeOptions, ticker, dataType } = useNetIncomeSeries()
 </script>
 
 <style scoped>

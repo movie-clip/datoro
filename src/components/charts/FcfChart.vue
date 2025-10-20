@@ -23,6 +23,8 @@
       aria-label="Free Cash Flow chart"
       :view-mode-options="viewModeOptions"
       :show-growth-labels="true"
+      :ticker="ticker"
+      :data-type="dataType"
       :force-expanded="forceExpanded"
       @modal-closed="resetViewMode"
     />
@@ -57,7 +59,7 @@ const props = defineProps({
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore();
-const { viewMode, series, compactSeries, title, message, loading, error } = useFcfSeries();
+const { viewMode, series, compactSeries, title, message, loading, error, ticker, dataType } = useFcfSeries();
 
 const viewModeOptions = [
   { label: 'FCF', value: 'fcf' },

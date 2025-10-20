@@ -82,5 +82,17 @@ export function useFcfSeries() {
     // Batch data will auto-refresh via useTickerData
   }
 
-  return { period, viewMode, series, compactSeries, title, message, loading, error, refresh };
+  return { 
+    period, 
+    viewMode, 
+    series, 
+    compactSeries, 
+    title, 
+    message, 
+    loading, 
+    error, 
+    refresh,
+    ticker: currentTicker,  // For cached growth calculations in BaseChart
+    dataType: 'fcf'         // Cache key identifier
+  };
 }

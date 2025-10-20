@@ -193,6 +193,7 @@ import VChart from 'vue-echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 import { calculateGrowthRates, formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator.js'
+import { getCachedGrowthRates } from '../../services/financials/growthService.js'
 
 const props = defineProps({
   title:      { type: String, default: '' },
@@ -214,6 +215,8 @@ const props = defineProps({
   dualAxis:   { type: Boolean, default: false },
   showGrowthLabels: { type: Boolean, default: false },
   invertGrowth: { type: Boolean, default: false }, // For expenses: decreases are positive
+  ticker: { type: String, default: null }, // For cached growth calculations
+  dataType: { type: String, default: 'generic' }, // Data type for cache key (e.g., 'revenue', 'netIncome')
   error:      { type: String, default: null },
   message:    { type: String, default: null },
 })
@@ -306,6 +309,12 @@ const growthData = computed(() => {
   
   if (dataToAnalyze.length < 2) return null
   
+  // Use cached calculations when ticker is available (prevents duplicate work with HeroSection)
+  if (props.ticker) {
+    return getCachedGrowthRates(dataToAnalyze, props.ticker, props.dataType)
+  }
+  
+  // Fallback to direct calculation (backwards compatibility)
   return calculateGrowthRates(dataToAnalyze)
 })
 

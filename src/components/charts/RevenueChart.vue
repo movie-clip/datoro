@@ -24,6 +24,8 @@
       :view-mode-options="viewModeOptions"
       :stacked="selectedSegments.length > 1 && !selectedSegments.includes('total')"
       :show-growth-labels="true"
+      :ticker="ticker"
+      :data-type="dataType"
       :force-expanded="forceExpanded"
       @update:selected-segments="selectedSegments = $event"
       @modal-closed="resetSelection"
@@ -59,7 +61,7 @@ const props = defineProps({
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore();
-const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error } = useRevenueSeries();
+const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error, ticker, dataType } = useRevenueSeries();
 
 const resetSelection = () => {
   selectedSegments.value = ['total'];

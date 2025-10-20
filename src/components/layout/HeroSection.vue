@@ -88,13 +88,12 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch, getBalanceFromBatch } from '../../services/financials/batchTableService.js'
-import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch } from '../../services/financials/batchChartService.js'
-import { calculateGrowthRates } from '../../utils/growthCalculator.js'
+import { calculateAllHealthIndicators } from '../../services/health/healthIndicatorService.js'
 import PriceChart from '../charts/PriceChart.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 
 const tickerStore = useTickerStore()
-const { batchData, loading, error } = storeToRefs(tickerStore)
+const { batchData, loading, error, currentTicker } = storeToRefs(tickerStore)
 
 // Aggregate key metrics from multiple data sources
 const data = computed(() => {
@@ -115,180 +114,24 @@ const data = computed(() => {
   }
 })
 
-// Health indicators based on multiple metrics
+// Health indicators using centralized service with caching
+// This prevents duplicate growth calculations and improves performance
 const healthIndicators = computed(() => {
-  const indicators = []
+  const valuation = getValuationFromBatch(batchData.value)
+  const cashFlow = getCashFlowFactsFromBatch(batchData.value)
+  const balance = getBalanceFromBatch(batchData.value)
   
-  // Valuation health (composite score from P/E, P/S, EV/EBITDA)
-  const pe = parseFloat(data.value.pe)
-  const ps = parseFloat(data.value.ps)
-  const evEbitda = parseFloat(data.value.evEbitda)
-  
-  let valuationScore = 0
-  let validMetrics = 0
-  
-  // Score P/E Ratio (lower is better)
-  if (!isNaN(pe) && pe > 0) {
-    validMetrics++
-    if (pe < 15) valuationScore += 2      // Good
-    else if (pe < 25) valuationScore += 1  // Neutral
-    else valuationScore += 0               // Overvalued
-  }
-  
-  // Score P/S Ratio (lower is better)
-  if (!isNaN(ps) && ps > 0) {
-    validMetrics++
-    if (ps < 2) valuationScore += 2        // Good
-    else if (ps < 5) valuationScore += 1   // Neutral
-    else valuationScore += 0               // Overvalued
-  }
-  
-  // Score EV/EBITDA (lower is better)
-  if (!isNaN(evEbitda) && evEbitda > 0) {
-    validMetrics++
-    if (evEbitda < 10) valuationScore += 2    // Good
-    else if (evEbitda < 15) valuationScore += 1  // Neutral
-    else valuationScore += 0                  // Overvalued
-  }
-  
-  // Calculate average score (0-2 range)
-  if (validMetrics > 0) {
-    const avgScore = valuationScore / validMetrics
-    
-    if (avgScore >= 1.5) {
-      indicators.push({ 
-        label: 'Valuation', 
-        status: 'good', 
-        tooltip: `Attractive valuation (P/E: ${data.value.pe}, P/S: ${data.value.ps}, EV/EBITDA: ${data.value.evEbitda})` 
-      })
-    } else if (avgScore >= 0.8) {
-      indicators.push({ 
-        label: 'Valuation', 
-        status: 'neutral', 
-        tooltip: `Fair valuation (P/E: ${data.value.pe}, P/S: ${data.value.ps}, EV/EBITDA: ${data.value.evEbitda})` 
-      })
-    } else {
-      indicators.push({ 
-        label: 'Valuation', 
-        status: 'warning', 
-        tooltip: `Expensive valuation (P/E: ${data.value.pe}, P/S: ${data.value.ps}, EV/EBITDA: ${data.value.evEbitda})` 
-      })
-    }
-  }
-  
-  // Performance health (composite score: revenue growth 25% + net income growth 25% + FCF yield 50%)
-  // Get revenue and net income data for growth calculation
-  const revenueSeries = getRevenueSeriesFromBatch(batchData.value, 'annual')
-  const netIncomeSeries = getNetIncomeSeriesFromBatch(batchData.value, 'annual')
-  
-  // Calculate growth rates (prefer 5-year, fallback to 2-year, then 1-year)
-  const revenueGrowthRates = calculateGrowthRates(revenueSeries)
-  const netIncomeGrowthRates = calculateGrowthRates(netIncomeSeries)
-  
-  // Use 5-year if available, otherwise 2-year, otherwise 1-year
-  let revenueGrowth = revenueGrowthRates.twoYear ?? revenueGrowthRates.oneYear
-  let netIncomeGrowth = netIncomeGrowthRates.twoYear ?? netIncomeGrowthRates.oneYear
-  
-  // Get FCF Yield
-  const fcfYield = parseFloat(data.value.fcfYield)
-  
-  // Score each component on 0-1-2 scale
-  let revGrowthScore = 0
-  let niGrowthScore = 0
-  let fcfYieldScore = 0
-  
-  // Score revenue growth (0-2 scale)
-  if (revenueGrowth !== null && !isNaN(revenueGrowth)) {
-    if (revenueGrowth < 0) {
-      revGrowthScore = 0  // Negative growth
-    } else if (revenueGrowth < 10) {
-      revGrowthScore = 1  // Positive but less than 10%
-    } else {
-      revGrowthScore = 2  // 10% or higher
-    }
-  }
-  
-  // Score net income growth (0-2 scale)
-  if (netIncomeGrowth !== null && !isNaN(netIncomeGrowth)) {
-    if (netIncomeGrowth < 0) {
-      niGrowthScore = 0  // Negative growth
-    } else if (netIncomeGrowth < 10) {
-      niGrowthScore = 1  // Positive but less than 10%
-    } else {
-      niGrowthScore = 2  // 10% or higher
-    }
-  }
-  
-  // Score FCF Yield (0-2 scale)
-  if (!isNaN(fcfYield)) {
-    if (fcfYield < 0) {
-      fcfYieldScore = 0  // Negative FCF
-    } else if (fcfYield <= 2) {
-      fcfYieldScore = 1  // 0-2%
-    } else {
-      fcfYieldScore = 2  // > 2%
-    }
-  }
-  
-  // Calculate weighted final score
-  // Revenue growth: 25% weight, Net Income growth: 25% weight, FCF Yield: 50% weight
-  const totalScore = (revGrowthScore * 0.25) + (niGrowthScore * 0.25) + (fcfYieldScore * 0.5)
-  
-  // Format growth values for tooltip
-  const revGrowthStr = revenueGrowth !== null ? `${revenueGrowth.toFixed(1)}%` : 'N/A'
-  const niGrowthStr = netIncomeGrowth !== null ? `${netIncomeGrowth.toFixed(1)}%` : 'N/A'
-  const fcfYieldStr = !isNaN(fcfYield) ? `${fcfYield.toFixed(1)}%` : 'N/A'
-  
-  // Score interpretation (max score = 2.0)
-  // Strong: >= 1.5 (avg of 75%+ per metric)
-  // Moderate: 0.75-1.5 (avg of 37.5%-75% per metric)
-  // Weak: < 0.75
-  if (totalScore >= 1.5) {
-    indicators.push({ 
-      label: 'Performance', 
-      status: 'good', 
-      tooltip: `Rev Growth: ${revGrowthStr} | NI Growth: ${niGrowthStr} | FCF Yield: ${fcfYieldStr}` 
-    })
-  } else if (totalScore >= 0.75) {
-    indicators.push({ 
-      label: 'Performance', 
-      status: 'neutral', 
-      tooltip: `Rev Growth: ${revGrowthStr} | NI Growth: ${niGrowthStr} | FCF Yield: ${fcfYieldStr}` 
-    })
-  } else {
-    indicators.push({ 
-      label: 'Performance', 
-      status: 'warning', 
-      tooltip: `Rev Growth: ${revGrowthStr} | NI Growth: ${niGrowthStr} | FCF Yield: ${fcfYieldStr}` 
-    })
-  }
-  
-  // Balance health (based on Altman Z-Score)
-  const altmanZ = parseFloat(data.value.altmanZScore)
-  if (!isNaN(altmanZ)) {
-    // Altman Z-Score ranges: > 2.99 = Safe, 1.81-2.99 = Grey zone, < 1.81 = Distress
-    if (altmanZ > 2.99) {
-      indicators.push({ 
-        label: 'Balance', 
-        status: 'good', 
-        tooltip: `Altman Z-Score: ${data.value.altmanZScore} - Safe zone (low bankruptcy risk)` 
-      })
-    } else if (altmanZ >= 1.81) {
-      indicators.push({ 
-        label: 'Balance', 
-        status: 'neutral', 
-        tooltip: `Altman Z-Score: ${data.value.altmanZScore} - Grey zone (moderate risk)` 
-      })
-    } else {
-      indicators.push({ 
-        label: 'Balance', 
-        status: 'warning', 
-        tooltip: `Altman Z-Score: ${data.value.altmanZScore} - Distress zone (higher bankruptcy risk)` 
-      })
-    }
-  }
-  
-  return indicators
+  return calculateAllHealthIndicators({
+    valuation: {
+      pe: parseFloat(data.value.pe),
+      ps: parseFloat(data.value.ps),
+      evEbitda: parseFloat(data.value.evEbitda)
+    },
+    batchData: batchData.value,
+    ticker: currentTicker.value,
+    fcfYield: cashFlow.fcfYield,
+    balance
+  })
 })
 
 // Helper functions

@@ -156,5 +156,18 @@ export function useRevenueSeries() {
     // Batch data will auto-refresh via useTickerData
   }
 
-  return { period, selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error, refresh };
+  return { 
+    period, 
+    selectedSegments, 
+    viewModeOptions, 
+    series, 
+    compactSeries, 
+    title, 
+    message, 
+    loading, 
+    error, 
+    refresh,
+    ticker: currentTicker,  // For cached growth calculations in BaseChart
+    dataType: 'revenue'     // Cache key identifier
+  };
 }
