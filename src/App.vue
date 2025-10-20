@@ -9,6 +9,13 @@ import HeroSection from './components/layout/HeroSection.vue'
 import TabNavigation from './components/layout/TabNavigation.vue'
 import TabPanel from './components/layout/TabPanel.vue'
 
+// Icon components
+import IconValuation from './components/icons/IconValuation.vue'
+import IconPerformance from './components/icons/IconPerformance.vue'
+import IconBalance from './components/icons/IconBalance.vue'
+import IconReturns from './components/icons/IconReturns.vue'
+import IconAI from './components/icons/IconAI.vue'
+
 // Chart components
 import PriceChart from './components/charts/PriceChart.vue'
 import PriceTargetBar from './components/charts/PriceTargetBar.vue'
@@ -35,11 +42,11 @@ const activeTab = ref('valuation')
 
 // Tab configuration
 const tabs = [
-  { id: 'valuation', label: 'Valuation', icon: '📊', badge: null },
-  { id: 'performance', label: 'Performance', icon: '💎', badge: null },
-  { id: 'balance', label: 'Balance', icon: '💰', badge: null },
-  { id: 'profitability', label: 'Returns', icon: '💰', badge: null },
-  { id: 'insights', label: 'AI Insights', icon: '🤖', badge: null }
+  { id: 'valuation', label: 'Valuation', icon: IconValuation, badge: null },
+  { id: 'performance', label: 'Performance', icon: IconPerformance, badge: null },
+  { id: 'balance', label: 'Balance', icon: IconBalance, badge: null },
+  { id: 'profitability', label: 'Returns', icon: IconReturns, badge: null },
+  { id: 'insights', label: 'AI Insights', icon: IconAI, badge: null }
 ]
 
 // Load saved tab preference

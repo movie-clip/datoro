@@ -10,7 +10,11 @@
         role="tab"
         @click="$emit('update:modelValue', tab.id)"
       >
-        <span class="tab-icon">{{ tab.icon }}</span>
+        <span class="tab-icon">
+          <!-- Support both component and emoji/string icons -->
+          <component v-if="typeof tab.icon === 'object'" :is="tab.icon" />
+          <template v-else>{{ tab.icon }}</template>
+        </span>
         <span class="tab-label">{{ tab.label }}</span>
         <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
       </button>
@@ -112,6 +116,38 @@ defineEmits(['update:modelValue'])
 .tab-icon {
   font-size: 1.25rem;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.tab-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  transition: all 0.3s ease;
+}
+
+/* Hover effect for icons */
+.tab-button:hover .tab-icon {
+  transform: translateY(-2px);
+}
+
+/* Active tab icon color matches accent */
+.tab-button.active .tab-icon svg {
+  stroke: #00A88E;
+  filter: drop-shadow(0 0 4px rgba(0, 168, 142, 0.4));
+}
+
+/* Default icon color */
+.tab-button .tab-icon svg {
+  stroke: #9E9E9E;
+}
+
+/* Hover icon color */
+.tab-button:hover .tab-icon svg {
+  stroke: #E5E5E5;
 }
 
 .tab-label {
