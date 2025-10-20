@@ -781,8 +781,10 @@ app.post('/api/ai/analysis', aiLimiter, async (req, res) => {
 // -------------------- Ticker Search Endpoint --------------------
 // Search for tickers by symbol or company name
 app.get('/api/search', fmpLimiter, async (req, res) => {
+  const startTime = Date.now()
   const { query } = req.query
   
+  // Validate query length (min 1 char, max 10)
   if (!query || query.trim().length === 0) {
     return res.status(400).json({
       error: {
@@ -792,16 +794,35 @@ app.get('/api/search', fmpLimiter, async (req, res) => {
     })
   }
   
+  if (query.trim().length > 10) {
+    return res.status(400).json({
+      error: {
+        message: 'Search query too long (max 10 characters)',
+        code: 'E_SEARCH_003'
+      }
+    })
+  }
+  
   const searchQuery = query.trim().toUpperCase()
   
-  // Check cache first
+  // Generate cache key with namespace for easy invalidation
   const cacheKey = cache.generateKey('search', searchQuery, '')
   
+  // Check multi-layer cache (memory + Redis)
   try {
     const cached = await cache.get(cacheKey)
     
     if (cached && cached.data) {
-      console.log(`[Search] Cache hit for query: ${searchQuery}`)
+      const duration = Date.now() - startTime
+      console.log(`[Search] Cache hit (${cached.source}) for "${searchQuery}" in ${duration}ms`)
+      
+      // Set cache headers for client-side caching
+      res.set({
+        'Cache-Control': 'public, max-age=300', // 5 minutes client cache
+        'X-Cache': 'HIT',
+        'X-Cache-Source': cached.source
+      })
+      
       return res.json(cached.data)
     }
   } catch (cacheError) {
@@ -810,14 +831,20 @@ app.get('/api/search', fmpLimiter, async (req, res) => {
   }
   
   try {
-    // Use FMP's search endpoint
+    // Fetch from FMP API with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5s timeout
+    
     const fmpUrl = `https://financialmodelingprep.com/api/v3/search?query=${encodeURIComponent(searchQuery)}&limit=10&apikey=${process.env.FMP_API_KEY}`
     
     const response = await fetch(fmpUrl, {
+      signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
     })
+    
+    clearTimeout(timeoutId)
     
     if (!response.ok) {
       throw new Error(`FMP API error: ${response.status}`)
@@ -825,43 +852,74 @@ app.get('/api/search', fmpLimiter, async (req, res) => {
     
     const data = await response.json()
     
-    // Filter and format results - prioritize exact ticker matches, limit to 5
-    const results = (data || [])
-      .filter(item => item.symbol && item.name) // Only items with symbol and name
-      .sort((a, b) => {
-        // Exact match first
-        if (a.symbol === searchQuery) return -1
-        if (b.symbol === searchQuery) return 1
-        
-        // Starts with query next
-        const aStarts = a.symbol.startsWith(searchQuery)
-        const bStarts = b.symbol.startsWith(searchQuery)
-        if (aStarts && !bStarts) return -1
-        if (!aStarts && bStarts) return 1
-        
-        // Then alphabetically
-        return a.symbol.localeCompare(b.symbol)
-      })
-      .slice(0, 5) // Limit to 5 results
-      .map(item => ({
+    // Optimize filtering and sorting with early termination
+    const results = []
+    const exactMatch = []
+    const startsWithMatch = []
+    const otherMatches = []
+    
+    // Single pass filtering and categorization
+    for (const item of data || []) {
+      if (!item.symbol || !item.name) continue
+      
+      const formatted = {
         symbol: item.symbol,
         name: item.name,
         exchange: item.exchangeShortName || item.stockExchange || ''
-      }))
-    
-    // Cache for 7 days (search results don't change frequently)
-    try {
-      await cache.set(cacheKey, results, CacheTTL.LONG) // 7 days
-    } catch (cacheError) {
-      console.error(`[Search] Cache write error for "${searchQuery}":`, cacheError)
-      // Continue even if cache fails
+      }
+      
+      if (item.symbol === searchQuery) {
+        exactMatch.push(formatted)
+      } else if (item.symbol.startsWith(searchQuery)) {
+        startsWithMatch.push(formatted)
+      } else {
+        otherMatches.push(formatted)
+      }
+      
+      // Early termination if we have enough results
+      if (exactMatch.length + startsWithMatch.length >= 5) break
     }
     
-    console.log(`[Search] Found ${results.length} results for query: ${searchQuery}`)
-    res.json(results)
+    // Combine results in priority order
+    results.push(...exactMatch)
+    results.push(...startsWithMatch.sort((a, b) => a.symbol.localeCompare(b.symbol)))
+    results.push(...otherMatches.sort((a, b) => a.symbol.localeCompare(b.symbol)))
+    
+    // Limit to 5 results
+    const finalResults = results.slice(0, 5)
+    
+    // Cache for 7 days (search results are stable)
+    try {
+      await cache.set(cacheKey, finalResults, CacheTTL.LONG)
+    } catch (cacheError) {
+      console.error(`[Search] Cache write error for "${searchQuery}":`, cacheError)
+    }
+    
+    const duration = Date.now() - startTime
+    console.log(`[Search] API call for "${searchQuery}" → ${finalResults.length} results in ${duration}ms`)
+    
+    // Set cache headers
+    res.set({
+      'Cache-Control': 'public, max-age=300',
+      'X-Cache': 'MISS'
+    })
+    
+    res.json(finalResults)
     
   } catch (error) {
-    console.error(`[Search] Error searching for "${searchQuery}":`, error)
+    const duration = Date.now() - startTime
+    
+    if (error.name === 'AbortError') {
+      console.error(`[Search] Timeout for "${searchQuery}" after ${duration}ms`)
+      return res.status(504).json({
+        error: {
+          message: 'Search request timed out',
+          code: 'E_SEARCH_004'
+        }
+      })
+    }
+    
+    console.error(`[Search] Error for "${searchQuery}" after ${duration}ms:`, error)
     res.status(500).json({
       error: {
         message: 'Failed to search tickers',

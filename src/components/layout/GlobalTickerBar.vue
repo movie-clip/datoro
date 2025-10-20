@@ -30,26 +30,35 @@
             title="Invalid ticker"
           >⚠️</span>
           
-          <!-- Search Results Dropdown -->
+          <!-- Search Results Dropdown - Optimized rendering -->
           <div
             v-if="showDropdown && (searching || searchResults.length > 0)"
             class="search-dropdown"
+            role="listbox"
             @mousedown.prevent
           >
-            <div v-if="searching" class="search-loading">
+            <div 
+              v-if="searching" 
+              class="search-loading"
+              role="status"
+              aria-live="polite"
+            >
               Searching...
             </div>
-            <div
+            <button
               v-else
               v-for="result in searchResults"
               :key="result.symbol"
+              type="button"
               class="search-result"
+              role="option"
+              :aria-label="`Select ${result.symbol} - ${result.name}`"
               @click="selectTicker(result.symbol)"
             >
               <div class="result-symbol">{{ result.symbol }}</div>
               <div class="result-name">{{ result.name }}</div>
               <div v-if="result.exchange" class="result-exchange">{{ result.exchange }}</div>
-            </div>
+            </button>
           </div>
         </div>
         <button
@@ -82,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
 import { useTickerSearch } from '../../composables/useTickerSearch'
 
@@ -101,8 +110,13 @@ const localInput = ref(model.value || '')
 const validationError = ref('')
 const showDropdown = ref(false)
 
-// Search functionality
-const { searchResults, searching, searchTickers, clearSearch } = useTickerSearch()
+// Search functionality with cleanup
+const { searchResults, searching, searchTickers, clearSearch, cleanup } = useTickerSearch()
+
+// Cleanup on component unmount
+onUnmounted(() => {
+  cleanup()
+})
 
 // Validate ticker format: 1-10 uppercase letters/numbers, no special chars except dots
 const validateInput = () => {
@@ -227,7 +241,7 @@ watch(() => model.value, (newVal) => {
 
 .input-wrapper {
   position: relative;
-  flex: 1;
+  flex: 1.05;
   display: flex;
   align-items: center;
 }
@@ -280,6 +294,12 @@ watch(() => model.value, (newVal) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  width: 100%;
 }
 
 .search-result:last-child {
