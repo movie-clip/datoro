@@ -12,6 +12,7 @@
         <div class="input-wrapper">
           <input
             id="ticker"
+            ref="inputRef"
             v-model.trim="localInput"
             class="input"
             type="text"
@@ -19,7 +20,7 @@
             maxlength="10"
             :aria-invalid="!!validationError"
             :aria-describedby="validationError ? 'ticker-error' : undefined"
-            @keyup.enter="handleSubmit"
+            @keyup.enter="handleEnterKey"
             @input="handleInputChange"
             @focus="showDropdown = true"
             @blur="handleBlur"
@@ -43,7 +44,10 @@
               role="status"
               aria-live="polite"
             >
-              Searching...
+              <div class="loading-spinner-container">
+                <div class="loading-spinner-dot"></div>
+                <span>Searching...</span>
+              </div>
             </div>
             <button
               v-else
@@ -55,9 +59,13 @@
               :aria-label="`Select ${result.symbol} - ${result.name}`"
               @click="selectTicker(result.symbol)"
             >
-              <div class="result-symbol">{{ result.symbol }}</div>
-              <div class="result-name">{{ result.name }}</div>
-              <div v-if="result.exchange" class="result-exchange">{{ result.exchange }}</div>
+              <div class="result-left">
+                <div class="result-symbol">{{ result.symbol }}</div>
+              </div>
+              <div class="result-right">
+                <div class="result-name">{{ result.name }}</div>
+                <div v-if="result.exchange" class="result-exchange">{{ result.exchange }}</div>
+              </div>
             </button>
           </div>
         </div>
@@ -109,6 +117,7 @@ const emit = defineEmits(['submit', 'update:companyName'])
 const localInput = ref(model.value || '')
 const validationError = ref('')
 const showDropdown = ref(false)
+const inputRef = ref(null)
 
 // Search functionality with cleanup
 const { searchResults, searching, searchTickers, clearSearch, cleanup } = useTickerSearch()
@@ -163,6 +172,12 @@ const selectTicker = (symbol) => {
   model.value = symbol
   showDropdown.value = false
   clearSearch()
+  
+  // Hide virtual keyboard on mobile
+  if (inputRef.value) {
+    inputRef.value.blur()
+  }
+  
   emit('submit')
 }
 
@@ -171,6 +186,17 @@ const handleBlur = () => {
   setTimeout(() => {
     showDropdown.value = false
   }, 200)
+}
+
+const handleEnterKey = () => {
+  // If there are search results, select the first one
+  if (searchResults.value && searchResults.value.length > 0) {
+    selectTicker(searchResults.value[0].symbol)
+    return
+  }
+  
+  // Otherwise, proceed with normal submit
+  handleSubmit()
 }
 
 const handleSubmit = () => {
@@ -189,6 +215,12 @@ const handleSubmit = () => {
   localInput.value = value
   showDropdown.value = false
   clearSearch()
+  
+  // Hide virtual keyboard on mobile
+  if (inputRef.value) {
+    inputRef.value.blur()
+  }
+  
   emit('submit')
 }
 
@@ -256,6 +288,7 @@ watch(() => model.value, (newVal) => {
   outline: none; 
   transition: all 0.2s;
   text-transform: uppercase;
+  font-size: 16px; /* Prevent mobile zoom on focus */
 }
 
 .input:focus { 
@@ -280,10 +313,40 @@ watch(() => model.value, (newVal) => {
 }
 
 .search-loading {
-  padding: 12px 16px;
-  color: #9E9E9E;
-  font-size: 14px;
+  padding: 16px;
   text-align: center;
+  background: linear-gradient(135deg, rgba(0, 168, 142, 0.05) 0%, rgba(0, 168, 142, 0.02) 100%);
+  border-bottom: 1px solid rgba(0, 168, 142, 0.1);
+}
+
+.loading-spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #00A88E;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.loading-spinner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00A88E;
+  animation: pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(0, 168, 142, 0.5);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
 }
 
 .search-result {
@@ -292,8 +355,10 @@ watch(() => model.value, (newVal) => {
   transition: all 0.2s ease;
   border-bottom: 1px solid rgba(42, 42, 46, 0.5);
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   background: transparent;
   border-left: none;
   border-right: none;
@@ -311,22 +376,47 @@ watch(() => model.value, (newVal) => {
   border-color: rgba(0, 168, 142, 0.2);
 }
 
+.result-left {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.result-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
 .result-symbol {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   color: #00A88E;
+  min-width: 60px;
 }
 
 .result-name {
   font-size: 13px;
   color: #E5E5E5;
   opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
 }
 
 .result-exchange {
   font-size: 11px;
   color: #9E9E9E;
   text-transform: uppercase;
+  padding: 2px 8px;
+  background: rgba(158, 158, 158, 0.1);
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .input[aria-invalid="true"] {
