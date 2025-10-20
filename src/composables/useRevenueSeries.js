@@ -65,8 +65,6 @@ export function useRevenueSeries() {
     
     const sortedDates = Array.from(allDates).sort((a, b) => a - b);
     
-    console.log('[Revenue] Total dates found:', sortedDates.length, 'Segments to show:', segmentsToShow);
-    
     // Create a map for quick lookup: date -> value for each segment
     const segmentMaps = {};
     segmentsToShow.forEach(segment => {
@@ -94,7 +92,6 @@ export function useRevenueSeries() {
       });
     });
     
-    console.log('[Revenue] Aligned multi-series for stacking:', multiSeries);
     return multiSeries;
   });
 

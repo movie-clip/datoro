@@ -81,7 +81,6 @@ export const useTickerStore = defineStore('ticker', () => {
     const cacheKey = `${t}-${mode}`
     const cached = cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`[TickerStore] ${t} → CLIENT CACHE HIT`)
       batchData.value = cached.data
       loading.value = false
       error.value = null
@@ -93,8 +92,6 @@ export const useTickerStore = defineStore('ticker', () => {
     const startTime = performance.now()
     
     try {
-      console.log(`[TickerStore] Fetching ${t} (${mode} mode)...`)
-      
       const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`)
       
       if (!response.ok) {
@@ -103,10 +100,6 @@ export const useTickerStore = defineStore('ticker', () => {
       
       const result = await response.json()
       fetchTime.value = Math.round(performance.now() - startTime)
-      
-      console.log(`[TickerStore] ${t} fetched in ${fetchTime.value}ms`)
-      console.log(`[TickerStore] Server fetch time: ${result.fetchDuration}ms`)
-      console.log(`[TickerStore] Cache: ${response.headers.get('X-Cache') || 'unknown'}`)
       
       batchData.value = result
       
@@ -140,9 +133,8 @@ export const useTickerStore = defineStore('ticker', () => {
   // Clear all cache
   function clearCache() {
     cache.clear()
-    console.log('[TickerStore] Cache cleared')
   }
-  
+
   return {
     // State
     currentTicker,

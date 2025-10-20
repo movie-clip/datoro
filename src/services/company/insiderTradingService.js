@@ -55,13 +55,6 @@ export async function getInsiderTradingAggregated(ticker) {
       }))
       .sort((a, b) => a.date - b.date)
     
-    console.log('Insider Trading Aggregated:', {
-      ticker: t,
-      tradesCount: trades.length,
-      monthsCount: aggregated.length,
-      sample: aggregated.slice(-3)
-    })
-    
     return { data: aggregated, error: null }
   } catch (error) {
     return handleServiceError(error, 'getInsiderTradingAggregated')

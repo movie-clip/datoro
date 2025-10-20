@@ -299,14 +299,6 @@ const createOption = (isLarge = false) => {
       
       // For bar charts, create category data (year strings)
       categoryData = yearsList.map(y => String(y))
-      
-      console.log('[BaseChart] Bar chart category setup:', {
-        dataPoints: allDataPoints.length,
-        uniqueYears,
-        yearsList,
-        categoryData,
-        isLarge
-      })
     }
   }
   
@@ -367,8 +359,7 @@ const createOption = (isLarge = false) => {
       left: isMobile ? 12 : 24, 
       right: isMobile ? 12 : 24, 
       top: topPadding, 
-      bottom: bottomPadding, 
-      containLabel: true 
+      bottom: bottomPadding
     },
     tooltip: isLarge ? { 
       // Modal view - enable rich tooltips for all devices
@@ -568,10 +559,6 @@ const createOption = (isLarge = false) => {
     if (dataSource[0].type) {
       // For bar charts with category axis, we still need to convert the data
       if (props.kind === 'bar' && yearsList.length > 0) {
-        console.log('[BaseChart] Converting fully-configured series to category data:', {
-          seriesCount: dataSource.length,
-          yearsList
-        })
         series = dataSource.map((s) => ({
           ...s,
           // Convert time-series data to category values for ALL series (bars and lines)
@@ -633,19 +620,7 @@ const createOption = (isLarge = false) => {
   }
 
   // Don't show legend - we have view mode buttons for switching
-  const finalOption = { ...base, series }
-  
-  if (props.kind === 'bar') {
-    console.log('[BaseChart] Final xAxis config:', {
-      type: finalOption.xAxis.type,
-      data: finalOption.xAxis.data,
-      dataLength: finalOption.xAxis.data?.length,
-      axisLabel: finalOption.xAxis.axisLabel,
-      isLarge
-    })
-  }
-  
-  return finalOption
+  return { ...base, series }
 }
 
 const option = computed(() => createOption(false))

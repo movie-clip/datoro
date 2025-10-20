@@ -137,7 +137,6 @@ async function fetchCompanyData() {
         .filter(e => e.date && new Date(e.date) >= now)
         .sort((a, b) => new Date(a.date) - new Date(b.date))
       earningsDate.value = upcoming.length > 0 ? upcoming[0].date : null
-      console.log('[CompanyHeader] Next earnings date:', earningsDate.value)
     }
   } catch (error) {
     console.error('[CompanyHeader] Error fetching data:', error)

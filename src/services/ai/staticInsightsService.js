@@ -24,7 +24,6 @@ async function loadBundle() {
         throw new Error(`Failed to load bundle: HTTP ${response.status}`)
       }
       insightsBundle = await response.json()
-      console.log(`✓ Loaded AI insights bundle (${Object.keys(insightsBundle).length} tickers)`)
       return insightsBundle
     } catch (error) {
       console.error('Error loading insights bundle:', error)
