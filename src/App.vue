@@ -35,9 +35,9 @@ const activeTab = ref('valuation')
 
 // Tab configuration
 const tabs = [
-  { id: 'valuation', label: 'Valuation', icon: '💎', badge: null },
-  { id: 'performance', label: 'Performance', icon: '📊', badge: null },
-  { id: 'balance', label: 'Balance', icon: '💵', badge: null },
+  { id: 'valuation', label: 'Valuation', icon: '📊', badge: null },
+  { id: 'performance', label: 'Performance', icon: '💎', badge: null },
+  { id: 'balance', label: 'Balance', icon: '💰', badge: null },
   { id: 'profitability', label: 'Returns', icon: '💰', badge: null },
   { id: 'insights', label: 'AI Insights', icon: '🤖', badge: null }
 ]

@@ -65,7 +65,7 @@
                 :key="indicator.label"
                 class="health-indicator"
                 :class="`health-${indicator.status}`"
-                :title="indicator.tooltip"
+                :data-tooltip="indicator.tooltip"
               >
                 <span class="health-dot"></span>
                 <span class="health-label">{{ indicator.label }}</span>
@@ -88,6 +88,8 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch, getBalanceFromBatch } from '../../services/financials/batchTableService.js'
+import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch } from '../../services/financials/batchChartService.js'
+import { calculateGrowthRates } from '../../utils/growthCalculator.js'
 import PriceChart from '../charts/PriceChart.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 
@@ -174,16 +176,91 @@ const healthIndicators = computed(() => {
     }
   }
   
-  // Performance health (FCF Yield)
+  // Performance health (composite score: revenue growth 25% + net income growth 25% + FCF yield 50%)
+  // Get revenue and net income data for growth calculation
+  const revenueSeries = getRevenueSeriesFromBatch(batchData.value, 'annual')
+  const netIncomeSeries = getNetIncomeSeriesFromBatch(batchData.value, 'annual')
+  
+  // Calculate growth rates (prefer 5-year, fallback to 2-year, then 1-year)
+  const revenueGrowthRates = calculateGrowthRates(revenueSeries)
+  const netIncomeGrowthRates = calculateGrowthRates(netIncomeSeries)
+  
+  // Use 5-year if available, otherwise 2-year, otherwise 1-year
+  let revenueGrowth = revenueGrowthRates.twoYear ?? revenueGrowthRates.oneYear
+  let netIncomeGrowth = netIncomeGrowthRates.twoYear ?? netIncomeGrowthRates.oneYear
+  
+  // Get FCF Yield
   const fcfYield = parseFloat(data.value.fcfYield)
-  if (!isNaN(fcfYield)) {
-    if (fcfYield > 5) {
-      indicators.push({ label: 'Performance', status: 'good', tooltip: 'FCF Yield > 5% - Strong cash generation' })
-    } else if (fcfYield > 2) {
-      indicators.push({ label: 'Performance', status: 'neutral', tooltip: 'FCF Yield 2-5% - Moderate cash generation' })
+  
+  // Score each component on 0-1-2 scale
+  let revGrowthScore = 0
+  let niGrowthScore = 0
+  let fcfYieldScore = 0
+  
+  // Score revenue growth (0-2 scale)
+  if (revenueGrowth !== null && !isNaN(revenueGrowth)) {
+    if (revenueGrowth < 0) {
+      revGrowthScore = 0  // Negative growth
+    } else if (revenueGrowth < 10) {
+      revGrowthScore = 1  // Positive but less than 10%
     } else {
-      indicators.push({ label: 'Performance', status: 'warning', tooltip: 'FCF Yield < 2% - Weak cash generation' })
+      revGrowthScore = 2  // 10% or higher
     }
+  }
+  
+  // Score net income growth (0-2 scale)
+  if (netIncomeGrowth !== null && !isNaN(netIncomeGrowth)) {
+    if (netIncomeGrowth < 0) {
+      niGrowthScore = 0  // Negative growth
+    } else if (netIncomeGrowth < 10) {
+      niGrowthScore = 1  // Positive but less than 10%
+    } else {
+      niGrowthScore = 2  // 10% or higher
+    }
+  }
+  
+  // Score FCF Yield (0-2 scale)
+  if (!isNaN(fcfYield)) {
+    if (fcfYield < 0) {
+      fcfYieldScore = 0  // Negative FCF
+    } else if (fcfYield <= 2) {
+      fcfYieldScore = 1  // 0-2%
+    } else {
+      fcfYieldScore = 2  // > 2%
+    }
+  }
+  
+  // Calculate weighted final score
+  // Revenue growth: 25% weight, Net Income growth: 25% weight, FCF Yield: 50% weight
+  const totalScore = (revGrowthScore * 0.25) + (niGrowthScore * 0.25) + (fcfYieldScore * 0.5)
+  
+  // Format growth values for tooltip
+  const revGrowthStr = revenueGrowth !== null ? `${revenueGrowth.toFixed(1)}%` : 'N/A'
+  const niGrowthStr = netIncomeGrowth !== null ? `${netIncomeGrowth.toFixed(1)}%` : 'N/A'
+  const fcfYieldStr = !isNaN(fcfYield) ? `${fcfYield.toFixed(1)}%` : 'N/A'
+  
+  // Score interpretation (max score = 2.0)
+  // Strong: >= 1.5 (avg of 75%+ per metric)
+  // Moderate: 0.75-1.5 (avg of 37.5%-75% per metric)
+  // Weak: < 0.75
+  if (totalScore >= 1.5) {
+    indicators.push({ 
+      label: 'Performance', 
+      status: 'good', 
+      tooltip: `Rev Growth: ${revGrowthStr} | NI Growth: ${niGrowthStr} | FCF Yield: ${fcfYieldStr}` 
+    })
+  } else if (totalScore >= 0.75) {
+    indicators.push({ 
+      label: 'Performance', 
+      status: 'neutral', 
+      tooltip: `Rev Growth: ${revGrowthStr} | NI Growth: ${niGrowthStr} | FCF Yield: ${fcfYieldStr}` 
+    })
+  } else {
+    indicators.push({ 
+      label: 'Performance', 
+      status: 'warning', 
+      tooltip: `Rev Growth: ${revGrowthStr} | NI Growth: ${niGrowthStr} | FCF Yield: ${fcfYieldStr}` 
+    })
   }
   
   // Balance health (based on Altman Z-Score)
@@ -393,6 +470,54 @@ const getMarginClass = (marginStr) => {
   font-size: 0.9rem;
   font-weight: 500;
   color: #E5E5E5;
+}
+
+/* Custom tooltip styling for health indicators */
+.health-indicator[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: rgba(30, 30, 34, 0.98);
+  color: #E5E5E5;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #2A2A2E;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.health-indicator[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(30, 30, 34, 0.98);
+  z-index: 1000;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.health-indicator {
+  position: relative;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 @keyframes pulse {
