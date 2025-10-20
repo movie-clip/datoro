@@ -64,12 +64,13 @@ watch(() => props.isOpen, (isOpen) => {
 
 .modal-container {
   position: relative;
-  background: #1a1a1a;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 12px;
   width: 100%;
   max-width: 1400px;
   max-height: 90vh;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
 
@@ -77,21 +78,23 @@ watch(() => props.isOpen, (isOpen) => {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 32px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(42, 42, 42, 0.6);
+  color: rgba(229, 229, 229, 0.7);
+  font-size: 28px;
   line-height: 1;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   z-index: 10;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(42, 42, 42, 0.9);
+  color: #E5E5E5;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .modal-content {
@@ -123,10 +126,14 @@ watch(() => props.isOpen, (isOpen) => {
 
 /* Mobile responsive - smaller close button */
 @media (max-width: 768px) {
+  .modal-container {
+    border-radius: 8px;
+  }
+  
   .close-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 24px;
+    width: 30px;
+    height: 30px;
+    font-size: 22px;
     top: 8px;
     right: 8px;
   }
