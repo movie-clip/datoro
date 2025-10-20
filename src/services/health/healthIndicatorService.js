@@ -121,7 +121,7 @@ export function calculatePerformanceHealth(batchData, ticker, fcfYield) {
   // Score FCF Yield (0-2 scale)
   const fcfYieldNum = parseFloat(fcfYield)
   if (!isNaN(fcfYieldNum)) {
-    if (fcfYieldNum < 0) {
+    if (fcfYieldNum < 0.5) {
       fcfYieldScore = 0  // Negative FCF
     } else if (fcfYieldNum <= 2) {
       fcfYieldScore = 1  // 0-2%
