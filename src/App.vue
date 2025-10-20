@@ -12,7 +12,6 @@ import CashFlowTable from './components/tables/CashFlowTable.vue'
 import MarginsGrowthTable from './components/tables/MarginsGrowthTable.vue'
 import BalanceTable from './components/tables/BalanceTable.vue'
 import CapitalReturnedTable from './components/tables/CapitalReturnedTable.vue'
-import MetricsOverviewTable from './components/tables/MetricsOverviewTable.vue'
 
 // Chart components
 import PriceChart from './components/charts/PriceChart.vue'
@@ -100,13 +99,6 @@ function handleImageError(event) {
       </section>
       <section class="panel">
         <CapitalReturnedTable />
-      </section>
-    </section>
-
-    <!-- Mobile-only: Metrics Overview Table (click to open chart) -->
-    <section class="mobile-only metrics-overview-section">
-      <section class="panel">
-        <MetricsOverviewTable />
       </section>
     </section>
 
