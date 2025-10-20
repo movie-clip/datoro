@@ -11,6 +11,7 @@ import ValuationTable from './components/tables/ValuationTable.vue'
 import CashFlowTable from './components/tables/CashFlowTable.vue'
 import MarginsGrowthTable from './components/tables/MarginsGrowthTable.vue'
 import BalanceTable from './components/tables/BalanceTable.vue'
+import MetricsOverviewTable from './components/tables/MetricsOverviewTable.vue'
 
 // Chart components
 import PriceChart from './components/charts/PriceChart.vue'
@@ -98,8 +99,15 @@ function handleImageError(event) {
       </section>
     </section>
 
-    <!-- Charts: 12 charts -->
-    <section class="charts">
+    <!-- Mobile-only: Metrics Overview Table (click to open chart) -->
+    <section class="mobile-only metrics-overview-section">
+      <section class="panel">
+        <MetricsOverviewTable />
+      </section>
+    </section>
+
+    <!-- Charts: 12 charts (hidden on mobile) -->
+    <section class="charts desktop-only">
       <section class="panel">
         <PriceChart />
       </section>
@@ -213,6 +221,32 @@ function handleImageError(event) {
 
 .price-target-section > .panel {
   width: 100%;
+}
+
+/* Mobile-specific sections */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: grid;
+}
+
+.metrics-overview-section {
+  max-width: 940px;
+  margin: 24px auto;
+  padding: 0 12px;
+}
+
+/* Mobile responsive: show mobile-only, hide desktop-only */
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
 }
 
 </style>

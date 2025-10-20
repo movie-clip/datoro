@@ -55,6 +55,8 @@
         <tr
           v-for="row in rows"
           :key="row.label"
+          :class="{ 'clickable-row': clickable }"
+          @click="clickable ? $emit('row-click', row) : null"
         >
           <th scope="row">
             {{ row.label }}
@@ -108,8 +110,14 @@ const props = defineProps({
   audioName: {
     type: String,
     default: null
+  },
+  clickable: {
+    type: Boolean,
+    default: false
   }
 })
+
+const emit = defineEmits(['row-click'])
 
 // Audio playback
 const audioPlayer = ref(null)
@@ -221,6 +229,15 @@ watch(() => props.error, (newError) => {
 .data-table td {
   color: #fff;
   text-align: right;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clickable-row:hover {
+  background-color: rgba(0, 89, 76, 0.1);
 }
 
 .skeleton-rows {

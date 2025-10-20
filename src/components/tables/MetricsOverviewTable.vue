@@ -1,0 +1,215 @@
+<template>
+  <div class="metrics-overview-container">
+    <BaseTable
+      title="Key Metrics"
+      :rows="metricsRows"
+      :loading="loading"
+      :error="error"
+      :clickable="true"
+      @row-click="handleRowClick"
+    />
+    
+    <!-- Modal for showing chart -->
+    <ChartModal
+      :is-open="showChartModal"
+      @close="closeChartModal"
+    >
+      <component
+        v-if="selectedMetric"
+        :is="selectedMetric.component"
+        :key="selectedMetric.key"
+      />
+    </ChartModal>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../../stores/tickerStore'
+import BaseTable from '../common/BaseTable.vue'
+import ChartModal from '../common/ChartModal.vue'
+
+// Import all chart components
+import RevenueChart from '../charts/RevenueChart.vue'
+import NetIncomeChart from '../charts/NetIncomeChart.vue'
+import EpsChart from '../charts/EpsChart.vue'
+import FcfChart from '../charts/FcfChart.vue'
+import EbitdaChart from '../charts/EbitdaChart.vue'
+import ExpensesChart from '../charts/ExpensesChart.vue'
+import SharesChart from '../charts/SharesChart.vue'
+import DividendYieldChart from '../charts/DividendYieldChart.vue'
+import CapitalReturnedChart from '../charts/CapitalReturnedChart.vue'
+import CashDebtChart from '../charts/CashDebtChart.vue'
+import PriceChart from '../charts/PriceChart.vue'
+import InsiderTradingChart from '../charts/InsiderTradingChart.vue'
+
+const tickerStore = useTickerStore()
+const { batchData, loading: storeLoading } = storeToRefs(tickerStore)
+
+const showChartModal = ref(false)
+const selectedMetric = ref(null)
+
+const loading = computed(() => storeLoading.value && !batchData.value)
+const error = computed(() => null)
+
+// Define all available metrics with their chart components
+const metricsDefinitions = [
+  { 
+    key: 'revenue', 
+    label: 'Revenue', 
+    component: RevenueChart,
+    getValue: (data) => {
+      const income = data?.data?.incomeAnnual?.[0]
+      return income?.revenue || null
+    }
+  },
+  { 
+    key: 'netIncome', 
+    label: 'Net Income', 
+    component: NetIncomeChart,
+    getValue: (data) => {
+      const income = data?.data?.incomeAnnual?.[0]
+      return income?.netIncome || null
+    }
+  },
+  { 
+    key: 'eps', 
+    label: 'EPS', 
+    component: EpsChart,
+    getValue: (data) => {
+      const income = data?.data?.incomeAnnual?.[0]
+      return income?.eps || null
+    }
+  },
+  { 
+    key: 'fcf', 
+    label: 'Free Cash Flow', 
+    component: FcfChart,
+    getValue: (data) => {
+      const cashflow = data?.data?.cashflowAnnual?.[0]
+      return cashflow?.freeCashFlow || null
+    }
+  },
+  { 
+    key: 'ebitda', 
+    label: 'EBITDA', 
+    component: EbitdaChart,
+    getValue: (data) => {
+      const income = data?.data?.incomeAnnual?.[0]
+      return income?.ebitda || null
+    }
+  },
+  { 
+    key: 'expenses', 
+    label: 'Operating Expenses', 
+    component: ExpensesChart,
+    getValue: (data) => {
+      const income = data?.data?.incomeAnnual?.[0]
+      return income?.operatingExpenses || null
+    }
+  },
+  { 
+    key: 'shares', 
+    label: 'Shares Outstanding', 
+    component: SharesChart,
+    getValue: (data) => {
+      const income = data?.data?.incomeAnnual?.[0]
+      return income?.weightedAverageShsOutDil || null
+    }
+  },
+  { 
+    key: 'dividend', 
+    label: 'Dividend Yield', 
+    component: DividendYieldChart,
+    getValue: (data) => {
+      const ratios = data?.data?.ratiosAnnual?.[0]
+      return ratios?.dividendYield ? (ratios.dividendYield * 100) : null
+    }
+  },
+  { 
+    key: 'capitalReturned', 
+    label: 'Capital Returned', 
+    component: CapitalReturnedChart,
+    getValue: (data) => {
+      const cashflow = data?.data?.cashflowAnnual?.[0]
+      const dividends = cashflow?.dividendsPaid || 0
+      const buybacks = cashflow?.commonStockRepurchased || 0
+      return Math.abs(dividends) + Math.abs(buybacks)
+    }
+  },
+  { 
+    key: 'cash', 
+    label: 'Cash & Debt', 
+    component: CashDebtChart,
+    getValue: (data) => {
+      const balance = data?.data?.balanceAnnual?.[0]
+      return balance?.cashAndCashEquivalents || null
+    }
+  },
+  { 
+    key: 'price', 
+    label: 'Stock Price', 
+    component: PriceChart,
+    getValue: (data) => {
+      const quote = data?.data?.quote?.[0]
+      return quote?.price || null
+    }
+  },
+  { 
+    key: 'insider', 
+    label: 'Insider Trading', 
+    component: InsiderTradingChart,
+    getValue: () => null // No single value for this
+  },
+]
+
+// Format value for display
+const formatValue = (value) => {
+  if (value === null || value === undefined) return '—'
+  
+  const abs = Math.abs(value)
+  if (abs >= 1e12) return `$${(value / 1e12).toFixed(2)}T`
+  if (abs >= 1e9) return `$${(value / 1e9).toFixed(2)}B`
+  if (abs >= 1e6) return `$${(value / 1e6).toFixed(2)}M`
+  if (abs >= 1e3) return `$${(value / 1e3).toFixed(2)}K`
+  if (abs >= 1) return `$${value.toFixed(2)}`
+  return value.toFixed(4)
+}
+
+// Build table rows from metrics
+const metricsRows = computed(() => {
+  if (!batchData.value) return []
+  
+  return metricsDefinitions.map(metric => {
+    const value = metric.getValue(batchData.value)
+    return {
+      metricKey: metric.key,
+      label: metric.label,
+      value: formatValue(value),
+      component: metric.component,
+      // Store raw data for potential use
+      rawValue: value
+    }
+  })
+})
+
+const handleRowClick = (row) => {
+  selectedMetric.value = {
+    key: row.metricKey,
+    component: row.component
+  }
+  showChartModal.value = true
+}
+
+const closeChartModal = () => {
+  showChartModal.value = false
+  selectedMetric.value = null
+}
+</script>
+
+<style scoped>
+.metrics-overview-container {
+  width: 100%;
+}
+</style>
