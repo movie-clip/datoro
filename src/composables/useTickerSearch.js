@@ -25,10 +25,11 @@ export function useTickerSearch() {
       abortController.abort()
     }
 
-    // Reset if query is empty or too short
+    // Reset if query is empty
     if (!query || query.trim().length === 0) {
       searchResults.value = []
       searchError.value = null
+      searching.value = false
       return
     }
 
