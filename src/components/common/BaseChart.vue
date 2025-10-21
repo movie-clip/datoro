@@ -198,15 +198,25 @@
 </template>
 
 <script setup>
-import { computed, ref, onBeforeUnmount } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import VChart from 'vue-echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 import { calculateGrowthRates, formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator.js'
 import { getCachedGrowthRates } from '../../services/financials/growthService.js'
 
-// Track if component is mounted to prevent updates after unmount
-const isMounted = ref(true)
+// Track if component is mounted AND ECharts is ready
+const isMounted = ref(false)
+const echartsReady = ref(false)
+
+// Ensure ECharts is registered before rendering
+onMounted(async () => {
+  // Wait for ECharts to be registered
+  const module = await import('../../plugins/echarts')
+  module.registerECharts()
+  echartsReady.value = true
+  isMounted.value = true
+})
 
 onBeforeUnmount(() => {
   isMounted.value = false

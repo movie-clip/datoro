@@ -40,9 +40,17 @@ export const useAuthStore = defineStore('auth', () => {
     
     try {
       console.log('[Auth] 📡 Calling /api/auth/me to check session...')
+      
+      // Add timeout to prevent auth from blocking too long
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        credentials: 'include' // Send HttpOnly cookie
+        credentials: 'include', // Send HttpOnly cookie
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       console.log('[Auth] 📡 Response status:', response.status)
       
@@ -64,8 +72,12 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = null
       }
     } catch (err) {
-      // Network errors only - these are real errors worth logging
-      console.error('[Auth] ❌ Init network error:', err.message)
+      // Network errors or timeout - these are real errors worth logging
+      if (err.name === 'AbortError') {
+        console.warn('[Auth] ⏱️ Init timeout (auth check took >3s)')
+      } else {
+        console.error('[Auth] ❌ Init network error:', err.message)
+      }
       user.value = null
       token.value = null
     }

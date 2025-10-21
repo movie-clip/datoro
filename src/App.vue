@@ -69,7 +69,10 @@ const authModalTab = ref('signin') // 'signin' or 'signup'
 
 // Initialize auth store on mount
 onMounted(async () => {
-  await authStore.init()
+  // Don't await - let auth init in background to avoid blocking render
+  authStore.init().catch(err => {
+    console.error('[App] Auth init failed:', err)
+  })
   
   const savedTab = localStorage.getItem('factorly_active_tab')
   if (savedTab && tabs.some(t => t.id === savedTab)) {
