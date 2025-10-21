@@ -24,10 +24,14 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Initialize auth state - check if user is logged in via cookie
    * SECURITY: Token is in HttpOnly cookie, never in localStorage
+   * 
+   * NOTE: You may see "401 (Unauthorized)" in the browser console - this is NORMAL!
+   * It just means you're not logged in. The browser shows all HTTP requests,
+   * including expected 401 responses. This is not an error.
    */
   async function init() {
-    // Token is automatically sent via HttpOnly cookie
-    // We just need to verify the session is still valid
+    // SECURITY: Token is in HttpOnly cookie only (JavaScript cannot access)
+    // This protects against XSS attacks
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         credentials: 'include' // Send HttpOnly cookie
@@ -36,17 +40,22 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.ok) {
         const data = await response.json()
         user.value = data.data.user
-        token.value = 'cookie' // Placeholder - actual token is in cookie
+        token.value = 'cookie' // Placeholder - actual token in HttpOnly cookie
+        console.log('[Auth] ✓ Session restored:', user.value.email)
+      } else if (response.status === 401) {
+        // 401 = Not logged in (this is expected, not an error!)
+        user.value = null
+        token.value = null
+        console.log('[Auth] ℹ No active session (not logged in)')
       } else {
-        // Session invalid or expired (401 is expected when not logged in)
+        // Other errors (500, etc.)
+        console.error('[Auth] ✗ Unexpected error during init:', response.status)
         user.value = null
         token.value = null
       }
     } catch (err) {
-      // Only log unexpected errors (not 401 which is normal when logged out)
-      if (err.message && !err.message.includes('401')) {
-        console.error('[Auth] Init error:', err)
-      }
+      // Network errors, etc.
+      console.error('[Auth] ✗ Init error:', err)
       user.value = null
       token.value = null
     }
@@ -76,12 +85,12 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.error || 'Registration failed')
       }
       
-      // Save user (token is in HttpOnly cookie)
+      // Save user data
       user.value = data.data.user
-      token.value = 'cookie' // Placeholder - actual token is in cookie
+      token.value = 'cookie' // Placeholder - actual token in HttpOnly cookie
       
-      // SECURITY: Do NOT store token in localStorage!
-      // Token is automatically stored in HttpOnly cookie by server
+      // SECURITY: Token is ONLY in HttpOnly cookie (server-side)
+      // JavaScript never touches the token - XSS protection!
       
       return { success: true }
       
@@ -117,12 +126,12 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.error || 'Login failed')
       }
       
-      // Save user (token is in HttpOnly cookie)
+      // Save user data
       user.value = data.data.user
-      token.value = 'cookie' // Placeholder - actual token is in cookie
+      token.value = 'cookie' // Placeholder - actual token in HttpOnly cookie
       
-      // SECURITY: Do NOT store token in localStorage!
-      // Token is automatically stored in HttpOnly cookie by server
+      // SECURITY: Token is ONLY in HttpOnly cookie (server-side)
+      // JavaScript never touches the token - XSS protection!
       
       return { success: true }
       
@@ -158,12 +167,12 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.error || 'Google login failed')
       }
       
-      // Save user (token is in HttpOnly cookie)
+      // Save user data
       user.value = data.data.user
-      token.value = 'cookie' // Placeholder - actual token is in cookie
+      token.value = 'cookie' // Placeholder - actual token in HttpOnly cookie
       
-      // SECURITY: Do NOT store token in localStorage!
-      // Token is automatically stored in HttpOnly cookie by server
+      // SECURITY: Token is ONLY in HttpOnly cookie (server-side)
+      // JavaScript never touches the token - XSS protection!
       
       return { success: true }
       
@@ -194,7 +203,7 @@ export const useAuthStore = defineStore('auth', () => {
       // Clear local state regardless of API call success
       user.value = null
       token.value = null
-      // No need to remove from localStorage - never stored there!
+      // Token is in HttpOnly cookie - server clears it
       loading.value = false
     }
   }

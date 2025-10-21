@@ -207,14 +207,22 @@ export async function findOrCreateUser(ipAddress, userAgent = null) {
  * @param {string} userAgent - Browser user agent
  * @param {string} source - Search source (direct, search, autocomplete)
  * @param {string} query - Original search query (optional)
+ * @param {string} authenticatedUserId - Authenticated user ID from JWT (optional)
  * @returns {Promise<void>}
  */
-export async function trackSearch(ipAddress, ticker, userAgent = null, source = 'direct', query = null) {
+export async function trackSearch(ipAddress, ticker, userAgent = null, source = 'direct', query = null, authenticatedUserId = null) {
   const db = getPrismaClient();
   
   try {
-    // Find or create user
-    const user = await findOrCreateUser(ipAddress, userAgent);
+    // Use authenticated user ID if available, otherwise find/create anonymous user
+    let userId;
+    if (authenticatedUserId) {
+      userId = authenticatedUserId;
+      console.log(`[Database] Tracking search for authenticated user: ${authenticatedUserId}`);
+    } else {
+      const user = await findOrCreateUser(ipAddress, userAgent);
+      userId = user.id;
+    }
     
     // Normalize ticker
     const normalizedTicker = ticker.toUpperCase().trim();
@@ -222,7 +230,7 @@ export async function trackSearch(ipAddress, ticker, userAgent = null, source = 
     // Record search
     await db.search.create({
       data: {
-        userId: user.id,
+        userId,
         ticker: normalizedTicker,
         query,
         source
@@ -242,7 +250,7 @@ export async function trackSearch(ipAddress, ticker, userAgent = null, source = 
       }
     });
     
-    console.log(`[Database] Tracked search: ${normalizedTicker} from ${ipAddress}`);
+    console.log(`[Database] Tracked search: ${normalizedTicker} from ${authenticatedUserId ? 'authenticated user' : ipAddress}`);
   } catch (error) {
     console.error('[Database] Error tracking search:', error.message);
     // Don't throw - tracking failures shouldn't break app
@@ -367,15 +375,18 @@ export async function updateTickerCompanyName(ticker, companyName) {
  * @param {boolean} data.cached - Whether response was cached
  * @param {string} data.errorCode - Error code if any
  * @param {string} data.ipAddress - User's IP (optional)
+ * @param {string} data.authenticatedUserId - Authenticated user ID from JWT (optional)
  * @returns {Promise<void>}
  */
 export async function trackApiRequest(data) {
   const db = getPrismaClient();
   
   try {
-    // Find user if IP provided
+    // Use authenticated user ID if available, otherwise find anonymous user by IP
     let userId = null;
-    if (data.ipAddress) {
+    if (data.authenticatedUserId) {
+      userId = data.authenticatedUserId;
+    } else if (data.ipAddress) {
       const user = await db.user.findFirst({
         where: { 
           ipAddress: data.ipAddress,

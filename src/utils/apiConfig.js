@@ -4,8 +4,11 @@
 /**
  * Get the API base URL based on environment and access method
  * - Production: Uses relative URLs (same origin)
- * - Dev (localhost): Uses relative URLs (Vite proxy)
- * - Dev (network IP): Uses direct API server connection
+ * - Dev: ALWAYS uses Vite proxy (relative URLs) for security
+ * 
+ * SECURITY: We use Vite proxy even for network IP access to maintain
+ * HttpOnly cookie security. This means cookies work properly and JavaScript
+ * cannot access the auth token (XSS protection).
  */
 export function getApiBaseUrl() {
   // If explicitly set in env, use it (production or override)
@@ -13,18 +16,10 @@ export function getApiBaseUrl() {
     return import.meta.env.VITE_API_BASE_URL
   }
 
-  // In development mode
+  // In development: ALWAYS use Vite proxy (relative URLs)
+  // This ensures HttpOnly cookies work properly even from network IP
   if (import.meta.env.DEV) {
-    const hostname = window.location.hostname
-    
-    // If accessing via localhost, use Vite proxy (relative URLs)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return '' // Relative URLs will go through Vite proxy
-    }
-    
-    // If accessing via network IP (e.g., from mobile), connect directly to API server
-    // Assumes API server is on same machine, port 7071
-    return `http://${hostname}:7071`
+    return '' // Relative URLs go through Vite proxy
   }
 
   // Production: use relative URLs (same origin)

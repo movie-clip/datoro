@@ -10,7 +10,14 @@ import { getPrismaClient } from './databaseService.js'
 const prisma = getPrismaClient()
 
 // Environment variables
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex')
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  console.error('[Auth] CRITICAL: JWT_SECRET environment variable is not set!')
+  console.error('[Auth] This will cause authentication failures in production.')
+  console.error('[Auth] Using temporary random secret - ALL SESSIONS WILL BE INVALIDATED ON RESTART!')
+  // Fallback for development only - NOT secure for production
+  process.env.JWT_SECRET = crypto.randomBytes(64).toString('hex')
+}
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -91,9 +98,11 @@ export function verifyToken(token) {
 /**
  * Register new user with email/password
  * @param {object} data - { email, password, name }
+ * @param {string} ipAddress - User's IP address (optional)
+ * @param {string} userAgent - User's browser user agent (optional)
  * @returns {Promise<object>} - { user, token }
  */
-export async function registerUser(data) {
+export async function registerUser(data, ipAddress = null, userAgent = null) {
   const { email, password, name } = data
   
   // Validate email format
@@ -153,8 +162,8 @@ export async function registerUser(data) {
   // Generate token
   const token = generateToken(user)
   
-  // Create session
-  await createSession(user.id, token)
+  // Create session with IP and user agent tracking
+  await createSession(user.id, token, ipAddress, userAgent)
   
   console.log(`[Auth] User registered: ${user.email}`)
   
@@ -168,9 +177,11 @@ export async function registerUser(data) {
 /**
  * Login user with email/password
  * @param {object} data - { email, password }
+ * @param {string} ipAddress - User's IP address (optional)
+ * @param {string} userAgent - User's browser user agent (optional)
  * @returns {Promise<object>} - { user, token }
  */
-export async function loginUser(data) {
+export async function loginUser(data, ipAddress = null, userAgent = null) {
   const { email, password } = data
   
   // Find user by email
@@ -202,8 +213,8 @@ export async function loginUser(data) {
   // Generate token
   const token = generateToken(user)
   
-  // Create session
-  await createSession(user.id, token)
+  // Create session with IP and user agent tracking
+  await createSession(user.id, token, ipAddress, userAgent)
   
   console.log(`[Auth] User logged in: ${user.email}`)
   
@@ -219,9 +230,11 @@ export async function loginUser(data) {
 /**
  * Verify Google OAuth token and create/login user
  * @param {string} googleToken - Google ID token
+ * @param {string} ipAddress - User's IP address (optional)
+ * @param {string} userAgent - User's browser user agent (optional)
  * @returns {Promise<object>} - { user, token }
  */
-export async function loginWithGoogle(googleToken) {
+export async function loginWithGoogle(googleToken, ipAddress = null, userAgent = null) {
   if (!googleClient) {
     throw new Error('Google OAuth not configured')
   }
@@ -296,15 +309,15 @@ export async function loginWithGoogle(googleToken) {
     // Generate token
     const token = generateToken(user)
     
-    // Create session
-    await createSession(user.id, token)
+    // Create session with IP and user agent tracking
+    await createSession(user.id, token, ipAddress, userAgent)
     
     // Return user without sensitive data
     const { password: _, ...userWithoutPassword } = user
     return { user: userWithoutPassword, token }
     
   } catch (error) {
-    console.error('[Auth] Google OAuth error:', error)
+    console.error('[Auth] Google OAuth error:', error.message)
     throw new Error('Google authentication failed')
   }
 }
@@ -317,9 +330,11 @@ export async function loginWithGoogle(googleToken) {
  * Create session for user
  * @param {string} userId - User ID
  * @param {string} token - JWT token
+ * @param {string} ipAddress - User's IP address (optional)
+ * @param {string} userAgent - User's browser user agent (optional)
  * @returns {Promise<object>} - Session object
  */
-async function createSession(userId, token) {
+async function createSession(userId, token, ipAddress = null, userAgent = null) {
   // Hash token for storage (never store plain tokens)
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
   
@@ -331,7 +346,9 @@ async function createSession(userId, token) {
     data: {
       userId,
       token: hashedToken,
-      expiresAt
+      expiresAt,
+      ipAddress,
+      userAgent
     }
   })
 }

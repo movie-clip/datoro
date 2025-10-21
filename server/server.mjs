@@ -134,12 +134,11 @@ app.use(cors({
   preflightContinue: false,
   optionsSuccessStatus: 204
 }))
-app.use(express.json())
-app.use(cookieParser()) // Parse cookies for session management
 
 // Body parser with size limits (prevent DoS attacks)
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
+app.use(cookieParser()) // Parse cookies for session management
 
 // Speed limiter (slows down heavy users)
 app.use(speedLimiter)
@@ -1092,6 +1091,52 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   
   // Connect to Redis
   await cache.connect()
+  
+  // Schedule daily session cleanup (only on worker 0 or if not using PM2)
+  if (!process.env.pm_id || process.env.pm_id === '0') {
+    console.log('[Auth] Scheduling daily session cleanup...')
+    
+    // Import cleanupExpiredSessions
+    const { cleanupExpiredSessions } = await import('./services/authService.js')
+    
+    // Run cleanup daily at 3 AM
+    const runCleanup = async () => {
+      const now = new Date()
+      const nextRun = new Date(now)
+      nextRun.setHours(3, 0, 0, 0) // 3:00 AM
+      
+      if (nextRun <= now) {
+        nextRun.setDate(nextRun.getDate() + 1) // Tomorrow
+      }
+      
+      const msUntilNextRun = nextRun - now
+      
+      setTimeout(async () => {
+        console.log('[Auth] Running scheduled session cleanup...')
+        try {
+          const count = await cleanupExpiredSessions()
+          console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
+        } catch (error) {
+          console.error('[Auth] ✗ Cleanup failed:', error.message)
+        }
+        
+        // Schedule next run (24 hours)
+        setInterval(async () => {
+          console.log('[Auth] Running scheduled session cleanup...')
+          try {
+            const count = await cleanupExpiredSessions()
+            console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
+          } catch (error) {
+            console.error('[Auth] ✗ Cleanup failed:', error.message)
+          }
+        }, 24 * 60 * 60 * 1000) // 24 hours
+      }, msUntilNextRun)
+      
+      console.log(`[Auth] Next cleanup scheduled for: ${nextRun.toLocaleString()}`)
+    }
+    
+    runCleanup()
+  }
 })
 
 server.on('error', (err) => {

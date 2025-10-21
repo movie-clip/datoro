@@ -118,7 +118,7 @@
         
         <button type="submit" class="submit-button" :disabled="loading">
           <span v-if="!loading">Create Account</span>
-          <span v-else">Creating account...</span>
+          <span v-else>Creating account...</span>
         </button>
         
         <div class="divider">

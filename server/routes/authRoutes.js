@@ -38,14 +38,18 @@ router.post(
         })
       }
       
-      const { user, token } = await registerUser(req.body)
+      const { user, token } = await registerUser(req.body, req.ip, req.headers['user-agent'])
       
       // Set HTTP-only cookie (more secure than localStorage)
+      // In development with different ports (cross-origin), sameSite must be 'none' with secure flag
+      // But since we're on HTTP in dev, we use 'lax' and rely on CORS credentials
+      const isProduction = process.env.NODE_ENV === 'production'
       res.cookie('authToken', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        secure: isProduction,
+        sameSite: isProduction ? 'lax' : 'lax', // Keep 'lax' even in dev
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/'
       })
       
       res.status(201).json({
@@ -85,7 +89,7 @@ router.post(
         })
       }
       
-      const { user, token } = await loginUser(req.body)
+      const { user, token } = await loginUser(req.body, req.ip, req.headers['user-agent'])
       
       // Set HTTP-only cookie
       res.cookie('authToken', token, {
@@ -130,7 +134,7 @@ router.post(
         })
       }
       
-      const { user, token } = await loginWithGoogle(req.body.token)
+      const { user, token } = await loginWithGoogle(req.body.token, req.ip, req.headers['user-agent'])
       
       // Set HTTP-only cookie
       res.cookie('authToken', token, {
