@@ -11,7 +11,6 @@ services:
   - type: web
     name: factorly-api
     runtime: node
-    region: frankfurt
     plan: free # FREE: sleeps after 15min inactivity | STARTER ($7/mo): 24/7 uptime
     buildCommand: npm install && npx prisma generate
     startCommand: node server/server.mjs
@@ -78,7 +77,6 @@ services:
   # ==============================================
   - type: keyvalue
     name: factorly-redis
-    region: frankfurt
     plan: free # FREE: 25MB storage
     maxmemoryPolicy: allkeys-lru # Auto-evict least recently used keys when full
     ipAllowList: [] # Empty = allow all Render services
@@ -143,7 +141,6 @@ databases:
     databaseName: financeview
     user: financeview
     plan: free # FREE: 90 days trial, then $7/month
-    region: frankfurt
     ipAllowList: [] # Empty = allow all Render services
 
 # ==============================================
