@@ -25,13 +25,26 @@ export const useAuthStore = defineStore('auth', () => {
    * Initialize auth state - check if user is logged in via cookie
    * SECURITY: Token is in HttpOnly cookie, never in localStorage
    * 
-   * NOTE: You may see "401 (Unauthorized)" in the browser console - this is NORMAL!
-   * It just means you're not logged in. The browser shows all HTTP requests,
-   * including expected 401 responses. This is not an error.
+   * Checks for auth cookie before making request to avoid unnecessary 401s.
    */
   async function init() {
     // SECURITY: Token is in HttpOnly cookie only (JavaScript cannot access)
     // This protects against XSS attacks
+    
+    // Check if authToken cookie exists before making request
+    // This prevents unnecessary 401 errors in production analytics
+    const hasAuthCookie = document.cookie.split(';').some(cookie => 
+      cookie.trim().startsWith('authToken=')
+    )
+    
+    if (!hasAuthCookie) {
+      // No cookie = not logged in, skip the request entirely
+      user.value = null
+      token.value = null
+      return
+    }
+    
+    // Cookie exists, verify it with the server
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         credentials: 'include' // Send HttpOnly cookie
@@ -42,20 +55,14 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = data.data.user
         token.value = 'cookie' // Placeholder - actual token in HttpOnly cookie
         console.log('[Auth] ✓ Session restored:', user.value.email)
-      } else if (response.status === 401) {
-        // 401 = Not logged in (this is expected, not an error!)
-        user.value = null
-        token.value = null
-        console.log('[Auth] ℹ No active session (not logged in)')
       } else {
-        // Other errors (500, etc.)
-        console.error('[Auth] ✗ Unexpected error during init:', response.status)
+        // Cookie exists but invalid/expired - clear state silently
         user.value = null
         token.value = null
       }
     } catch (err) {
-      // Network errors, etc.
-      console.error('[Auth] ✗ Init error:', err)
+      // Network errors only - these are real errors worth logging
+      console.error('[Auth] Init network error:', err.message)
       user.value = null
       token.value = null
     }
@@ -142,7 +149,18 @@ export const useAuthStore = defineStore('auth', () => {
           errorMessage = data.errors[0].msg || data.errors[0].message || errorMessage
         }
         
-        console.error('[Auth] Login failed:', errorMessage, data)
+        // Log detailed error for debugging
+        console.error('[Auth] ❌ Login failed')
+        console.error('[Auth] Error message:', errorMessage)
+        console.error('[Auth] Status:', response.status)
+        console.error('[Auth] Full response:', data)
+        
+        // Add helpful hint for common issues
+        if (response.status === 401 && errorMessage.includes('Invalid email or password')) {
+          console.error('[Auth] 💡 Hint: If you just deployed to production, you need to register a new account.')
+          console.error('[Auth] 💡 Your local development database is separate from production.')
+        }
+        
         throw new Error(errorMessage)
       }
       
