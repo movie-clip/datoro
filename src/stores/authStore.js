@@ -22,34 +22,30 @@ export const useAuthStore = defineStore('auth', () => {
   // ============================================
   
   /**
-   * Load user from localStorage and verify session
+   * Initialize auth state - check if user is logged in via cookie
+   * SECURITY: Token is in HttpOnly cookie, never in localStorage
    */
   async function init() {
-    // Check localStorage for saved token
-    const savedToken = localStorage.getItem('authToken')
-    if (!savedToken) return
-    
-    token.value = savedToken
-    
-    // Verify token is still valid
+    // Token is automatically sent via HttpOnly cookie
+    // We just need to verify the session is still valid
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${savedToken}`
-        },
-        credentials: 'include'
+        credentials: 'include' // Send HttpOnly cookie
       })
       
       if (response.ok) {
         const data = await response.json()
         user.value = data.data.user
+        token.value = 'cookie' // Placeholder - actual token is in cookie
       } else {
-        // Token invalid, clear it
-        logout()
+        // Session invalid or expired
+        user.value = null
+        token.value = null
       }
     } catch (err) {
       console.error('[Auth] Init error:', err)
-      logout()
+      user.value = null
+      token.value = null
     }
   }
   
@@ -77,12 +73,12 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.error || 'Registration failed')
       }
       
-      // Save user and token
+      // Save user (token is in HttpOnly cookie)
       user.value = data.data.user
-      token.value = data.data.token
+      token.value = 'cookie' // Placeholder - actual token is in cookie
       
-      // Save to localStorage for persistence
-      localStorage.setItem('authToken', data.data.token)
+      // SECURITY: Do NOT store token in localStorage!
+      // Token is automatically stored in HttpOnly cookie by server
       
       return { success: true }
       
@@ -118,12 +114,12 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.error || 'Login failed')
       }
       
-      // Save user and token
+      // Save user (token is in HttpOnly cookie)
       user.value = data.data.user
-      token.value = data.data.token
+      token.value = 'cookie' // Placeholder - actual token is in cookie
       
-      // Save to localStorage
-      localStorage.setItem('authToken', data.data.token)
+      // SECURITY: Do NOT store token in localStorage!
+      // Token is automatically stored in HttpOnly cookie by server
       
       return { success: true }
       
@@ -159,12 +155,12 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.error || 'Google login failed')
       }
       
-      // Save user and token
+      // Save user (token is in HttpOnly cookie)
       user.value = data.data.user
-      token.value = data.data.token
+      token.value = 'cookie' // Placeholder - actual token is in cookie
       
-      // Save to localStorage
-      localStorage.setItem('authToken', data.data.token)
+      // SECURITY: Do NOT store token in localStorage!
+      // Token is automatically stored in HttpOnly cookie by server
       
       return { success: true }
       
@@ -184,23 +180,18 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     
     try {
-      // Call logout endpoint if we have a token
-      if (token.value) {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token.value}`
-          },
-          credentials: 'include'
-        })
-      }
+      // Call logout endpoint - token is sent automatically via HttpOnly cookie
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include' // Send HttpOnly cookie
+      })
     } catch (err) {
       console.error('[Auth] Logout error:', err)
     } finally {
       // Clear local state regardless of API call success
       user.value = null
       token.value = null
-      localStorage.removeItem('authToken')
+      // No need to remove from localStorage - never stored there!
       loading.value = false
     }
   }

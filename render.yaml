@@ -12,7 +12,7 @@ services:
     name: factorly-api
     runtime: node
     plan: free # FREE: sleeps after 15min inactivity | STARTER ($7/mo): 24/7 uptime
-    buildCommand: npm install && npx prisma generate
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
     startCommand: node server/server.mjs
     healthCheckPath: /api/health
     
