@@ -221,6 +221,7 @@ const props = defineProps({
   stacked:    { type: Boolean, default: false },
   useLegend:  { type: Boolean, default: false },
   dualAxis:   { type: Boolean, default: false },
+  rightAxisType: { type: String, default: 'symmetric' }, // 'symmetric' (for insider trading) or 'percentage' (for margins)
   showGrowthLabels: { type: Boolean, default: false },
   invertGrowth: { type: Boolean, default: false }, // For expenses: decreases are positive
   ticker: { type: String, default: null }, // For cached growth calculations
@@ -604,17 +605,20 @@ const createOption = (isLarge = false) => {
         axisLine: { lineStyle: { color: '#aaa' } },
         splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
       },
-      // Right axis (for insider trading/secondary data)
+      // Right axis (for insider trading/secondary data or percentage margins)
       {
         type: 'value',
         position: 'right',
-        min: (value) => {
+        min: props.rightAxisType === 'percentage' ? 0 : (value) => {
           // Ensure 0 is always centered by making bounds symmetric
           const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
           // Add 10% padding to prevent data from touching edges
           return -absMax * 1.1
         },
-        max: (value) => {
+        max: props.rightAxisType === 'percentage' ? (value) => {
+          // Round up to nearest 10 for clean scale (e.g., 38% -> 40%)
+          return Math.ceil(value.max / 10) * 10
+        } : (value) => {
           // Ensure 0 is always centered by making bounds symmetric
           const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
           // Add 10% padding to prevent data from touching edges
@@ -625,6 +629,9 @@ const createOption = (isLarge = false) => {
           color: '#ddd', 
           fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
           formatter: (val) => {
+            if (props.rightAxisType === 'percentage') {
+              return val.toFixed(1) + '%'
+            }
             if (Math.abs(val) >= 1000) {
               return (val / 1000).toFixed(1) + 'K'
             }

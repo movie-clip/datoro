@@ -11,6 +11,7 @@
     :message="message"
     :stacked="chartView === 'bridge'"
     :dual-axis="chartView === 'margin'"
+    right-axis-type="percentage"
     :selected-segments="chartView === 'bridge' ? selectedSegments : undefined"
     :view-mode-options="chartView === 'bridge' ? viewModeOptions : undefined"
     aria-label="EBITDA chart"
