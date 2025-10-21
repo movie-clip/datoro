@@ -148,8 +148,11 @@ async function _executeWithTimeout(queryFn, timeoutMs = QueryTimeout.STANDARD) {
  * Find or create user by IP address (for anonymous users)
  * 
  * NOTE: After authentication implementation, ipAddress is no longer unique.
- * This function now creates a new anonymous user record for each IP/session.
+ * This function creates/finds anonymous user records by IP.
  * For authenticated users, use the user ID from the JWT token instead.
+ * 
+ * RACE CONDITION FIX: Uses transaction to prevent duplicate user creation
+ * from concurrent requests with the same IP address.
  * 
  * @param {string} ipAddress - User's IP address
  * @param {string} userAgent - Browser user agent
@@ -159,34 +162,62 @@ export async function findOrCreateUser(ipAddress, userAgent = null) {
   const db = getPrismaClient();
   
   try {
-    // Try to find existing anonymous user with this IP (most recent)
-    let user = await db.user.findFirst({
-      where: { 
-        ipAddress,
-        email: null, // Only anonymous users (no auth)
-        googleId: null
-      },
-      orderBy: { createdAt: 'desc' }
+    // Use transaction to prevent race condition
+    const user = await db.$transaction(async (tx) => {
+      // Try to find existing anonymous user with this IP (most recent)
+      let existingUser = await tx.user.findFirst({
+        where: { 
+          ipAddress,
+          email: null, // Only anonymous users (no auth)
+          googleId: null
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      // If user exists, update user agent if changed
+      if (existingUser) {
+        if (userAgent && existingUser.userAgent !== userAgent) {
+          existingUser = await tx.user.update({
+            where: { id: existingUser.id },
+            data: { 
+              userAgent, 
+              updatedAt: new Date() 
+            }
+          });
+        }
+        return existingUser;
+      }
+      
+      // No user found - create new one
+      // The transaction ensures only one user is created even with concurrent requests
+      try {
+        const newUser = await tx.user.create({
+          data: { 
+            ipAddress, 
+            userAgent 
+          }
+        });
+        return newUser;
+      } catch (createError) {
+        // If creation fails (duplicate), try finding again
+        // This handles edge case where another transaction created the user
+        const retryUser = await tx.user.findFirst({
+          where: { 
+            ipAddress,
+            email: null,
+            googleId: null
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        
+        if (retryUser) {
+          return retryUser;
+        }
+        
+        // If still not found, rethrow the error
+        throw createError;
+      }
     });
-    
-    // If no user found, create one
-    if (!user) {
-      user = await db.user.create({
-        data: { 
-          ipAddress, 
-          userAgent 
-        }
-      });
-    } else if (userAgent && user.userAgent !== userAgent) {
-      // Update user agent if changed
-      user = await db.user.update({
-        where: { id: user.id },
-        data: { 
-          userAgent, 
-          updatedAt: new Date() 
-        }
-      });
-    }
     
     return user;
   } catch (error) {

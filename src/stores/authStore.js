@@ -82,7 +82,16 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await response.json()
       
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed')
+        // Extract detailed error message from validation errors or main error
+        let errorMessage = data.error || 'Registration failed'
+        
+        // If there are validation errors, show the first one
+        if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          errorMessage = data.errors[0].msg || data.errors[0].message || errorMessage
+        }
+        
+        console.error('[Auth] Registration failed:', errorMessage, data)
+        throw new Error(errorMessage)
       }
       
       // Save user data
@@ -92,10 +101,12 @@ export const useAuthStore = defineStore('auth', () => {
       // SECURITY: Token is ONLY in HttpOnly cookie (server-side)
       // JavaScript never touches the token - XSS protection!
       
+      console.log('[Auth] ✓ Registration successful:', user.value.email)
       return { success: true }
       
     } catch (err) {
       error.value = err.message
+      console.error('[Auth] Registration error:', err.message)
       return { success: false, error: err.message }
     } finally {
       loading.value = false
@@ -123,7 +134,16 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await response.json()
       
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed')
+        // Extract detailed error message
+        let errorMessage = data.error || 'Login failed'
+        
+        // If there are validation errors, show the first one
+        if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          errorMessage = data.errors[0].msg || data.errors[0].message || errorMessage
+        }
+        
+        console.error('[Auth] Login failed:', errorMessage, data)
+        throw new Error(errorMessage)
       }
       
       // Save user data
@@ -133,10 +153,12 @@ export const useAuthStore = defineStore('auth', () => {
       // SECURITY: Token is ONLY in HttpOnly cookie (server-side)
       // JavaScript never touches the token - XSS protection!
       
+      console.log('[Auth] ✓ Login successful:', user.value.email)
       return { success: true }
       
     } catch (err) {
       error.value = err.message
+      console.error('[Auth] Login error:', err.message)
       return { success: false, error: err.message }
     } finally {
       loading.value = false
