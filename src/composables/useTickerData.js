@@ -64,7 +64,6 @@ export function useTickerData(tickerRef, options = {}) {
     // Check client-side cache first
     const cacheKey = `${t}-${mode}`
     if (cache.has(cacheKey)) {
-      console.log(`[useTickerData] ${t} → CLIENT CACHE HIT`)
       data.value = cache.get(cacheKey)
       loading.value = false
       error.value = null
@@ -76,8 +75,6 @@ export function useTickerData(tickerRef, options = {}) {
     const startTime = performance.now()
     
     try {
-      console.log(`[useTickerData] Fetching ${t} (${mode} mode)...`)
-      
       const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`)
       
       if (!response.ok) {
@@ -87,15 +84,17 @@ export function useTickerData(tickerRef, options = {}) {
       const result = await response.json()
       fetchTime.value = Math.round(performance.now() - startTime)
       
-      console.log(`[useTickerData] ${t} fetched in ${fetchTime.value}ms`)
-      console.log(`[useTickerData] Server fetch time: ${result.fetchDuration}ms`)
-      console.log(`[useTickerData] Cache: ${response.headers.get('X-Cache') || 'unknown'}`)
-      
       data.value = result
       
       // Store in client-side cache (5 min TTL)
       cache.set(cacheKey, result)
       setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000)
+      
+      // Lazy load tab icons after first successful data load
+      if (typeof window.__preloadTabIcons === 'function') {
+        window.__preloadTabIcons()
+        window.__preloadTabIcons = null // Only call once
+      }
       
     } catch (err) {
       console.error(`[useTickerData] Error fetching ${t}:`, err)

@@ -53,13 +53,6 @@
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.js" />
     
-    <!-- Preload tab icons (visible immediately on page load) -->
-    <link rel="preload" href="/icons/performance.png" as="image" />
-    <link rel="preload" href="/icons/valuation.png" as="image" />
-    <link rel="preload" href="/icons/balance.png" as="image" />
-    <link rel="preload" href="/icons/returns.png" as="image" />
-    <link rel="preload" href="/icons/ai.png" as="image" />
-    
     <!-- Inline critical CSS for instant render -->
     <style>
       /* Critical CSS - Prevents FOUC */
@@ -213,5 +206,27 @@
       </style>
     </div>
     <script type="module" src="/src/main.js"></script>
+    
+    <!-- Lazy load tab icons after app is ready -->
+    <script>
+      // Expose function for Vue to call when data is loaded
+      window.__preloadTabIcons = function() {
+        const icons = [
+          '/icons/performance.png',
+          '/icons/valuation.png', 
+          '/icons/balance.png',
+          '/icons/returns.png',
+          '/icons/ai.png'
+        ];
+        
+        icons.forEach(src => {
+          const link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.as = 'image';
+          link.href = src;
+          document.head.appendChild(link);
+        });
+      };
+    </script>
   </body>
 </html>

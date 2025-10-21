@@ -8,7 +8,17 @@ export default defineConfig(({ mode }) => {
   const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:7071'
 
   return {
-    plugins: [vue()],
+    plugins: [
+      vue({
+        // Disable expensive template compilation optimizations in dev
+        template: {
+          compilerOptions: {
+            hoistStatic: false, // Faster compilation
+            cacheHandlers: false // Less memory, faster in dev
+          }
+        }
+      })
+    ],
 
     server: {
       host: '0.0.0.0', // Allow access from local network (iPhone, etc.)
@@ -16,14 +26,24 @@ export default defineConfig(({ mode }) => {
       
       // Performance optimizations for dev server
       hmr: {
-        overlay: false // Disable error overlay for faster HMR
+        overlay: false, // Disable error overlay for faster HMR
+        protocol: 'ws', // Use WebSocket (faster than polling)
+        timeout: 30000
       },
       
       // Enable faster dev server
       fs: {
-        strict: true,
-        allow: ['..'] // Allow serving files from parent directory
+        strict: false, // Less strict for faster serving
+        allow: ['..'], // Allow serving files from parent directory
+        // Cache file system reads
+        cachedChecks: true
       },
+      
+      // Pre-transform modules for faster initial load
+      preTransformRequests: true,
+      
+      // Disable source map generation in dev for speed
+      sourcemap: false,
       
       // Aggressive dev server optimizations
       warmup: {
@@ -78,7 +98,11 @@ export default defineConfig(({ mode }) => {
       // Enable esbuild optimization
       esbuildOptions: {
         target: 'es2020'
-      }
+      },
+      // Force dependency optimization on first run
+      force: false,
+      // Disable deep scanning for faster startup
+      holdUntilCrawlEnd: false
     },
 
     // Production build optimization

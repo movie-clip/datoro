@@ -32,15 +32,11 @@ export const useAuthStore = defineStore('auth', () => {
     // SECURITY: Token is in HttpOnly cookie only (JavaScript cannot access)
     // This protects against XSS attacks
     
-    console.log('[Auth] 🔄 Initializing auth state...')
-    
     // Note: We can't check if the cookie exists because it's HttpOnly
     // (JavaScript can't read it). So we just try to verify with the server.
     // The server will return 401 if no valid cookie exists.
     
     try {
-      console.log('[Auth] 📡 Calling /api/auth/me to check session...')
-      
       // Add timeout to prevent auth from blocking too long
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
@@ -52,22 +48,17 @@ export const useAuthStore = defineStore('auth', () => {
       
       clearTimeout(timeoutId)
       
-      console.log('[Auth] 📡 Response status:', response.status)
-      
       if (response.ok) {
         const data = await response.json()
         user.value = data.data.user
         token.value = 'cookie' // Placeholder - actual token in HttpOnly cookie
-        console.log('[Auth] ✅ Session restored:', user.value.email)
       } else if (response.status === 401) {
         // Not logged in - this is expected, not an error
-        // Silent - don't log to avoid polluting console/analytics
-        console.log('[Auth] ℹ️ No active session (not logged in)')
         user.value = null
         token.value = null
       } else {
         // Other errors (500, etc.) - these are real errors worth logging
-        console.error('[Auth] ❌ Unexpected init error:', response.status)
+        console.error('[Auth] Unexpected init error:', response.status)
         user.value = null
         token.value = null
       }

@@ -43,8 +43,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { API_BASE_URL } from '../../utils/apiConfig.js'
+import { ref, computed, toRef, watch } from 'vue'
+import { useTickerData } from '../../composables/useTickerData.js'
 
 const props = defineProps({
   ticker: { type: String, required: true }
@@ -52,11 +52,52 @@ const props = defineProps({
 
 const emit = defineEmits(['update:companyName', 'update:companyProfile'])
 
-const loading = ref(false)
-const profile = ref({})
-const quote = ref({})
-const earningsDate = ref(null)
 const imageError = ref(false)
+
+// Use batch data composable (same data source as charts)
+const tickerRef = toRef(props, 'ticker')
+const { data: batchData, loading, error } = useTickerData(tickerRef)
+
+// Extract profile from batch data
+const profile = computed(() => {
+  if (!batchData.value?.data?.profile) return {}
+  const profileArray = batchData.value.data.profile
+  return Array.isArray(profileArray) && profileArray.length > 0 
+    ? profileArray[0] 
+    : {}
+})
+
+// Extract quote from batch data
+const quote = computed(() => {
+  if (!batchData.value?.data?.quote) return {}
+  const quoteArray = batchData.value.data.quote
+  return Array.isArray(quoteArray) && quoteArray.length > 0 
+    ? quoteArray[0] 
+    : {}
+})
+
+// Extract earnings date from batch data
+const earningsDate = computed(() => {
+  if (!batchData.value?.data?.earningsCalendar) return null
+  const earningsData = batchData.value.data.earningsCalendar
+  if (!Array.isArray(earningsData) || earningsData.length === 0) return null
+  
+  // Find next earnings date (future date)
+  const now = new Date()
+  const upcoming = earningsData
+    .filter(e => e.date && new Date(e.date) >= now)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  return upcoming.length > 0 ? upcoming[0].date : null
+})
+
+// Emit company name and profile when data changes
+watch(profile, (newProfile) => {
+  if (newProfile?.companyName) {
+    emit('update:companyName', newProfile.companyName)
+  }
+  // Always emit profile to parent so description can be shown
+  emit('update:companyProfile', newProfile)
+}, { immediate: true })
 
 const handleImageError = () => {
   imageError.value = true
@@ -85,64 +126,6 @@ const formatMarketCap = (mktCap) => {
   if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`
   return `$${num.toLocaleString()}`
 }
-
-async function fetchCompanyData() {
-  const t = props.ticker?.trim().toUpperCase()
-  if (!t) {
-    profile.value = {}
-    quote.value = {}
-    earningsDate.value = null
-    return
-  }
-
-  loading.value = true
-  try {
-    // Fetch profile, quote, and earnings calendar in parallel
-    const [profileRes, quoteRes, earningsRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/fmp/api/v3/profile/${t}`),
-      fetch(`${API_BASE_URL}/api/fmp/api/v3/quote/${t}`),
-      fetch(`${API_BASE_URL}/api/fmp/api/v3/historical/earning_calendar/${t}`)
-    ])
-
-    if (profileRes.ok) {
-      const profileData = await profileRes.json()
-      profile.value = Array.isArray(profileData) && profileData.length > 0 
-        ? profileData[0] 
-        : {}
-      // Emit company name to parent
-      if (profile.value.companyName) {
-        emit('update:companyName', profile.value.companyName)
-      }
-      // Always emit profile to parent so description can be shown
-      emit('update:companyProfile', profile.value)
-    }
-
-    if (quoteRes.ok) {
-      const quoteData = await quoteRes.json()
-      quote.value = Array.isArray(quoteData) && quoteData.length > 0 
-        ? quoteData[0] 
-        : {}
-    }
-
-    if (earningsRes.ok) {
-      const earningsData = await earningsRes.json()
-      // Find next earnings date (future date)
-      const now = new Date()
-      const upcoming = earningsData
-        .filter(e => e.date && new Date(e.date) >= now)
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-      earningsDate.value = upcoming.length > 0 ? upcoming[0].date : null
-    }
-  } catch (error) {
-    console.error('[CompanyHeader] Error fetching data:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(() => props.ticker, () => {
-  fetchCompanyData()
-}, { immediate: true })
 </script>
 
 <style scoped>

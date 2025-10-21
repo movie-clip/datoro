@@ -5,6 +5,7 @@ import express from 'express'
 import compression from 'compression'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import crypto from 'crypto'
 import fetch from 'node-fetch'
 import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
@@ -759,7 +760,22 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
       console.log(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
       res.setHeader('X-Cache', cached.source)
       
-      // Track in database (background)
+      // Generate ETag from cached data for HTTP 304 support
+      const etag = crypto.createHash('md5')
+        .update(JSON.stringify(cached.data))
+        .digest('hex')
+        .substring(0, 16)
+      
+      // Check if client has same version (ETag match)
+      const clientEtag = req.headers['if-none-match']
+      if (clientEtag === etag) {
+        console.log(`[Batch] ${t} (${mode}) → 304 Not Modified (ETag match)`)
+        res.setHeader('ETag', etag)
+        res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+        return res.status(304).end()
+      }
+      
+      // Track in database (background - don't await)
       if (isDatabaseAvailable) {
         trackSearch(req.ip, t, req.headers['user-agent'], 'batch').catch(err => {
           console.error('[Database] Search tracking error:', err.message)
@@ -767,6 +783,9 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
         })
       }
       
+      // Send cached data with ETag
+      res.setHeader('ETag', etag)
+      res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
       return res.json(cached.data)
     }
     
@@ -803,7 +822,7 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
       }
     }
     
-    // Track API request
+    // Track API request (background - don't await)
     if (isDatabaseAvailable) {
       trackApiRequest({
         endpoint: `/api/ticker-data/${t}`,
@@ -818,6 +837,14 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
       })
     }
     
+    // Generate ETag and send with cache headers
+    const etag = crypto.createHash('md5')
+      .update(JSON.stringify(result))
+      .digest('hex')
+      .substring(0, 16)
+    
+    res.setHeader('ETag', etag)
+    res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
     res.json(result)
   } catch (error) {
     console.error(`[Batch] Error fetching ${t}:`, error)
