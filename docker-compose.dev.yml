@@ -1,0 +1,47 @@
+# Development Database (PostgreSQL + Redis)
+# Usage:
+#   Start: docker-compose -f docker-compose.dev.yml up -d
+#   Stop:  docker-compose -f docker-compose.dev.yml down
+#   Logs:  docker-compose -f docker-compose.dev.yml logs -f
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres-dev:
+    image: postgres:16-alpine
+    container_name: factorly-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5433:5432"  # External port 5433 to avoid conflicts
+    environment:
+      POSTGRES_USER: factorly_dev
+      POSTGRES_PASSWORD: dev_password_123
+      POSTGRES_DB: factorly_dev
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factorly_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache (Optional but recommended)
+  redis-dev:
+    image: redis:7-alpine
+    container_name: factorly-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6380:6379"  # External port 6380 to avoid conflicts
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-dev-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-dev-data:
+  redis-dev-data:
