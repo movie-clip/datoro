@@ -130,6 +130,10 @@ app.use(cors({
 app.use(express.json())
 app.use(cookieParser()) // Parse cookies for session management
 
+// Body parser with size limits (prevent DoS attacks)
+app.use(express.json({ limit: '10kb' }))
+app.use(express.urlencoded({ extended: true, limit: '10kb' }))
+
 // Speed limiter (slows down heavy users)
 app.use(speedLimiter)
 

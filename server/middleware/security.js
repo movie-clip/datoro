@@ -23,7 +23,8 @@ export function securityHeaders() {
         
         // Vue requires 'unsafe-eval' for template compilation
         // 'unsafe-inline' needed for inline styles/scripts
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        // 'data:' needed for Vite's base64-encoded module preloads
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "data:"],
         
         // Allow inline styles (common in Vue components)
         styleSrc: ["'self'", "'unsafe-inline'"],
