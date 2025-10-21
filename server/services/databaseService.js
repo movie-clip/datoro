@@ -145,7 +145,11 @@ async function _executeWithTimeout(queryFn, timeoutMs = QueryTimeout.STANDARD) {
 // ============================================
 
 /**
- * Find or create user by IP address
+ * Find or create user by IP address (for anonymous users)
+ * 
+ * NOTE: After authentication implementation, ipAddress is no longer unique.
+ * This function now creates a new anonymous user record for each IP/session.
+ * For authenticated users, use the user ID from the JWT token instead.
  * 
  * @param {string} ipAddress - User's IP address
  * @param {string} userAgent - Browser user agent
@@ -155,17 +159,36 @@ export async function findOrCreateUser(ipAddress, userAgent = null) {
   const db = getPrismaClient();
   
   try {
-    return await db.user.upsert({
-      where: { ipAddress },
-      update: { 
-        userAgent, 
-        updatedAt: new Date() 
+    // Try to find existing anonymous user with this IP (most recent)
+    let user = await db.user.findFirst({
+      where: { 
+        ipAddress,
+        email: null, // Only anonymous users (no auth)
+        googleId: null
       },
-      create: { 
-        ipAddress, 
-        userAgent 
-      }
+      orderBy: { createdAt: 'desc' }
     });
+    
+    // If no user found, create one
+    if (!user) {
+      user = await db.user.create({
+        data: { 
+          ipAddress, 
+          userAgent 
+        }
+      });
+    } else if (userAgent && user.userAgent !== userAgent) {
+      // Update user agent if changed
+      user = await db.user.update({
+        where: { id: user.id },
+        data: { 
+          userAgent, 
+          updatedAt: new Date() 
+        }
+      });
+    }
+    
+    return user;
   } catch (error) {
     console.error('[Database] Error finding/creating user:', error.message);
     throw error;
@@ -237,8 +260,13 @@ export async function getUserSearchHistory(ipAddress, limit = 10) {
   const db = getPrismaClient();
   
   try {
-    const user = await db.user.findUnique({
-      where: { ipAddress },
+    const user = await db.user.findFirst({
+      where: { 
+        ipAddress,
+        email: null, // Anonymous users only
+        googleId: null
+      },
+      orderBy: { createdAt: 'desc' },
       include: {
         searches: {
           take: limit,
@@ -348,8 +376,13 @@ export async function trackApiRequest(data) {
     // Find user if IP provided
     let userId = null;
     if (data.ipAddress) {
-      const user = await db.user.findUnique({
-        where: { ipAddress: data.ipAddress },
+      const user = await db.user.findFirst({
+        where: { 
+          ipAddress: data.ipAddress,
+          email: null, // Anonymous users only
+          googleId: null
+        },
+        orderBy: { createdAt: 'desc' },
         select: { id: true }
       });
       userId = user?.id;

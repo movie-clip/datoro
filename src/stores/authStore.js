@@ -38,12 +38,15 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = data.data.user
         token.value = 'cookie' // Placeholder - actual token is in cookie
       } else {
-        // Session invalid or expired
+        // Session invalid or expired (401 is expected when not logged in)
         user.value = null
         token.value = null
       }
     } catch (err) {
-      console.error('[Auth] Init error:', err)
+      // Only log unexpected errors (not 401 which is normal when logged out)
+      if (err.message && !err.message.includes('401')) {
+        console.error('[Auth] Init error:', err)
+      }
       user.value = null
       token.value = null
     }
