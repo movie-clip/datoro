@@ -13,10 +13,10 @@ const AIAnalysisPanel = defineAsyncComponent(() =>
   import('./components/layout/AIAnalysisPanel.vue')
 )
 
-// Lazy load all chart components (only load when tab is opened)
-const PriceChart = defineAsyncComponent(() =>
-  import('./components/charts/PriceChart.vue')
-)
+// PriceChart is used in HeroSection (always visible), so import it statically
+import PriceChart from './components/charts/PriceChart.vue'
+
+// Lazy load other chart components (only load when tab is opened)
 const PriceTargetBar = defineAsyncComponent(() =>
   import('./components/charts/PriceTargetBar.vue')
 )
