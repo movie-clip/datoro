@@ -15,12 +15,15 @@ export function useCapitalReturnedSeries() {
   // Extract capital returned data from batch (always annual)
   const rawData = computed(() => getCapitalReturnedSeriesFromBatch(batchData.value, 'annual'))
 
+  // Check if data is legitimately empty (company doesn't return capital)
+  const hasNoCapitalReturns = computed(() => {
+    if (!currentTicker.value || loading.value || batchError.value) return false
+    return rawData.value.length === 0
+  })
+
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (currentTicker.value || '').toUpperCase()
-    if (t && rawData.value.length === 0) {
-      return `No capital returned data for '${t}'`
-    }
+    // Don't treat "no capital returns" as an error - it's legitimate
     return null
   })
 
@@ -54,18 +57,17 @@ export function useCapitalReturnedSeries() {
   })
 
   // Update title based on ticker
-  watch([() => currentTicker, rawData, loading], () => {
-    const ticker = currentTicker
+  watch([() => currentTicker, rawData, loading, hasNoCapitalReturns], () => {
+    const ticker = currentTicker.value
     if (!ticker) {
       title.value = 'Capital Returned to Shareholders — Empty'
       message.value = 'Enter a ticker'
     } else if (error.value) {
-      // Keep original title, show error in message
       title.value = 'Capital Returned to Shareholders'
       message.value = error.value
-    } else if (rawData.value.length === 0 && !loading.value) {
-      title.value = 'Capital Returned — No data'
-      message.value = `No capital return data for '${ticker}'`
+    } else if (hasNoCapitalReturns.value) {
+      title.value = `Capital Returned — ${ticker.toUpperCase()}`
+      message.value = '' // Use emptyDataMessage instead
     } else {
       title.value = 'Capital Returned to Shareholders'
       message.value = ''
@@ -76,5 +78,21 @@ export function useCapitalReturnedSeries() {
     // Batch data will auto-refresh via useTickerData
   }
 
-  return { series, title, message, loading, error, refresh, selectedSegments };
+  // Friendly message when company doesn't return capital
+  const emptyDataMessage = computed(() => {
+    if (!hasNoCapitalReturns.value) return null
+    const ticker = currentTicker.value?.toUpperCase() || 'this company'
+    return `${ticker} does not currently return capital to shareholders through dividends or buybacks`
+  })
+
+  return { 
+    series, 
+    title, 
+    message, 
+    loading, 
+    error, 
+    emptyDataMessage,
+    refresh, 
+    selectedSegments 
+  }
 }

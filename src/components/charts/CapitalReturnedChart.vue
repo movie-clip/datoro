@@ -9,6 +9,7 @@
     :loading="loading"
     :error="error"
     :message="message"
+    :empty-data-message="emptyDataMessage"
     :stacked="true"
     :view-mode-options="segmentOptions"
     :show-growth-labels="true"
@@ -30,7 +31,7 @@ const props = defineProps({
 })
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error, selectedSegments } = useCapitalReturnedSeries();
+const { series, title, message, loading, error, emptyDataMessage, selectedSegments } = useCapitalReturnedSeries();
 
 const segmentOptions = [
   { value: 'dividends', label: 'Dividends' },

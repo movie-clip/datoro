@@ -15,12 +15,15 @@ export function useDividendYieldSeries() {
   // Extract dividend yield data from batch
   const rawData = computed(() => getDividendYieldSeriesFromBatch(batchData.value, period.value))
 
+  // Check if data is legitimately empty (company doesn't pay dividends)
+  const hasNoDividends = computed(() => {
+    if (!currentTicker.value || loading.value || batchError.value) return false
+    return rawData.value.length === 0
+  })
+
   const error = computed(() => {
     if (batchError.value) return batchError.value
-    const t = (currentTicker.value || '').toUpperCase()
-    if (t && rawData.value.length === 0) {
-      return `No dividend data for '${t}'`
-    }
+    // Don't treat "no dividends" as an error - it's legitimate data
     return null
   })
 
@@ -30,18 +33,17 @@ export function useDividendYieldSeries() {
   })
 
   // Update title based on ticker
-  watch([() => currentTicker, rawData, loading], () => {
-    const ticker = currentTicker
+  watch([() => currentTicker, rawData, loading, hasNoDividends], () => {
+    const ticker = currentTicker.value
     if (!ticker) {
       title.value = 'Dividend Yield — Empty'
       message.value = 'Enter a ticker'
     } else if (error.value) {
-      // Keep original title, show error in message
       title.value = 'Dividend Yield'
       message.value = error.value
-    } else if (rawData.value.length === 0 && !loading.value) {
-      title.value = 'Dividend Yield — No data'
-      message.value = `No dividend data for '${ticker}'`
+    } else if (hasNoDividends.value) {
+      title.value = `Dividend Yield — ${ticker.toUpperCase()}`
+      message.value = '' // Empty message, will use emptyDataMessage prop instead
     } else {
       title.value = 'Dividend Yield'
       message.value = ''
@@ -52,5 +54,21 @@ export function useDividendYieldSeries() {
     // Batch data will auto-refresh via useTickerData
   }
 
-  return { period, series, title, message, loading, error, refresh }
+  // Friendly message when company doesn't pay dividends
+  const emptyDataMessage = computed(() => {
+    if (!hasNoDividends.value) return null
+    const ticker = currentTicker.value?.toUpperCase() || 'this company'
+    return `${ticker} does not currently pay dividends`
+  })
+
+  return { 
+    period, 
+    series, 
+    title, 
+    message, 
+    loading, 
+    error, 
+    emptyDataMessage,
+    refresh 
+  }
 }

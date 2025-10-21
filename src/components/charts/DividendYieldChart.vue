@@ -5,6 +5,7 @@
     :loading="loading"
     :error="error"
     :message="message"
+    :empty-data-message="emptyDataMessage"
     kind="bar"
     y-format="percent"
     :bar-max-width="40"
@@ -26,5 +27,5 @@ const props = defineProps({
 })
 
 // No ticker prop - using Pinia store
-const { series, title, loading, error, message } = useDividendYieldSeries()
+const { series, title, loading, error, message, emptyDataMessage } = useDividendYieldSeries()
 </script>

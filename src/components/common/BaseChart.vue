@@ -80,13 +80,22 @@
         variant="chart"
       />
       <VChart 
-        v-else-if="isMounted && option.series?.length"
+        v-else-if="isMounted && (option.series?.length || hasEmptyData)"
         class="echart" 
-        :class="{ 'clickable': !isModal, 'loading-chart': loading }" 
+        :class="{ 'clickable': !isModal, 'loading-chart': loading, 'empty-chart': hasEmptyData }" 
         :option="option" 
         autoresize 
         @click="handleClick"
       />
+      <!-- Empty data overlay (similar to loading overlay) -->
+      <div
+        v-if="hasEmptyData && !isModal"
+        class="empty-data-overlay"
+      >
+        <div class="empty-data-panel">
+          <p class="empty-message">{{ emptyDataMessage }}</p>
+        </div>
+      </div>
       <div
         v-if="loading && option.series?.length"
         class="chart-loading-overlay"
@@ -228,6 +237,7 @@ const props = defineProps({
   dataType: { type: String, default: 'generic' }, // Data type for cache key (e.g., 'revenue', 'netIncome')
   error:      { type: String, default: null },
   message:    { type: String, default: null },
+  emptyDataMessage: { type: String, default: null }, // Friendly message when data is legitimately empty (not an error)
 })
 
 const showModal = ref(false)
@@ -266,6 +276,22 @@ const toggleSegment = (segmentValue) => {
   
   emit('update:selectedSegments', current)
 }
+
+// Computed property to check if data is empty (but valid, not an error)
+const hasEmptyData = computed(() => {
+  if (!props.emptyDataMessage) return false
+  if (props.error) return false // Has a real error, not just empty
+  if (props.loading) return false // Still loading
+  
+  // Check if series is empty
+  const isEmpty = !props.series || 
+    (Array.isArray(props.series) && props.series.length === 0) ||
+    (Array.isArray(props.series) && props.series.every(s => 
+      !s?.data || (Array.isArray(s.data) && s.data.length === 0)
+    ))
+  
+  return isEmpty
+})
 
 function fmtShort(n){
   const a = Math.abs(n)
@@ -908,6 +934,45 @@ const modalOption = computed(() => createOption(true))
 
 .loading-chart {
   opacity: 0.5;
+}
+
+.empty-chart {
+  opacity: 0.3;
+  filter: blur(2px);
+}
+
+/* Empty data overlay (matches loading overlay style) */
+.empty-data-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 15, 16, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.empty-data-panel {
+  padding: 20px 28px;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 8px;
+  color: #E5E5E5;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
+}
+
+.empty-message {
+  font-size: 13px;
+  color: #B8B8B8;
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* Mobile responsive styles */
