@@ -18,7 +18,7 @@
             :src="tab.icon" 
             :alt="`${tab.label} icon`"
             class="tab-icon-img"
-            loading="eager"
+            loading="lazy"
             decoding="async"
             width="28"
             height="28"

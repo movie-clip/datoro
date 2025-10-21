@@ -50,6 +50,10 @@
     <!-- Preconnect to external domains for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://www.googletagmanager.com" />
+    
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.js" />
+    <link rel="preload" href="/logo.png" as="image" fetchpriority="high" />
   </head>
   <body>
     <div id="app"></div>
