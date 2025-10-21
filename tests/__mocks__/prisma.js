@@ -22,6 +22,7 @@ export const mockPrismaClient = {
   user: {
     upsert: vi.fn(),
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
     findMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -57,6 +58,12 @@ export const mockPrismaClient = {
   $queryRaw: vi.fn(),
   $executeRaw: vi.fn(),
   
+  // Transaction support (for race condition fix)
+  $transaction: vi.fn(async (callback) => {
+    // Execute callback with mockPrismaClient as transaction client
+    return callback(mockPrismaClient)
+  }),
+  
   // Connection management
   $connect: vi.fn(),
   $disconnect: vi.fn(),
@@ -70,6 +77,7 @@ export function resetMockDatabase() {
 }
 
 // In-memory stores for realistic mock behavior
+let userStore = [] // Track users created during tests
 let searchStore = []
 let apiRequestStore = []
 
@@ -79,6 +87,7 @@ let apiRequestStore = []
  */
 export function setupDefaultMocks() {
   // Reset stores
+  userStore = []
   searchStore = []
   apiRequestStore = []
   
@@ -90,6 +99,83 @@ export function setupDefaultMocks() {
     lastSeenAt: new Date(),
     createdAt: new Date(),
   }))
+  
+  // findFirst - for finding existing users by IP (used in transaction and getUserSearchHistory)
+  mockPrismaClient.user.findFirst.mockImplementation(async ({ where, include, orderBy }) => {
+    // Find matching user in store
+    let user = userStore.find(u => {
+      if (where?.ipAddress && u.ipAddress !== where.ipAddress) return false
+      if (where?.email !== undefined && u.email !== where.email) return false
+      if (where?.googleId !== undefined && u.googleId !== where.googleId) return false
+      return true
+    })
+    
+    if (!user) return null
+    
+    // Clone user to avoid mutation and update lastSeenAt (simulate real DB behavior)
+    await new Promise(resolve => setTimeout(resolve, 2)) // Ensure time advances
+    user = { ...user, lastSeenAt: new Date() }
+    
+    // If including searches, add them from the store
+    if (include?.searches) {
+      const userSearches = searchStore
+        .filter(s => s.userId === user.id)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, include.searches.take || 10)
+        .map(s => ({
+          ticker: s.ticker,
+          query: s.query,
+          source: s.source,
+          createdAt: s.createdAt
+        }))
+      user.searches = userSearches
+    }
+    
+    return user
+  })
+  
+  // create - for creating new users in transaction
+  mockPrismaClient.user.create.mockImplementation(async ({ data }) => {
+    const user = {
+      id: `mock-user-${data.ipAddress || 'anonymous'}-${Date.now()}`,
+      ipAddress: data.ipAddress || null,
+      userAgent: data.userAgent || null,
+      email: data.email || null,
+      googleId: data.googleId || null,
+      lastSeenAt: new Date(),
+      createdAt: new Date(),
+    }
+    // Add to in-memory store
+    userStore.push(user)
+    return user
+  })
+  
+  // update - for updating lastSeenAt in transaction
+  mockPrismaClient.user.update.mockImplementation(async ({ where, data }) => {
+    // Find user in store
+    const userIndex = userStore.findIndex(u => u.id === where.id)
+    if (userIndex >= 0) {
+      // Add tiny delay to ensure lastSeenAt changes in tests
+      await new Promise(resolve => setTimeout(resolve, 1))
+      
+      // Update existing user
+      userStore[userIndex] = {
+        ...userStore[userIndex],
+        ...data,
+        lastSeenAt: data.lastSeenAt || new Date()
+      }
+      return userStore[userIndex]
+    }
+    
+    // Fallback for tests that don't use store
+    return {
+      id: where.id || `mock-user-update-${Date.now()}`,
+      ipAddress: data.ipAddress || '192.168.1.1',
+      userAgent: data.userAgent || 'Test Browser',
+      lastSeenAt: data.lastSeenAt || new Date(),
+      createdAt: new Date(Date.now() - 86400000), // 1 day ago
+    }
+  })
   
   mockPrismaClient.user.findUnique.mockImplementation(async ({ where, include }) => {
     const user = {
