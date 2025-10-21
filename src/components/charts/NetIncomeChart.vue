@@ -1,43 +1,20 @@
 <template>
-  <div style="position:relative; min-height:240px;">
-    <div
-      v-if="loading && series.length === 0"
-      class="spinner"
-      aria-live="polite"
-      aria-busy="true"
-      tabindex="0"
-    >
-      Loading…
-    </div>
-    <BaseChart
-      v-else
-      v-model:period="period"
-      :title="title"
-      :series="series"
-      kind="bar"
-      y-format="currency"
-      :loading="loading"
-      aria-label="Net Income chart"
-      :period-options="viewModeOptions"
-      :show-growth-labels="true"
-      :ticker="ticker"
-      :data-type="dataType"
-      :force-expanded="forceExpanded"
-    />
-    <p
-      v-if="error"
-      class="msg error"
-      role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
-      v-else-if="message"
-      class="msg"
-    >
-      {{ message }}
-    </p>
-  </div>
+  <BaseChart
+    v-model:period="period"
+    :title="title"
+    :series="series"
+    kind="bar"
+    y-format="currency"
+    :loading="loading"
+    :error="error"
+    :message="message"
+    aria-label="Net Income chart"
+    :period-options="viewModeOptions"
+    :show-growth-labels="true"
+    :ticker="ticker"
+    :data-type="dataType"
+    :force-expanded="forceExpanded"
+  />
 </template>
 
 <script setup>

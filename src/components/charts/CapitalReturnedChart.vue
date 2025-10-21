@@ -1,44 +1,20 @@
 
 <template>
-  <div style="position:relative; min-height:240px;">
-    <div
-      v-if="loading && series.length === 0"
-      class="spinner"
-      aria-live="polite"
-      aria-busy="true"
-      tabindex="0"
-    >
-      Loading…
-    </div>
-    
-    <BaseChart
-      v-if="!loading || series.length > 0"
-      v-model:selected-segments="selectedSegments"
-      :title="title"
-      :series="series"
-      kind="bar"
-      y-format="currency"
-      :loading="loading"
-      :stacked="true"
-      :view-mode-options="segmentOptions"
-      :show-growth-labels="true"
-      aria-label="Capital returned to shareholders chart"
-      :force-expanded="forceExpanded"
-    />
-    <p
-      v-if="error"
-      class="msg error"
-      role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
-      v-else-if="message"
-      class="msg"
-    >
-      {{ message }}
-    </p>
-  </div>
+  <BaseChart
+    v-model:selected-segments="selectedSegments"
+    :title="title"
+    :series="series"
+    kind="bar"
+    y-format="currency"
+    :loading="loading"
+    :error="error"
+    :message="message"
+    :stacked="true"
+    :view-mode-options="segmentOptions"
+    :show-growth-labels="true"
+    aria-label="Capital returned to shareholders chart"
+    :force-expanded="forceExpanded"
+  />
 </template>
 
 <script setup>

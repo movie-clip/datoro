@@ -1,46 +1,23 @@
 
 <template>
-  <div style="position:relative; min-height:240px;">
-    <div
-      v-if="loading && series.length === 0"
-      class="spinner"
-      aria-live="polite"
-      aria-busy="true"
-      tabindex="0"
-    >
-      Loading…
-    </div>
-    <BaseChart
-      v-else
-      v-model:view-mode="viewMode"
-      :title="title"
-      :series="series"
-      :compact-series="compactSeries"
-      kind="bar"
-      y-format="short"
-      :loading="loading"
-      aria-label="Free Cash Flow chart"
-      :view-mode-options="viewModeOptions"
-      :show-growth-labels="true"
-      :ticker="ticker"
-      :data-type="dataType"
-      :force-expanded="forceExpanded"
-      @modal-closed="resetViewMode"
-    />
-    <p
-      v-if="error"
-      class="msg error"
-      role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
-      v-else-if="message"
-      class="msg"
-    >
-      {{ message }}
-    </p>
-  </div>
+  <BaseChart
+    v-model:view-mode="viewMode"
+    :title="title"
+    :series="series"
+    :compact-series="compactSeries"
+    kind="bar"
+    y-format="short"
+    :loading="loading"
+    :error="error"
+    :message="message"
+    aria-label="Free Cash Flow chart"
+    :view-mode-options="viewModeOptions"
+    :show-growth-labels="true"
+    :ticker="ticker"
+    :data-type="dataType"
+    :force-expanded="forceExpanded"
+    @modal-closed="resetViewMode"
+  />
 </template>
 
 <script setup>

@@ -1,30 +1,18 @@
 
 <template>
-  <div style="position:relative; min-height:240px;">
-    <div
-      v-if="loading && series.length === 0"
-      class="spinner"
-      aria-live="polite"
-      aria-busy="true"
-      tabindex="0"
-    >
-      Loading…
-    </div>
-    <BaseChart
-      v-else
-      v-model:view-mode="tfKey"
-      :title="title"
-      :series="series"
-      kind="line"
-      y-format="int"
-      :view-mode-options="timeframeOptions"
-      :loading="loading"
-      :error="error"
-      :message="message"
-      aria-label="Price chart"
-      :force-expanded="forceExpanded"
-    />
-  </div>
+  <BaseChart
+    v-model:view-mode="tfKey"
+    :title="title"
+    :series="series"
+    kind="line"
+    y-format="int"
+    :view-mode-options="timeframeOptions"
+    :loading="loading"
+    :error="error"
+    :message="message"
+    aria-label="Price chart"
+    :force-expanded="forceExpanded"
+  />
 </template>
 
 <script setup>

@@ -1,66 +1,43 @@
 
 <template>
-  <div style="position:relative; min-height:240px;">
-    <div
-      v-if="loading && series.length === 0"
-      class="spinner"
-      aria-live="polite"
-      aria-busy="true"
-      tabindex="0"
-    >
-      Loading…
-    </div>
-    <BaseChart
-      v-else
-      :title="title"
-      :series="chartView === 'margin' ? ebitdaWithMargin : series"
-      :compact-series="ebitdaWithMargin"
-      kind="bar"
-      y-format="currency"
-      :loading="loading"
-      :stacked="chartView === 'bridge'"
-      :dual-axis="chartView === 'margin'"
-      :selected-segments="chartView === 'bridge' ? selectedSegments : undefined"
-      :view-mode-options="chartView === 'bridge' ? viewModeOptions : undefined"
-      aria-label="EBITDA chart"
-      :show-growth-labels="chartView !== 'bridge'"
-      :force-expanded="forceExpanded"
-      @update:selected-segments="selectedSegments = $event"
-      @modal-closed="resetView"
-    >
-      <template #controls>
-        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <button 
-            :class="{ active: chartView === 'margin' }" 
-            class="view-toggle"
-            @click="chartView = 'margin'"
-          >
-            EBITDA & Margin
-          </button>
-          <button 
-            :class="{ active: chartView === 'bridge' }" 
-            class="view-toggle"
-            @click="chartView = 'bridge'"
-          >
-            Bridge View
-          </button>
-        </div>
-      </template>
-    </BaseChart>
-    <p
-      v-if="error"
-      class="msg error"
-      role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
-      v-else-if="message"
-      class="msg"
-    >
-      {{ message }}
-    </p>
-  </div>
+  <BaseChart
+    :title="title"
+    :series="chartView === 'margin' ? ebitdaWithMargin : series"
+    :compact-series="ebitdaWithMargin"
+    kind="bar"
+    y-format="currency"
+    :loading="loading"
+    :error="error"
+    :message="message"
+    :stacked="chartView === 'bridge'"
+    :dual-axis="chartView === 'margin'"
+    :selected-segments="chartView === 'bridge' ? selectedSegments : undefined"
+    :view-mode-options="chartView === 'bridge' ? viewModeOptions : undefined"
+    aria-label="EBITDA chart"
+    :show-growth-labels="chartView !== 'bridge'"
+    :force-expanded="forceExpanded"
+    @update:selected-segments="selectedSegments = $event"
+    @modal-closed="resetView"
+  >
+    <template #controls>
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <button 
+          :class="{ active: chartView === 'margin' }" 
+          class="view-toggle"
+          @click="chartView = 'margin'"
+        >
+          EBITDA & Margin
+        </button>
+        <button 
+          :class="{ active: chartView === 'bridge' }" 
+          class="view-toggle"
+          @click="chartView = 'bridge'"
+        >
+          Bridge View
+        </button>
+      </div>
+    </template>
+  </BaseChart>
 </template>
 
 <script setup>

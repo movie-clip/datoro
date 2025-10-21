@@ -1,40 +1,17 @@
 
 <template>
-  <div style="position:relative; min-height:240px;">
-    <div
-      v-if="loading && series.length === 0"
-      class="spinner"
-      aria-live="polite"
-      aria-busy="true"
-      tabindex="0"
-    >
-      Loading…
-    </div>
-    <BaseChart
-      v-else
-      :title="title"
-      :series="series"
-      kind="bar"
-      y-format="int"
-      :loading="loading"
-      aria-label="EPS chart"
-      :show-growth-labels="true"
-      :force-expanded="forceExpanded"
-    />
-    <p
-      v-if="error"
-      class="msg error"
-      role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
-      v-else-if="message"
-      class="msg"
-    >
-      {{ message }}
-    </p>
-  </div>
+  <BaseChart
+    :title="title"
+    :series="series"
+    kind="bar"
+    y-format="int"
+    :loading="loading"
+    :error="error"
+    :message="message"
+    aria-label="EPS chart"
+    :show-growth-labels="true"
+    :force-expanded="forceExpanded"
+  />
 </template>
 
 <script setup>
