@@ -40,16 +40,16 @@ router.post(
       
       const { user, token } = await registerUser(req.body, req.ip, req.headers['user-agent'])
       
-      // Set HTTP-only cookie (more secure than localStorage)
-      // In development with different ports (cross-origin), sameSite must be 'none' with secure flag
-      // But since we're on HTTP in dev, we use 'lax' and rely on CORS credentials
+      // Set HTTP-only cookie
       const isProduction = process.env.NODE_ENV === 'production'
       res.cookie('authToken', token, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? 'lax' : 'lax', // Keep 'lax' even in dev
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/'
+        path: '/',
+        // Don't set domain in dev (lets it work with localhost and network IP)
+        ...(isProduction && { domain: undefined })
       })
       
       res.status(201).json({
@@ -92,13 +92,20 @@ router.post(
       const { user, token } = await loginUser(req.body, req.ip, req.headers['user-agent'])
       
       // Set HTTP-only cookie
-      res.cookie('authToken', token, {
+      const isProduction = process.env.NODE_ENV === 'production'
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-      })
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+        ...(isProduction && { domain: undefined })
+      }
       
+      console.log('[Auth] Setting cookie with options:', cookieOptions)
+      res.cookie('authToken', token, cookieOptions)
+      
+      console.log('[Auth] Cookie set, sending response')
       res.json({
         success: true,
         data: { user, token }
@@ -137,11 +144,14 @@ router.post(
       const { user, token } = await loginWithGoogle(req.body.token, req.ip, req.headers['user-agent'])
       
       // Set HTTP-only cookie
+      const isProduction = process.env.NODE_ENV === 'production'
       res.cookie('authToken', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+        ...(isProduction && { domain: undefined })
       })
       
       res.json({

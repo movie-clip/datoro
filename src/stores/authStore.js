@@ -25,44 +25,47 @@ export const useAuthStore = defineStore('auth', () => {
    * Initialize auth state - check if user is logged in via cookie
    * SECURITY: Token is in HttpOnly cookie, never in localStorage
    * 
-   * Checks for auth cookie before making request to avoid unnecessary 401s.
+   * Always checks with server since HttpOnly cookies can't be read by JavaScript.
+   * Note: You may see a 401 error in the Network tab - this is normal when not logged in.
    */
   async function init() {
     // SECURITY: Token is in HttpOnly cookie only (JavaScript cannot access)
     // This protects against XSS attacks
     
-    // Check if authToken cookie exists before making request
-    // This prevents unnecessary 401 errors in production analytics
-    const hasAuthCookie = document.cookie.split(';').some(cookie => 
-      cookie.trim().startsWith('authToken=')
-    )
+    console.log('[Auth] 🔄 Initializing auth state...')
     
-    if (!hasAuthCookie) {
-      // No cookie = not logged in, skip the request entirely
-      user.value = null
-      token.value = null
-      return
-    }
+    // Note: We can't check if the cookie exists because it's HttpOnly
+    // (JavaScript can't read it). So we just try to verify with the server.
+    // The server will return 401 if no valid cookie exists.
     
-    // Cookie exists, verify it with the server
     try {
+      console.log('[Auth] 📡 Calling /api/auth/me to check session...')
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         credentials: 'include' // Send HttpOnly cookie
       })
+      
+      console.log('[Auth] 📡 Response status:', response.status)
       
       if (response.ok) {
         const data = await response.json()
         user.value = data.data.user
         token.value = 'cookie' // Placeholder - actual token in HttpOnly cookie
-        console.log('[Auth] ✓ Session restored:', user.value.email)
+        console.log('[Auth] ✅ Session restored:', user.value.email)
+      } else if (response.status === 401) {
+        // Not logged in - this is expected, not an error
+        // Silent - don't log to avoid polluting console/analytics
+        console.log('[Auth] ℹ️ No active session (not logged in)')
+        user.value = null
+        token.value = null
       } else {
-        // Cookie exists but invalid/expired - clear state silently
+        // Other errors (500, etc.) - these are real errors worth logging
+        console.error('[Auth] ❌ Unexpected init error:', response.status)
         user.value = null
         token.value = null
       }
     } catch (err) {
       // Network errors only - these are real errors worth logging
-      console.error('[Auth] Init network error:', err.message)
+      console.error('[Auth] ❌ Init network error:', err.message)
       user.value = null
       token.value = null
     }
@@ -129,6 +132,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     
     try {
+      console.log('[Auth] 🔐 Attempting login...')
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -172,6 +176,13 @@ export const useAuthStore = defineStore('auth', () => {
       // JavaScript never touches the token - XSS protection!
       
       console.log('[Auth] ✓ Login successful:', user.value.email)
+      
+      // Check if cookie was set
+      console.log('[Auth] 🍪 Checking cookies after login...')
+      console.log('[Auth] 🍪 All cookies:', document.cookie || '(none visible - HttpOnly cookies won\'t show here)')
+      console.log('[Auth] 🍪 Note: authToken cookie is HttpOnly, so JavaScript cannot see it')
+      console.log('[Auth] 🍪 To verify: Open DevTools → Application → Cookies → http://192.168.18.3:5173')
+      
       return { success: true }
       
     } catch (err) {

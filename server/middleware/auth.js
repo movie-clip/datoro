@@ -17,11 +17,18 @@ export function authenticate(requireAuth = true) {
       const authHeader = req.headers.authorization
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7)
+        console.log('[Auth Middleware] Token from header')
       }
       
       // Check cookie if no header token
       if (!token && req.cookies && req.cookies.authToken) {
         token = req.cookies.authToken
+        console.log('[Auth Middleware] Token from cookie')
+      }
+      
+      // Debug logging
+      if (!token) {
+        console.log('[Auth Middleware] No token found. Cookies:', Object.keys(req.cookies || {}))
       }
       
       // If no token and auth required, reject

@@ -42,14 +42,18 @@ export default defineConfig(({ mode }) => {
         // FMP API - proxy to backend which injects API key
         '/api/fmp': {
           target: apiBaseUrl,
-          changeOrigin: true,
+          changeOrigin: false,  // Don't change origin - preserve cookies
+          cookieDomainRewrite: false,  // Don't rewrite cookie domain
+          cookiePathRewrite: false,  // Don't rewrite cookie path
           // Don't rewrite - backend expects /api/fmp prefix
         },
 
         // Other /api routes - proxy to backend
         '/api': {
           target: apiBaseUrl,
-          changeOrigin: true,
+          changeOrigin: false,  // Don't change origin - preserve cookies
+          cookieDomainRewrite: false,  // Don't rewrite cookie domain
+          cookiePathRewrite: false,  // Don't rewrite cookie path
         },
       },
     },
