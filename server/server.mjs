@@ -125,7 +125,10 @@ app.use(cors({
   preflightContinue: false,
   optionsSuccessStatus: 204
 }))
-app.use(express.json())
+
+// Body parser with size limits (prevent DoS attacks)
+app.use(express.json({ limit: '10kb' }))
+app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 
 // Speed limiter (slows down heavy users)
 app.use(speedLimiter)
