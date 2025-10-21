@@ -1,28 +1,58 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, defineAsyncComponent } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 
-// Layout components
+// Layout components - Load immediately (visible on page load)
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
-import AIAnalysisPanel from './components/layout/AIAnalysisPanel.vue'
 import HeroSection from './components/layout/HeroSection.vue'
 import TabNavigation from './components/layout/TabNavigation.vue'
 import TabPanel from './components/layout/TabPanel.vue'
 
-// Chart components
-import PriceChart from './components/charts/PriceChart.vue'
-import PriceTargetBar from './components/charts/PriceTargetBar.vue'
-import RevenueChart from './components/charts/RevenueChart.vue'
-import NetIncomeChart from './components/charts/NetIncomeChart.vue'
-import EpsChart from './components/charts/EpsChart.vue'
-import FcfChart from './components/charts/FcfChart.vue'
-import EbitdaChart from './components/charts/EbitdaChart.vue'
-import ExpensesChart from './components/charts/ExpensesChart.vue'
-import InsiderTradingChart from './components/charts/InsiderTradingChart.vue'
-import CapitalReturnedChart from './components/charts/CapitalReturnedChart.vue'
-import DividendYieldChart from './components/charts/DividendYieldChart.vue'
-import SharesChart from './components/charts/SharesChart.vue'
-import CashDebtChart from './components/charts/CashDebtChart.vue'
+// Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
+const AIAnalysisPanel = defineAsyncComponent(() =>
+  import('./components/layout/AIAnalysisPanel.vue')
+)
+
+// Lazy load all chart components (only load when tab is opened)
+const PriceChart = defineAsyncComponent(() =>
+  import('./components/charts/PriceChart.vue')
+)
+const PriceTargetBar = defineAsyncComponent(() =>
+  import('./components/charts/PriceTargetBar.vue')
+)
+const RevenueChart = defineAsyncComponent(() =>
+  import('./components/charts/RevenueChart.vue')
+)
+const NetIncomeChart = defineAsyncComponent(() =>
+  import('./components/charts/NetIncomeChart.vue')
+)
+const EpsChart = defineAsyncComponent(() =>
+  import('./components/charts/EpsChart.vue')
+)
+const FcfChart = defineAsyncComponent(() =>
+  import('./components/charts/FcfChart.vue')
+)
+const EbitdaChart = defineAsyncComponent(() =>
+  import('./components/charts/EbitdaChart.vue')
+)
+const ExpensesChart = defineAsyncComponent(() =>
+  import('./components/charts/ExpensesChart.vue')
+)
+const InsiderTradingChart = defineAsyncComponent(() =>
+  import('./components/charts/InsiderTradingChart.vue')
+)
+const CapitalReturnedChart = defineAsyncComponent(() =>
+  import('./components/charts/CapitalReturnedChart.vue')
+)
+const DividendYieldChart = defineAsyncComponent(() =>
+  import('./components/charts/DividendYieldChart.vue')
+)
+const SharesChart = defineAsyncComponent(() =>
+  import('./components/charts/SharesChart.vue')
+)
+const CashDebtChart = defineAsyncComponent(() =>
+  import('./components/charts/CashDebtChart.vue')
+)
 
 // Use Pinia store for centralized state
 const tickerStore = useTickerStore()
