@@ -45,11 +45,9 @@ router.post(
       res.cookie('authToken', token, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax',
+        sameSite: isProduction ? 'none' : 'lax',  // 'none' allows cross-domain cookies in production
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
-        // Don't set domain in dev (lets it work with localhost and network IP)
-        ...(isProduction && { domain: undefined })
       })
       
       res.status(201).json({
@@ -95,11 +93,11 @@ router.post(
       const isProduction = process.env.NODE_ENV === 'production'
       const cookieOptions = {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
+        secure: isProduction,  // Must be true for SameSite=none
+        sameSite: isProduction ? 'none' : 'lax',  // 'none' allows cross-domain cookies in production
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
-        ...(isProduction && { domain: undefined })
+        // Don't set domain - let browser use the exact domain the cookie is set from
       }
       
       console.log('[Auth] Setting cookie with options:', cookieOptions)
@@ -148,10 +146,9 @@ router.post(
       res.cookie('authToken', token, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax',
+        sameSite: isProduction ? 'none' : 'lax',  // 'none' allows cross-domain cookies in production
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
-        ...(isProduction && { domain: undefined })
       })
       
       res.json({
