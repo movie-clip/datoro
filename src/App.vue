@@ -1,12 +1,14 @@
 <script setup>
 import { ref, watch, onMounted, defineAsyncComponent } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
+import { useAuthStore } from './stores/authStore'
 
 // Layout components - Load immediately (visible on page load)
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
 import HeroSection from './components/layout/HeroSection.vue'
 import TabNavigation from './components/layout/TabNavigation.vue'
 import TabPanel from './components/layout/TabPanel.vue'
+import AuthModal from './components/auth/AuthModal.vue'
 
 // Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
 const AIAnalysisPanel = defineAsyncComponent(() =>
@@ -54,11 +56,26 @@ const CashDebtChart = defineAsyncComponent(() =>
   import('./components/charts/CashDebtChart.vue')
 )
 
-// Use Pinia store for centralized state
+// Use Pinia stores
 const tickerStore = useTickerStore()
+const authStore = useAuthStore()
 
 const inputTicker = ref('AAPL')
 const companyName = ref('Apple Inc.')
+
+// Auth modal state
+const showAuthModal = ref(false)
+const authModalTab = ref('signin') // 'signin' or 'signup'
+
+// Initialize auth store on mount
+onMounted(async () => {
+  await authStore.init()
+  
+  const savedTab = localStorage.getItem('factorly_active_tab')
+  if (savedTab && tabs.some(t => t.id === savedTab)) {
+    activeTab.value = savedTab
+  }
+})
 
 // Tab state with localStorage persistence
 const activeTab = ref('valuation')
@@ -71,14 +88,6 @@ const tabs = [
   { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null },
   { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null }
 ]
-
-// Load saved tab preference
-onMounted(() => {
-  const savedTab = localStorage.getItem('factorly_active_tab')
-  if (savedTab && tabs.some(t => t.id === savedTab)) {
-    activeTab.value = savedTab
-  }
-})
 
 // Save tab preference
 watch(activeTab, (newTab) => {
@@ -105,6 +114,32 @@ function applyTicker(){
 function handleImageError(event) {
   event.target.style.display = 'none'
 }
+
+// Auth modal functions
+function openSignIn() {
+  authModalTab.value = 'signin'
+  showAuthModal.value = true
+}
+
+function openSignUp() {
+  authModalTab.value = 'signup'
+  showAuthModal.value = true
+}
+
+function closeAuthModal() {
+  showAuthModal.value = false
+}
+
+function handleAuthSuccess() {
+  console.log('[App] User authenticated:', authStore.user)
+  // Could show a success toast here
+}
+
+function handleLogout() {
+  if (confirm('Are you sure you want to sign out?')) {
+    authStore.logout()
+  }
+}
 </script>
 
 <template>
@@ -122,29 +157,49 @@ function handleImageError(event) {
         </div>
         
         <div class="header-right">
-          <button 
-            class="icon-button" 
-            title="Settings"
-            aria-label="Settings"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v6m0 6v6m-7-7h6m6 0h6" />
-              <path d="M20.4 8.4l-4.2 4.2m-8.4 0L3.6 8.4M3.6 15.6l4.2-4.2m8.4 0l4.2 4.2" />
-            </svg>
-          </button>
-          <button 
-            class="icon-button" 
-            title="Theme"
-            aria-label="Theme toggle"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
-          </button>
+          <!-- Show auth buttons if not logged in -->
+          <template v-if="!authStore.isAuthenticated">
+            <button class="auth-button sign-in" @click="openSignIn">
+              Sign In
+            </button>
+            <button class="auth-button sign-up" @click="openSignUp">
+              Sign Up
+            </button>
+          </template>
+          
+          <!-- Show user menu if logged in -->
+          <template v-else>
+            <div class="user-menu">
+              <img 
+                v-if="authStore.user?.avatarUrl" 
+                :src="authStore.user.avatarUrl" 
+                :alt="authStore.user.name || 'User'"
+                class="user-avatar"
+              />
+              <div v-else class="user-avatar-placeholder">
+                {{ (authStore.user?.name || authStore.user?.email || 'U')[0].toUpperCase() }}
+              </div>
+              <span class="user-name">{{ authStore.user?.name || authStore.user?.email }}</span>
+              <button class="logout-button" @click="handleLogout" title="Sign Out">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
+            </div>
+          </template>
         </div>
       </div>
     </header>
+
+    <!-- Auth Modal -->
+    <AuthModal 
+      :is-open="showAuthModal"
+      :default-tab="authModalTab"
+      @close="closeAuthModal"
+      @success="handleAuthSuccess"
+    />
 
     <section
       class="ticker-bar-section"
@@ -366,6 +421,92 @@ function handleImageError(event) {
   flex-shrink: 0;
 }
 
+/* Auth Buttons */
+.auth-button {
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.auth-button.sign-in {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-button.sign-in:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.auth-button.sign-up {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+}
+
+.auth-button.sign-up:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* User Menu */
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar,
+.user-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar-placeholder {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.user-name {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-button {
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
 /* Ticker Bar Section - spacing after header */
 .ticker-bar-section {
   max-width: 900px;
@@ -400,6 +541,15 @@ function handleImageError(event) {
 
   .ticker-bar-section {
     margin-top: 1.25rem;
+  }
+
+  .auth-button {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .user-name {
+    display: none; /* Hide name on tablet */
   }
 }
 

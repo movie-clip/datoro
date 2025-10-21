@@ -18,15 +18,65 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  ipAddress String   @unique @map("ip_address")
+  
+  // Authentication fields
+  email     String?  @unique
+  password  String?  // bcrypt hash (null for OAuth-only users)
+  emailVerified Boolean @default(false) @map("email_verified")
+  
+  // OAuth fields
+  googleId  String?  @unique @map("google_id")
+  avatarUrl String?  @map("avatar_url")
+  
+  // User profile
+  name      String?
+  
+  // Subscription fields
+  subscriptionTier String @default("free") @map("subscription_tier") // free, premium, enterprise
+  subscriptionStatus String @default("active") @map("subscription_status") // active, canceled, expired
+  subscriptionEndsAt DateTime? @map("subscription_ends_at")
+  stripeCustomerId String? @unique @map("stripe_customer_id")
+  stripeSubscriptionId String? @unique @map("stripe_subscription_id")
+  
+  // Legacy tracking fields (for backwards compatibility)
+  ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
+  
+  // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  lastLoginAt DateTime? @map("last_login_at")
 
   searches    Search[]
   apiRequests ApiRequest[]
+  sessions    Session[]
 
+  @@index([email])
+  @@index([googleId])
+  @@index([subscriptionTier])
+  @@index([subscriptionStatus])
   @@map("users")
+}
+
+// ============================================
+// Session Management (JWT alternative for security)
+// ============================================
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique // hashed session token
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
 }
 
 // ============================================

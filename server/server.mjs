@@ -4,6 +4,7 @@
 import express from 'express'
 import compression from 'compression'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import fetch from 'node-fetch'
 import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
@@ -11,6 +12,7 @@ import { dirname, join } from 'path'
 import { getCacheService, CacheTTL } from './services/cacheService.js'
 import { getMonitoringService } from './services/monitoringService.js'
 import * as sentryService from './services/sentryService.js'
+import authRoutes from './routes/authRoutes.js'
 import { 
   validate,
   validateProfile,
@@ -126,6 +128,7 @@ app.use(cors({
   optionsSuccessStatus: 204
 }))
 app.use(express.json())
+app.use(cookieParser()) // Parse cookies for session management
 
 // Speed limiter (slows down heavy users)
 app.use(speedLimiter)
@@ -157,6 +160,11 @@ async function fetchWithDeduplication(key, fetchFn) {
     inFlightRequests.delete(key)
   }
 }
+
+// ============================================
+// Authentication Routes
+// ============================================
+app.use('/api/auth', authRoutes)
 
 // Apply rate limiting to FMP endpoints
 app.use('/api/fmp', fmpLimiter, async (req, res) => {
