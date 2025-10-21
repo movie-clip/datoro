@@ -112,6 +112,13 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
     
+    // In development, allow any origin (localhost, local network IPs, etc.)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[CORS] Allowing development origin: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // In production, check allowed origins
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -1077,8 +1084,9 @@ app.use(sentryService.errorHandler())
 // Global error handler with monitoring (must be last)
 app.use(errorHandler(monitoring))
 
-const server = app.listen(PORT, async () => {
-  console.log(`FMP Proxy Server listening on http://localhost:${PORT}`)
+const server = app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`FMP Proxy Server listening on http://0.0.0.0:${PORT}`)
+  console.log(`Access from network: http://<your-pc-ip>:${PORT}`)
   console.log(`CORS allowed origin: ${DEV_ORIGIN}`)
   console.log(`FMP API: ${FMP_API_KEY ? 'ENABLED' : 'DISABLED (set FMP_API_KEY)'}`)
   

@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: [vue()],
 
     server: {
-      host: 'localhost',
+      host: '0.0.0.0', // Allow access from local network (iPhone, etc.)
       port: 5173,
       
       // Performance optimizations for dev server

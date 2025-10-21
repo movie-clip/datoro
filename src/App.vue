@@ -434,18 +434,27 @@ function handleLogout() {
 
 .auth-button.sign-in {
   background: transparent;
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #E5E5E5;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .auth-button.sign-in:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 168, 142, 0.1);
+  border-color: rgba(0, 168, 142, 0.3);
+  color: #00A88E;
+  transform: translateY(-1px);
 }
 
 .auth-button.sign-up {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #00594C 0%, #00755F 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 89, 76, 0.2);
+}
+
+.auth-button.sign-up:hover {
+  background: linear-gradient(135deg, #00755F 0%, #00A88E 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 89, 76, 0.4);
 }
 
 .auth-button.sign-up:hover {
@@ -458,6 +467,16 @@ function handleLogout() {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(0, 89, 76, 0.05);
+  border: 1px solid rgba(0, 89, 76, 0.15);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.user-menu:hover {
+  background: rgba(0, 89, 76, 0.08);
+  border-color: rgba(0, 89, 76, 0.25);
 }
 
 .user-avatar,
@@ -466,20 +485,22 @@ function handleLogout() {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid rgba(0, 168, 142, 0.2);
 }
 
 .user-avatar-placeholder {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #00594C 0%, #00755F 100%);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 89, 76, 0.2);
 }
 
 .user-name {
-  color: #fff;
+  color: #E5E5E5;
   font-size: 0.9rem;
   font-weight: 500;
   max-width: 150px;
@@ -491,7 +512,7 @@ function handleLogout() {
 .logout-button {
   padding: 0.5rem;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   color: #888;
   cursor: pointer;
@@ -502,9 +523,10 @@ function handleLogout() {
 }
 
 .logout-button:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  transform: translateY(-1px);
 }
 
 /* Ticker Bar Section - spacing after header */

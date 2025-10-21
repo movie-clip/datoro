@@ -254,8 +254,9 @@ if (typeof window !== 'undefined') {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -274,16 +275,22 @@ if (typeof window !== 'undefined') {
 }
 
 .auth-modal {
-  background: #1a1a1d;
-  border-radius: 16px;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 12px;
   padding: 2rem;
   max-width: 440px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 89, 76, 0.2), 0 0 0 1px rgba(0, 89, 76, 0.1);
   animation: slideUp 0.3s ease-out;
+  transition: border-color 0.3s ease;
+}
+
+.auth-modal:hover {
+  border-color: rgba(0, 89, 76, 0.4);
 }
 
 @keyframes slideUp {
@@ -302,7 +309,7 @@ if (typeof window !== 'undefined') {
   top: 1rem;
   right: 1rem;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: #888;
   cursor: pointer;
   padding: 0.5rem;
@@ -311,15 +318,17 @@ if (typeof window !== 'undefined') {
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: rgba(0, 89, 76, 0.1);
+  border-color: rgba(0, 89, 76, 0.3);
+  color: #00A88E;
 }
 
 .auth-tabs {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 2rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   padding: 0.25rem;
 }
@@ -337,9 +346,15 @@ if (typeof window !== 'undefined') {
   transition: all 0.2s;
 }
 
+.auth-tabs .tab:hover:not(.active) {
+  background: rgba(0, 168, 142, 0.05);
+  color: #00A88E;
+}
+
 .auth-tabs .tab.active {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #00594C 0%, #00755F 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 89, 76, 0.3);
 }
 
 .auth-form h2 {
@@ -379,8 +394,9 @@ if (typeof window !== 'undefined') {
 
 .form-group input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #00A88E;
   background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(0, 168, 142, 0.1);
 }
 
 .hint {
@@ -403,7 +419,7 @@ if (typeof window !== 'undefined') {
 .submit-button {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #00594C 0%, #00755F 100%);
   border: none;
   border-radius: 8px;
   color: #fff;
@@ -411,11 +427,13 @@ if (typeof window !== 'undefined') {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 89, 76, 0.2);
 }
 
 .submit-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 89, 76, 0.4);
+  background: linear-gradient(135deg, #00755F 0%, #00A88E 100%);
 }
 
 .submit-button:disabled {
@@ -436,12 +454,12 @@ if (typeof window !== 'undefined') {
   left: 0;
   right: 0;
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
 .divider span {
   position: relative;
-  background: #1a1a1d;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
   padding: 0 1rem;
   color: #666;
   font-size: 0.85rem;
@@ -451,7 +469,7 @@ if (typeof window !== 'undefined') {
   width: 100%;
   padding: 0.875rem;
   background: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   color: #333;
   font-size: 0.95rem;
@@ -466,7 +484,9 @@ if (typeof window !== 'undefined') {
 
 .google-button:hover:not(:disabled) {
   background: #f9f9f9;
-  border-color: #ccc;
+  border-color: rgba(0, 168, 142, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .google-button:disabled {
@@ -483,11 +503,13 @@ if (typeof window !== 'undefined') {
 }
 
 .terms a {
-  color: #3b82f6;
+  color: #00A88E;
   text-decoration: none;
+  transition: color 0.2s;
 }
 
 .terms a:hover {
+  color: #00C9A7;
   text-decoration: underline;
 }
 
