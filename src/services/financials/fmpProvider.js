@@ -3,9 +3,8 @@
 // https://site.financialmodelingprep.com/developer/docs/
 
 import { handleServiceError } from '../shared.js'
+import { API_BASE_URL } from '../../utils/apiConfig.js'
 
-// Get API base URL from environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 const BASE = `${API_BASE_URL}/api/fmp/api/v3`
 
 async function getValuation(ticker) {

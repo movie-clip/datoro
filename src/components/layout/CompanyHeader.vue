@@ -44,9 +44,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-
-// Get API base URL from environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+import { API_BASE_URL } from '../../utils/apiConfig.js'
 
 const props = defineProps({
   ticker: { type: String, required: true }

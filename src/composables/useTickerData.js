@@ -3,9 +3,7 @@
 // Replaces 30+ individual API calls with 1 batch request
 
 import { ref, watch, computed } from 'vue'
-
-// Get API base URL from environment variable or fallback to relative URL for dev
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+import { API_BASE_URL } from '../utils/apiConfig.js'
 
 const cache = new Map() // Client-side cache for instant navigation
 
