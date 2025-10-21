@@ -1,17 +1,23 @@
-# Render.com Blueprint Configuration
-# This file defines all services, databases, and environment variables
-# Render will auto-deploy from this configuration when connected to GitHub
+# ==============================================
+# Render.com Deployment Configuration
+# ==============================================
+# This blueprint defines all services for automated deployment
+# Connect to GitHub and Render will auto-deploy from this file
 
 services:
-  # Backend API Server
+  # ==============================================
+  # Backend API Server (Node.js + PM2)
+  # ==============================================
   - type: web
     name: factorly-api
     runtime: node
-    region: oregon # or frankfurt, singapore (choose closest to users)
-    plan: free # free tier (sleeps after 15min inactivity) - upgrade to starter ($7/mo) for 24/7
-    buildCommand: npm install && npx prisma generate
+    region: frankfurt # Choose: oregon, frankfurt, singapore (closest to users)
+    plan: free # FREE: sleeps after 15min inactivity | STARTER ($7/mo): 24/7 uptime
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
     startCommand: node server/server.mjs
     healthCheckPath: /api/health
+    
+    # Only rebuild backend when these files change
     buildFilter:
       paths:
         - server/**
@@ -22,48 +28,72 @@ services:
         - src/**
         - public/**
         - "*.md"
+    
+    # Environment Variables
     envVars:
       - key: NODE_ENV
         value: production
+      
       - key: PORT
         value: 7071
+      
+      # REQUIRED: Set manually in Render dashboard
       - key: FMP_API_KEY
-        sync: false # Set manually in Render dashboard
+        sync: false
+      
+      # Auto-populated from database service
       - key: DATABASE_URL
         fromDatabase:
           name: factorly-db
           property: connectionString
+      
+      # Auto-populated from Redis service
       - key: REDIS_URL
         fromService:
           name: factorly-redis
           type: keyvalue
           property: connectionString
+      
+      # OPTIONAL: Set manually if using Sentry
       - key: SENTRY_DSN
-        sync: false # Optional - set manually if using Sentry
+        sync: false
+      
+      # OPTIONAL: Set manually if using AI features
       - key: VITE_OPENAI_API_KEY
-        sync: false # Optional - set manually if using AI features
+        sync: false
+      
       - key: VITE_AI_PROVIDER
         value: openai
+      
+      # CORS: Allow frontend domain(s)
+      # For multiple origins: https://domain1.com,https://domain2.com
       - key: ALLOWED_ORIGINS
         value: https://factorly.onrender.com
+      
       - key: DEV_ORIGIN
         value: https://factorly.onrender.com
 
-  # Redis Cache (Key Value Instance)
+  # ==============================================
+  # Redis Cache (Key-Value Store)
+  # ==============================================
   - type: keyvalue
     name: factorly-redis
     region: oregon
-    plan: free # 25MB free
-    maxmemoryPolicy: allkeys-lru # Evict least recently used keys when full
-    ipAllowList: [] # Empty = allow all (Render services auto-allowed)
+    plan: free # FREE: 25MB storage
+    maxmemoryPolicy: allkeys-lru # Auto-evict least recently used keys when full
+    ipAllowList: [] # Empty = allow all Render services
 
-  # Frontend Static Site
+  # ==============================================
+  # Frontend Static Site (Vue 3 + Vite)
+  # ==============================================
   - type: web
     name: factorly
     runtime: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    pullRequestPreviewsEnabled: true # Preview PRs before merging
+    pullRequestPreviewsEnabled: true # Auto-preview pull requests
+    
+    # Only rebuild frontend when these files change
     buildFilter:
       paths:
         - src/**
@@ -76,26 +106,68 @@ services:
         - server/**
         - prisma/**
         - "*.md"
+    
+    # HTTP Headers
     headers:
+      # Cache static assets for 1 hour
       - path: /*
         name: Cache-Control
-        value: public, max-age=3600 # Cache static assets for 1 hour
+        value: public, max-age=3600
+      
+      # Content Security Policy
       - path: /*
         name: Content-Security-Policy
         value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://factorly-api.onrender.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
+    
+    # SPA routing: redirect all routes to index.html
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
+    
+    # Environment Variables (build-time)
     envVars:
+      # REQUIRED: Backend API URL
       - key: VITE_API_BASE_URL
         value: https://factorly-api.onrender.com
+      
+      # OPTIONAL: AI provider (if using AI features)
+      # - key: VITE_AI_PROVIDER
+      #   value: openai
 
+# ==============================================
 # PostgreSQL Database
+# ==============================================
 databases:
   - name: factorly-db
     databaseName: financeview
     user: financeview
-    plan: free # 90 days free, then $7/month
+    plan: free # FREE: 90 days trial, then $7/month
     region: oregon
-    ipAllowList: [] # Empty = allow all (Render services auto-allowed)
+    ipAllowList: [] # Empty = allow all Render services
+
+# ==============================================
+# DEPLOYMENT CHECKLIST
+# ==============================================
+# After blueprint is deployed:
+#
+# 1. Set required secrets in Render dashboard:
+#    - FMP_API_KEY (get from financialmodelingprep.com)
+#
+# 2. Optional: Set AI secrets if using AI features:
+#    - VITE_OPENAI_API_KEY (for OpenAI integration)
+#
+# 3. Optional: Set monitoring if using Sentry:
+#    - SENTRY_DSN (for error tracking)
+#
+# 4. Update ALLOWED_ORIGINS if using custom domain:
+#    - Add your production domain(s)
+#    - Add www subdomain if needed
+#
+# 5. Update frontend VITE_API_BASE_URL:
+#    - Change to your custom backend domain if not using default
+#
+# 6. Update CSP header in frontend headers:
+#    - Update connect-src with your backend domain
+#
+# For detailed deployment guide, see: DEPLOYMENT_CHECKLIST.md

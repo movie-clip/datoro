@@ -27,6 +27,7 @@
         </button>
       </div>
       <VChart
+        v-if="isMounted && modalOption.series?.length"
         class="echart-modal"
         :option="modalOption"
         :class="{ 'loading-chart': loading }"
@@ -79,7 +80,7 @@
         variant="chart"
       />
       <VChart 
-        v-else
+        v-else-if="isMounted && option.series?.length"
         class="echart" 
         :class="{ 'clickable': !isModal, 'loading-chart': loading }" 
         :option="option" 
@@ -188,12 +189,19 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onBeforeUnmount } from 'vue'
 import VChart from 'vue-echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 import { calculateGrowthRates, formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator.js'
 import { getCachedGrowthRates } from '../../services/financials/growthService.js'
+
+// Track if component is mounted to prevent updates after unmount
+const isMounted = ref(true)
+
+onBeforeUnmount(() => {
+  isMounted.value = false
+})
 
 const props = defineProps({
   title:      { type: String, default: '' },

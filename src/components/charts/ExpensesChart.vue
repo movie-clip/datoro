@@ -1,6 +1,5 @@
 <template>
   <BaseChart
-    :key="`expenses-${tickerStore.currentTicker}`"
     :title="title"
     :series="series"
     :compact-series="compactSeries"

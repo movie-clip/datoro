@@ -11,7 +11,6 @@
     </div>
     <BaseChart
       v-else
-      :key="`netincome-${tickerStore.currentTicker}`"
       v-model:period="period"
       :title="title"
       :series="series"

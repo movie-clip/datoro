@@ -12,7 +12,6 @@
     </div>
     <BaseChart
       v-else
-      :key="`fcf-${tickerStore.currentTicker}`"
       v-model:view-mode="viewMode"
       :title="title"
       :series="series"

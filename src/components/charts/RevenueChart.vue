@@ -12,7 +12,6 @@
     </div>
     <BaseChart
       v-else
-      :key="`revenue-${tickerStore.currentTicker}`"
       :title="title"
       :series="series"
       :compact-series="compactSeries"

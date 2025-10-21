@@ -97,7 +97,7 @@ export function getValuationFromBatch(batchData) {
  * Replaces 3 API calls with data from batch endpoint
  */
 export function getCashFlowFactsFromBatch(batchData) {
-  const out = { fcfYield: '—', fcfYieldAdjSBC: '—', sbcImpact: '—' }
+  const out = { fcfYield: '—', fcfYieldAdjSBC: '—', fcfYieldAdjSBCRaw: null, sbcImpact: '—' }
   
   if (!batchData?.data) return out
   
@@ -130,6 +130,7 @@ export function getCashFlowFactsFromBatch(batchData) {
       
       out.fcfYield = fcfYieldValue.toFixed(2) + '%'
       out.fcfYieldAdjSBC = fcfYieldAdjSBCValue.toFixed(2) + '%'
+      out.fcfYieldAdjSBCRaw = fcfYieldAdjSBCValue  // Store raw numeric value for color coding
       
       // Calculate SBC Impact as percentage difference
       if (fcfYieldValue !== 0) {

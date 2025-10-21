@@ -1,3 +1,19 @@
+/* CSS Color Variables - Centralized color system */
+:root {
+  /* Brand colors (Aston Martin inspired) */
+  --color-brand-primary: #00A88E;
+  --color-brand-primary-dark: #00594C;
+  --color-brand-primary-light: #00755F;
+  
+  /* Status colors */
+  --color-success: #00A88E;
+  --color-warning: #F59E0B;
+  --color-danger: #ef4444;
+  
+  /* Neutral colors */
+  --color-grey: #aaa;
+}
+
 /* Reset and base styles */
 *, *::before, *::after {
   box-sizing: border-box;

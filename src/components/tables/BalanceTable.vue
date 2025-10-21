@@ -28,6 +28,7 @@ import { getBalanceFromBatch } from '../../services/financials/batchTableService
 import { useIsMobile } from '../../composables/useIsMobile'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
+import { COLORS } from '../../utils/colors.js'
 
 // Import chart components
 import CashDebtChart from '../charts/CashDebtChart.vue'
@@ -86,8 +87,8 @@ const getCashAndDebt = (batchData) => {
 
 const rows = computed(() => {
   const colorMap = {
-    green: '#00A88E',
-    red: '#ef4444',
+    green: COLORS.status.success,
+    red: COLORS.status.danger,
     grey: '#aaa'
   }
   

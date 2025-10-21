@@ -143,3 +143,48 @@ This project uses GitHub Actions for automated testing and deployment.
 npm run build
 npm run preview
 ```
+
+## 📚 Documentation
+
+### Getting Started
+- **[Quick Start Guide](#quick-start)** - Start development in minutes
+- **[Setup & Development](#setup--development)** - Detailed setup instructions
+- **[Environment Variables](./ENVIRONMENT_VARIABLES.md)** - Complete reference of all env vars
+
+### Deployment
+- **[Deployment Guide](./DEPLOYMENT.md)** - Step-by-step deployment to Render.com or other platforms
+- **[Deployment Checklist](./DEPLOYMENT_CHECKLIST.md)** - Pre/post deployment verification
+- **[PM2 Guide](./PM2_GUIDE.md)** - Production process management with PM2
+
+### Configuration
+- **[Ollama Setup](./docs/OLLAMA_SETUP.md)** - Run AI analysis locally for free
+- **[CI/CD Setup](./docs/cicd/README.md)** - GitHub Actions configuration
+- **[render.yaml](./render.yaml)** - Render.com blueprint configuration
+
+### Development
+- **[Project Structure](#project-structure)** - Code organization
+- **[Architecture](./IMPROVEMENT_RECOMMENDATIONS.md)** - System design and improvements
+- **[Color System](./docs/COLORS.md)** - Centralized color management for consistent styling
+
+## Environment Variables
+
+Quick reference of key environment variables:
+
+```bash
+# Required (in .env.local)
+FMP_API_KEY=your_fmp_key_here
+
+# Recommended for production (in .env.local)
+REDIS_URL=redis://...
+SENTRY_DSN=https://...@sentry.io/...
+
+# Optional AI features (in .env.local)
+VITE_AI_PROVIDER=openai
+VITE_OPENAI_API_KEY=sk-...
+
+# Production frontend (set in hosting platform)
+VITE_API_BASE_URL=https://your-backend-api.com
+```
+
+📖 See [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) for complete reference.
+
