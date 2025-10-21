@@ -57,13 +57,6 @@ services:
       - key: SENTRY_DSN
         sync: false
       
-      # OPTIONAL: Set manually if using AI features
-      - key: VITE_OPENAI_API_KEY
-        sync: false
-      
-      - key: VITE_AI_PROVIDER
-        value: openai
-      
       # CORS: Allow frontend domain(s)
       # For multiple origins: https://domain1.com,https://domain2.com
       - key: ALLOWED_ORIGINS
@@ -128,10 +121,6 @@ services:
       # REQUIRED: Backend API URL
       - key: VITE_API_BASE_URL
         value: https://factorly-api.onrender.com
-      
-      # OPTIONAL: AI provider (if using AI features)
-      # - key: VITE_AI_PROVIDER
-      #   value: openai
 
 # ==============================================
 # PostgreSQL Database
@@ -151,20 +140,21 @@ databases:
 # 1. Set required secrets in Render dashboard:
 #    - FMP_API_KEY (get from financialmodelingprep.com)
 #
-# 2. Optional: Set AI secrets if using AI features:
-#    - VITE_OPENAI_API_KEY (for OpenAI integration)
-#
-# 3. Optional: Set monitoring if using Sentry:
+# 2. Optional: Set monitoring if using Sentry:
 #    - SENTRY_DSN (for error tracking)
 #
-# 4. Update ALLOWED_ORIGINS if using custom domain:
+# 3. Update ALLOWED_ORIGINS if using custom domain:
 #    - Add your production domain(s)
 #    - Add www subdomain if needed
 #
-# 5. Update frontend VITE_API_BASE_URL:
+# 4. Update frontend VITE_API_BASE_URL:
 #    - Change to your custom backend domain if not using default
 #
-# 6. Update CSP header in frontend headers:
+# 5. Update CSP header in frontend headers:
 #    - Update connect-src with your backend domain
 #
+# Note: AI insights are pre-generated and served as static JSON files
+#       No API keys needed for AI features in production
+#
 # For detailed deployment guide, see: DEPLOYMENT_CHECKLIST.md
+
