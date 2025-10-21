@@ -1,27 +1,41 @@
 # AI Analysis Service
 
 ## Overview
-This service provides AI-powered financial analysis for companies using either OpenAI's GPT-4o-mini or local Ollama models.
+This service loads pre-generated AI analysis from static JSON files. AI insights are generated locally using `scripts/generate-ai-insights.mjs` and stored in `public/ai-insights/{ticker}.json`.
+
+## Benefits
+- **Zero API costs**: No OpenAI/Ollama API calls at runtime
+- **Fast loading**: Static files served from CDN
+- **Predictable quality**: Pre-reviewed insights
+- **No rate limits**: Unlimited concurrent users
 
 ## Response Format
-All AI responses follow a structured JSON format for consistency and easy formatting:
+All AI insights follow a structured JSON format:
 
 ```json
-[
-  {
-    "title": "Short Title (2-5 words)",
-    "description": "1-2 sentence description"
-  },
-  {
-    "title": "Another Title",
-    "description": "Another description"
-  }
-]
+{
+  "ticker": "AAPL",
+  "companyName": "Apple Inc.",
+  "generated": "2025-01-15T10:30:00.000Z",
+  "version": "1.0",
+  "advantages": [
+    {
+      "title": "Brand Loyalty",
+      "description": "Apple has cultivated exceptional brand loyalty with a retention rate above 90%."
+    }
+  ],
+  "risks": [
+    {
+      "title": "China Dependence",
+      "description": "Over 20% of revenue from China creates geopolitical and economic risk."
+    }
+  ]
+}
 ```
 
 ## Analysis Types
 
-### Competitive Advantages (`advantages`)
+### Competitive Advantages
 Analyzes the company's competitive moats and strengths:
 - Brand loyalty and strength
 - Market position
@@ -30,7 +44,7 @@ Analyzes the company's competitive moats and strengths:
 - Switching costs
 - Unique assets
 
-### Investment Risks (`risks`)
+### Investment Risks
 Analyzes key risks to consider:
 - Competition
 - Regulatory concerns
@@ -39,61 +53,31 @@ Analyzes key risks to consider:
 - Cyclicality
 - Valuation concerns
 
-## Prompt Configuration
+## Generating Insights
 
-All prompts are centrally managed in `prompts.js`:
-- **SYSTEM_PROMPTS**: Contains the system prompts for each analysis type
-- **parseAIResponse()**: Parses raw AI responses and validates JSON structure
-
-### Modifying Prompts
-
-To customize the analysis:
-
-1. Edit `src/services/ai/prompts.js`
-2. Modify the `SYSTEM_PROMPTS` object
-3. Ensure the prompt instructs the AI to return JSON format
-4. Keep the example format in the prompt for consistency
-
-Example:
-```javascript
-export const SYSTEM_PROMPTS = {
-  advantages: `You are a financial analyst...
-  
-  Return ONLY a JSON array of objects with "title" and "description" fields.
-  ...
-  `
-}
+### Single Ticker
+```bash
+node scripts/generate-ai-insights.mjs AAPL
 ```
 
-## Response Parsing
+### Multiple Tickers
+```bash
+node scripts/generate-ai-insights.mjs AAPL MSFT GOOGL
+```
 
-The `parseAIResponse()` function:
-1. Extracts JSON array from the response (handles extra text)
-2. Validates array structure
-3. Validates each item has `title` and `description`
-4. Falls back to plain text format if parsing fails
+### Test Portfolio
+```bash
+node scripts/generate-ai-insights.mjs AAPL MSFT AMZN GOOGL CRM ASML TSM DUOL SPGI MSCI
+```
 
-## Caching
-
-Responses are cached in localStorage for 30 days:
-- Cache key format: `ai_analysis_{type}_{ticker}`
-- Cache includes timestamp for expiry calculation
-- Use refresh button to clear cache and re-fetch
-
-## Configuration
-
-See `.env.local` for configuration options:
-- `VITE_AI_PROVIDER`: `openai` or `ollama`
-- `VITE_OPENAI_API_KEY`: OpenAI API key (if using OpenAI)
-- `VITE_OLLAMA_BASE_URL`: Ollama server URL (default: `http://localhost:11434`)
-- `VITE_OLLAMA_MODEL`: Ollama model name (default: `llama3.2`)
+See `scripts/generate-ai-insights.mjs` for generation details.
 
 ## Usage Example
 
 ```javascript
 import { getCompetitiveAdvantages, getInvestmentRisks } from './ai/chatgptService'
 
-// Fetch competitive advantages
+// Fetch competitive advantages from static JSON
 const result = await getCompetitiveAdvantages('AAPL', 'Apple Inc.')
 
 // Result structure:
@@ -103,21 +87,37 @@ const result = await getCompetitiveAdvantages('AAPL', 'Apple Inc.')
     data: [
       { title: "Brand Loyalty", description: "..." },
       { title: "Ecosystem Lock-in", description: "..." }
-    ],
-    error: null
+    ]
   },
   error: null,
-  cached: false,
-  provider: 'ollama'
+  cached: true  // All static files are considered "cached"
 }
+```
+
+## File Structure
+
+```
+public/
+  ai-insights/
+    aapl.json          # Apple insights
+    msft.json          # Microsoft insights
+    ...
+  ai-insights.json     # Index of all available insights
 ```
 
 ## Error Handling
 
-- Network errors: Displays connection error message
-- API errors: Shows API-specific error details
-- Parse errors: Falls back to plain text display
-- Missing config: Shows configuration error
+- Missing file: Shows "AI insights not available for {TICKER}"
+- Invalid JSON: Shows parse error with details
+- Network errors: Shows connection error message
+
+## Migrating to Static Approach
+
+If you previously used OpenAI/Ollama API:
+1. Generate insights: `node scripts/generate-ai-insights.mjs {TICKERS}`
+2. Review generated JSON files in `public/ai-insights/`
+3. Deploy with static files
+4. No API keys or configuration needed!
 
 ## Best Practices
 

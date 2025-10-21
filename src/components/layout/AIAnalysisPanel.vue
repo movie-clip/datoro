@@ -2,14 +2,6 @@
   <section class="analysis-panel panel">
     <div class="analysis-header">
       <h3>{{ title }}</h3>
-      <button 
-        v-if="!loading && data" 
-        class="refresh-btn" 
-        title="Refresh analysis"
-        @click="refresh"
-      >
-        ↻
-      </button>
     </div>
     
     <div
@@ -17,7 +9,7 @@
       class="loading"
     >
       <div class="loading-spinner" />
-      <p>Analyzing...</p>
+      <p>Loading...</p>
     </div>
     
     <div
@@ -25,12 +17,6 @@
       class="error"
     >
       <p>{{ error }}</p>
-      <button
-        class="retry-btn"
-        @click="refresh"
-      >
-        Try Again
-      </button>
     </div>
     
     <div
@@ -41,29 +27,13 @@
         class="analysis-text"
         v-html="formattedData"
       />
-      <div class="footer-info">
-        <div
-          v-if="cached"
-          class="cache-indicator"
-          title="Loaded from cache"
-        >
-          📌 Cached (expires in {{ daysUntilExpiry }} days)
-        </div>
-        <div
-          v-if="provider"
-          class="provider-indicator"
-          :title="`Using ${provider === 'ollama' ? 'local Ollama' : 'OpenAI API'}`"
-        >
-          🤖 {{ provider === 'ollama' ? 'Ollama' : 'OpenAI' }}
-        </div>
-      </div>
     </div>
     
     <div
       v-else
       class="empty"
     >
-      <p>AI analysis temporarily disabled</p>
+      <p>No analysis available</p>
     </div>
   </section>
 </template>
@@ -72,8 +42,8 @@
 import { ref, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
-// AI insights from static JSON files (zero cost, fast CDN delivery)
-import { getCompetitiveAdvantages, getInvestmentRisks } from '../../services/ai/staticInsightsService'
+// AI insights from static JSON files (pre-generated locally)
+import { getCompetitiveAdvantages, getInvestmentRisks } from '../../services/ai/insightsService'
 
 const props = defineProps({
   companyName: { type: String, default: '' },
@@ -86,8 +56,6 @@ const { currentTicker } = storeToRefs(tickerStore)
 const data = ref(null)
 const loading = ref(false)
 const error = ref(null)
-const cached = ref(false)
-const provider = ref(null)
 
 const title = computed(() => 
   props.type === 'advantages' ? 'Competitive Advantages' : 'Investment Risks'
@@ -96,8 +64,9 @@ const title = computed(() =>
 const formattedData = computed(() => {
   if (!data.value) return ''
   
-  // Handle new JSON format: array of {title, description}
-  if (data.value.success !== false && Array.isArray(data.value.data)) {
+  // Handle JSON format: array of {title, description}
+  // This includes both success=true (real insights) and success=false (friendly messages)
+  if (Array.isArray(data.value.data)) {
     return data.value.data
       .map(item => {
         const title = item.title ? `<strong>${item.title}:</strong>` : ''
@@ -107,104 +76,37 @@ const formattedData = computed(() => {
       .join('')
   }
   
-  // Fallback for old format (plain text with bullet points)
-  const text = typeof data.value === 'string' ? data.value : data.value.data?.[0]?.description || ''
-  return text
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .map(line => {
-      // Handle bullet points
-      if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
-        return `<div class="bullet-point">${line.substring(1).trim()}</div>`
-      }
-      return `<div class="bullet-point">${line}</div>`
-    })
-    .join('')
+  return ''
 })
 
-const daysUntilExpiry = computed(() => {
-  // Simple calculation - actual expiry is tracked in localStorage
-  return 30
-})
-
-// AI feature temporarily disabled - parameter marked as unused
-// eslint-disable-next-line no-unused-vars
-async function fetchAnalysis(_clearCache = false) {
-  // AI feature disabled - show message without making API call
+async function fetchAnalysis() {
   const t = (currentTicker.value || '').trim().toUpperCase()
   if (!t) {
     return
   }
   
-  // Set a friendly disabled message
-  loading.value = false
+  loading.value = true
   error.value = null
   data.value = null
-  cached.value = false
-  
-  // Show disabled message instead of making API call
-  // Uncomment the code below to re-enable AI features:
-  
-  // loading.value = true
-  // error.value = null
-  // data.value = null
-  // cached.value = false
-  
-  // Wait for company name to be available (max 3 seconds)
-  let company = props.companyName
-  if (!company) {
-    console.log(`[AI] Waiting for company name for ${t}...`)
-    for (let i = 0; i < 30; i++) {
-      await new Promise(resolve => setTimeout(resolve, 100))
-      if (props.companyName) {
-        company = props.companyName
-        console.log(`[AI] Got company name: ${company}`)
-        break
-      }
-    }
-  }
   
   try {
     const fetchFn = props.type === 'advantages' ? getCompetitiveAdvantages : getInvestmentRisks
-  const result = await fetchFn(t, company || t, _clearCache)
+    const result = await fetchFn(t, props.companyName || t)
     
     if (result.error) {
-      // Check if it's an API key error and show a friendly message
-      const errorMsg = result.error
-      if (errorMsg.includes('API key not configured') || errorMsg.includes('401')) {
-        error.value = 'AI analysis requires an API key to be configured. This feature is optional.'
-      } else {
-        error.value = result.error
-      }
-      provider.value = result.provider
+      error.value = result.error
     } else {
-      // Store the entire result object (includes parsed data)
       data.value = result.data
-      cached.value = result.cached || false
-      provider.value = result.provider
     }
   } catch (e) {
-    const errorMsg = e.message || 'Failed to load analysis'
-    // Check if it's an API key error
-    if (errorMsg.includes('API key not configured') || errorMsg.includes('401')) {
-      error.value = 'AI analysis requires an API key to be configured. This feature is optional.'
-    } else {
-      error.value = errorMsg
-    }
+    error.value = e.message || 'Failed to load analysis'
   } finally {
     loading.value = false
   }
-  
 }
 
-// Manual refresh - clears cache and fetches fresh
-async function refresh() {
-  await fetchAnalysis(true)
-}
-
-// Auto-refresh when ticker changes - uses cache
-watch(currentTicker, () => fetchAnalysis(false), { immediate: true })
+// Auto-load when ticker changes
+watch(currentTicker, () => fetchAnalysis(), { immediate: true })
 </script>
 
 <style scoped>
@@ -233,26 +135,6 @@ watch(currentTicker, () => fetchAnalysis(false), { immediate: true })
   font-size: 16px;
   font-weight: 600;
   color: #fff;
-}
-
-.refresh-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ddd;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.refresh-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .loading {
@@ -286,21 +168,6 @@ watch(currentTicker, () => fetchAnalysis(false), { immediate: true })
   justify-content: center;
   color: #ff6a6a;
   gap: 12px;
-}
-
-.retry-btn {
-  background: rgba(255, 106, 106, 0.1);
-  border: 1px solid rgba(255, 106, 106, 0.3);
-  color: #ff6a6a;
-  padding: 6px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.retry-btn:hover {
-  background: rgba(255, 106, 106, 0.2);
 }
 
 .content {
@@ -337,30 +204,6 @@ watch(currentTicker, () => fetchAnalysis(false), { immediate: true })
   font-weight: 600;
   display: inline-block;
   margin-right: 4px;
-}
-
-.footer-info {
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.cache-indicator,
-.provider-indicator {
-  font-size: 11px;
-  color: #888;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  cursor: help;
-  white-space: nowrap;
-}
-
-.provider-indicator {
-  background: rgba(74, 158, 255, 0.1);
-  color: #4a9eff;
 }
 
 .empty {

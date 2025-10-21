@@ -64,7 +64,10 @@ export async function getInsights(ticker) {
       provider: bundle[t].provider || 'static'
     }
   } catch (error) {
-    console.error(`Error loading insights for ${t}:`, error)
+    // Don't log "NOT_AVAILABLE" errors - they're expected
+    if (error.message !== 'NOT_AVAILABLE') {
+      console.error(`Error loading insights for ${t}:`, error)
+    }
     throw error
   }
 }
@@ -97,16 +100,27 @@ export async function getCompetitiveAdvantages(ticker, companyName = null, clear
     // Check if it's a "not available" error
     const isNotAvailable = error.message === 'NOT_AVAILABLE' || error.message.includes('Unexpected token')
     
+    // For "not available", show a friendly message instead of an error
+    if (isNotAvailable) {
+      return {
+        data: {
+          success: false,
+          data: [{ 
+            title: 'Not Yet Available', 
+            description: `AI insights are not yet available for ${ticker}`
+          }],
+          error: null
+        },
+        error: null, // No error to display - show the friendly message instead
+        cached: false,
+        provider: 'static'
+      }
+    }
+    
+    // For other errors, return error message
     return {
-      data: {
-        success: false,
-        data: [{ 
-          title: 'Feature Temporarily Unavailable', 
-          description: 'AI insights are currently being generated for this company. Please check back soon or try another ticker.'
-        }],
-        error: isNotAvailable ? 'AI insights not yet available for this ticker' : error.message
-      },
-      error: isNotAvailable ? null : error.message,
+      data: null,
+      error: error.message || 'Failed to load AI insights',
       cached: false,
       provider: 'static'
     }
@@ -141,16 +155,27 @@ export async function getInvestmentRisks(ticker, companyName = null, clearCache 
     // Check if it's a "not available" error
     const isNotAvailable = error.message === 'NOT_AVAILABLE' || error.message.includes('Unexpected token')
     
+    // For "not available", show a friendly message instead of an error
+    if (isNotAvailable) {
+      return {
+        data: {
+          success: false,
+          data: [{ 
+            title: 'Not Yet Available', 
+            description: `AI insights are not yet available for ${ticker}`
+          }],
+          error: null
+        },
+        error: null, // No error to display - show the friendly message instead
+        cached: false,
+        provider: 'static'
+      }
+    }
+    
+    // For other errors, return error message
     return {
-      data: {
-        success: false,
-        data: [{ 
-          title: 'Feature Temporarily Unavailable', 
-          description: 'AI insights are currently being generated for this company. Please check back soon or try another ticker.'
-        }],
-        error: isNotAvailable ? 'AI insights not yet available for this ticker' : error.message
-      },
-      error: isNotAvailable ? null : error.message,
+      data: null,
+      error: error.message || 'Failed to load AI insights',
       cached: false,
       provider: 'static'
     }

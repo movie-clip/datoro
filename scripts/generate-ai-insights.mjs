@@ -1,22 +1,36 @@
 #!/usr/bin/env node
 /**
- * Generate AI insights for S&P 500 companies using your server endpoint
- * Same prompts and API as the web page - ensures identical user experience
+ * Generate AI insights using local AI provider (OpenAI/Ollama)
+ * Saves results as static JSON files for zero-cost deployment
  * 
  * Usage:
  *   node scripts/generate-ai-insights.mjs              # Generate test tickers
  *   node scripts/generate-ai-insights.mjs AAPL MSFT    # Generate specific tickers
+ * 
+ * Configuration (via environment variables):
+ *   AI_PROVIDER=ollama (or openai)
+ *   OPENAI_API_KEY=sk-... (if using openai)
+ *   OLLAMA_BASE_URL=http://localhost:11434 (default)
+ *   OLLAMA_MODEL=llama3.2 (default)
  */
 
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { config } from 'dotenv'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Load environment variables
+config({ path: path.join(__dirname, '..', '.env') })
+config({ path: path.join(__dirname, '..', '.env.local'), override: true })
+
 // Configuration
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:7071'
+const AI_PROVIDER = process.env.AI_PROVIDER || process.env.VITE_AI_PROVIDER || 'ollama'
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || ''
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || process.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434'
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || process.env.VITE_OLLAMA_MODEL || 'llama3.2'
 const OUTPUT_DIR = path.join(__dirname, '../public/ai-insights')
 const VERSION = '1.0'
 
@@ -61,32 +75,93 @@ Return ONLY the JSON array, no other text.`
 }
 
 /**
- * Call server endpoint (same as web page does)
+ * Call AI provider directly (OpenAI or Ollama)
  */
-async function callServerAPI(ticker, companyName, type) {
+async function callAI(ticker, companyName, type) {
+  const systemPrompt = SYSTEM_PROMPTS[type]
+  const userPrompt = `Company: ${companyName} (${ticker})`
+
   try {
-    const response = await fetch(`${SERVER_URL}/api/ai/analysis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ticker,
-        companyName,
-        type,
-        systemPrompt: SYSTEM_PROMPTS[type],
-        clearCache: true // Force fresh generation
+    if (AI_PROVIDER === 'ollama') {
+      const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: OLLAMA_MODEL,
+          prompt: `${systemPrompt}\n\n${userPrompt}`,
+          stream: false,
+          options: { temperature: 0.7, num_predict: 400 }
+        })
       })
-    })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || `HTTP ${response.status}`)
+      if (!response.ok) {
+        throw new Error(`Ollama error: ${response.status}`)
+      }
+
+      const result = await response.json()
+      return result.response
+    } else if (AI_PROVIDER === 'openai') {
+      if (!OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY not configured')
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 400
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(`OpenAI error: ${response.status} - ${error.error?.message || 'Unknown error'}`)
+      }
+
+      const result = await response.json()
+      return result.choices[0].message.content
+    } else {
+      throw new Error(`Unknown AI provider: ${AI_PROVIDER}`)
     }
-
-    const result = await response.json()
-    return result
   } catch (error) {
-    console.error('  ✗ API error:', error.message)
+    console.error('  ✗ AI error:', error.message)
     throw error
+  }
+}
+
+/**
+ * Parse and validate AI response
+ */
+function parseAIResponse(rawResponse) {
+  try {
+    // Try to find complete JSON array
+    const jsonMatch = rawResponse.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) {
+      throw new Error('No JSON array found in response')
+    }
+    
+    const parsed = JSON.parse(jsonMatch[0])
+    
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('Invalid array structure')
+    }
+    
+    if (!parsed.every(item => item.title && item.description)) {
+      throw new Error('Missing title or description')
+    }
+    
+    return parsed
+  } catch (error) {
+    throw new Error(`Parse error: ${error.message}`)
   }
 }
 
@@ -106,26 +181,20 @@ async function generateInsights(ticker, companyName) {
   try {
     // Generate competitive advantages
     console.log('  → Requesting competitive advantages...')
-    const advantagesResult = await callServerAPI(ticker, companyName, 'advantages')
+    const advantagesRaw = await callAI(ticker, companyName, 'advantages')
+    const advantages = parseAIResponse(advantagesRaw)
     
-    if (advantagesResult.error || !advantagesResult.data?.success) {
-      throw new Error(`Advantages failed: ${advantagesResult.error || 'Invalid response'}`)
-    }
-    
-    console.log(`  ✓ Got ${advantagesResult.data.data.length} advantages`)
+    console.log(`  ✓ Got ${advantages.length} advantages`)
     
     // Wait 2 seconds before next request
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     // Generate investment risks
     console.log('  → Requesting investment risks...')
-    const risksResult = await callServerAPI(ticker, companyName, 'risks')
+    const risksRaw = await callAI(ticker, companyName, 'risks')
+    const risks = parseAIResponse(risksRaw)
     
-    if (risksResult.error || !risksResult.data?.success) {
-      throw new Error(`Risks failed: ${risksResult.error || 'Invalid response'}`)
-    }
-    
-    console.log(`  ✓ Got ${risksResult.data.data.length} risks`)
+    console.log(`  ✓ Got ${risks.length} risks`)
 
     // Create insights object
     const insights = {
@@ -133,10 +202,10 @@ async function generateInsights(ticker, companyName) {
       companyName,
       lastUpdated: new Date().toISOString().split('T')[0],
       version: VERSION,
-      provider: advantagesResult.provider || 'unknown',
+      provider: AI_PROVIDER,
       insights: {
-        competitiveAdvantages: advantagesResult.data.data,
-        investmentRisks: risksResult.data.data
+        competitiveAdvantages: advantages,
+        investmentRisks: risks
       }
     }
 
@@ -146,8 +215,8 @@ async function generateInsights(ticker, companyName) {
     await fs.writeFile(filepath, JSON.stringify(insights, null, 2), 'utf8')
     
     console.log(`  ✓ Saved to ${filename}`)
-    console.log(`     Advantages: ${advantagesResult.data.data.length} items`)
-    console.log(`     Risks: ${risksResult.data.data.length} items`)
+    console.log(`     Advantages: ${advantages.length} items`)
+    console.log(`     Risks: ${risks.length} items`)
     
     return { ticker, success: true }
   } catch (error) {
@@ -182,26 +251,32 @@ async function main() {
   const args = process.argv.slice(2)
   
   console.log('🤖 AI Insights Generator')
-  console.log('=' .repeat(50))
-  console.log(`Server: ${SERVER_URL}`)
+  console.log('='.repeat(50))
+  console.log(`AI Provider: ${AI_PROVIDER}`)
   console.log(`Output: ${OUTPUT_DIR}`)
-  console.log('=' .repeat(50))
+  console.log('='.repeat(50))
 
-  // Check server is running
-  try {
-    console.log('\nChecking server connection...')
-    const healthCheck = await fetch(`${SERVER_URL}/api/health`)
-    if (!healthCheck.ok) {
-      throw new Error('Server health check failed')
-    }
-    console.log('✓ Server is running')
-  } catch (error) {
-    console.error(`✗ Cannot connect to server at ${SERVER_URL}`)
-    console.error('  Make sure your server is running:')
-    console.error('  npm run pm2:start')
-    console.error('  or')
-    console.error('  node server/server.mjs')
+  // Check AI provider configuration
+  if (AI_PROVIDER === 'openai' && !OPENAI_API_KEY) {
+    console.error('\n✗ OpenAI API key not configured')
+    console.error('  Set OPENAI_API_KEY or VITE_OPENAI_API_KEY in .env.local')
     process.exit(1)
+  }
+
+  if (AI_PROVIDER === 'ollama') {
+    try {
+      console.log('\nChecking Ollama connection...')
+      const healthCheck = await fetch(`${OLLAMA_BASE_URL}/api/tags`)
+      if (!healthCheck.ok) {
+        throw new Error('Ollama health check failed')
+      }
+      console.log(`✓ Ollama is running (${OLLAMA_MODEL})`)
+    } catch (error) {
+      console.error(`✗ Cannot connect to Ollama at ${OLLAMA_BASE_URL}`)
+      console.error('  Make sure Ollama is running:')
+      console.error('  ollama serve')
+      process.exit(1)
+    }
   }
 
   // Ensure output directory exists

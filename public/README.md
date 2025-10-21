@@ -5,8 +5,8 @@ Pre-generated AI insights served as static files (zero cost, fast delivery).
 ## 🚀 Generate Insights
 
 **Prerequisites:**
-1. Start your server: `npm run pm2:start` (or `node server/server.mjs`)
-2. Ensure your AI provider (ChatGPT/Claude/etc) is configured in `.env`
+1. Configure your AI provider (OpenAI/Ollama) locally for generation
+2. See `scripts/generate-ai-insights.mjs` for configuration details
 
 **Generate specific tickers:**
 ```bash
@@ -42,35 +42,29 @@ node scripts/build-insights-bundle.mjs
 {
   "ticker": "AAPL",
   "companyName": "Apple Inc.",
-  "lastUpdated": "2025-10-18",
+  "generated": "2025-01-15T10:30:00.000Z",
   "version": "1.0",
-  "provider": "ollama",
-  "insights": {
-    "competitiveAdvantages": [
-      { "title": "Brand Loyalty", "description": "..." },
-      { "title": "Ecosystem Lock-in", "description": "..." }
-    ],
-    "investmentRisks": [
-      { "title": "China Dependence", "description": "..." }
-    ]
-  }
+  "advantages": [
+    { "title": "Brand Loyalty", "description": "..." },
+    { "title": "Ecosystem Lock-in", "description": "..." }
+  ],
+  "risks": [
+    { "title": "China Dependence", "description": "..." }
+  ]
 }
 ```
 
 ## ⚠️ Rate Limits
 
-If you hit rate limits:
+If you hit rate limits during generation:
 - Wait a few minutes
 - Run script again with failed tickers only
 - Or increase delay in script (change `3000` to `5000` ms)
 
-## 🧪 Test Files
+## 🧪 Testing
 
 ```bash
-# Validate JSON structure
-node tests/manual/test-static-insights.mjs
-
 # Test in browser
 npm run dev
-# Search for ticker → Click "AI Analysis" tab
+# Search for ticker → Load AI insights from static files
 ```
