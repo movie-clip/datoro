@@ -205,6 +205,7 @@ const props = defineProps({
   invertGrowth: { type: Boolean, default: false }, // For expenses: decreases are positive
   ticker: { type: String, default: null }, // For cached growth calculations
   dataType: { type: String, default: 'generic' }, // Data type for cache key (e.g., 'revenue', 'netIncome')
+  customGrowthData: { type: Object, default: null }, // Custom growth data (e.g., for price chart with 1D/1W/1M)
   error:      { type: String, default: null },
   message:    { type: String, default: null },
   emptyDataMessage: { type: String, default: null }, // Friendly message when data is legitimately empty (not an error)
@@ -267,6 +268,9 @@ const hasEmptyData = computed(() => {
 // Calculate growth data for the chart
 const growthData = computed(() => {
   if (!props.showGrowthLabels) return null
+  
+  // Use custom growth data if provided (e.g., for price chart with 1D/1W/1M)
+  if (props.customGrowthData) return props.customGrowthData
   
   // Handle both simple array and multi-series object
   let dataToAnalyze = []

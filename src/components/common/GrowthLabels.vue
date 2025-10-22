@@ -1,29 +1,60 @@
 <template>
   <div v-if="growthData" class="growth-labels">
-    <div
-      v-if="growthData.oneYear !== null"
-      class="growth-label"
-      :class="getGrowthClass(growthData.oneYear)"
-    >
-      <span class="label-period">1Y</span>
-      <span class="label-value">{{ formatGrowth(growthData.oneYear) }}</span>
-    </div>
-    <div
-      v-if="growthData.twoYear !== null"
-      class="growth-label"
-      :class="getGrowthClass(growthData.twoYear)"
-    >
-      <span class="label-period">2Y</span>
-      <span class="label-value">{{ formatGrowth(growthData.twoYear) }}</span>
-    </div>
-    <div
-      v-if="growthData.fiveYear !== null"
-      class="growth-label"
-      :class="getGrowthClass(growthData.fiveYear)"
-    >
-      <span class="label-period">5Y</span>
-      <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
-    </div>
+    <!-- Short-term mode: 1D, 1W, 1M -->
+    <template v-if="growthData.oneDay !== undefined">
+      <div
+        v-if="growthData.oneDay !== null"
+        class="growth-label"
+        :class="getGrowthClass(growthData.oneDay)"
+      >
+        <span class="label-period">1D</span>
+        <span class="label-value">{{ formatGrowth(growthData.oneDay) }}</span>
+      </div>
+      <div
+        v-if="growthData.oneWeek !== null"
+        class="growth-label"
+        :class="getGrowthClass(growthData.oneWeek)"
+      >
+        <span class="label-period">1W</span>
+        <span class="label-value">{{ formatGrowth(growthData.oneWeek) }}</span>
+      </div>
+      <div
+        v-if="growthData.oneMonth !== null"
+        class="growth-label"
+        :class="getGrowthClass(growthData.oneMonth)"
+      >
+        <span class="label-period">1M</span>
+        <span class="label-value">{{ formatGrowth(growthData.oneMonth) }}</span>
+      </div>
+    </template>
+    
+    <!-- Long-term mode: 1Y, 2Y, 5Y -->
+    <template v-else>
+      <div
+        v-if="growthData.oneYear !== null"
+        class="growth-label"
+        :class="getGrowthClass(growthData.oneYear)"
+      >
+        <span class="label-period">1Y</span>
+        <span class="label-value">{{ formatGrowth(growthData.oneYear) }}</span>
+      </div>
+      <div
+        v-if="growthData.twoYear !== null"
+        class="growth-label"
+        :class="getGrowthClass(growthData.twoYear)"
+      >
+        <span class="label-period">2Y</span>
+        <span class="label-value">{{ formatGrowth(growthData.twoYear) }}</span>
+      </div>
+      <div
+        v-if="growthData.fiveYear !== null"
+        class="growth-label"
+        :class="getGrowthClass(growthData.fiveYear)"
+      >
+        <span class="label-period">5Y</span>
+        <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
+      </div>
+    </template>
   </div>
 </template>
 

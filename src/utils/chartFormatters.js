@@ -21,14 +21,16 @@ export function fmtShort(n) {
 /**
  * Format Y-axis values based on display mode
  * @param {number} v - Value to format
- * @param {string} mode - Format mode: 'short', 'currency', 'percent', 'int', or default
+ * @param {string} mode - Format mode: 'short', 'currency', 'percent', 'price', 'int', or default
  * @returns {string} Formatted value
  * @example yFormatter(1500000, 'currency') => "$2M"
+ * @example yFormatter(182.45, 'price') => "$182"
  */
 export function yFormatter(v, mode) {
   if (mode === 'short') return fmtShort(v)
   if (mode === 'currency') return '$' + fmtShort(v)
   if (mode === 'percent') return v.toFixed(2) + '%'
+  if (mode === 'price') return '$' + Math.round(v).toString()
   if (mode === 'int') return Math.round(v).toLocaleString()
   return Math.round(v).toString()
 }

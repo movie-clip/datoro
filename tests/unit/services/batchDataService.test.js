@@ -444,8 +444,8 @@ describe('Batch Data Service', () => {
         .reply(200, [])
         
       nock(FMP_BASE_URL)
-        .get('/api/v4/insider-trading')
-        .query({ symbol: TEST_TICKER, limit: '100', apikey: TEST_API_KEY })
+        .get('/stable/insider-trading/search')
+        .query({ symbol: TEST_TICKER, page: '0', limit: '500', apikey: TEST_API_KEY })
         .reply(200, [])
 
       const result = await fetchTickerBatch(TEST_TICKER, TEST_API_KEY)

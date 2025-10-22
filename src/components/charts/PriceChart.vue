@@ -5,13 +5,15 @@
     :title="title"
     :series="series"
     kind="line"
-    y-format="int"
+    y-format="price"
     :view-mode-options="timeframeOptions"
     :loading="loading"
     :error="error"
     :message="message"
     aria-label="Price chart"
     :force-expanded="forceExpanded"
+    :show-growth-labels="true"
+    :custom-growth-data="growthData"
   />
 </template>
 
@@ -30,7 +32,7 @@ const props = defineProps({
 })
 
 // No ticker prop needed - using Pinia store
-const { tfKey, series, title, message, loading, error, retry } = usePriceSeries();
+const { tfKey, series, title, message, loading, error, retry, growthData } = usePriceSeries();
 
 const timeframeOptions = computed(() => 
   TF_ORDER.map(key => ({ label: key, value: key }))

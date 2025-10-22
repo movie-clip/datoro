@@ -425,10 +425,10 @@ export function getInsiderTradingFromBatch(batchData) {
       
       const value = Math.abs(Number(trade.securitiesTransacted) * Number(trade.price))
       
-      if (trade.acquistionOrDisposition === 'A') {
+      if (trade.acquisitionOrDisposition === 'A') {
         grouped[monthKey].buyValue += value
         grouped[monthKey].netShares += Number(trade.securitiesTransacted)
-      } else if (trade.acquistionOrDisposition === 'D') {
+      } else if (trade.acquisitionOrDisposition === 'D') {
         grouped[monthKey].sellValue += value
         grouped[monthKey].netShares -= Number(trade.securitiesTransacted)
       }

@@ -65,8 +65,8 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
     priceTargetSummary: `/api/v4/price-target-summary?symbol=${t}&apikey=${fmpApiKey}`,
     priceTargetConsensus: `/api/v4/price-target-consensus?symbol=${t}&apikey=${fmpApiKey}`,
     
-    // Insider trading (Priority 2 - Less critical)
-    insiderTrading: `/api/v4/insider-trading?symbol=${t}&limit=100&apikey=${fmpApiKey}`,
+    // Insider trading (Priority 2 - More historical data with search endpoint)
+    insiderTrading: `/stable/insider-trading/search?symbol=${t}&page=0&limit=500&apikey=${fmpApiKey}`,
   };
 
   // Fetch all in parallel

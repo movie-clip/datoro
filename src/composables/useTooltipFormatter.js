@@ -71,6 +71,9 @@ export function createTooltipFormatter(options = {}) {
           }
         } else if (yFormat === 'percent') {
           formatted = `${value.toFixed(1)}%`
+        } else if (yFormat === 'price') {
+          // Format as price with 2 decimal places
+          formatted = `$${value.toFixed(2)}`
         } else if (yFormat === 'int') {
           formatted = Math.round(value).toLocaleString()
         } else {

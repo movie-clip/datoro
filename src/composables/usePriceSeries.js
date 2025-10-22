@@ -40,6 +40,7 @@ export function usePriceSeries() {
         // Return as ECharts series with dynamic color and gradient
         return {
           type: 'line',
+          name: 'Price',
           data: filtered,
           smooth: 0.15,
           showSymbol: false,
@@ -87,6 +88,7 @@ export function usePriceSeries() {
       
       return {
         type: 'line',
+        name: 'Price',
         data: rawPrices,
         smooth: 0.15,
         showSymbol: false,
@@ -125,6 +127,92 @@ export function usePriceSeries() {
     return rawPrices
   })
 
+  // Calculate growth based on timeframe
+  const growthData = computed(() => {
+    const rawPrices = getPriceSeriesFromBatch(batchData.value)
+    if (!rawPrices || rawPrices.length < 2) return null
+    
+    const sortedData = [...rawPrices].sort((a, b) => a[0] - b[0])
+    const latestValue = sortedData[sortedData.length - 1][1]
+    const latestDate = sortedData[sortedData.length - 1][0]
+    
+    const isShortTerm = tfKey.value === '5D' || tfKey.value === '1M'
+    
+    const findClosestValue = (targetDate, maxDiffDays = 3) => {
+      let closest = null
+      let minDiff = Infinity
+      
+      for (const [date, value] of sortedData) {
+        const diff = Math.abs(date - targetDate)
+        if (diff < minDiff) {
+          minDiff = diff
+          closest = value
+        }
+      }
+      
+      if (minDiff < maxDiffDays * 24 * 60 * 60 * 1000) {
+        return closest
+      }
+      return null
+    }
+    
+    const calculateGrowth = (oldValue, newValue) => {
+      if (oldValue === null || oldValue === 0 || newValue === null) return null
+      return ((newValue - oldValue) / Math.abs(oldValue)) * 100
+    }
+    
+    if (isShortTerm) {
+      // Calculate short-term growth: 1D, 1W, 1M
+      const oneDayAgo = latestDate - (1 * 24 * 60 * 60 * 1000)
+      const oneWeekAgo = latestDate - (7 * 24 * 60 * 60 * 1000)
+      const oneMonthAgo = latestDate - (30 * 24 * 60 * 60 * 1000)
+      
+      const oneDayValue = findClosestValue(oneDayAgo, 2)
+      const oneWeekValue = findClosestValue(oneWeekAgo, 3)
+      const oneMonthValue = findClosestValue(oneMonthAgo, 5)
+      
+      return {
+        oneDay: calculateGrowth(oneDayValue, latestValue),
+        oneWeek: calculateGrowth(oneWeekValue, latestValue),
+        oneMonth: calculateGrowth(oneMonthValue, latestValue)
+      }
+    } else {
+      // Calculate long-term growth: 1Y, 2Y, 5Y
+      const oneYearAgo = latestDate - (365 * 24 * 60 * 60 * 1000)
+      const twoYearsAgo = latestDate - (2 * 365 * 24 * 60 * 60 * 1000)
+      const fiveYearsAgo = latestDate - (5 * 365 * 24 * 60 * 60 * 1000)
+      
+      const findLongTermValue = (targetDate) => {
+        let closest = null
+        let minDiff = Infinity
+        
+        for (const [date, value] of sortedData) {
+          const diff = Math.abs(date - targetDate)
+          if (diff < minDiff) {
+            minDiff = diff
+            closest = value
+          }
+        }
+        
+        // Only return if within 6 months of target
+        if (minDiff < 180 * 24 * 60 * 60 * 1000) {
+          return closest
+        }
+        return null
+      }
+      
+      const oneYearValue = findLongTermValue(oneYearAgo)
+      const twoYearValue = findLongTermValue(twoYearsAgo)
+      const fiveYearValue = findLongTermValue(fiveYearsAgo)
+      
+      return {
+        oneYear: calculateGrowth(oneYearValue, latestValue),
+        twoYear: calculateGrowth(twoYearValue, latestValue),
+        fiveYear: calculateGrowth(fiveYearValue, latestValue)
+      }
+    }
+  })
+
   // Update title when ticker or timeframe changes
   watch([() => currentTicker.value, tfKey, () => batchData.value], () => {
     const t = currentTicker.value
@@ -161,7 +249,7 @@ export function usePriceSeries() {
     }
   }, { immediate: true })
 
-  return { tfKey, series, title, message, loading, error, retry: refresh };
+  return { tfKey, series, title, message, loading, error, retry: refresh, growthData };
 }
 
 // Map timeframe range to max days for filtering

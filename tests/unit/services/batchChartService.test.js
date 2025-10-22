@@ -103,19 +103,19 @@ const mockBatchData = {
         transactionDate: '2023-11-15', 
         securitiesTransacted: 10000, 
         price: 180.50, 
-        acquistionOrDisposition: 'D' 
+        acquisitionOrDisposition: 'D' 
       },
       { 
         transactionDate: '2023-11-20', 
         securitiesTransacted: 5000, 
         price: 182.00, 
-        acquistionOrDisposition: 'A' 
+        acquisitionOrDisposition: 'A' 
       },
       { 
         transactionDate: '2023-10-10', 
         securitiesTransacted: 15000, 
         price: 175.00, 
-        acquistionOrDisposition: 'D' 
+        acquisitionOrDisposition: 'D' 
       }
     ],
     priceHistory: {
