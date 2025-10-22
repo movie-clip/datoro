@@ -27,12 +27,13 @@ async function fetchWithTimeout(url, options = {}, timeout = 10000) {
 /**
  * Fetch all data for a ticker in one batch
  * Returns everything needed for the dashboard in a single response
+ * Now fetches 19 endpoints (added analyst price targets)
  */
 export async function fetchTickerBatch(ticker, fmpApiKey) {
   const t = ticker.toUpperCase().trim();
   const baseUrl = 'https://financialmodelingprep.com';
   
-  // All endpoints we need to fetch
+  // All endpoints we need to fetch (19 total)
   const endpoints = {
     // Core company data (Priority 1 - Always needed)
     profile: `/api/v3/profile/${t}?apikey=${fmpApiKey}`,
@@ -58,7 +59,11 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
     dividendHistory: `/api/v3/historical-price-full/stock_dividend/${t}?apikey=${fmpApiKey}`,
     stockSplit: `/api/v3/historical-price-full/stock_split/${t}?apikey=${fmpApiKey}`,
     earningsCalendar: `/api/v3/historical/earning_calendar/${t}?apikey=${fmpApiKey}`,
-    financialScores: `/stable/financial-scores?symbol=${t}&apikey=${fmpApiKey}`,
+    financialScores: `/api/v3/score?symbol=${t}&apikey=${fmpApiKey}`,
+    
+    // Analyst data (Priority 2)
+    priceTargetSummary: `/api/v4/price-target-summary?symbol=${t}&apikey=${fmpApiKey}`,
+    priceTargetConsensus: `/api/v4/price-target-consensus?symbol=${t}&apikey=${fmpApiKey}`,
     
     // Insider trading (Priority 2 - Less critical)
     insiderTrading: `/api/v4/insider-trading?symbol=${t}&limit=100&apikey=${fmpApiKey}`,

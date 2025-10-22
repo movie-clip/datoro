@@ -1,8 +1,10 @@
 <template>
   <div class="price-target-container">
-    <h3 class="chart-title">Price Target Analysis</h3>
+    <h3 class="chart-title">
+      Analyst Price Target
+    </h3>
     
-    <div v-if="loading" class="loading">Loading price target...</div>
+    <div v-if="loading" class="loading">Loading price target data...</div>
     
     <div v-else-if="error" class="error">{{ error }}</div>
     
@@ -23,17 +25,17 @@
       <!-- The horizontal bar with zones -->
       <div class="bar-container">
         <div class="zone-bar">
-          <!-- Green zone (undervalued) -->
+          <!-- Green zone (strong upside >20%) -->
           <div 
             class="zone green-zone"
             :style="{ width: '40%' }"
           />
-          <!-- Yellow zone (fair value ±20%) -->
+          <!-- Yellow zone (hold ±20%) -->
           <div 
             class="zone yellow-zone"
             :style="{ width: '20%' }"
           />
-          <!-- Red zone (overvalued) -->
+          <!-- Red zone (downside >20%) -->
           <div 
             class="zone red-zone"
             :style="{ width: '40%' }"
@@ -54,24 +56,24 @@
           </div>
         </div>
 
-        <!-- Fair value marker -->
+        <!-- Consensus target marker -->
         <div 
           class="price-marker fair-value"
           :style="{ left: '50%' }"
-          :title="`Target: $${priceTarget.toFixed(2)}`"
+          :title="`Consensus: $${targetConsensus.toFixed(2)}`"
         >
           <div class="marker-line target" />
           <div class="marker-label target">
-            <div class="marker-value">${{ priceTarget.toFixed(2) }}</div>
-            <div class="marker-name">Target</div>
+            <div class="marker-value">${{ targetConsensus.toFixed(2) }}</div>
+            <div class="marker-name">Consensus</div>
           </div>
         </div>
       </div>
 
       <!-- Price range labels -->
       <div class="range-labels">
-        <span class="range-label left">${{ minPrice.toFixed(2) }}</span>
-        <span class="range-label right">${{ maxPrice.toFixed(2) }}</span>
+        <span class="range-label left" :title="`Low: $${targetLow.toFixed(2)}`">${{ minPrice.toFixed(2) }}</span>
+        <span class="range-label right" :title="`High: $${targetHigh.toFixed(2)}`">${{ maxPrice.toFixed(2) }}</span>
       </div>
 
       <!-- Analysis text -->
@@ -81,7 +83,7 @@
     </div>
 
     <div v-else class="no-data">
-      No price target data available
+      No analyst price target data available for this stock
     </div>
   </div>
 </template>
@@ -94,10 +96,29 @@ import { useTickerStore } from '../../stores/tickerStore'
 const tickerStore = useTickerStore()
 const { batchData, loading, currentTicker } = storeToRefs(tickerStore)
 
-// Extract price target and current price from batch data
-const priceTarget = computed(() => {
-  const profile = batchData.value?.data?.profile?.[0]
-  return profile?.dcf || profile?.price || 0
+// Extract analyst price targets from batch data
+const priceTargetData = computed(() => {
+  // FMP API returns array: [{ symbol, targetConsensus, targetHigh, targetLow, targetMedian }]
+  return batchData.value?.data?.priceTargetConsensus?.[0] || null
+})
+
+const targetConsensus = computed(() => {
+  return priceTargetData.value?.targetConsensus || 0
+})
+
+const targetHigh = computed(() => {
+  return priceTargetData.value?.targetHigh || 0
+})
+
+const targetLow = computed(() => {
+  return priceTargetData.value?.targetLow || 0
+})
+
+const analystCount = computed(() => {
+  // FMP API returns array: [{ lastMonth, lastQuarter, lastYear, allTime, ... }]
+  const summary = batchData.value?.data?.priceTargetSummary?.[0]
+  // Use most recent analyst count (last quarter is good balance of recency vs sample size)
+  return summary?.lastQuarter || summary?.lastMonth || summary?.lastYear || 0
 })
 
 const currentPrice = computed(() => {
@@ -106,7 +127,7 @@ const currentPrice = computed(() => {
 })
 
 const hasData = computed(() => {
-  return priceTarget.value > 0 && currentPrice.value > 0
+  return targetConsensus.value > 0 && currentPrice.value > 0 && analystCount.value > 0
 })
 
 const error = computed(() => {
@@ -114,15 +135,17 @@ const error = computed(() => {
   return null
 })
 
-// Calculate price range (fair value ±20% for yellow zone, extend beyond for full range)
+// Calculate price range based on analyst targets
 const minPrice = computed(() => {
-  // Undervalued zone extends 50% below fair value
-  return priceTarget.value * 0.5
+  // Use analyst low or 30% below consensus
+  const low = targetLow.value > 0 ? targetLow.value : targetConsensus.value * 0.7
+  return Math.min(low, currentPrice.value * 0.7)
 })
 
 const maxPrice = computed(() => {
-  // Overvalued zone extends 50% above fair value
-  return currentPrice.value * 1.5
+  // Use analyst high or 30% above consensus
+  const high = targetHigh.value > 0 ? targetHigh.value : targetConsensus.value * 1.3
+  return Math.max(high, currentPrice.value * 1.3)
 })
 
 // Calculate current price position on the bar (0-100%)
@@ -138,50 +161,54 @@ const currentPricePosition = computed(() => {
   return Math.max(0, Math.min(100, position))
 })
 
-// Analysis based on current price vs target
-const priceDifference = computed(() => {
+// Calculate upside/downside percentage
+const upsidePercentage = computed(() => {
   if (!hasData.value) return 0
-  return ((currentPrice.value - priceTarget.value) / priceTarget.value) * 100
+  return ((targetConsensus.value - currentPrice.value) / currentPrice.value) * 100
+})
+
+const upsideClass = computed(() => {
+  const upside = upsidePercentage.value
+  if (upside > 15) return 'positive'
+  if (upside < -15) return 'negative'
+  return 'neutral'
 })
 
 const analysisClass = computed(() => {
-  const diff = priceDifference.value
-  if (diff < -20) return 'undervalued'
-  if (diff > 20) return 'overvalued'
+  const upside = upsidePercentage.value
+  if (upside > 20) return 'undervalued'
+  if (upside < -20) return 'overvalued'
   return 'fair'
 })
 
-const analysisTitle = computed(() => {
-  const diff = priceDifference.value
-  if (diff < -20) return 'Undervalued'
-  if (diff > 20) return 'Overvalued'
-  return 'Fair Value'
-})
-
 const analysisMessage = computed(() => {
-  const diff = priceDifference.value
-  const absDiff = Math.abs(diff)
+  const upside = upsidePercentage.value
+  const absUpside = Math.abs(upside)
+  const count = analystCount.value
   
-  if (diff < -20) {
-    return `Stock is trading ${absDiff.toFixed(1)}% below fair value.`
+  if (upside > 20) {
+    return `${count} analyst${count > 1 ? 's' : ''} see ${absUpside.toFixed(1)}% upside. Stock appears undervalued.`
   }
-  if (diff > 20) {
-    return `Stock is trading ${absDiff.toFixed(1)}% above fair value.`
+  if (upside < -20) {
+    return `${count} analyst${count > 1 ? 's' : ''} see ${absUpside.toFixed(1)}% downside. Stock appears overvalued.`
   }
-  return `Stock is trading within ±20% of fair value (${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%).`
+  if (upside > 0) {
+    return `${count} analyst${count > 1 ? 's' : ''} see ${upside.toFixed(1)}% upside. Stock near fair value.`
+  }
+  return `${count} analyst${count > 1 ? 's' : ''} see ${absUpside.toFixed(1)}% downside. Stock near fair value.`
 })
 </script>
 
 <style scoped>
 .price-target-container {
-  padding: 1rem;
+  padding: 0;
 }
 
 .chart-title {
   font-size: 16px;
   font-weight: 600;
   color: #E5E5E5;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 1rem 0;
   text-align: center;
 }
 
@@ -193,7 +220,7 @@ const analysisMessage = computed(() => {
 }
 
 .error {
-  color: #ef4444;
+  color: var(--color-danger, #ef4444);
 }
 
 .visualization {
@@ -220,16 +247,17 @@ const analysisMessage = computed(() => {
 }
 
 .label-item.undervalued {
-  color: #00A88E;
+  color: var(--color-success, #00A88E);
   text-align: left;
 }
 
 .label-item.fair {
-  color: #FFC107;
+  color: var(--color-warning, #F59E0B);
+  text-align: center;
 }
 
 .label-item.overvalued {
-  color: #ef4444;
+  color: var(--color-danger, #ef4444);
   text-align: right;
 }
 
@@ -253,15 +281,15 @@ const analysisMessage = computed(() => {
 }
 
 .green-zone {
-  background: linear-gradient(to right, #00A88E, #00C9A7);
+  background: linear-gradient(to right, var(--color-success, #00A88E), #00C9A7);
 }
 
 .yellow-zone {
-  background: linear-gradient(to right, #FFD54F, #FFC107);
+  background: linear-gradient(to right, #FFD54F, var(--color-warning, #F59E0B));
 }
 
 .red-zone {
-  background: linear-gradient(to right, #FF6B6B, #ef4444);
+  background: linear-gradient(to right, #FF6B6B, var(--color-danger, #ef4444));
 }
 
 .price-marker {
@@ -357,32 +385,50 @@ const analysisMessage = computed(() => {
 
 .analysis-text.undervalued {
   background: rgba(0, 168, 142, 0.15);
-  border: 1px solid #00A88E;
-  color: #00A88E;
+  border: 1px solid var(--color-success, #00A88E);
+  color: var(--color-success, #00A88E);
 }
 
 .analysis-text.fair {
   background: rgba(255, 193, 7, 0.15);
-  border: 1px solid #FFC107;
-  color: #FFC107;
+  border: 1px solid var(--color-warning, #F59E0B);
+  color: var(--color-warning, #F59E0B);
 }
 
 .analysis-text.overvalued {
   background: rgba(239, 68, 68, 0.15);
-  border: 1px solid #ef4444;
-  color: #ef4444;
+  border: 1px solid var(--color-danger, #ef4444);
+  color: var(--color-danger, #ef4444);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .price-target-container {
-    min-height: 280px;
+    min-height: 320px;
     padding: 1.5rem 0.5rem;
   }
 
   .chart-title {
     font-size: 14px;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .analyst-info {
+    padding: 0.5rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .info-item {
+    min-width: 80px;
+  }
+
+  .info-label {
+    font-size: 10px;
+  }
+
+  .info-value {
+    font-size: 14px;
   }
 
   .labels-row {
@@ -395,6 +441,7 @@ const analysisMessage = computed(() => {
 
   .bar-container {
     height: 70px;
+    margin: 2rem 0 0.5rem 0;
   }
 
   .zone-bar {
@@ -410,8 +457,9 @@ const analysisMessage = computed(() => {
   }
 
   .marker-label {
-    top: -40px;
-    padding: 4px 30px;
+    top: -45px;
+    padding: 4px 6px;
+    min-width: 70px;
   }
 
   .price-marker.current-price .marker-label {
@@ -419,18 +467,64 @@ const analysisMessage = computed(() => {
   }
 
   .marker-value {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .marker-name {
+    font-size: 9px;
+    margin-top: 2px;
+  }
+
+  .range-labels {
+    margin-top: 0.5rem;
+  }
+
+  .range-label {
     font-size: 10px;
-    margin-top: 3px;
   }
 
   .analysis-text {
     font-size: 11px;
     padding: 0.5rem;
     margin-top: 1rem;
+    line-height: 1.5;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 375px) {
+  .analyst-info {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .info-item {
+    min-width: 70px;
+  }
+
+  .info-label {
+    font-size: 9px;
+  }
+
+  .info-value {
+    font-size: 13px;
+  }
+
+  .marker-label {
+    padding: 3px 4px;
+    min-width: 60px;
+  }
+
+  .marker-value {
+    font-size: 10px;
+  }
+
+  .marker-name {
+    font-size: 8px;
+  }
+
+  .analysis-text {
+    font-size: 10px;
+    padding: 0.5rem 0.25rem;
   }
 }
 </style>

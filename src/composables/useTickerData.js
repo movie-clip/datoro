@@ -111,7 +111,6 @@ export function useTickerData(tickerRef, options = {}) {
       // Store in client-side cache (5 min TTL) with ETag
       cache.set(cacheKey, { data: result, etag: etag || null })
       setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000)
-      setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000)
       
       // Lazy load tab icons after first successful data load
       if (typeof window.__preloadTabIcons === 'function') {
