@@ -57,8 +57,8 @@ export function useCapitalReturnedSeries() {
   })
 
   // Update title based on ticker
-  watch([() => currentTicker, rawData, loading, hasNoCapitalReturns], () => {
-    const ticker = currentTicker.value
+  // Optimized: Only watch ticker (other values update when ticker changes)
+  watch(() => currentTicker.value, (ticker) => {
     if (!ticker) {
       title.value = 'Capital Returned to Shareholders — Empty'
       message.value = 'Enter a ticker'

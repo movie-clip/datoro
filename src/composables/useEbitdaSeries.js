@@ -94,8 +94,9 @@ export function useEbitdaSeries() {
   })
 
   // Update title based on ticker and view
-  watch([() => currentTicker, chartView, rawData, loading], () => {
-    const ticker = currentTicker
+  // Optimized: Only watch ticker and view (rawData/loading trigger via ticker change anyway)
+  watch([() => currentTicker.value, chartView], () => {
+    const ticker = currentTicker.value
     if (!ticker) {
       title.value = 'EBITDA — Empty'
       message.value = 'Enter a ticker'

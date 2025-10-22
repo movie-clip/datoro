@@ -45,8 +45,8 @@ export function useNetIncomeSeries() {
   const title = computed(() => 'Net Income')
 
   // Update message based on state
-  watch([() => currentTicker, rawData, loading], () => {
-    const ticker = currentTicker
+  // Optimized: Only watch ticker (rawData/loading change when ticker changes)
+  watch(() => currentTicker.value, (ticker) => {
     if (!ticker) {
       message.value = null
     } else if (error.value) {

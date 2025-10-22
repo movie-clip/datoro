@@ -163,6 +163,7 @@ import { isConfiguredSeries, isMultiSeriesFormat, isConfiguredSeriesArray } from
 import { getTooltipConfig } from '../../composables/useTooltipFormatter.js'
 import { createSeriesConfig } from '../../utils/chartSeriesFactory.js'
 import { createXAxisConfig, createYAxisConfig } from '../../utils/chartAxisFactory.js'
+import { useIsMobile } from '../../composables/useIsMobile.js'
 
 // Track if component is mounted AND ECharts is ready
 const isMounted = ref(false)
@@ -313,10 +314,10 @@ const formatGrowth = (growth) => {
   return formatGrowthUtil(growth)
 }
 
+// Use reactive mobile detection composable
+const { isMobile } = useIsMobile()
+
 const createOption = (isLarge = false) => {
-  // Detect mobile device
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
-  
   // For bar charts, extract years and create category axis
   // For line charts, use time axis
   let uniqueYears = null
@@ -343,9 +344,9 @@ const createOption = (isLarge = false) => {
   // In modal view with useLegend, show legend at top
   const showLegendAtTop = isLarge && props.useLegend
   // Increased top padding on mobile modal (50 instead of 30) for toggle buttons
-  const topPadding = showLegendAtTop ? 60 : (isLarge ? (isMobile ? 50 : 30) : 45)
+  const topPadding = showLegendAtTop ? 60 : (isLarge ? (isMobile.value ? 50 : 30) : 45)
   // Add extra bottom padding if showLegend is enabled (for multi-series charts)
-  const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile ? 15 : 55) : (isMobile ? 15 : 50)
+  const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile.value ? 15 : 55) : (isMobile.value ? 15 : 50)
   
   // Build legend selection: only first series (typically 'Total Revenue') selected by default
   // Apply this whenever useLegend is true, not just in modal view
@@ -382,9 +383,9 @@ const createOption = (isLarge = false) => {
       orient: 'horizontal',
       bottom: 5,
       left: 'center',
-      textStyle: { color: '#ddd', fontSize: isMobile ? 11 : 12 },
+      textStyle: { color: '#ddd', fontSize: isMobile.value ? 11 : 12 },
       selectedMode: 'multiple', // Allow toggling individual series
-      itemGap: isMobile ? 8 : 12
+      itemGap: isMobile.value ? 8 : 12
     } : props.useLegend ? {
       // Compact view with useLegend - hide legend but apply selection
       show: false,
@@ -394,14 +395,14 @@ const createOption = (isLarge = false) => {
       show: false 
     },
     grid: { 
-      left: isMobile ? 12 : 24, 
-      right: isMobile ? 12 : 24, 
+      left: isMobile.value ? 12 : 24, 
+      right: isMobile.value ? 12 : 24, 
       top: topPadding, 
       bottom: bottomPadding
     },
     tooltip: getTooltipConfig({
       isLarge,
-      isMobile,
+      isMobile: isMobile.value,
       kind: props.kind,
       dualAxis: props.dualAxis,
       yFormat: props.yFormat
@@ -409,14 +410,14 @@ const createOption = (isLarge = false) => {
     xAxis: createXAxisConfig(props.kind, {
       categoryData,
       isLarge,
-      isMobile
+      isMobile: isMobile.value
     }),
     yAxis: createYAxisConfig({
       dualAxis: props.dualAxis,
       yFormat: props.yFormat,
       rightAxisType: props.rightAxisType,
       isLarge,
-      isMobile
+      isMobile: isMobile.value
     }),
   }
 
@@ -433,8 +434,17 @@ const createOption = (isLarge = false) => {
   return { ...base, series }
 }
 
-const option = computed(() => createOption(props.forceExpanded ? true : false))
-const modalOption = computed(() => createOption(true))
+// Optimized: Compute compact option (always needed for initial render)
+const option = computed(() => createOption(false))
+
+// Optimized: Only compute modal option when actually needed (modal open or forceExpanded)
+const modalOption = computed(() => {
+  if (props.forceExpanded || showModal.value) {
+    return createOption(true)
+  }
+  // Return compact option as fallback (avoids unnecessary computation)
+  return option.value
+})
 </script>
 
 <style scoped>

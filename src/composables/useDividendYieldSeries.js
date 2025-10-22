@@ -33,8 +33,8 @@ export function useDividendYieldSeries() {
   })
 
   // Update title based on ticker
-  watch([() => currentTicker, rawData, loading, hasNoDividends], () => {
-    const ticker = currentTicker.value
+  // Optimized: Only watch ticker (other values update when ticker changes)
+  watch(() => currentTicker.value, (ticker) => {
     if (!ticker) {
       title.value = 'Dividend Yield — Empty'
       message.value = 'Enter a ticker'

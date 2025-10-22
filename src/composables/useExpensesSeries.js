@@ -89,8 +89,8 @@ export function useExpensesSeries() {
   }
 
   // Update title based on ticker
-  watch([() => currentTicker, rawData, loading], () => {
-    const ticker = currentTicker
+  // Optimized: Only watch ticker (rawData/loading change when ticker changes)
+  watch(() => currentTicker.value, (ticker) => {
     if (!ticker) {
       title.value = 'Operating Expenses — Empty'
       message.value = 'Enter a ticker'
