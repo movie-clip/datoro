@@ -6,6 +6,69 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig.js'
 
+/**
+ * LRU Cache with max size limit
+ * Automatically evicts least recently used items when full
+ */
+class LRUCache {
+  constructor(maxSize = 50) {
+    this.maxSize = maxSize
+    this.cache = new Map()
+  }
+
+  get(key) {
+    if (!this.cache.has(key)) {
+      return undefined
+    }
+    
+    // Move to end (mark as recently used)
+    const value = this.cache.get(key)
+    this.cache.delete(key)
+    this.cache.set(key, value)
+    return value
+  }
+
+  set(key, value) {
+    // Remove if exists (to re-add at end)
+    if (this.cache.has(key)) {
+      this.cache.delete(key)
+    }
+    
+    // Evict oldest if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value
+      this.cache.delete(firstKey)
+    }
+    
+    this.cache.set(key, value)
+  }
+
+  has(key) {
+    return this.cache.has(key)
+  }
+
+  delete(key) {
+    return this.cache.delete(key)
+  }
+
+  clear() {
+    this.cache.clear()
+  }
+
+  get size() {
+    return this.cache.size
+  }
+
+  // Get cache statistics
+  getStats() {
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      keys: Array.from(this.cache.keys())
+    }
+  }
+}
+
 export const useTickerStore = defineStore('ticker', () => {
   // State
   const currentTicker = ref('AAPL')
@@ -14,8 +77,8 @@ export const useTickerStore = defineStore('ticker', () => {
   const error = ref(null)
   const fetchTime = ref(0)
   
-  // Cache (5 min TTL)
-  const cache = new Map()
+  // Cache (5 min TTL, max 50 items)
+  const cache = new LRUCache(50)
   const CACHE_TTL = 5 * 60 * 1000
   
   // Computed - Individual data accessors
@@ -102,14 +165,11 @@ export const useTickerStore = defineStore('ticker', () => {
       
       batchData.value = result
       
-      // Update cache
+      // Update cache (LRU will auto-evict if full)
       cache.set(cacheKey, {
         data: result,
         timestamp: Date.now()
       })
-      
-      // Clean up old cache entries
-      setTimeout(() => cache.delete(cacheKey), CACHE_TTL)
       
     } catch (err) {
       console.error(`[TickerStore] Error fetching ${t}:`, err)
@@ -161,6 +221,9 @@ export const useTickerStore = defineStore('ticker', () => {
     setTicker,
     fetchTickerData,
     refresh,
-    clearCache
+    clearCache,
+    
+    // Cache monitoring
+    getCacheStats: () => cache.getStats()
   }
 })
