@@ -2,7 +2,7 @@
 // Optimized chart data functions using batch endpoint data
 // Eliminates 15-20 API calls by extracting data from single batch endpoint
 
-import { validateBatchData, safeParseBatchData } from './batchDataSchemas.js'
+// import { validateBatchData, safeParseBatchData } from './batchDataSchemas.js' // Temporarily disabled
 
 /**
  * Simple LRU cache for memoization
