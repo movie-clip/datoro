@@ -128,12 +128,6 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-    
-    # Environment Variables (build-time)
-    envVars:
-      # REQUIRED: Backend API URL
-      - key: VITE_API_BASE_URL
-        value: https://factorly-api.onrender.com
 
 # ==============================================
 # PostgreSQL Database
