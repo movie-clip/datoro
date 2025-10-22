@@ -160,7 +160,9 @@ export default defineConfig(({ mode }) => {
         },
         mangle: {
           // Mangle variable names for smaller output
-          safari10: true
+          safari10: true,
+          // CRITICAL: Keep function names for memoization cache keys
+          keep_fnames: true
         }
       },
       
