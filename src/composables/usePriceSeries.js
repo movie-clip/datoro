@@ -29,7 +29,20 @@ export function usePriceSeries() {
     const maxDays = mapTimeframeToMaxDays(cfg.range)
     if (maxDays) {
       const cutoffTime = Date.now() - (maxDays * 24 * 60 * 60 * 1000)
-      const filtered = rawPrices.filter(point => point[0] >= cutoffTime)
+      let filtered = rawPrices.filter(point => point[0] >= cutoffTime)
+      
+      // Handle edge case: if filtered data is empty (e.g., weekend with 5D timeframe)
+      // Fall back to last available data points
+      if (filtered.length === 0 && rawPrices.length > 0) {
+        // Take the last N points based on timeframe
+        const fallbackCount = Math.min(maxDays, rawPrices.length)
+        filtered = rawPrices.slice(-fallbackCount)
+      }
+      
+      // Ensure we have at least 2 data points for meaningful display
+      if (filtered.length < 2 && rawPrices.length >= 2) {
+        filtered = rawPrices.slice(-Math.min(10, rawPrices.length))
+      }
       
       // Calculate if price is up or down from start
       if (filtered.length >= 2) {
@@ -138,7 +151,24 @@ export function usePriceSeries() {
     
     const isShortTerm = tfKey.value === '5D' || tfKey.value === '1M'
     
+    /**
+     * Find the closest value to a target date, accounting for market closures
+     * Markets are closed on weekends and holidays
+     */
     const findClosestValue = (targetDate, maxDiffDays = 3) => {
+      // Adjust target date if it falls on a weekend
+      const targetDateObj = new Date(targetDate)
+      const dayOfWeek = targetDateObj.getDay()
+      
+      // If Saturday (6), go back to Friday
+      if (dayOfWeek === 6) {
+        targetDate -= 1 * 24 * 60 * 60 * 1000
+      }
+      // If Sunday (0), go back to Friday
+      else if (dayOfWeek === 0) {
+        targetDate -= 2 * 24 * 60 * 60 * 1000
+      }
+      
       let closest = null
       let minDiff = Infinity
       
@@ -150,9 +180,28 @@ export function usePriceSeries() {
         }
       }
       
-      if (minDiff < maxDiffDays * 24 * 60 * 60 * 1000) {
+      // For short-term (1D), be more lenient - allow up to 4 days back (handles long weekends)
+      // For other periods, use the specified maxDiffDays
+      const effectiveMaxDiff = maxDiffDays === 2 ? 4 : maxDiffDays
+      const maxAllowedDiff = effectiveMaxDiff * 24 * 60 * 60 * 1000
+      
+      if (minDiff < maxAllowedDiff) {
         return closest
       }
+      
+      // If still no data found, try to find the most recent data point before target
+      // This handles cases where there's a market holiday
+      for (let i = sortedData.length - 1; i >= 0; i--) {
+        const [date, value] = sortedData[i]
+        if (date <= targetDate) {
+          const diff = targetDate - date
+          if (diff < maxAllowedDiff) {
+            return value
+          }
+          break
+        }
+      }
+      
       return null
     }
     
