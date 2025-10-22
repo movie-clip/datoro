@@ -59,7 +59,7 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
     dividendHistory: `/api/v3/historical-price-full/stock_dividend/${t}?apikey=${fmpApiKey}`,
     stockSplit: `/api/v3/historical-price-full/stock_split/${t}?apikey=${fmpApiKey}`,
     earningsCalendar: `/api/v3/historical/earning_calendar/${t}?apikey=${fmpApiKey}`,
-    financialScores: `/api/v3/score?symbol=${t}&apikey=${fmpApiKey}`,
+    financialScores: `/stable/financial-scores?symbol=${t}&apikey=${fmpApiKey}`,
     
     // Analyst data (Priority 2)
     priceTargetSummary: `/api/v4/price-target-summary?symbol=${t}&apikey=${fmpApiKey}`,
