@@ -2,6 +2,8 @@
 // Optimized chart data functions using batch endpoint data
 // Eliminates 15-20 API calls by extracting data from single batch endpoint
 
+import { validateBatchData, safeParseBatchData } from './batchDataSchemas.js'
+
 /**
  * Simple LRU cache for memoization
  * Caches expensive calculations to avoid redundant processing
@@ -54,10 +56,29 @@ function getCacheKey(fnName, ...args) {
 }
 
 /**
- * Memoization decorator for expensive functions
+ * Memoization decorator with built-in validation
+ * Validates batch data structure and caches results
  */
 function memoize(fn) {
   return function(...args) {
+    // Validate batch data on first argument (if it looks like batch data)
+    const batchData = args[0]
+    if (batchData && typeof batchData === 'object' && 'ticker' in batchData && 'data' in batchData) {
+      // Use safe parse to avoid throwing errors in production
+      const validationResult = safeParseBatchData(batchData)
+      
+      if (!validationResult.success) {
+        console.warn(`[BatchChartService] Validation failed for ${fn.name}:`, {
+          ticker: batchData.ticker,
+          errorCount: validationResult.error?.errors?.length || 0
+        })
+        // Continue with original data (warnings logged for monitoring)
+      } else {
+        // Replace with validated/sanitized data
+        args[0] = validationResult.data
+      }
+    }
+    
     const cacheKey = getCacheKey(fn.name, ...args)
     
     // Check cache first
@@ -74,7 +95,21 @@ function memoize(fn) {
 }
 
 /**
- * Get revenue series from batch data (MEMOIZED)
+ * Validate batch data before processing (strict mode)
+ * This function can be called explicitly for stricter validation
+ * Throws on validation errors instead of returning safe defaults
+ */
+export function validateAndSanitizeBatchData(batchData) {
+  try {
+    return validateBatchData(batchData)
+  } catch (error) {
+    console.error('[BatchChartService] Strict validation failed:', error)
+    throw error
+  }
+}
+
+/**
+ * Get revenue series from batch data (MEMOIZED + VALIDATED)
  * Used by: RevenueChart
  * Replaces: /api/v3/income-statement/:ticker (1 call)
  */
