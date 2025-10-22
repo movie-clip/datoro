@@ -157,13 +157,21 @@ class CacheService {
   async set(key, value, ttlSeconds = 3600) {
     this.stats.sets++;
 
+    // Pre-compute ETag for HTTP 304 responses (avoid stringify on every request)
+    const etag = this.generateETag(value);
+    const cacheValue = {
+      data: value,
+      etag: etag,
+      cachedAt: Date.now()
+    };
+
     // Layer 1: Memory cache
-    this.memoryCache.set(key, value);
+    this.memoryCache.set(key, cacheValue);
 
     // Layer 2: Redis cache
     if (this.redisEnabled && this.connected) {
       try {
-        const serialized = JSON.stringify(value);
+        const serialized = JSON.stringify(cacheValue);
         if (ttlSeconds > 0) {
           await this.redis.setex(key, ttlSeconds, serialized);
         } else {
@@ -174,6 +182,16 @@ class CacheService {
         this.stats.errors++;
       }
     }
+  }
+  
+  /**
+   * Generate ETag from data (MD5 hash)
+   */
+  generateETag(data) {
+    return crypto.createHash('md5')
+      .update(JSON.stringify(data))
+      .digest('hex')
+      .substring(0, 16);
   }
 
   /**

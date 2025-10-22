@@ -209,23 +209,11 @@
     
     <!-- Lazy load tab icons after app is ready -->
     <script>
-      // Expose function for Vue to call when data is loaded
+      // Icons will load naturally when tabs render (no prefetch needed)
+      // Browser caches them after first load, subsequent loads are instant
       window.__preloadTabIcons = function() {
-        const icons = [
-          '/icons/performance.png',
-          '/icons/valuation.png', 
-          '/icons/balance.png',
-          '/icons/returns.png',
-          '/icons/ai.png'
-        ];
-        
-        icons.forEach(src => {
-          const link = document.createElement('link');
-          link.rel = 'prefetch';
-          link.as = 'image';
-          link.href = src;
-          document.head.appendChild(link);
-        });
+        // No-op - icons load when tabs are clicked/rendered
+        // This function exists for compatibility with useTickerData.js
       };
     </script>
   </body>

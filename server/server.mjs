@@ -760,11 +760,18 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
       console.log(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
       res.setHeader('X-Cache', cached.source)
       
-      // Generate ETag from cached data for HTTP 304 support
-      const etag = crypto.createHash('md5')
-        .update(JSON.stringify(cached.data))
-        .digest('hex')
-        .substring(0, 16)
+      // Handle both old format (direct data) and new format (wrapped with etag)
+      let responseData = cached.data
+      let etag = 'no-etag'
+      
+      // New format: { data: {...}, etag: '...', cachedAt: ... }
+      if (cached.data.etag && cached.data.data) {
+        etag = cached.data.etag
+        responseData = cached.data.data
+      } else {
+        // Old format: direct data object - generate ETag on the fly
+        etag = cache.generateETag(cached.data)
+      }
       
       // Check if client has same version (ETag match)
       const clientEtag = req.headers['if-none-match']
@@ -775,18 +782,20 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
         return res.status(304).end()
       }
       
-      // Track in database (background - don't await)
+      // Track in database (truly async - don't block response)
       if (isDatabaseAvailable) {
-        trackSearch(req.ip, t, req.headers['user-agent'], 'batch').catch(err => {
-          console.error('[Database] Search tracking error:', err.message)
-          isDatabaseAvailable = false
+        setImmediate(() => {
+          trackSearch(req.ip, t, req.headers['user-agent'], 'batch').catch(err => {
+            console.error('[Database] Search tracking error:', err.message)
+            isDatabaseAvailable = false
+          })
         })
       }
       
       // Send cached data with ETag
       res.setHeader('ETag', etag)
       res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
-      return res.json(cached.data)
+      return res.json(responseData)
     }
     
     console.log(`[Batch] ${t} (${mode}) → CACHE MISS - Fetching from FMP...`)
@@ -806,42 +815,40 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
     
     console.log(`[Batch] ${t} (${mode}) → Fetched in ${result.fetchDuration}ms`)
     
-    // Track in database (background)
+    // Track in database (truly async - use setImmediate to not block response)
     if (isDatabaseAvailable) {
-      trackSearch(req.ip, t, req.headers['user-agent'], 'batch').catch(err => {
-        console.error('[Database] Search tracking error:', err.message)
-        isDatabaseAvailable = false
-      })
-      
-      // Update company name if available
-      if (result.data.profile && Array.isArray(result.data.profile) && result.data.profile[0]?.companyName) {
-        updateTickerCompanyName(t, result.data.profile[0].companyName).catch(err => {
-          console.error('[Database] Company name update error:', err.message)
+      setImmediate(() => {
+        trackSearch(req.ip, t, req.headers['user-agent'], 'batch').catch(err => {
+          console.error('[Database] Search tracking error:', err.message)
           isDatabaseAvailable = false
         })
-      }
-    }
-    
-    // Track API request (background - don't await)
-    if (isDatabaseAvailable) {
-      trackApiRequest({
-        endpoint: `/api/ticker-data/${t}`,
-        method: 'GET',
-        statusCode: 200,
-        responseTime: Date.now() - startTime,
-        cached: false,
-        ipAddress: req.ip
-      }).catch(err => {
-        console.error('[Database] API tracking error:', err.message)
-        isDatabaseAvailable = false
+        
+        // Update company name if available
+        if (result.data.profile && Array.isArray(result.data.profile) && result.data.profile[0]?.companyName) {
+          updateTickerCompanyName(t, result.data.profile[0].companyName).catch(err => {
+            console.error('[Database] Company name update error:', err.message)
+            isDatabaseAvailable = false
+          })
+        }
+        
+        // Track API request
+        trackApiRequest({
+          endpoint: `/api/ticker-data/${t}`,
+          method: 'GET',
+          statusCode: 200,
+          responseTime: Date.now() - startTime,
+          cached: false,
+          ipAddress: req.ip
+        }).catch(err => {
+          console.error('[Database] API tracking error:', err.message)
+          isDatabaseAvailable = false
+        })
       })
     }
     
-    // Generate ETag and send with cache headers
-    const etag = crypto.createHash('md5')
-      .update(JSON.stringify(result))
-      .digest('hex')
-      .substring(0, 16)
+    // Get ETag from cached object (pre-computed during cache.set())
+    const cachedResult = await cache.get(cacheKey)
+    const etag = cachedResult.data?.etag || 'no-etag'
     
     res.setHeader('ETag', etag)
     res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache

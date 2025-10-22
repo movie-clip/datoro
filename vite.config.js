@@ -2,6 +2,35 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+/**
+ * Custom plugin to add aggressive caching headers for static assets in dev
+ * This fixes slow 304 responses (240-260ms) for images
+ */
+function staticAssetCachingPlugin() {
+  return {
+    name: 'static-asset-caching',
+    configureServer(server) {
+      // Add middleware to set caching headers for static assets
+      server.middlewares.use((req, res, next) => {
+        // Match static assets (images, fonts, etc.)
+        const isStaticAsset = req.url?.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot)$/i)
+        
+        if (isStaticAsset) {
+          // Intercept writeHead to add cache headers
+          const originalWriteHead = res.writeHead
+          res.writeHead = function(...args) {
+            // Set aggressive caching for static assets
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+            return originalWriteHead.apply(this, args)
+          }
+        }
+        
+        next()
+      })
+    }
+  }
+}
+
 export default defineConfig(({ mode }) => {
   // Load environment variables
   const env = loadEnv(mode, process.cwd(), '')
@@ -9,6 +38,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
+      staticAssetCachingPlugin(), // Add caching headers for static assets
       vue({
         // Disable expensive template compilation optimizations in dev
         template: {
@@ -24,12 +54,9 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0', // Allow access from local network (iPhone, etc.)
       port: 5173,
       
-      // Performance optimizations for dev server
-      hmr: {
-        overlay: false, // Disable error overlay for faster HMR
-        protocol: 'ws', // Use WebSocket (faster than polling)
-        timeout: 30000
-      },
+      // Disable HMR to match production environment
+      // Dev will require manual browser refresh after code changes
+      hmr: false,
       
       // Enable faster dev server
       fs: {
