@@ -353,13 +353,17 @@ async function createSession(userId, token, ipAddress = null, userAgent = null) 
   })
 }
 
+// In-memory session cache (60 second TTL to reduce DB load)
+const sessionCache = new Map()
+const SESSION_CACHE_TTL = 60 * 1000 // 1 minute
+
 /**
  * Verify session token
  * @param {string} token - JWT token
  * @returns {Promise<object|null>} - User object or null
  */
 export async function verifySession(token) {
-  // Verify JWT first
+  // Verify JWT first (fast, no DB)
   const payload = verifyToken(token)
   if (!payload) {
     return null
@@ -368,13 +372,21 @@ export async function verifySession(token) {
   // Hash token to compare with database
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
   
-  // Find session
+  // Check cache first (avoid DB query on every request)
+  const cached = sessionCache.get(hashedToken)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.user
+  }
+  
+  // Find session in database
   const session = await prisma.session.findUnique({
     where: { token: hashedToken },
     include: { user: true }
   })
   
   if (!session) {
+    // Cache negative result for 10 seconds to prevent repeated DB queries
+    sessionCache.set(hashedToken, { user: null, expiresAt: Date.now() + 10000 })
     return null
   }
   
@@ -384,11 +396,19 @@ export async function verifySession(token) {
     await prisma.session.delete({
       where: { id: session.id }
     })
+    sessionCache.delete(hashedToken)
     return null
   }
   
   // Return user without password
   const { password: _, ...userWithoutPassword } = session.user
+  
+  // Cache valid session for 1 minute
+  sessionCache.set(hashedToken, {
+    user: userWithoutPassword,
+    expiresAt: Date.now() + SESSION_CACHE_TTL
+  })
+  
   return userWithoutPassword
 }
 
@@ -404,6 +424,9 @@ export async function logoutUser(token) {
     where: { token: hashedToken }
   })
   
+  // Clear from cache
+  sessionCache.delete(hashedToken)
+  
   console.log('[Auth] User logged out')
 }
 
@@ -416,6 +439,9 @@ export async function logoutAllSessions(userId) {
   await prisma.session.deleteMany({
     where: { userId }
   })
+  
+  // Clear all cached sessions for this user (brute force: clear entire cache)
+  sessionCache.clear()
   
   console.log(`[Auth] All sessions deleted for user: ${userId}`)
 }

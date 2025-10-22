@@ -58,6 +58,11 @@ export default defineConfig(({ mode }) => {
       // Dev will require manual browser refresh after code changes
       hmr: false,
       
+      // CRITICAL: Force strong caching for dev server responses
+      headers: {
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      },
+      
       // Enable faster dev server
       fs: {
         strict: false, // Less strict for faster serving
@@ -81,7 +86,8 @@ export default defineConfig(({ mode }) => {
           './src/stores/tickerStore.js',
           './src/composables/useTickerData.js',
           './src/services/financials/batchChartService.js',
-          './src/services/financials/batchTableService.js'
+          './src/services/financials/batchTableService.js',
+          './src/styles/globals.css'
         ]
       },
 
