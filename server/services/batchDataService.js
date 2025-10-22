@@ -71,12 +71,12 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
     const responses = await Promise.allSettled(
       Object.entries(endpoints).map(async ([key, endpoint]) => {
         try {
-          // Fetch with 10 second timeout
+          // Fetch with 8 second timeout (reduced from 10 for faster failures)
           const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
-          }, 10000);
+          }, 8000);
           
           if (!res.ok) {
             console.warn(`[BatchData] ${key} failed: ${res.status}`);
@@ -92,12 +92,13 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
       })
     );
 
-    // Build result object
+    // Build result object - ALWAYS return data, even if some endpoints failed
     const result = {
       ticker: t,
       timestamp: new Date().toISOString(),
       fetchDuration: Date.now() - startTime,
-      data: {}
+      data: {},
+      failures: [] // Track which endpoints failed
     };
 
     responses.forEach((response, index) => {
@@ -105,9 +106,13 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
       if (response.status === 'fulfilled') {
         const [dataKey, data] = response.value;
         result.data[dataKey] = data;
+        if (!data) {
+          result.failures.push(key);
+        }
       } else {
         console.error(`[BatchData] ${key} error:`, response.reason);
         result.data[key] = null;
+        result.failures.push(key);
       }
     });
 

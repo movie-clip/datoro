@@ -852,6 +852,10 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
     
     res.setHeader('ETag', etag)
     res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+    
+    // CRITICAL: Return the actual data, not the cache wrapper
+    // Cache stores { data: {...}, etag: '...', cachedAt: ... }
+    // We must unwrap to send just the data
     res.json(result)
   } catch (error) {
     console.error(`[Batch] Error fetching ${t}:`, error)

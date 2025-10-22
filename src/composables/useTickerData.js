@@ -75,7 +75,23 @@ export function useTickerData(tickerRef, options = {}) {
     const startTime = performance.now()
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`)
+      // Use If-None-Match header to leverage server ETags (HTTP 304 responses)
+      const headers = {}
+      const cachedData = cache.get(cacheKey)
+      if (cachedData?.etag) {
+        headers['If-None-Match'] = cachedData.etag
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`, { headers })
+      
+      // Handle 304 Not Modified - use cached data
+      if (response.status === 304) {
+        data.value = cachedData.data
+        loading.value = false
+        error.value = null
+        fetchTime.value = Math.round(performance.now() - startTime)
+        return
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -84,10 +100,17 @@ export function useTickerData(tickerRef, options = {}) {
       const result = await response.json()
       fetchTime.value = Math.round(performance.now() - startTime)
       
+      // Store ETag for future requests
+      const etag = response.headers.get('etag')
+      if (etag) {
+        result._etag = etag
+      }
+      
       data.value = result
       
-      // Store in client-side cache (5 min TTL)
-      cache.set(cacheKey, result)
+      // Store in client-side cache (5 min TTL) with ETag
+      cache.set(cacheKey, { data: result, etag: etag || null })
+      setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000)
       setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000)
       
       // Lazy load tab icons after first successful data load
