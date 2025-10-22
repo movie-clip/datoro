@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getRevenueSeriesFromBatch,
   getRevenueSegmentsFromBatch,
@@ -12,7 +12,8 @@ import {
   getExpensesSeriesFromBatch,
   getDividendYieldSeriesFromBatch,
   getInsiderTradingFromBatch,
-  getPriceSeriesFromBatch
+  getPriceSeriesFromBatch,
+  memoCache
 } from '../../../src/services/financials/batchChartService.js';
 
 // Mock batch data fixtures
@@ -132,6 +133,11 @@ const mockBatchData = {
 };
 
 describe('Batch Chart Service', () => {
+  
+  // Clear memoization cache before each test to ensure test isolation
+  beforeEach(() => {
+    memoCache.clear();
+  });
   
   describe('getRevenueSeriesFromBatch', () => {
     it('should extract annual revenue series', () => {
