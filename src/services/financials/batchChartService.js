@@ -2,116 +2,12 @@
 // Optimized chart data functions using batch endpoint data
 // Eliminates 15-20 API calls by extracting data from single batch endpoint
 
-// import { validateBatchData, safeParseBatchData } from './batchDataSchemas.js' // Temporarily disabled
-
 /**
- * Simple LRU cache for memoization
- * Caches expensive calculations to avoid redundant processing
- */
-class MemoCache {
-  constructor(maxSize = 100) {
-    this.cache = new Map()
-    this.maxSize = maxSize
-  }
-
-  get(key) {
-    if (!this.cache.has(key)) return undefined
-    
-    // Move to end (most recently used)
-    const value = this.cache.get(key)
-    this.cache.delete(key)
-    this.cache.set(key, value)
-    return value
-  }
-
-  set(key, value) {
-    // Delete oldest if at capacity
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value
-      this.cache.delete(firstKey)
-    }
-    
-    this.cache.set(key, value)
-  }
-
-  clear() {
-    this.cache.clear()
-  }
-}
-
-// Global memo cache (shared across all function calls)
-const memoCache = new MemoCache(100)
-
-/**
- * Generate cache key from function arguments
- */
-function getCacheKey(fnName, ...args) {
-  // Use ticker and timestamp from batchData as key components
-  const batchData = args[0]
-  const ticker = batchData?.ticker || 'unknown'
-  const timestamp = batchData?.timestamp || 0
-  const otherArgs = args.slice(1).join(':')
-  
-  return `${fnName}:${ticker}:${timestamp}:${otherArgs}`
-}
-
-/**
- * Memoization decorator (validation temporarily disabled for debugging)
- * Validates batch data structure and caches results
- */
-function memoize(fn) {
-  return function(...args) {
-    // VALIDATION TEMPORARILY DISABLED - schemas causing issues
-    // TODO: Re-enable after fixing Zod schemas
-    /*
-    const batchData = args[0]
-    if (batchData && typeof batchData === 'object' && 'ticker' in batchData && 'data' in batchData) {
-      const validationResult = safeParseBatchData(batchData)
-      
-      if (!validationResult.success) {
-        console.warn(`[BatchChartService] Validation failed for ${fn.name}:`, {
-          ticker: batchData.ticker,
-          errorCount: validationResult.error?.errors?.length || 0
-        })
-      }
-    }
-    */
-    
-    const cacheKey = getCacheKey(fn.name, ...args)
-    
-    // Check cache first
-    const cached = memoCache.get(cacheKey)
-    if (cached !== undefined) {
-      return cached
-    }
-    
-    // Calculate and cache
-    const result = fn(...args)
-    memoCache.set(cacheKey, result)
-    return result
-  }
-}
-
-/**
- * Validate batch data before processing (strict mode)
- * This function can be called explicitly for stricter validation
- * Throws on validation errors instead of returning safe defaults
- */
-export function validateAndSanitizeBatchData(batchData) {
-  try {
-    return validateBatchData(batchData)
-  } catch (error) {
-    console.error('[BatchChartService] Strict validation failed:', error)
-    throw error
-  }
-}
-
-/**
- * Get revenue series from batch data (MEMOIZED + VALIDATED)
+ * Get revenue series from batch data
  * Used by: RevenueChart
  * Replaces: /api/v3/income-statement/:ticker (1 call)
  */
-export const getRevenueSeriesFromBatch = memoize(function getRevenueSeriesFromBatch(batchData, period = 'annual') {
+export function getRevenueSeriesFromBatch(batchData, period = 'annual') {
   try {
     const statements = period === 'quarterly' 
       ? batchData?.data?.incomeQuarter 
@@ -129,17 +25,14 @@ export const getRevenueSeriesFromBatch = memoize(function getRevenueSeriesFromBa
     console.error('[BatchChartService] getRevenueSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get revenue segments from batch data (MEMOIZED)
+ * Get revenue segments from batch data
  * Used by: RevenueChart (segment breakdown)
  * Replaces: /api/v4/revenue-product-segmentation (1 call)
- * 
- * This is an expensive operation due to nested loops and data transformation.
- * Memoization prevents redundant calculations when switching between segments.
  */
-export const getRevenueSegmentsFromBatch = memoize(function getRevenueSegmentsFromBatch(batchData) {
+export function getRevenueSegmentsFromBatch(batchData) {
   try {
     const segmentData = batchData?.data?.revenueSegments
     
@@ -201,14 +94,14 @@ export const getRevenueSegmentsFromBatch = memoize(function getRevenueSegmentsFr
     console.error('[BatchChartService] getRevenueSegmentsFromBatch error:', error)
     return { segments: [], series: {} }
   }
-})
+}
 
 /**
- * Get Free Cash Flow series from batch data (MEMOIZED)
+ * Get FCF series from batch data
  * Used by: FcfChart
  * Replaces: /api/v3/cash-flow-statement/:ticker + /api/v3/key-metrics/:ticker (2 calls)
  */
-export const getFcfSeriesFromBatch = memoize(function getFcfSeriesFromBatch(batchData, period = 'annual') {
+export function getFcfSeriesFromBatch(batchData, period = 'annual') {
   try {
     const cashflow = period === 'quarterly'
       ? batchData?.data?.cashflowQuarter
@@ -242,14 +135,14 @@ export const getFcfSeriesFromBatch = memoize(function getFcfSeriesFromBatch(batc
     console.error('[BatchChartService] getFcfSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get Net Income series from batch data (MEMOIZED)
+ * Get Net Income series from batch data
  * Used by: NetIncomeChart
  * Replaces: /api/v3/income-statement/:ticker (1 call)
  */
-export const getNetIncomeSeriesFromBatch = memoize(function getNetIncomeSeriesFromBatch(batchData, period = 'annual') {
+export function getNetIncomeSeriesFromBatch(batchData, period = 'annual') {
   try {
     const statements = period === 'quarterly'
       ? batchData?.data?.incomeQuarter
@@ -267,14 +160,14 @@ export const getNetIncomeSeriesFromBatch = memoize(function getNetIncomeSeriesFr
     console.error('[BatchChartService] getNetIncomeSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get EPS series from batch data (MEMOIZED)
+ * Get EPS series from batch data
  * Used by: EpsChart
- * Replaces: /api/v3/income-statement/:ticker (1 call)
+ * Replaces: /api/v3/income-statement/:ticker?period=quarter (1 call)
  */
-export const getEpsSeriesFromBatch = memoize(function getEpsSeriesFromBatch(batchData, period = 'annual') {
+export function getEpsSeriesFromBatch(batchData, period = 'annual') {
   try {
     const statements = period === 'quarterly' 
       ? batchData?.data?.incomeQuarter 
@@ -292,14 +185,14 @@ export const getEpsSeriesFromBatch = memoize(function getEpsSeriesFromBatch(batc
     console.error('[BatchChartService] getEpsSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get EBITDA series from batch data (MEMOIZED)
+ * Get EBITDA series from batch data
  * Used by: EbitdaChart
- * Replaces: /api/v3/key-metrics/:ticker (1 call)
+ * Replaces: /api/v3/income-statement/:ticker (1 call)
  */
-export const getEbitdaSeriesFromBatch = memoize(function getEbitdaSeriesFromBatch(batchData, period = 'annual') {
+export function getEbitdaSeriesFromBatch(batchData, period = 'annual') {
   try {
     const statements = period === 'quarterly'
       ? batchData?.data?.incomeQuarter
@@ -324,14 +217,14 @@ export const getEbitdaSeriesFromBatch = memoize(function getEbitdaSeriesFromBatc
     console.error('[BatchChartService] getEbitdaSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get Cash & Debt series from batch data (MEMOIZED)
+ * Get Cash & Debt series from batch data
  * Used by: CashDebtChart
  * Replaces: /api/v3/balance-sheet-statement/:ticker (1 call)
  */
-export const getCashDebtSeriesFromBatch = memoize(function getCashDebtSeriesFromBatch(batchData, period = 'annual') {
+export function getCashDebtSeriesFromBatch(batchData, period = 'annual') {
   try {
     const balance = period === 'quarterly'
       ? batchData?.data?.balanceQuarter
@@ -357,14 +250,14 @@ export const getCashDebtSeriesFromBatch = memoize(function getCashDebtSeriesFrom
     console.error('[BatchChartService] getCashDebtSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get Capital Returned series from batch data (MEMOIZED)
+ * Get Capital Returned series from batch data
  * Used by: CapitalReturnedChart
  * Replaces: /api/v3/cash-flow-statement/:ticker (1 call)
  */
-export const getCapitalReturnedSeriesFromBatch = memoize(function getCapitalReturnedSeriesFromBatch(batchData, period = 'annual') {
+export function getCapitalReturnedSeriesFromBatch(batchData, period = 'annual') {
   try {
     const cashflow = period === 'quarterly'
       ? batchData?.data?.cashflowQuarter
@@ -391,14 +284,14 @@ export const getCapitalReturnedSeriesFromBatch = memoize(function getCapitalRetu
     console.error('[BatchChartService] getCapitalReturnedSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get Shares Outstanding series from batch data (MEMOIZED)
+ * Get Shares Outstanding series from batch data
  * Used by: SharesChart
- * Replaces: /api/v3/enterprise-values/:ticker (1 call)
+ * Replaces: /api/v3/income-statement/:ticker (1 call)
  */
-export const getSharesSeriesFromBatch = memoize(function getSharesSeriesFromBatch(batchData, period = 'annual') {
+export function getSharesSeriesFromBatch(batchData, period = 'annual') {
   try {
     const statements = period === 'quarterly'
       ? batchData?.data?.incomeQuarter
@@ -416,14 +309,14 @@ export const getSharesSeriesFromBatch = memoize(function getSharesSeriesFromBatc
     console.error('[BatchChartService] getSharesSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get Expenses series from batch data (MEMOIZED)
+ * Get Expenses series from batch data
  * Used by: ExpensesChart
  * Replaces: /api/v3/income-statement/:ticker (1 call)
  */
-export const getExpensesSeriesFromBatch = memoize(function getExpensesSeriesFromBatch(batchData, period = 'annual') {
+export function getExpensesSeriesFromBatch(batchData, period = 'annual') {
   try {
     const statements = period === 'quarterly'
       ? batchData?.data?.incomeQuarter
@@ -444,14 +337,14 @@ export const getExpensesSeriesFromBatch = memoize(function getExpensesSeriesFrom
     console.error('[BatchChartService] getExpensesSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get Dividend Yield series from batch data (MEMOIZED)
+ * Get Dividend Yield series from batch data
  * Used by: DividendYieldChart
- * Replaces: /api/v3/historical-price-full/stock_dividend/:ticker (1 call)
+ * Replaces: /api/v3/historical-price-full/:ticker/dividend (1 call from dividendHistory)
  */
-export const getDividendYieldSeriesFromBatch = memoize(function getDividendYieldSeriesFromBatch(batchData, period = 'annual') {
+export function getDividendYieldSeriesFromBatch(batchData, period = 'annual') {
   try {
     const dividendHistory = batchData?.data?.dividendHistory
     const profile = batchData?.data?.profile?.[0]
@@ -499,17 +392,14 @@ export const getDividendYieldSeriesFromBatch = memoize(function getDividendYield
     console.error('[BatchChartService] getDividendYieldSeriesFromBatch error:', error)
     return []
   }
-})
+}
 
 /**
- * Get Insider Trading aggregated data from batch data (MEMOIZED)
+ * Get Insider Trading aggregated data from batch data
  * Used by: InsiderTradingChart
  * Replaces: /api/v4/insider-trading (1 call from insiderTrading)
- * 
- * Expensive operation: processes 500+ records with date parsing, grouping, and aggregation.
- * Memoization prevents redundant processing when switching views.
  */
-export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFromBatch(batchData) {
+export function getInsiderTradingFromBatch(batchData) {
   try {
     const insiderData = batchData?.data?.insiderTrading
     
@@ -556,14 +446,14 @@ export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFrom
     console.error('[BatchChartService] getInsiderTradingFromBatch error:', error)
     return { buys: [], sells: [], net: [] }
   }
-})
+}
 
 /**
- * Get price history series from batch data (MEMOIZED)
+ * Get price history series from batch data
  * Used by: PriceChart, InsiderTradingChart
  * Replaces: Direct /api/fmp/api/v3/historical-price-full call (1 call eliminated)
  */
-export const getPriceSeriesFromBatch = memoize(function getPriceSeriesFromBatch(batchData, maxDays = null) {
+export function getPriceSeriesFromBatch(batchData, maxDays = null) {
   try {
     const priceHistory = batchData?.data?.priceHistory
     
@@ -592,7 +482,4 @@ export const getPriceSeriesFromBatch = memoize(function getPriceSeriesFromBatch(
     console.error('[BatchChartService] getPriceSeriesFromBatch error:', error)
     return []
   }
-})
-
-// Export memoCache for testing and cache management
-export { memoCache }
+}
