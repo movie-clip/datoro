@@ -456,6 +456,10 @@ const analysisMessage = computed(() => {
     height: 45px;
   }
 
+  .price-marker.current-price .marker-line {
+    height: 45px;
+  }
+
   .marker-label {
     top: -45px;
     padding: 4px 6px;
