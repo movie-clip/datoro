@@ -35,13 +35,17 @@ export function createTooltipFormatter(options = {}) {
       const lname = String(name).toLowerCase()
       let formatted
 
+      // Check if this is shares data (shares outstanding, diluted shares, etc.)
+      // Exclude "Share Buybacks" which is a dollar amount, not share count
+      const isSharesData = (lname.includes('shares') || lname.includes('outstanding')) && !lname.includes('buyback')
+
       if (dualAxis) {
         // Dual axis specific formatting
         if (lname.includes('price')) {
           formatted = `$${value.toFixed(2)}`
         } else if (lname.includes('margin') || lname.includes('%')) {
           formatted = `${value.toFixed(1)}%`
-        } else if (lname.includes('share')) {
+        } else if (isSharesData) {
           const sign = value >= 0 ? '+' : ''
           const abs = Math.abs(value)
           formatted = abs >= 1000
@@ -52,8 +56,20 @@ export function createTooltipFormatter(options = {}) {
           formatted = yFormatter(value, 'currency')
         }
       } else {
-        // Always use currency format for tooltips (consistent "$10B" format)
-        if (yFormat === 'percent') {
+        // Check for shares data first (before applying currency format)
+        if (isSharesData) {
+          // Format shares as millions (e.g., "1,234M shares")
+          const abs = Math.abs(value)
+          if (abs >= 1e9) {
+            formatted = `${(value / 1e9).toFixed(2)}B shares`
+          } else if (abs >= 1e6) {
+            formatted = `${(value / 1e6).toFixed(0)}M shares`
+          } else if (abs >= 1e3) {
+            formatted = `${(value / 1e3).toFixed(0)}K shares`
+          } else {
+            formatted = `${Math.round(value).toLocaleString()} shares`
+          }
+        } else if (yFormat === 'percent') {
           formatted = `${value.toFixed(1)}%`
         } else if (yFormat === 'int') {
           formatted = Math.round(value).toLocaleString()
