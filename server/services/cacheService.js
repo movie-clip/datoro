@@ -157,21 +157,13 @@ class CacheService {
   async set(key, value, ttlSeconds = 3600) {
     this.stats.sets++;
 
-    // Pre-compute ETag for HTTP 304 responses (avoid stringify on every request)
-    const etag = this.generateETag(value);
-    const cacheValue = {
-      data: value,
-      etag: etag,
-      cachedAt: Date.now()
-    };
-
-    // Layer 1: Memory cache
-    this.memoryCache.set(key, cacheValue);
+    // Layer 1: Memory cache (store raw data)
+    this.memoryCache.set(key, value);
 
     // Layer 2: Redis cache
     if (this.redisEnabled && this.connected) {
       try {
-        const serialized = JSON.stringify(cacheValue);
+        const serialized = JSON.stringify(value);
         if (ttlSeconds > 0) {
           await this.redis.setex(key, ttlSeconds, serialized);
         } else {
