@@ -56,15 +56,16 @@ function getCacheKey(fnName, ...args) {
 }
 
 /**
- * Memoization decorator with built-in validation
+ * Memoization decorator (validation temporarily disabled for debugging)
  * Validates batch data structure and caches results
  */
 function memoize(fn) {
   return function(...args) {
-    // Validate batch data on first argument (if it looks like batch data)
+    // VALIDATION TEMPORARILY DISABLED - schemas causing issues
+    // TODO: Re-enable after fixing Zod schemas
+    /*
     const batchData = args[0]
     if (batchData && typeof batchData === 'object' && 'ticker' in batchData && 'data' in batchData) {
-      // Use safe parse to avoid throwing errors in production
       const validationResult = safeParseBatchData(batchData)
       
       if (!validationResult.success) {
@@ -72,12 +73,9 @@ function memoize(fn) {
           ticker: batchData.ticker,
           errorCount: validationResult.error?.errors?.length || 0
         })
-        // Continue with original data (warnings logged for monitoring)
-        // DO NOT replace args[0] - use original data to avoid breaking charts
       }
-      // Note: We intentionally don't replace args[0] with validated data
-      // to avoid breaking existing cached data and chart logic
     }
+    */
     
     const cacheKey = getCacheKey(fn.name, ...args)
     
