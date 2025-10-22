@@ -12,7 +12,7 @@
  *   - All memoization caches (client-side will auto-clear on reload)
  */
 
-import { createClient } from 'redis'
+import Redis from 'ioredis'
 import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -36,11 +36,9 @@ async function clearRedisCache() {
   console.log('🔌 Connecting to Redis...')
   console.log(`   URL: ${REDIS_URL.replace(/:[^:]*@/, ':***@')}`) // Hide password
   
-  const client = createClient({
-    url: REDIS_URL,
-    socket: {
-      reconnectStrategy: false // Don't retry, just fail fast
-    }
+  const client = new Redis(REDIS_URL, {
+    maxRetriesPerRequest: 1,
+    lazyConnect: true
   })
 
   client.on('error', (err) => {
@@ -58,7 +56,7 @@ async function clearRedisCache() {
 
     if (batchKeys.length === 0) {
       console.log('ℹ️  No cached data found (cache already empty)')
-      await client.disconnect()
+      await client.quit()
       return
     }
 
@@ -73,8 +71,8 @@ async function clearRedisCache() {
 
     // Delete all batch keys
     console.log('🗑️  Deleting cached data...')
-    for (const key of batchKeys) {
-      await client.del(key)
+    if (batchKeys.length > 0) {
+      await client.del(...batchKeys)
     }
 
     console.log(`✅ Successfully deleted ${batchKeys.length} cache entries\n`)
@@ -88,7 +86,7 @@ async function clearRedisCache() {
       console.warn(`⚠️  Warning: ${remainingKeys.length} keys still remain`)
     }
 
-    await client.disconnect()
+    await client.quit()
     console.log('\n✅ Done! Redis cache has been cleared.')
     console.log('   New data will be fetched from FMP API on next request.')
     
