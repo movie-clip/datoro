@@ -43,8 +43,9 @@
 </template>
 
 <script setup>
-import { ref, computed, toRef, watch } from 'vue'
-import { useTickerData } from '../../composables/useTickerData.js'
+import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../../stores/tickerStore'
 
 const props = defineProps({
   ticker: { type: String, required: true }
@@ -54,27 +55,9 @@ const emit = defineEmits(['update:companyName', 'update:companyProfile'])
 
 const imageError = ref(false)
 
-// Use batch data composable (same data source as charts)
-const tickerRef = toRef(props, 'ticker')
-const { data: batchData, loading, error } = useTickerData(tickerRef)
-
-// Extract profile from batch data
-const profile = computed(() => {
-  if (!batchData.value?.data?.profile) return {}
-  const profileArray = batchData.value.data.profile
-  return Array.isArray(profileArray) && profileArray.length > 0 
-    ? profileArray[0] 
-    : {}
-})
-
-// Extract quote from batch data
-const quote = computed(() => {
-  if (!batchData.value?.data?.quote) return {}
-  const quoteArray = batchData.value.data.quote
-  return Array.isArray(quoteArray) && quoteArray.length > 0 
-    ? quoteArray[0] 
-    : {}
-})
+// Use shared Pinia store (same data source as all other components)
+const tickerStore = useTickerStore()
+const { batchData, loading, profile, quote } = storeToRefs(tickerStore)
 
 // Extract earnings date from batch data
 const earningsDate = computed(() => {

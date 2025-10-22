@@ -114,17 +114,23 @@ export default defineConfig(({ mode }) => {
         'echarts/core',
         'echarts/charts/LineChart',
         'echarts/charts/BarChart',
+        'echarts/charts/CandlestickChart',
         'echarts/renderers/CanvasRenderer',
         'echarts/components/GridComponent',
         'echarts/components/TooltipComponent',
         'echarts/components/TitleComponent',
         'echarts/components/LegendComponent',
+        'echarts/components/DataZoomComponent',
+        'echarts/components/MarkLineComponent',
         'vue-echarts'
       ],
       exclude: [],
       // Enable esbuild optimization
       esbuildOptions: {
-        target: 'es2020'
+        target: 'es2020',
+        // Aggressive minification in deps
+        minify: true,
+        treeShaking: true
       },
       // Force dependency optimization on first run
       force: false,
