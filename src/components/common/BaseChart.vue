@@ -160,6 +160,7 @@ import { getCachedGrowthRates } from '../../services/financials/growthService.js
 import { fmtShort, yFormatter } from '../../utils/chartFormatters.js'
 import { convertToCategoryData, extractYearsFromSeries, getAllDataPoints } from '../../utils/chartDataTransformers.js'
 import { isConfiguredSeries, isMultiSeriesFormat, isConfiguredSeriesArray } from '../../utils/chartTypeGuards.js'
+import { getTooltipConfig } from '../../composables/useTooltipFormatter.js'
 
 // Track if component is mounted AND ECharts is ready
 const isMounted = ref(false)
@@ -396,120 +397,13 @@ const createOption = (isLarge = false) => {
       top: topPadding, 
       bottom: bottomPadding
     },
-    tooltip: isLarge ? { 
-      // Modal view - enable rich tooltips for all devices
-      trigger: 'axis',
-      confine: isMobile, // Keep tooltip within chart bounds on mobile
-      triggerOn: isMobile ? 'click' : 'mousemove|click', // Tap to show on mobile, hover on desktop
-      position: isMobile ? 'top' : undefined, // Fixed position on mobile
-      backgroundColor: 'rgba(21, 21, 24, 0.95)',
-      borderColor: '#2A2A2E',
-      borderWidth: 1,
-      textStyle: {
-        color: '#E5E5E5',
-        fontSize: 13
-      },
-      formatter: (params) => {
-        if (!params || params.length === 0) return ''
-        
-        // For bar charts, params[0].value is the data value, not an array
-        // For line charts, params[0].value is [timestamp, value]
-        const isBarChart = props.kind === 'bar'
-        const date = isBarChart 
-          ? params[0].name // Bar chart uses category name (year)
-          : new Date(params[0].value[0]).toLocaleDateString()
-        
-        let html = `<div style="font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #E5E5E5;">${date}</div>`
-        
-        params.forEach(item => {
-          const marker = item.marker
-          const name = item.seriesName || ''
-          const value = isBarChart ? Number(item.value) : Number(item.value[1])
-          const lname = String(name).toLowerCase()
-          let formatted
-          
-          if (props.dualAxis) {
-            // Dual axis specific formatting
-            if (lname.includes('price')) {
-              formatted = `$${value.toFixed(2)}`
-            } else if (lname.includes('margin') || lname.includes('%')) {
-              formatted = `${value.toFixed(1)}%`
-            } else if (lname.includes('share')) {
-              const sign = value >= 0 ? '+' : ''
-              const abs = Math.abs(value)
-              formatted = abs >= 1000 
-                ? `${sign}${(value / 1000).toFixed(1)}K shares`
-                : `${sign}${value.toFixed(0)} shares`
-            } else {
-              formatted = yFormatter(value, props.yFormat)
-            }
-          } else {
-            // Use yFormat prop for consistent formatting
-            formatted = yFormatter(value, props.yFormat)
-          }
-          
-          html += `<div style="color: #E5E5E5;">${marker} ${name}: ${formatted}</div>`
-        })
-        return html
-      }
-    } : !isMobile ? { 
-      // Compact view - enable tooltips for desktop only
-      trigger: 'axis',
-      triggerOn: 'mousemove', // Hover only, no click
-      backgroundColor: 'rgba(21, 21, 24, 0.95)',
-      borderColor: '#2A2A2E',
-      borderWidth: 1,
-      textStyle: {
-        color: '#E5E5E5',
-        fontSize: 12
-      },
-      formatter: (params) => {
-        if (!params || params.length === 0) return ''
-        
-        // For bar charts, params[0].value is the data value, not an array
-        // For line charts, params[0].value is [timestamp, value]
-        const isBarChart = props.kind === 'bar'
-        const date = isBarChart 
-          ? params[0].name // Bar chart uses category name (year)
-          : new Date(params[0].value[0]).toLocaleDateString()
-        
-        let html = `<div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #E5E5E5;">${date}</div>`
-        
-        params.forEach(item => {
-          const marker = item.marker
-          const name = item.seriesName || ''
-          const value = isBarChart ? Number(item.value) : Number(item.value[1])
-          const lname = String(name).toLowerCase()
-          let formatted
-          
-          if (props.dualAxis) {
-            // Dual axis specific formatting
-            if (lname.includes('price')) {
-              formatted = `$${value.toFixed(2)}`
-            } else if (lname.includes('margin') || lname.includes('%')) {
-              formatted = `${value.toFixed(1)}%`
-            } else if (lname.includes('share')) {
-              const sign = value >= 0 ? '+' : ''
-              const abs = Math.abs(value)
-              formatted = abs >= 1000 
-                ? `${sign}${(value / 1000).toFixed(1)}K shares`
-                : `${sign}${value.toFixed(0)} shares`
-            } else {
-              formatted = yFormatter(value, props.yFormat)
-            }
-          } else {
-            // Use yFormat prop for consistent formatting
-            formatted = yFormatter(value, props.yFormat)
-          }
-          
-          html += `<div style="color: #E5E5E5;">${marker} ${name}: ${formatted}</div>`
-        })
-        return html
-      }
-    } : { 
-      // Compact view on mobile - disable tooltips to prevent persistence bug
-      show: false
-    },
+    tooltip: getTooltipConfig({
+      isLarge,
+      isMobile,
+      kind: props.kind,
+      dualAxis: props.dualAxis,
+      yFormat: props.yFormat
+    }),
     xAxis: {
       type: props.kind === 'bar' ? 'category' : 'time',
       data: props.kind === 'bar' ? categoryData : undefined,
