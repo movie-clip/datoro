@@ -54,28 +54,18 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0', // Allow access from local network (iPhone, etc.)
       port: 5173,
       
-      // Disable HMR to match production environment
-      // Dev will require manual browser refresh after code changes
-      hmr: false,
-      
-      // CRITICAL: Force strong caching for dev server responses
-      headers: {
-        'Cache-Control': 'public, max-age=31536000, immutable'
-      },
+      // Enable HMR for instant hot-reload during development
+      hmr: true,
       
       // Enable faster dev server
       fs: {
         strict: false, // Less strict for faster serving
         allow: ['..'], // Allow serving files from parent directory
-        // Cache file system reads
-        cachedChecks: true
+        cachedChecks: true // Cache file system reads
       },
       
       // Pre-transform modules for faster initial load
       preTransformRequests: true,
-      
-      // Disable source map generation in dev for speed
-      sourcemap: false,
       
       // Aggressive dev server optimizations
       warmup: {

@@ -92,6 +92,11 @@ services:
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true # Auto-preview pull requests
     
+    # Environment Variables (injected during build)
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://factorly-api.onrender.com
+    
     # Only rebuild frontend when these files change
     buildFilter:
       paths:

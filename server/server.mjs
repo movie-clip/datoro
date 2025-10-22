@@ -130,8 +130,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['X-Cache', 'X-Request-Id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'If-None-Match'],
+  exposedHeaders: ['X-Cache', 'X-Request-Id', 'ETag'],
   preflightContinue: false,
   optionsSuccessStatus: 204
 }))
