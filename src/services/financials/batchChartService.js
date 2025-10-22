@@ -31,11 +31,16 @@ const cache = new LRUCache(100)
 
 // Memoize wrapper: ticker + args only (no timestamp = no cache misses on refetch)
 const memoize = (fn) => function(...args) {
+  // Handle null/undefined batchData
+  if (!args[0]) return fn(...args)
+  
   const ticker = args[0]?.ticker
   if (!ticker) return fn(...args)
+  
   const key = `${fn.name}:${ticker}:${args.slice(1).join(':')}`
   const cached = cache.get(key)
   if (cached !== undefined) return cached
+  
   const result = fn(...args)
   cache.set(key, result)
   return result
@@ -67,11 +72,11 @@ export function getRevenueSeriesFromBatch(batchData, period = 'annual') {
 }
 
 /**
- * Get revenue segments from batch data (MEMOIZED - expensive operation)
+ * Get revenue segments from batch data
  * Used by: RevenueChart (segment breakdown)
  * Replaces: /api/v4/revenue-product-segmentation (1 call)
  */
-export const getRevenueSegmentsFromBatch = memoize(function getRevenueSegmentsFromBatch(batchData) {
+export function getRevenueSegmentsFromBatch(batchData) {
   try {
     const segmentData = batchData?.data?.revenueSegments
     
@@ -133,7 +138,7 @@ export const getRevenueSegmentsFromBatch = memoize(function getRevenueSegmentsFr
     console.error('[BatchChartService] getRevenueSegmentsFromBatch error:', error)
     return { segments: [], series: {} }
   }
-})
+}
 
 /**
  * Get FCF series from batch data
