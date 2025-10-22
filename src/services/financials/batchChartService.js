@@ -3,6 +3,45 @@
 // Eliminates 15-20 API calls by extracting data from single batch endpoint
 
 /**
+ * Simple LRU memoization cache
+ * Key insight: ticker + args is enough (NO timestamp needed - Redis ensures consistency)
+ */
+class LRUCache {
+  constructor(maxSize = 100) {
+    this.cache = new Map()
+    this.maxSize = maxSize
+  }
+  get(key) {
+    if (!this.cache.has(key)) return undefined
+    const value = this.cache.get(key)
+    this.cache.delete(key); this.cache.set(key, value)
+    return value
+  }
+  set(key, value) {
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value
+      this.cache.delete(firstKey)
+    }
+    this.cache.set(key, value)
+  }
+  clear() { this.cache.clear() }
+}
+
+const cache = new LRUCache(100)
+
+// Memoize wrapper: ticker + args only (no timestamp = no cache misses on refetch)
+const memoize = (fn) => function(...args) {
+  const ticker = args[0]?.ticker
+  if (!ticker) return fn(...args)
+  const key = `${fn.name}:${ticker}:${args.slice(1).join(':')}`
+  const cached = cache.get(key)
+  if (cached !== undefined) return cached
+  const result = fn(...args)
+  cache.set(key, result)
+  return result
+}
+
+/**
  * Get revenue series from batch data
  * Used by: RevenueChart
  * Replaces: /api/v3/income-statement/:ticker (1 call)
@@ -28,11 +67,11 @@ export function getRevenueSeriesFromBatch(batchData, period = 'annual') {
 }
 
 /**
- * Get revenue segments from batch data
+ * Get revenue segments from batch data (MEMOIZED - expensive operation)
  * Used by: RevenueChart (segment breakdown)
  * Replaces: /api/v4/revenue-product-segmentation (1 call)
  */
-export function getRevenueSegmentsFromBatch(batchData) {
+export const getRevenueSegmentsFromBatch = memoize(function getRevenueSegmentsFromBatch(batchData) {
   try {
     const segmentData = batchData?.data?.revenueSegments
     
@@ -94,7 +133,7 @@ export function getRevenueSegmentsFromBatch(batchData) {
     console.error('[BatchChartService] getRevenueSegmentsFromBatch error:', error)
     return { segments: [], series: {} }
   }
-}
+})
 
 /**
  * Get FCF series from batch data
@@ -395,11 +434,11 @@ export function getDividendYieldSeriesFromBatch(batchData, period = 'annual') {
 }
 
 /**
- * Get Insider Trading aggregated data from batch data
+ * Get Insider Trading aggregated data from batch data (MEMOIZED - expensive)
  * Used by: InsiderTradingChart
  * Replaces: /api/v4/insider-trading (1 call from insiderTrading)
  */
-export function getInsiderTradingFromBatch(batchData) {
+export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFromBatch(batchData) {
   try {
     const insiderData = batchData?.data?.insiderTrading
     
@@ -446,7 +485,10 @@ export function getInsiderTradingFromBatch(batchData) {
     console.error('[BatchChartService] getInsiderTradingFromBatch error:', error)
     return { buys: [], sells: [], net: [] }
   }
-}
+})
+
+// Export cache for testing
+export { cache as memoCache }
 
 /**
  * Get price history series from batch data
