@@ -73,10 +73,10 @@ function memoize(fn) {
           errorCount: validationResult.error?.errors?.length || 0
         })
         // Continue with original data (warnings logged for monitoring)
-      } else {
-        // Replace with validated/sanitized data
-        args[0] = validationResult.data
+        // DO NOT replace args[0] - use original data to avoid breaking charts
       }
+      // Note: We intentionally don't replace args[0] with validated data
+      // to avoid breaking existing cached data and chart logic
     }
     
     const cacheKey = getCacheKey(fn.name, ...args)
