@@ -35,10 +35,12 @@ export const generalLimiter = rateLimit({
   }
 });
 
-// Strict limiter for FMP API endpoints (300 req/min for paid plan)
+// Strict limiter for FMP API endpoints - Per-IP protection
+// FMP paid plan: 300 req/min total, but limit each IP to 30 req/min
+// This prevents a single abusive user from exhausting the entire quota
 export const fmpLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 300, // Paid plan: 300 requests/minute
+  windowMs: 60 * 1000, // 1 minute window
+  max: 30, // 30 requests per IP per minute (10% of total quota)
   message: {
     error: 'Too many API requests, please slow down.',
     retryAfter: '60 seconds'
@@ -47,17 +49,62 @@ export const fmpLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false, // Count all requests
   handler: (req, res) => {
-    console.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (300 req/min)`);
+    console.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (30 req/min)`);
     res.status(429).json({
       error: 'Rate limit exceeded',
       message: 'You are making too many requests to the financial data API. Please slow down.',
       retryAfter: res.getHeader('Retry-After'),
-      limit: 300,
+      limit: 30,
       window: '1 minute',
-      tip: 'Consider caching data on the client side to reduce requests.'
+      tip: 'Data is cached for 7 days. Wait a moment and try again to get cached results.'
     });
   }
 });
+
+// Global FMP limiter - tracks total API calls across ALL IPs
+// Prevents exhausting the 300 req/min FMP quota even with many users
+let globalFmpCounter = 0;
+let globalFmpWindowStart = Date.now();
+const GLOBAL_FMP_LIMIT = 250; // Conservative limit (83% of 300 quota)
+const GLOBAL_FMP_WINDOW = 60 * 1000; // 1 minute
+
+export function globalFmpLimiter(req, res, next) {
+  const now = Date.now();
+  
+  // Reset counter if window expired
+  if (now - globalFmpWindowStart >= GLOBAL_FMP_WINDOW) {
+    globalFmpCounter = 0;
+    globalFmpWindowStart = now;
+  }
+  
+  // Check global limit
+  if (globalFmpCounter >= GLOBAL_FMP_LIMIT) {
+    const timeUntilReset = Math.ceil((GLOBAL_FMP_WINDOW - (now - globalFmpWindowStart)) / 1000);
+    console.warn(`[RateLimit] Global FMP limit reached (${GLOBAL_FMP_LIMIT}/min). Blocking request from ${req.ip}`);
+    
+    return res.status(503).json({
+      error: 'Service temporarily unavailable',
+      message: 'The API quota is currently exhausted. Please try again in a moment.',
+      retryAfter: `${timeUntilReset} seconds`,
+      globalLimit: GLOBAL_FMP_LIMIT,
+      window: '1 minute'
+    });
+  }
+  
+  // Increment counter only for actual API calls (not cached responses)
+  // We'll decrement in the route handler if it's a cache hit
+  req.fmpCallTracked = true;
+  globalFmpCounter++;
+  
+  next();
+}
+
+// Helper to decrement global counter when serving from cache
+export function decrementGlobalFmpCounter() {
+  if (globalFmpCounter > 0) {
+    globalFmpCounter--;
+  }
+}
 
 // Very strict limiter for admin/cache endpoints (10 req/min)
 export const adminLimiter = rateLimit({
@@ -139,6 +186,8 @@ export function createRedisStore(redisClient) {
 export default {
   generalLimiter,
   fmpLimiter,
+  globalFmpLimiter,
+  decrementGlobalFmpCounter,
   adminLimiter,
   speedLimiter,
   aiLimiter,

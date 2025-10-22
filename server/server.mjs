@@ -38,6 +38,8 @@ import {
 } from './services/databaseService.js'
 import { 
   fmpLimiter, 
+  globalFmpLimiter,
+  decrementGlobalFmpCounter,
   adminLimiter, 
   speedLimiter 
 } from './middleware/rateLimiter.js'
@@ -731,7 +733,7 @@ app.get('/api/search', fmpLimiter, async (req, res) => {
 
 // -------------------- Batch Data Endpoint --------------------
 // Fetch all ticker data in one optimized request (reduces 30+ calls to 1)
-app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
+app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, res) => {
   const startTime = Date.now()
   const { ticker } = req.params
   const mode = req.query.mode || 'full' // 'full' or 'priority'
@@ -757,6 +759,12 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, async (req, res) => {
     const cached = await cache.get(cacheKey)
     if (cached.data) {
       console.log(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
+      
+      // Decrement global FMP counter for cache hits (not actual API calls)
+      if (req.fmpCallTracked) {
+        decrementGlobalFmpCounter();
+      }
+      
       res.setHeader('X-Cache', cached.source)
       
       // Handle both old format (direct data) and new format (wrapped with etag)
