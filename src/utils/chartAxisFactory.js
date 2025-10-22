@@ -3,7 +3,7 @@
  * Extracted from BaseChart.vue to reduce complexity
  */
 
-import { yFormatter } from './chartFormatters.js'
+import { yFormatter, fmtShort } from './chartFormatters.js'
 
 /**
  * Create X-axis configuration
@@ -153,10 +153,8 @@ export function createDualYAxisConfig(options = {}) {
           if (rightAxisType === 'percentage') {
             return val.toFixed(1) + '%'
           }
-          if (Math.abs(val) >= 1000) {
-            return (val / 1000).toFixed(1) + 'K'
-          }
-          return val.toFixed(0)
+          // Use same formatting as shares outstanding chart
+          return fmtShort(val)
         }
       },
       axisLine: { lineStyle: { color: '#aaa' } },
