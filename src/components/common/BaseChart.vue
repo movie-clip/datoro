@@ -42,35 +42,11 @@
         </div>
       </div>
       <!-- Growth Labels Section -->
-      <div
-        v-if="showGrowthLabels && growthData"
-        class="growth-labels"
-      >
-        <div
-          v-if="growthData.oneYear !== null"
-          class="growth-label"
-          :class="getGrowthClass(growthData.oneYear)"
-        >
-          <span class="label-period">1Y</span>
-          <span class="label-value">{{ formatGrowth(growthData.oneYear) }}</span>
-        </div>
-        <div
-          v-if="growthData.twoYear !== null"
-          class="growth-label"
-          :class="getGrowthClass(growthData.twoYear)"
-        >
-          <span class="label-period">2Y</span>
-          <span class="label-value">{{ formatGrowth(growthData.twoYear) }}</span>
-        </div>
-        <div
-          v-if="growthData.fiveYear !== null"
-          class="growth-label"
-          :class="getGrowthClass(growthData.fiveYear)"
-        >
-          <span class="label-period">5Y</span>
-          <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
-        </div>
-      </div>
+      <GrowthLabels 
+        v-if="showGrowthLabels"
+        :growth-data="growthData"
+        :invert-growth="invertGrowth"
+      />
     </template>
     
     <!-- Normal Mode: Show compact view with expand button -->
@@ -163,35 +139,11 @@
         />
         
         <!-- Growth Labels Section -->
-        <div
-          v-if="showGrowthLabels && growthData"
-          class="growth-labels"
-        >
-          <div
-            v-if="growthData.oneYear !== null"
-            class="growth-label"
-            :class="getGrowthClass(growthData.oneYear)"
-          >
-            <span class="label-period">1Y</span>
-            <span class="label-value">{{ formatGrowth(growthData.oneYear) }}</span>
-          </div>
-          <div
-            v-if="growthData.twoYear !== null"
-            class="growth-label"
-            :class="getGrowthClass(growthData.twoYear)"
-          >
-            <span class="label-period">2Y</span>
-            <span class="label-value">{{ formatGrowth(growthData.twoYear) }}</span>
-          </div>
-          <div
-            v-if="growthData.fiveYear !== null"
-            class="growth-label"
-            :class="getGrowthClass(growthData.fiveYear)"
-          >
-            <span class="label-period">5Y</span>
-            <span class="label-value">{{ formatGrowth(growthData.fiveYear) }}</span>
-          </div>
-        </div>
+        <GrowthLabels 
+          v-if="showGrowthLabels"
+          :growth-data="growthData"
+          :invert-growth="invertGrowth"
+        />
       </ChartModal>
     </template>
   </div>
@@ -202,8 +154,12 @@ import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import VChart from 'vue-echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
+import GrowthLabels from './GrowthLabels.vue'
 import { calculateGrowthRates, formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator.js'
 import { getCachedGrowthRates } from '../../services/financials/growthService.js'
+import { fmtShort, yFormatter } from '../../utils/chartFormatters.js'
+import { convertToCategoryData, extractYearsFromSeries, getAllDataPoints } from '../../utils/chartDataTransformers.js'
+import { isConfiguredSeries, isMultiSeriesFormat, isConfiguredSeriesArray } from '../../utils/chartTypeGuards.js'
 
 // Track if component is mounted AND ECharts is ready
 const isMounted = ref(false)
@@ -303,23 +259,7 @@ const hasEmptyData = computed(() => {
   return isEmpty
 })
 
-function fmtShort(n){
-  const a = Math.abs(n)
-  if (a >= 1e12) return (n/1e12).toFixed(0)+'T'
-  if (a >= 1e9 ) return (n/1e9 ).toFixed(0)+'B'
-  if (a >= 1e6 ) return (n/1e6 ).toFixed(0)+'M'
-  if (a >= 1e3 ) return (n/1e3 ).toFixed(0)+'K'
-  return String(n)
-}
-
-const yFormatter = (v, mode) => {
-  if (mode === 'short') return fmtShort(v)
-  if (mode === 'currency') return '$' + fmtShort(v)
-  if (mode === 'percent') return v.toFixed(2) + '%'
-  if (mode === 'int') return Math.round(v).toLocaleString()
-  return Math.round(v).toString()
-}
-
+// Growth calculation and formatting
 // Calculate growth data for the chart
 const growthData = computed(() => {
   if (!props.showGrowthLabels) return null
@@ -370,19 +310,6 @@ const formatGrowth = (growth) => {
   return formatGrowthUtil(growth)
 }
 
-// Get CSS class for growth label (handling inversion)
-const getGrowthClass = (growth) => {
-  if (growth === null || growth === undefined || isNaN(growth)) return ''
-  
-  // For inverted growth (expenses), negative is good (positive class)
-  if (props.invertGrowth) {
-    return growth <= 0 ? 'positive' : 'negative'
-  }
-  
-  // Normal growth: positive is good
-  return growth >= 0 ? 'positive' : 'negative'
-}
-
 const createOption = (isLarge = false) => {
   // Detect mobile device
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
@@ -397,34 +324,12 @@ const createOption = (isLarge = false) => {
   const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
   
   if (props.kind === 'bar') {
-    // Get all data points from series
-    const allDataPoints = []
+    // Get all data points from series using utility function
+    const allDataPoints = getAllDataPoints(dataSource)
     
-    // Handle different data formats
-    if (Array.isArray(dataSource)) {
-      if (dataSource.length > 0 && Array.isArray(dataSource[0]) && dataSource[0].length === 2) {
-        // Simple array format: [[timestamp, value], ...]
-        allDataPoints.push(...dataSource)
-      } else if (dataSource.length > 0 && dataSource[0]?.data) {
-        // Multi-series format: [{ name: 'X', data: [...] }, ...]
-        dataSource.forEach(s => {
-          if (s?.data && Array.isArray(s.data)) {
-            allDataPoints.push(...s.data)
-          }
-        })
-      }
-    }
-    
-    // Extract unique years and sort
+    // Extract unique years and sort using utility function
     if (allDataPoints.length > 0) {
-      const years = new Set()
-      allDataPoints.forEach(point => {
-        if (Array.isArray(point) && point[0]) {
-          const year = new Date(point[0]).getFullYear()
-          years.add(year)
-        }
-      })
-      yearsList = Array.from(years).sort((a, b) => a - b)
+      yearsList = extractYearsFromSeries(allDataPoints)
       uniqueYears = yearsList.length
       
       // For bar charts, create category data (year strings)
@@ -718,36 +623,17 @@ const createOption = (isLarge = false) => {
     },
   }
 
-  // Helper function: Convert time-series data to category-aligned values for bar charts
-  const convertToCategoryData = (timeSeriesData, categoryYears) => {
-    if (!timeSeriesData || !Array.isArray(timeSeriesData) || timeSeriesData.length === 0) {
-      return []
-    }
-    
-    // Create a map: year -> value
-    const yearValueMap = new Map()
-    timeSeriesData.forEach(point => {
-      if (Array.isArray(point) && point.length >= 2) {
-        const year = new Date(point[0]).getFullYear()
-        yearValueMap.set(year, point[1])
-      }
-    })
-    
-    // Return values in the same order as categoryYears
-    return categoryYears.map(year => yearValueMap.get(year) || 0)
-  }
-
   // Handle both single series array and multi-series array
   let series
   
   // Check if dataSource is already a fully configured series object (e.g., from PriceChart)
-  if (dataSource && !Array.isArray(dataSource) && dataSource.type) {
+  if (isConfiguredSeries(dataSource)) {
     // Single fully configured series object - wrap in array
     series = [dataSource]
-  } else if (Array.isArray(dataSource) && dataSource.length > 0 && dataSource[0]?.name) {
+  } else if (isMultiSeriesFormat(dataSource)) {
     // Multi-series format: [{ name: 'FCF', data: [...] }, { name: 'SBC', data: [...] }]
     // If series already has 'type' property, it's a fully configured series
-    if (dataSource[0].type) {
+    if (isConfiguredSeriesArray(dataSource)) {
       // For bar charts with category axis, we still need to convert the data
       if (props.kind === 'bar' && yearsList.length > 0) {
         series = dataSource.map((s) => ({
@@ -1069,77 +955,6 @@ const modalOption = computed(() => createOption(true))
 
   .modal-title {
     font-size: 16px;
-  }
-}
-
-/* Growth Labels Styles */
-.growth-labels {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 0px;
-  padding: 2px;
-  flex-wrap: wrap;
-}
-
-.growth-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4px 1px;
-  border-radius: 6px;
-  min-width: 60px;
-}
-
-.growth-label:hover {
-  transform: scale(1.05);
-}
-
-.growth-label.positive {
-  background: rgba(0, 89, 76, 0.15);
-  border: 1px solid #00594C;
-  color: #00A88E;
-}
-
-.growth-label.negative {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid #ef4444;
-  color: #ef4444;
-}
-
-.label-period {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.9;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
-}
-
-.label-value {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
-@media (max-width: 768px) {
-  .growth-labels {
-    gap: 6px;
-    margin-top: 4px;
-    padding: 4px;
-  }
-
-  .growth-label {
-    padding: 5px 10px;
-    min-width: 55px;
-  }
-
-  .label-period {
-    font-size: 9px;
-  }
-
-  .label-value {
-    font-size: 12px;
   }
 }
 

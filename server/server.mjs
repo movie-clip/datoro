@@ -1111,6 +1111,45 @@ app.get('/api/analytics/stats', adminLimiter, validate(validateAnalyticsStats), 
   }
 })
 
+// ============================================================================
+// SEO & Bot Routes (robots.txt, sitemap.xml, Google verification)
+// ============================================================================
+
+// Robots.txt - Tell search engines what to crawl
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain')
+  res.send(`User-agent: *
+Allow: /
+
+# Disallow API routes
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://factorly.onrender.com/sitemap.xml
+`)
+})
+
+// Sitemap.xml - Help search engines discover pages (placeholder for now)
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml')
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://factorly.onrender.com/</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+`)
+})
+
+// Google Search Console verification file
+app.get('/googleda227c5410366f98.html', (req, res) => {
+  res.type('text/html')
+  res.send('google-site-verification: googleda227c5410366f98.html')
+})
+
 // 404 handler (must be after all routes)
 app.use(notFoundHandler)
 
