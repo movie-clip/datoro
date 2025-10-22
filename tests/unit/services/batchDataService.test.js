@@ -1,11 +1,11 @@
 /**
  * Unit Tests for Batch Data Service
  * 
- * Tests the core data fetching service that retrieves 17 FMP endpoints in parallel.
+ * Tests the core data fetching service that retrieves 19 FMP endpoints in parallel.
  * This is the backbone of the application (96.7% API reduction vs multi-call approach).
  * 
  * Coverage:
- * - fetchTickerBatch() - All 17 endpoints
+ * - fetchTickerBatch() - All 19 endpoints (includes priceTargetSummary & priceTargetConsensus)
  * - fetchTickerPriority() - 4 critical endpoints for quick load
  * - Error handling (timeout, 404, 500, network errors)
  * - Parallel fetching behavior
@@ -349,9 +349,9 @@ describe('Batch Data Service', () => {
     nock.cleanAll()
   })
 
-  describe('fetchTickerBatch - Full Data (17 endpoints)', () => {
-    it('should fetch all 17 endpoints successfully', async () => {
-      // Mock all 17 FMP endpoints
+  describe('fetchTickerBatch - Full Data (19 endpoints)', () => {
+    it('should fetch all 19 endpoints successfully', async () => {
+      // Mock all 19 FMP endpoints
       nock(FMP_BASE_URL)
         .get(`/api/v3/profile/${TEST_TICKER}`)
         .query({ apikey: TEST_API_KEY })
@@ -429,7 +429,17 @@ describe('Batch Data Service', () => {
         .reply(200, [])
         
       nock(FMP_BASE_URL)
-        .get('/stable/financial-scores')
+        .get('/api/v3/score')
+        .query({ symbol: TEST_TICKER, apikey: TEST_API_KEY })
+        .reply(200, [])
+        
+      nock(FMP_BASE_URL)
+        .get('/api/v4/price-target-summary')
+        .query({ symbol: TEST_TICKER, apikey: TEST_API_KEY })
+        .reply(200, [])
+        
+      nock(FMP_BASE_URL)
+        .get('/api/v4/price-target-consensus')
         .query({ symbol: TEST_TICKER, apikey: TEST_API_KEY })
         .reply(200, [])
         
@@ -447,7 +457,7 @@ describe('Batch Data Service', () => {
       expect(result.fetchDuration).toBeGreaterThan(0)
       expect(result.data).toBeDefined()
 
-      // Verify all 17 endpoints are present
+      // Verify all 19 endpoints are present
       expect(result.data.profile).toEqual(mockProfile)
       expect(result.data.quote).toEqual(mockQuote)
       expect(result.data.incomeAnnual).toEqual(mockIncomeStatement)
@@ -464,6 +474,8 @@ describe('Batch Data Service', () => {
       expect(result.data.stockSplit).toBeDefined()
       expect(result.data.earningsCalendar).toEqual([])
       expect(result.data.financialScores).toEqual([])
+      expect(result.data.priceTargetSummary).toEqual([])
+      expect(result.data.priceTargetConsensus).toEqual([])
       expect(result.data.insiderTrading).toEqual([])
 
       // All nock mocks should be consumed
