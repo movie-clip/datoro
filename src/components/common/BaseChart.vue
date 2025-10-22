@@ -161,6 +161,8 @@ import { fmtShort, yFormatter } from '../../utils/chartFormatters.js'
 import { convertToCategoryData, extractYearsFromSeries, getAllDataPoints } from '../../utils/chartDataTransformers.js'
 import { isConfiguredSeries, isMultiSeriesFormat, isConfiguredSeriesArray } from '../../utils/chartTypeGuards.js'
 import { getTooltipConfig } from '../../composables/useTooltipFormatter.js'
+import { createSeriesConfig } from '../../utils/chartSeriesFactory.js'
+import { createXAxisConfig, createYAxisConfig } from '../../utils/chartAxisFactory.js'
 
 // Track if component is mounted AND ECharts is ready
 const isMounted = ref(false)
@@ -404,191 +406,28 @@ const createOption = (isLarge = false) => {
       dualAxis: props.dualAxis,
       yFormat: props.yFormat
     }),
-    xAxis: {
-      type: props.kind === 'bar' ? 'category' : 'time',
-      data: props.kind === 'bar' ? categoryData : undefined,
-      boundaryGap: props.kind === 'bar' ? true : false,
-      axisLabel: { 
-        color: '#ddd', 
-        fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
-        rotate: (props.kind === 'bar' && isLarge) ? 45 : 0,
-        hideOverlap: false,
-        showMinLabel: true,
-        showMaxLabel: true,
-        formatter: props.kind === 'bar' ? undefined : '{yyyy}', // Category axis shows data as-is
-        // For bar charts: show all labels on desktop (interval: 0), fewer on mobile (interval: 1)
-        interval: (props.kind === 'bar' && isLarge) ? (isMobile ? 1 : 0) : 'auto'
-      },
-      axisTick: {
-        alignWithLabel: true,
-        show: true
-      },
-      axisLine: { lineStyle: { color: '#aaa' } },
-      splitLine: { show: false }
-    },
-    yAxis: props.dualAxis ? [
-      // Left axis (for price/primary data)
-      {
-        type: 'value',
-        scale: true,
-        position: 'left',
-        axisLabel: { 
-          color: '#ddd', 
-          fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
-          formatter: (val) => yFormatter(val, props.yFormat) 
-        },
-        axisLine: { lineStyle: { color: '#aaa' } },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
-      },
-      // Right axis (for insider trading/secondary data or percentage margins)
-      {
-        type: 'value',
-        position: 'right',
-        min: props.rightAxisType === 'percentage' ? 0 : (value) => {
-          // Ensure 0 is always centered by making bounds symmetric
-          const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
-          // Add 10% padding to prevent data from touching edges
-          return -absMax * 1.1
-        },
-        max: props.rightAxisType === 'percentage' ? (value) => {
-          // Round up to nearest 10 for clean scale (e.g., 38% -> 40%)
-          return Math.ceil(value.max / 10) * 10
-        } : (value) => {
-          // Ensure 0 is always centered by making bounds symmetric
-          const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
-          // Add 10% padding to prevent data from touching edges
-          return absMax * 1.1
-        },
-        splitNumber: 4, // Force 4 split lines for better centering
-        axisLabel: { 
-          color: '#ddd', 
-          fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
-          formatter: (val) => {
-            if (props.rightAxisType === 'percentage') {
-              return val.toFixed(1) + '%'
-            }
-            if (Math.abs(val) >= 1000) {
-              return (val / 1000).toFixed(1) + 'K'
-            }
-            return val.toFixed(0)
-          }
-        },
-        axisLine: { lineStyle: { color: '#aaa' } },
-        splitLine: { 
-          show: true,
-          lineStyle: { 
-            color: 'rgba(255,255,255,0.1)',
-            type: 'dashed'
-          }
-        }
-      }
-    ] : {
-      type: 'value',
-      scale: true,
-      splitNumber: 4, // Limit to 4 intervals (5 lines total) for cleaner axis
-      min: (v) => {
-        const r = v.max - v.min
-        if (r === 0) {
-          const p = Math.abs(v.min) * 0.05 || 1
-          return v.min - p
-        }
-        const calculated = v.min - r * 0.03 // Reduced padding from 0.06 to 0.03
-        // If all data is positive, don't let axis go negative
-        if (v.min >= 0 && calculated < 0) {
-          return 0
-        }
-        return calculated
-      },
-      max: (v) => {
-        const r = v.max - v.min
-        if (r === 0) {
-          const p = Math.abs(v.max) * 0.05 || 1
-          return v.max + p
-        }
-        return v.max + r * 0.03 // Reduced padding from 0.06 to 0.03
-      },
-      axisLabel: { 
-        color: '#ddd', 
-        fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
-        formatter: (val) => yFormatter(val, props.yFormat) 
-      },
-      axisLine: { lineStyle: { color: '#aaa' } },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
-    },
+    xAxis: createXAxisConfig(props.kind, {
+      categoryData,
+      isLarge,
+      isMobile
+    }),
+    yAxis: createYAxisConfig({
+      dualAxis: props.dualAxis,
+      yFormat: props.yFormat,
+      rightAxisType: props.rightAxisType,
+      isLarge,
+      isMobile
+    }),
   }
 
   // Handle both single series array and multi-series array
-  let series
-  
-  // Check if dataSource is already a fully configured series object (e.g., from PriceChart)
-  if (isConfiguredSeries(dataSource)) {
-    // Single fully configured series object - wrap in array
-    series = [dataSource]
-  } else if (isMultiSeriesFormat(dataSource)) {
-    // Multi-series format: [{ name: 'FCF', data: [...] }, { name: 'SBC', data: [...] }]
-    // If series already has 'type' property, it's a fully configured series
-    if (isConfiguredSeriesArray(dataSource)) {
-      // For bar charts with category axis, we still need to convert the data
-      if (props.kind === 'bar' && yearsList.length > 0) {
-        series = dataSource.map((s) => ({
-          ...s,
-          // Convert time-series data to category values for ALL series (bars and lines)
-          data: convertToCategoryData(s.data, yearsList)
-        }))
-      } else {
-        // Use as-is for line charts (time axis)
-        series = dataSource
-      }
-    } else {
-      // Otherwise, apply default configuration
-      series = dataSource.map((s) => {
-        // For bar charts with category axis, convert time-series to category values
-        const seriesData = (props.kind === 'bar' && yearsList.length > 0) 
-          ? convertToCategoryData(s.data, yearsList)
-          : s.data
-        
-        return {
-          type: props.kind,
-          name: s.name,
-          data: seriesData,
-          // Use stack property from series object if provided
-          stack: s.stack || undefined,
-          barMaxWidth: props.barMaxWidth,
-          itemStyle: { opacity: 0.9, ...(s.itemStyle || {}) },
-          smooth: props.kind === 'line' ? props.smooth : undefined,
-          showSymbol: props.kind === 'line' ? false : undefined,
-          emphasis: props.kind === 'line' ? { disabled: true } : undefined,
-          lineStyle: props.kind === 'line' ? { width: isLarge ? 3 : 2 } : undefined,
-        }
-      })
-    }
-  } else {
-    // Single series format: [[timestamp, value], ...]
-    if (props.kind === 'bar') {
-      // For bar charts with category axis, convert time-series to category values
-      const barData = yearsList.length > 0 
-        ? convertToCategoryData(dataSource, yearsList)
-        : dataSource
-      
-      series = [{ 
-        type: 'bar', 
-        name: props.title || 'Series', 
-        data: barData, 
-        barMaxWidth: props.barMaxWidth, 
-        itemStyle: { opacity: 0.9 } 
-      }]
-    } else {
-      series = [{ 
-        type: 'line', 
-        name: props.title || 'Series', 
-        data: dataSource, 
-        smooth: props.smooth, 
-        showSymbol: false, 
-        emphasis: { disabled: true }, 
-        lineStyle: { width: isLarge ? 3 : 2 } 
-      }]
-    }
-  }
+  const series = createSeriesConfig(dataSource, props.kind, {
+    title: props.title,
+    yearsList,
+    barMaxWidth: props.barMaxWidth,
+    smooth: props.smooth,
+    isLarge
+  })
 
   // Don't show legend - we have view mode buttons for switching
   return { ...base, series }
