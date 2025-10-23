@@ -6,6 +6,36 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig.js'
 
+// Local storage key for API version tracking
+const API_VERSION_KEY = 'factorly-api-version'
+
+/**
+ * Check API version and clear cache if version changed
+ * This ensures stale data is auto-cleared when FMP endpoints change
+ */
+async function checkApiVersion(cache) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/version`)
+    const { version } = await response.json()
+    
+    const cachedVersion = localStorage.getItem(API_VERSION_KEY)
+    if (cachedVersion && cachedVersion !== version) {
+      console.log(`[TickerStore] API version changed: ${cachedVersion} → ${version}`)
+      console.log('[TickerStore] Clearing cache to prevent stale data')
+      cache.clear()
+      localStorage.setItem(API_VERSION_KEY, version)
+      return true // Cache was cleared
+    } else if (!cachedVersion) {
+      // First time - just store version
+      localStorage.setItem(API_VERSION_KEY, version)
+    }
+    return false
+  } catch (err) {
+    console.warn('[TickerStore] Version check failed:', err.message)
+    return false
+  }
+}
+
 /**
  * LRU Cache with max size limit
  * Automatically evicts least recently used items when full
@@ -81,6 +111,11 @@ export const useTickerStore = defineStore('ticker', () => {
   const cache = new LRUCache(50)
   const CACHE_TTL = 5 * 60 * 1000
   
+  // Check API version on startup (auto-clear cache if version changed)
+  checkApiVersion(cache).catch(err => {
+    console.error('[TickerStore] Version check error:', err)
+  })
+  
   // Computed - Individual data accessors
   const profile = computed(() => {
     const p = batchData.value?.data?.profile
@@ -142,7 +177,14 @@ export const useTickerStore = defineStore('ticker', () => {
     // Check cache first
     const cacheKey = `${t}-${mode}`
     const cached = cache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    const currentVersion = localStorage.getItem(API_VERSION_KEY)
+    
+    // Use cached data if:
+    // 1. Cache exists and not expired
+    // 2. Version matches (prevents serving stale data after API changes)
+    if (cached && 
+        Date.now() - cached.timestamp < CACHE_TTL && 
+        cached.version === currentVersion) {
       batchData.value = cached.data
       loading.value = false
       error.value = null
@@ -154,7 +196,23 @@ export const useTickerStore = defineStore('ticker', () => {
     const startTime = performance.now()
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`)
+      // Send ETag if we have cached data with matching version
+      const headers = {}
+      if (cached?.etag && cached?.version === currentVersion) {
+        headers['If-None-Match'] = cached.etag
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`, { headers })
+      
+      // Handle 304 Not Modified - use cached data (server validated it's still fresh)
+      if (response.status === 304) {
+        console.log(`[TickerStore] ${t} - 304 Not Modified (using cached data)`)
+        batchData.value = cached.data
+        loading.value = false
+        error.value = null
+        fetchTime.value = Math.round(performance.now() - startTime)
+        return
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -165,9 +223,12 @@ export const useTickerStore = defineStore('ticker', () => {
       
       batchData.value = result
       
-      // Update cache (LRU will auto-evict if full)
+      // Store in cache with ETag and version for future 304 responses
+      const etag = response.headers.get('etag')
       cache.set(cacheKey, {
         data: result,
+        etag: etag || null,
+        version: currentVersion,
         timestamp: Date.now()
       })
       

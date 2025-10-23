@@ -60,6 +60,10 @@ config({ path: join(__dirname, '..', '.env.local'), override: true })
 const cache = getCacheService()
 const monitoring = getMonitoringService()
 
+// API Version - increment when FMP endpoints change to auto-invalidate caches
+const API_VERSION = 'v2.1'
+const API_UPDATED = '2025-10-23T00:00:00Z'
+
 // Database health flag (disabled if offline to prevent 5s timeouts)
 let isDatabaseAvailable = true
 
@@ -73,8 +77,8 @@ const app = express()
 // Render runs behind a proxy, so we need to trust X-Forwarded-* headers
 app.set('trust proxy', 1)
 
-// Disable Express automatic ETag generation (we handle it manually)
-app.set('etag', false)
+// Enable Express strong ETags for automatic caching of static responses
+app.set('etag', 'strong')
 
 // Initialize Sentry FIRST (before any other middleware)
 sentryService.initSentry()
@@ -180,6 +184,21 @@ async function fetchWithDeduplication(key, fetchFn) {
 // Authentication Routes
 // ============================================
 app.use('/api/auth', authRoutes)
+
+// ============================================
+// API Version Endpoint
+// ============================================
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: API_VERSION,
+    updated: API_UPDATED,
+    cachePolicy: {
+      redis: '7 days',
+      client: '5 minutes',
+      memory: '5 minutes'
+    }
+  })
+})
 
 // Apply rate limiting to FMP endpoints
 app.use('/api/fmp', fmpLimiter, async (req, res) => {
@@ -754,7 +773,8 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, re
     })
   }
 
-  const cacheKey = cache.generateKey('batch', t, mode)
+  // Include API version in cache key to auto-invalidate on endpoint changes
+  const cacheKey = cache.generateKey('batch', t, mode, API_VERSION)
   
   try {
     // Check cache first (7-day TTL for batch data)
@@ -772,29 +792,30 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, re
       
       // Handle both old format (direct data) and new format (wrapped with etag)
       let responseData = cached.data
-      let etag = 'no-etag'
+      let dataHash = ''
       
       // New format: { data: {...}, etag: '...', cachedAt: ... }
       if (cached.data.etag && cached.data.data) {
-        etag = cached.data.etag
+        dataHash = cached.data.etag
         responseData = cached.data.data
       } else {
-        // Old format: direct data object - generate ETag on the fly
-        etag = cache.generateETag(cached.data)
+        // Old format: direct data object - generate hash on the fly
+        dataHash = cache.generateETag(cached.data)
       }
       
-      // NOTE: ETag matching temporarily disabled (Oct 2025)
-      // When FMP endpoints change, ETags from old data can cause stale responses
-      // TODO: Implement cache versioning to automatically invalidate ETags when endpoints change
-      // For now, always send fresh data with 200 OK to prevent 304 Not Modified with stale data
+      // Version-aware ETag: prefix with API version to prevent stale 304s
+      // When API_VERSION changes, all ETags become invalid automatically
+      const etag = `"${API_VERSION}-${dataHash}"`
       
-      // const clientEtag = req.headers['if-none-match']
-      // if (clientEtag === etag) {
-      //   console.log(`[Batch] ${t} (${mode}) → 304 Not Modified (ETag match)`)
-      //   res.setHeader('ETag', etag)
-      //   res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
-      //   return res.status(304).end()
-      // }
+      // Check if client has same version (ETag match with version prefix)
+      const clientEtag = req.headers['if-none-match']
+      if (clientEtag === etag) {
+        console.log(`[Batch] ${t} (${mode}) → 304 Not Modified (ETag match, version ${API_VERSION})`)
+        res.setHeader('ETag', etag)
+        res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+        res.setHeader('X-API-Version', API_VERSION)
+        return res.status(304).end()
+      }
       
       // Track in database (truly async - don't block response)
       if (isDatabaseAvailable) {
@@ -806,11 +827,10 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, re
         })
       }
       
-      // Send cached data WITHOUT ETag (temporarily disabled to force fresh data)
-      // res.setHeader('ETag', etag)
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate') // Force fresh data
-      res.setHeader('Pragma', 'no-cache')
-      res.setHeader('Expires', '0')
+      // Send cached data with version-aware ETag
+      res.setHeader('ETag', etag)
+      res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+      res.setHeader('X-API-Version', API_VERSION)
       return res.json(responseData)
     }
     
@@ -862,16 +882,14 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, re
       })
     }
     
-    // Get ETag from cached object (pre-computed during cache.set())
-    const cachedResult = await cache.get(cacheKey)
-    const etag = cachedResult.data?.etag || 'no-etag'
+    // Generate version-aware ETag for fresh data
+    const dataHash = cache.generateETag(result)
+    const etag = `"${API_VERSION}-${dataHash}"`
     
     res.setHeader('ETag', etag)
     res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+    res.setHeader('X-API-Version', API_VERSION)
     
-    // CRITICAL: Return the actual data, not the cache wrapper
-    // Cache stores { data: {...}, etag: '...', cachedAt: ... }
-    // We must unwrap to send just the data
     res.json(result)
   } catch (error) {
     console.error(`[Batch] Error fetching ${t}:`, error)

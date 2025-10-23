@@ -31,7 +31,7 @@ class CacheService {
       sizeCalculation: (value) => {
         return JSON.stringify(value).length;
       },
-      ttl: options.memoryTtl || 60 * 1000, // 1 minute
+      ttl: options.memoryTtl || 5 * 60 * 1000, // 5 minutes (aligned with client cache)
       updateAgeOnGet: true,
       updateAgeOnHas: false,
     });

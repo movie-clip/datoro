@@ -74,7 +74,8 @@ export default defineConfig(({ mode }) => {
           './src/main.js',
           './src/App.vue',
           './src/stores/tickerStore.js',
-          './src/composables/useTickerData.js',
+          './src/composables/usePriceSeries.js',
+          './src/composables/useNetIncomeSeries.js',
           './src/services/financials/batchChartService.js',
           './src/services/financials/batchTableService.js',
           './src/styles/globals.css'
