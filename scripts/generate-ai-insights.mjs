@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Generate AI insights using local AI provider (OpenAI/Ollama)
- * Saves results as static JSON files for zero-cost deployment
+ * Generates a single bundle file (ai-insights.json) for efficient deployment
  * 
  * Usage:
  *   node scripts/generate-ai-insights.mjs              # Generate test tickers
@@ -31,7 +31,7 @@ const AI_PROVIDER = process.env.AI_PROVIDER || process.env.VITE_AI_PROVIDER || '
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || ''
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || process.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || process.env.VITE_OLLAMA_MODEL || 'llama3.2'
-const OUTPUT_DIR = path.join(__dirname, '../public/ai-insights')
+const OUTPUT_FILE = path.join(__dirname, '../public/ai-insights.json')
 const VERSION = '1.0'
 
 // Test tickers (as specified by user)
@@ -196,29 +196,16 @@ async function generateInsights(ticker, companyName) {
     
     console.log(`  ✓ Got ${risks.length} risks`)
 
-    // Create insights object
-    const insights = {
-      ticker: ticker.toUpperCase(),
-      companyName,
-      lastUpdated: new Date().toISOString().split('T')[0],
-      version: VERSION,
-      provider: AI_PROVIDER,
-      insights: {
-        competitiveAdvantages: advantages,
-        investmentRisks: risks
+    // Return insights data (will be bundled later)
+    return {
+      ticker,
+      success: true,
+      data: {
+        advantages,
+        risks,
+        updated: new Date().toISOString().split('T')[0]
       }
     }
-
-    // Save to file
-    const filename = `${ticker.toLowerCase()}.json`
-    const filepath = path.join(OUTPUT_DIR, filename)
-    await fs.writeFile(filepath, JSON.stringify(insights, null, 2), 'utf8')
-    
-    console.log(`  ✓ Saved to ${filename}`)
-    console.log(`     Advantages: ${advantages.length} items`)
-    console.log(`     Risks: ${risks.length} items`)
-    
-    return { ticker, success: true }
   } catch (error) {
     console.error(`  ✗ Error generating insights for ${ticker}:`, error.message)
     return { ticker, success: false, error: error.message }
@@ -253,7 +240,7 @@ async function main() {
   console.log('🤖 AI Insights Generator')
   console.log('='.repeat(50))
   console.log(`AI Provider: ${AI_PROVIDER}`)
-  console.log(`Output: ${OUTPUT_DIR}`)
+  console.log(`Output: ${OUTPUT_FILE}`)
   console.log('='.repeat(50))
 
   // Check AI provider configuration
@@ -278,9 +265,6 @@ async function main() {
       process.exit(1)
     }
   }
-
-  // Ensure output directory exists
-  await fs.mkdir(OUTPUT_DIR, { recursive: true })
 
   // Determine which tickers to process
   let tickers
@@ -315,34 +299,46 @@ async function main() {
   console.log('\n' + '='.repeat(50))
   console.log('📊 Generation Summary')
   console.log('='.repeat(50))
-  const successful = results.filter(r => r.success).length
-  const failed = results.filter(r => !r.success).length
+  const successful = results.filter(r => r.success)
+  const failed = results.filter(r => !r.success)
   
-  console.log(`✓ Successful: ${successful}/${tickers.length}`)
-  console.log(`✗ Failed: ${failed}`)
+  console.log(`✓ Successful: ${successful.length}/${tickers.length}`)
+  console.log(`✗ Failed: ${failed.length}`)
   
-  if (failed > 0) {
+  if (failed.length > 0) {
     console.log('\nFailed tickers:')
-    results.filter(r => !r.success).forEach(r => {
+    failed.forEach(r => {
       console.log(`  - ${r.ticker}: ${r.error}`)
     })
   }
 
-  console.log('\n✅ Done!')
-  console.log(`\n💡 Files saved to: ${OUTPUT_DIR}`)
-  console.log('   Test in browser: npm run dev, then search for a ticker')
-  
-  // Build bundle if we have successful generations
-  if (successful > 0) {
-    console.log('\n📦 Building optimized bundle...')
-    try {
-      const { execSync } = await import('child_process')
-      execSync('node scripts/build-insights-bundle.mjs', { stdio: 'inherit' })
-    } catch (bundleError) {
-      console.error('⚠️  Bundle build failed:', bundleError.message)
-      console.log('   Run manually: node scripts/build-insights-bundle.mjs')
+  // Build bundle from successful results
+  if (successful.length > 0) {
+    console.log('\n� Building bundle...')
+    
+    const bundle = {}
+    for (const result of successful) {
+      const ticker = result.ticker.toUpperCase()
+      bundle[ticker] = {
+        advantages: result.data.advantages,
+        risks: result.data.risks,
+        updated: result.data.updated,
+        provider: AI_PROVIDER
+      }
     }
+    
+    // Write bundle file
+    const bundleContent = JSON.stringify(bundle, null, 2)
+    await fs.writeFile(OUTPUT_FILE, bundleContent, 'utf8')
+    
+    const bundleSize = (bundleContent.length / 1024).toFixed(1)
+    console.log(`✓ Bundle created: ${bundleSize} KB`)
+    console.log(`  File: ${OUTPUT_FILE}`)
+    console.log(`  Tickers: ${Object.keys(bundle).length}`)
   }
+
+  console.log('\n✅ Done!')
+  console.log('   Test in browser: npm run dev, then search for a ticker')
 }
 
 // Run

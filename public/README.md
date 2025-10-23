@@ -1,6 +1,6 @@
-# AI Insights - Static JSON Files
+# AI Insights - Static Bundle
 
-Pre-generated AI insights served as static files (zero cost, fast delivery).
+Pre-generated AI insights served as a single optimized bundle (zero cost, fast delivery).
 
 ## 🚀 Generate Insights
 
@@ -11,7 +11,7 @@ Pre-generated AI insights served as static files (zero cost, fast delivery).
 **Generate specific tickers:**
 ```bash
 node scripts/generate-ai-insights.mjs AAPL MSFT NVDA
-# Automatically builds optimized bundle after generation
+# Automatically creates optimized bundle (ai-insights.json)
 ```
 
 **Generate test set (10 tickers):**
@@ -19,38 +19,36 @@ node scripts/generate-ai-insights.mjs AAPL MSFT NVDA
 node scripts/generate-ai-insights.mjs AAPL MSFT AMZN GOOGL CRM ASML TSM DUOL SPGI MSCI
 ```
 
-## ⚡ Optimization: Bundled Approach
+## ⚡ Bundle Architecture
 
-**For 500 companies, we use a single bundle instead of 500 files:**
+**Single bundle file instead of individual files:**
 
-- ✅ **1 HTTP request** instead of 500
-- ✅ **165 KB gzipped** instead of 700 KB
-- ✅ **0.2s load time** instead of 25s
-- ✅ **In-memory cache** for instant lookups
-- ✅ **76% size reduction** with compression
+- ✅ **1 HTTP request** for all insights
+- ✅ **~26 KB** bundle size (~7 KB gzipped)
+- ✅ **0.2s load time** with instant lookups
+- ✅ **In-memory cache** after first load
+- ✅ **No build step** required - generated directly
 
-**Bundle is automatically created** when you run the generation script!
+**The script creates `ai-insights.json` directly** - no separate build needed!
 
-Manual bundle build:
-```bash
-node scripts/build-insights-bundle.mjs
-```
+## 📝 Bundle Format
 
-## 📝 File Format
+The generated bundle (`ai-insights.json`) uses an optimized format:
 
 ```json
 {
-  "ticker": "AAPL",
-  "companyName": "Apple Inc.",
-  "generated": "2025-01-15T10:30:00.000Z",
-  "version": "1.0",
-  "advantages": [
-    { "title": "Brand Loyalty", "description": "..." },
-    { "title": "Ecosystem Lock-in", "description": "..." }
-  ],
-  "risks": [
-    { "title": "China Dependence", "description": "..." }
-  ]
+  "AAPL": {
+    "advantages": [
+      { "title": "Brand Loyalty", "description": "..." },
+      { "title": "Ecosystem Lock-in", "description": "..." }
+    ],
+    "risks": [
+      { "title": "China Dependence", "description": "..." }
+    ],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "MSFT": { ... }
 }
 ```
 
@@ -66,5 +64,5 @@ If you hit rate limits during generation:
 ```bash
 # Test in browser
 npm run dev
-# Search for ticker → Load AI insights from static files
+# Search for ticker → Load AI insights from bundle
 ```

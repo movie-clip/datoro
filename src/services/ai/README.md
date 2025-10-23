@@ -1,7 +1,7 @@
 # AI Analysis Service
 
 ## Overview
-This service loads pre-generated AI analysis from static JSON files. AI insights are generated locally using `scripts/generate-ai-insights.mjs` and stored in `public/ai-insights/{ticker}.json`.
+This service loads pre-generated AI analysis from a static JSON bundle. AI insights are generated locally using `scripts/generate-ai-insights.mjs` and stored in `public/ai-insights.json`.
 
 ## Benefits
 - **Zero API costs**: No OpenAI/Ollama API calls at runtime
@@ -98,11 +98,20 @@ const result = await getCompetitiveAdvantages('AAPL', 'Apple Inc.')
 
 ```
 public/
-  ai-insights/
-    aapl.json          # Apple insights
-    msft.json          # Microsoft insights
-    ...
-  ai-insights.json     # Index of all available insights
+  ai-insights.json     # Bundle with all AI insights (used by app)
+```
+
+The bundle format is optimized for size and performance:
+```json
+{
+  "AAPL": {
+    "advantages": [...],
+    "risks": [...],
+    "updated": "2025-10-17",
+    "provider": "ollama"
+  },
+  "MSFT": { ... }
+}
 ```
 
 ## Error Handling
@@ -115,8 +124,8 @@ public/
 
 If you previously used OpenAI/Ollama API:
 1. Generate insights: `node scripts/generate-ai-insights.mjs {TICKERS}`
-2. Review generated JSON files in `public/ai-insights/`
-3. Deploy with static files
+2. Review generated bundle in `public/ai-insights.json`
+3. Deploy with bundle file
 4. No API keys or configuration needed!
 
 ## Best Practices
