@@ -77,14 +77,14 @@ onMounted(async () => {
   // Wait for auth init before loading watchlist
   try {
     await authStore.init()
+    
+    // Only initialize watchlist if user is authenticated
+    if (authStore.isAuthenticated) {
+      await initializeWatchlist()
+    }
   } catch (err) {
     console.error('[App] Auth init failed:', err)
   }
-  
-  // Initialize watchlist after auth check
-  initializeWatchlist().catch(err => {
-    console.error('[App] Watchlist init failed:', err)
-  })
   
   const savedTab = localStorage.getItem('factorly_active_tab')
   if (savedTab && tabs.some(t => t.id === savedTab)) {

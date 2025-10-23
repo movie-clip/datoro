@@ -30,7 +30,9 @@ const fetchWatchlist = async () => {
   error.value = null
   
   try {
-    const response = await fetch(`${API_BASE_URL}/api/watchlist`)
+    const response = await fetch(`${API_BASE_URL}/api/watchlist`, {
+      credentials: 'include' // Send HttpOnly cookie
+    })
     
     if (!response.ok) {
       if (response.status === 401) {

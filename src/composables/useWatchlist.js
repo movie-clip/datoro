@@ -15,7 +15,9 @@ export function useWatchlist() {
     
     loading.value = true
     try {
-      const response = await fetch(`${API_BASE_URL}/api/watchlist`)
+      const response = await fetch(`${API_BASE_URL}/api/watchlist`, {
+        credentials: 'include' // Send HttpOnly cookie
+      })
       
       if (response.ok) {
         const data = await response.json()
@@ -52,7 +54,8 @@ export function useWatchlist() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/watchlist/${upperTicker}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include' // Send HttpOnly cookie
       })
       
       if (!response.ok) {
@@ -90,7 +93,8 @@ export function useWatchlist() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/watchlist/${upperTicker}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include' // Send HttpOnly cookie
       })
       
       if (!response.ok) {
