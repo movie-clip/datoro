@@ -1,0 +1,25 @@
+{
+  "name": "ai-insights-tool",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Standalone Vue.js tool for generating AI insights using local Ollama",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.mjs",
+    "start:dev": "concurrently \"npm run server\" \"npm run dev\" --names \"server,vite\" --prefix-colors \"blue,green\""
+  },
+  "dependencies": {
+    "vue": "^3.5.13",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.11",
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,7 +1,7 @@
 # AI Analysis Service
 
 ## Overview
-This service loads pre-generated AI analysis from a static JSON bundle. AI insights are generated locally using `scripts/generate-ai-insights.mjs` and stored in `public/ai-insights.json`.
+This service loads pre-generated AI analysis from a static JSON bundle. AI insights are generated using the **AI Insights Tool** (located in `ai-insights-tool/`) and stored in `public/ai-insights.json`.
 
 ## Benefits
 - **Zero API costs**: No OpenAI/Ollama API calls at runtime
