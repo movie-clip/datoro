@@ -11,6 +11,7 @@ import TabNavigation from './components/layout/TabNavigation.vue'
 import TabPanel from './components/layout/TabPanel.vue'
 import AuthModal from './components/auth/AuthModal.vue'
 import WatchlistPanel from './components/common/WatchlistPanel.vue'
+import MainMenu from './components/common/MainMenu.vue'
 
 // Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
 const AIAnalysisPanel = defineAsyncComponent(() =>
@@ -67,6 +68,9 @@ const companyName = ref('Apple Inc.')
 
 const showAuthModal = ref(false)
 const authModalTab = ref('signin') // 'signin' or 'signup'
+
+// Main Menu
+const showMainMenu = ref(false)
 
 // Watchlist
 const { initializeWatchlist, toggleWatchlist, clearWatchlist } = useWatchlist()
@@ -167,6 +171,10 @@ function handleLogout() {
   }
 }
 
+function toggleMainMenu() {
+  showMainMenu.value = !showMainMenu.value
+}
+
 function toggleWatchlistPanel() {
   showWatchlistPanel.value = !showWatchlistPanel.value
 }
@@ -193,6 +201,20 @@ function handleSelectTicker(ticker) {
     <header class="app-header">
       <div class="header-container">
         <div class="header-left">
+          <!-- Hamburger Menu Button -->
+          <button 
+            class="hamburger-menu-button" 
+            @click="toggleMainMenu"
+            title="Menu"
+            aria-label="Open main menu"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          
           <img 
             src="/logo.png" 
             alt="Factorly Logo" 
@@ -203,19 +225,6 @@ function handleSelectTicker(ticker) {
         </div>
         
         <div class="header-right">
-          <!-- Watchlist button (visible when logged in) -->
-          <button 
-            v-if="authStore.isAuthenticated"
-            class="watchlist-button" 
-            @click="toggleWatchlistPanel"
-            title="Watchlist"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            <span>Watchlist</span>
-          </button>
-          
           <!-- Show auth buttons if not logged in -->
           <template v-if="!authStore.isAuthenticated">
             <button class="auth-button sign-in" @click="openSignIn">
@@ -384,6 +393,14 @@ function handleSelectTicker(ticker) {
       </section>
     </section>
     
+    <!-- Main Menu -->
+    <MainMenu 
+      :is-open="showMainMenu"
+      :is-authenticated="authStore.isAuthenticated"
+      @close="showMainMenu = false"
+      @toggle-watchlist="toggleWatchlistPanel"
+    />
+    
     <!-- Watchlist Panel -->
     <WatchlistPanel 
       :is-open="showWatchlistPanel"
@@ -431,6 +448,36 @@ function handleSelectTicker(ticker) {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Hamburger Menu Button */
+.hamburger-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #9E9E9E;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hamburger-menu-button:hover {
+  background: rgba(0, 89, 76, 0.1);
+  border-color: rgba(0, 89, 76, 0.3);
+  color: #00A88E;
+  transform: translateY(-1px);
+}
+
+.hamburger-menu-button:active {
+  transform: translateY(0);
+}
+
+.hamburger-menu-button svg {
+  width: 24px;
+  height: 24px;
 }
 
 .brand-logo {
