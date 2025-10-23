@@ -1,313 +1,71 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { onMounted } from 'vue'
+import AppHeader from './components/AppHeader.vue'
+import ProgressBar from './components/ProgressBar.vue'
+import TickerStatus from './components/TickerStatus.vue'
+import { useOllamaStatus } from './composables/useOllamaStatus'
+import { useBundleStats } from './composables/useBundleStats'
+import { useTickerManagement } from './composables/useTickerManagement'
+import { useGeneration } from './composables/useGeneration'
+import { useDataPreview } from './composables/useDataPreview'
 
-const tickerInput = ref('')
-const forceRegenerate = ref(false)
-const isChecking = ref(false)
-const isGenerating = ref(false)
-const checkedTickers = ref([])
-const tickerStatuses = ref({})
-const bundleStats = ref(null)
-const ollamaStatus = ref('checking')
-const generationResults = ref([])
-const generationSummary = ref(null)
-const expandedTickers = ref(new Set())
-const selectedTickers = ref(new Set())
-const tickersToGenerate = ref(new Set()) // Tickers selected for generation
-const totalTickersToGenerate = ref(0) // Total count for progress tracking
-const completedTickers = ref(0) // Completed count for progress
+// Composables
+const { ollamaStatus } = useOllamaStatus()
+const { bundleStats, loadBundleStats } = useBundleStats()
+const {
+  tickerInput,
+  tickerStatuses,
+  tickersToGenerate,
+  isChecking,
+  existingTickers,
+  newTickers,
+  invalidTickers,
+  checkTickers,
+  toggleGenerationSelection,
+  selectAllForGeneration,
+  deselectAllForGeneration
+} = useTickerManagement()
 
-// Toggle ticker expansion
-function toggleTicker(ticker) {
-  if (expandedTickers.value.has(ticker)) {
-    expandedTickers.value.delete(ticker)
-  } else {
-    expandedTickers.value.add(ticker)
-  }
-  // Force reactivity
-  expandedTickers.value = new Set(expandedTickers.value)
-}
+const {
+  isGenerating,
+  generationResults,
+  generationSummary,
+  totalTickersToGenerate,
+  completedTickers,
+  progressPercentage,
+  successfulGenerations,
+  generateInsights
+} = useGeneration(loadBundleStats)
 
-// Toggle ticker selection
-function toggleSelection(ticker) {
-  if (selectedTickers.value.has(ticker)) {
-    selectedTickers.value.delete(ticker)
-  } else {
-    selectedTickers.value.add(ticker)
-  }
-  selectedTickers.value = new Set(selectedTickers.value)
-}
+const {
+  expandedTickers,
+  selectedTickers,
+  toggleTicker,
+  toggleSelection,
+  selectAll,
+  deselectAll,
+  applyToMainProject
+} = useDataPreview()
 
-// Toggle ticker for generation
-function toggleGenerationSelection(ticker) {
-  if (tickersToGenerate.value.has(ticker)) {
-    tickersToGenerate.value.delete(ticker)
-  } else {
-    tickersToGenerate.value.add(ticker)
-  }
-  tickersToGenerate.value = new Set(tickersToGenerate.value)
-}
-
-// Select/deselect all for generation
-function selectAllForGeneration() {
-  tickersToGenerate.value = new Set([...newTickers.value, ...existingTickers.value])
-}
-
-function deselectAllForGeneration() {
-  tickersToGenerate.value.clear()
-  tickersToGenerate.value = new Set(tickersToGenerate.value)
-}
-
-// Select all tickers
-function selectAll() {
-  selectedTickers.value = new Set([...existingTickers.value, ...successfulGenerations.value])
-}
-
-// Deselect all tickers
-function deselectAll() {
-  selectedTickers.value.clear()
-  selectedTickers.value = new Set(selectedTickers.value)
-}
-
-// Apply selected tickers to main project
-async function applyToMainProject() {
-  if (selectedTickers.value.size === 0) {
-    alert('Please select at least one ticker to apply')
-    return
-  }
-
-  const confirmed = confirm(
-    `Apply ${selectedTickers.value.size} ticker(s) to main project?\n\n` +
-    `This will merge the data into public/ai-insights.json.\n` +
-    `Existing tickers will be updated.`
-  )
-
-  if (!confirmed) return
-
-  try {
-    const tickersToApply = Array.from(selectedTickers.value)
-    
-    console.log('Applying tickers:', tickersToApply)
-    
-    const res = await fetch('/api/apply-to-main', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tickers: tickersToApply })
-    })
-
-    console.log('Response status:', res.status)
-    console.log('Response headers:', res.headers.get('content-type'))
-    
-    const text = await res.text()
-    console.log('Response text:', text)
-    
-    let data
-    try {
-      data = JSON.parse(text)
-    } catch (e) {
-      throw new Error('Server returned invalid JSON. Make sure the backend server is running on port 7072.')
-    }
-
-    if (data.success) {
-      alert(`✅ Successfully applied ${data.appliedCount} ticker(s) to main project!`)
-      deselectAll()
-    } else {
-      alert(`❌ Failed to apply: ${data.error}`)
-    }
-  } catch (error) {
-    console.error('Apply error:', error)
-    alert(`❌ Failed to apply: ${error.message}`)
-  }
-}
-
-// Computed: successfully generated tickers from current session
-const successfulGenerations = computed(() => {
-  return generationResults.value
-    .filter(r => r.success)
-    .map(r => r.ticker)
+// Initialize
+onMounted(() => {
+  loadBundleStats()
 })
 
-// Check Ollama status on mount
-checkOllamaStatus()
-setInterval(checkOllamaStatus, 5000)
-
-// Load bundle stats on mount
-loadBundleStats()
-
-async function checkOllamaStatus() {
-  try {
-    const res = await fetch('/api/ollama/status')
-    const data = await res.json()
-    ollamaStatus.value = data.running ? 'connected' : 'offline'
-  } catch (error) {
-    ollamaStatus.value = 'offline'
-  }
+// Helper functions for template
+const handleGenerate = () => {
+  generateInsights(ollamaStatus.value, tickersToGenerate.value, tickerStatuses.value)
 }
 
-async function loadBundleStats() {
-  try {
-    const res = await fetch('/api/bundle/stats')
-    bundleStats.value = await res.json()
-  } catch (error) {
-    console.error('Failed to load bundle stats:', error)
-  }
+const handleSelectAll = () => {
+  selectAll(existingTickers.value, successfulGenerations.value)
 }
-
-async function checkTickers() {
-  if (!tickerInput.value.trim()) {
-    alert('Please enter at least one ticker')
-    return
-  }
-
-  isChecking.value = true
-  generationResults.value = []
-  generationSummary.value = null
-
-  try {
-    const res = await fetch('/api/tickers/check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tickers: tickerInput.value })
-    })
-
-    const data = await res.json()
-    checkedTickers.value = data.validTickers
-    tickerStatuses.value = data.tickerInfo
-    
-    // Auto-select all valid tickers for generation
-    tickersToGenerate.value = new Set(data.validTickers.filter(ticker => 
-      data.tickerInfo[ticker].status !== 'invalid'
-    ))
-  } catch (error) {
-    alert('Failed to check tickers: ' + error.message)
-  } finally {
-    isChecking.value = false
-  }
-}
-
-async function generateInsights() {
-  if (ollamaStatus.value !== 'connected') {
-    alert('Ollama is not running! Please start Ollama first.')
-    return
-  }
-
-  // Use only the tickers selected for generation
-  const selectedForGeneration = Array.from(tickersToGenerate.value)
-  
-  if (selectedForGeneration.length === 0) {
-    alert('No tickers selected for generation. Please select at least one ticker.')
-    return
-  }
-
-  // Filter to only process tickers that are new or force regenerate is checked
-  const tickersToProcess = selectedForGeneration.filter(ticker => {
-    const status = tickerStatuses.value[ticker]
-    return status.status === 'new' || (status.status === 'exists' && forceRegenerate.value)
-  })
-
-  // If no tickers to process but forceRegenerate is not checked, 
-  // just process the selected existing tickers anyway
-  const finalTickersToProcess = tickersToProcess.length > 0 
-    ? tickersToProcess 
-    : selectedForGeneration
-
-  isGenerating.value = true
-  generationResults.value = []
-  generationSummary.value = null
-  totalTickersToGenerate.value = finalTickersToProcess.length
-  completedTickers.value = 0
-
-  try {
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        tickers: finalTickersToProcess,
-        force: forceRegenerate.value
-      })
-    })
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const chunk = decoder.decode(value)
-      const lines = chunk.split('\n').filter(line => line.trim())
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(6))
-          
-          if (data.type === 'result') {
-            generationResults.value.push(data)
-            completedTickers.value++
-          } else if (data.type === 'summary') {
-            generationSummary.value = data
-          }
-        }
-      }
-    }
-
-    // Reload bundle stats
-    await loadBundleStats()
-  } catch (error) {
-    alert('Failed to generate insights: ' + error.message)
-  } finally {
-    isGenerating.value = false
-  }
-}
-
-const existingTickers = computed(() => {
-  return checkedTickers.value.filter(ticker => 
-    tickerStatuses.value[ticker]?.status === 'exists'
-  )
-})
-
-const newTickers = computed(() => {
-  return checkedTickers.value.filter(ticker => 
-    tickerStatuses.value[ticker]?.status === 'new'
-  )
-})
-
-const invalidTickers = computed(() => {
-  return Object.keys(tickerStatuses.value).filter(ticker =>
-    tickerStatuses.value[ticker]?.status === 'invalid'
-  )
-})
-
-const progressPercentage = computed(() => {
-  if (totalTickersToGenerate.value === 0) return 0
-  return Math.round((completedTickers.value / totalTickersToGenerate.value) * 100)
-})
 </script>
 
 <template>
   <div class="app">
     <!-- Header -->
-    <header class="header">
-      <div class="header-content">
-        <h1>🤖 AI Insights Generator</h1>
-        <div class="header-stats">
-          <div class="stat" v-if="bundleStats">
-            <span class="stat-label">Tickers:</span>
-            <span class="stat-value">{{ bundleStats.count }}</span>
-          </div>
-          <div class="stat" v-if="bundleStats">
-            <span class="stat-label">Size:</span>
-            <span class="stat-value">{{ bundleStats.size_kb }} KB</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Ollama:</span>
-            <span :class="['status-indicator', ollamaStatus]">
-              {{ ollamaStatus === 'connected' ? '✅ Connected' : '❌ Offline' }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </header>
+    <AppHeader :bundleStats="bundleStats" :ollamaStatus="ollamaStatus" />
 
     <!-- Main Content -->
     <main class="main-content">
@@ -330,83 +88,29 @@ const progressPercentage = computed(() => {
               {{ isChecking ? 'Checking...' : '🔍 Check Status' }}
             </button>
             <button 
-              @click="generateInsights" 
-              :disabled="isGenerating || checkedTickers.length === 0 || ollamaStatus !== 'connected'"
+              @click="handleGenerate" 
+              :disabled="isGenerating || tickersToGenerate.size === 0 || ollamaStatus !== 'connected'"
               class="secondary"
             >
               {{ isGenerating ? 'Generating...' : '🚀 Generate' }}
             </button>
           </div>
-
-          <label class="checkbox-label mt-2">
-            <input 
-              type="checkbox" 
-              v-model="forceRegenerate"
-              :disabled="isGenerating"
-            >
-            <span>Force regenerate existing</span>
-          </label>
         </div>
 
         <!-- Ticker Status -->
-        <div class="panel status-section" v-if="Object.keys(tickerStatuses).length > 0">
-          <div class="status-header">
-            <h2>Ticker Status</h2>
-            <div class="status-controls">
-              <button @click="selectAllForGeneration" class="btn-tiny">Select All</button>
-              <button @click="deselectAllForGeneration" class="btn-tiny secondary">Deselect All</button>
-              <span class="text-small text-grey">{{ tickersToGenerate.size }} selected</span>
-            </div>
-          </div>
-          <div class="status-list">
-            <div 
-              v-for="ticker in invalidTickers" 
-              :key="ticker"
-              class="status-item error"
-            >
-              <div>
-                <strong>{{ ticker }}</strong>
-                <p class="text-small">{{ tickerStatuses[ticker].error }}</p>
-              </div>
-            </div>
-
-            <div 
-              v-for="ticker in existingTickers" 
-              :key="ticker"
-              class="status-item success"
-            >
-              <input 
-                type="checkbox" 
-                :checked="tickersToGenerate.has(ticker)"
-                @change="toggleGenerationSelection(ticker)"
-                :disabled="isGenerating"
-                class="status-checkbox"
-              >
-              <div>
-                <strong>{{ ticker }}</strong>
-                <p class="text-small">Already in bundle</p>
-              </div>
-            </div>
-
-            <div 
-              v-for="ticker in newTickers" 
-              :key="ticker"
-              class="status-item info"
-            >
-              <input 
-                type="checkbox" 
-                :checked="tickersToGenerate.has(ticker)"
-                @change="toggleGenerationSelection(ticker)"
-                :disabled="isGenerating"
-                class="status-checkbox"
-              >
-              <div>
-                <strong>{{ ticker }}</strong>
-                <p class="text-small">New ticker</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TickerStatus
+          v-if="Object.keys(tickerStatuses).length > 0"
+          :invalidTickers="invalidTickers"
+          :existingTickers="existingTickers"
+          :newTickers="newTickers"
+          :tickerStatuses="tickerStatuses"
+          :selectedCount="tickersToGenerate.size"
+          :isGenerating="isGenerating"
+          :isSelected="(ticker) => tickersToGenerate.has(ticker)"
+          @selectAll="selectAllForGeneration"
+          @deselectAll="deselectAllForGeneration"
+          @toggle="toggleGenerationSelection"
+        />
       </div>
 
       <!-- Right Panel -->
@@ -418,7 +122,7 @@ const progressPercentage = computed(() => {
             <!-- Selection controls -->
             <div v-if="existingTickers.length > 0 || successfulGenerations.length > 0" class="selection-controls">
               <div class="selection-actions">
-                <button @click="selectAll" class="btn-small">Select All</button>
+                <button @click="handleSelectAll" class="btn-small">Select All</button>
                 <button @click="deselectAll" class="btn-small secondary">Deselect All</button>
                 <span class="selection-count text-small text-grey">
                   {{ selectedTickers.size }} selected
@@ -435,36 +139,12 @@ const progressPercentage = computed(() => {
           </div>
 
           <!-- Progress Bar (shown during generation) -->
-          <div v-if="isGenerating" class="progress-container">
-            <div class="progress-header">
-              <h3>🚀 Generating AI Insights</h3>
-              <p class="progress-subtitle">
-                Processing {{ completedTickers }} of {{ totalTickersToGenerate }} tickers
-              </p>
-            </div>
-            
-            <div class="progress-bar-wrapper">
-              <div class="progress-bar">
-                <div 
-                  class="progress-bar-fill" 
-                  :style="{ width: progressPercentage + '%' }"
-                >
-                  <span class="progress-text">{{ progressPercentage }}%</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="progress-info">
-              <div class="progress-stat">
-                <span class="stat-icon">✅</span>
-                <span>Completed: {{ completedTickers }}</span>
-              </div>
-              <div class="progress-stat">
-                <span class="stat-icon">⏳</span>
-                <span>Remaining: {{ totalTickersToGenerate - completedTickers }}</span>
-              </div>
-            </div>
-          </div>
+          <ProgressBar 
+            v-if="isGenerating"
+            :total="totalTickersToGenerate"
+            :completed="completedTickers"
+            :percentage="progressPercentage"
+          />
 
           <!-- Empty state -->
           <div v-if="!isGenerating && Object.keys(tickerStatuses).length === 0 && generationResults.length === 0" class="empty-state">
@@ -788,30 +468,37 @@ const progressPercentage = computed(() => {
   align-items: center;
   margin-bottom: 1rem;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .status-header h2 {
   margin: 0;
+  flex: 1;
 }
 
 .status-controls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-right: 1rem;
+}
+
+.status-controls .text-grey {
+  margin-right: 0.1rem;
+  font-weight: 500;
 }
 
 .btn-tiny {
   background: #2A2A2E;
   color: #E5E5E5;
   border: none;
-  padding: 0.375rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  font-size: 0.625rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .btn-tiny:hover {
@@ -855,11 +542,16 @@ const progressPercentage = computed(() => {
 
 .status-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
   border-radius: 8px;
   border-left: 3px solid;
+}
+
+.status-item > div {
+  flex: 1;
+  min-width: 0;
 }
 
 .status-item.success {
