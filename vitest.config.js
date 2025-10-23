@@ -1,9 +1,11 @@
 // vitest.config.js
 import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  plugins: [vue()],
   test: {
-    // Test environment
+    // Test environment - node for backend/composable tests
     environment: 'node',
     
     // Global test timeout (5 seconds for API tests)

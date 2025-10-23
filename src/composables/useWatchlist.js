@@ -70,12 +70,20 @@ export function useWatchlist() {
           return { success: true }
         }
         
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to add ticker')
+        let errorMessage = 'Failed to add ticker'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (e) {
+          // Response not JSON, use default message
+        }
+        throw new Error(errorMessage)
       }
       
       return { success: true }
     } catch (error) {
+      // Revert optimistic update on network error
+      watchlistSet.value.delete(upperTicker)
       console.error('Error adding to watchlist:', error)
       throw error
     }
@@ -105,12 +113,20 @@ export function useWatchlist() {
           throw new Error('Authentication required')
         }
         
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to remove ticker')
+        let errorMessage = 'Failed to remove ticker'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (e) {
+          // Response not JSON, use default message
+        }
+        throw new Error(errorMessage)
       }
       
       return { success: true }
     } catch (error) {
+      // Revert optimistic update on network error
+      watchlistSet.value.add(upperTicker)
       console.error('Error removing from watchlist:', error)
       throw error
     }

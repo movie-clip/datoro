@@ -4,8 +4,10 @@
  */
 
 import express from 'express';
+import { randomUUID } from 'crypto';
 import { authenticate } from '../middleware/auth.js';
 import { getPrismaClient } from '../services/databaseService.js';
+import { generalLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 const prisma = getPrismaClient();
@@ -14,7 +16,7 @@ const prisma = getPrismaClient();
  * GET /api/watchlist
  * Fetch user's watchlist with ticker details
  */
-router.get('/watchlist', authenticate(), async (req, res) => {
+router.get('/watchlist', generalLimiter, authenticate(), async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -37,9 +39,9 @@ router.get('/watchlist', authenticate(), async (req, res) => {
 
 /**
  * POST /api/watchlist/:ticker
- * Add ticker to user's watchlist
+ * Add a ticker to user's watchlist
  */
-router.post('/watchlist/:ticker', authenticate(), async (req, res) => {
+router.post('/watchlist/:ticker', generalLimiter, authenticate(), async (req, res) => {
   try {
     const userId = req.user.id;
     const ticker = req.params.ticker.toUpperCase().trim();
@@ -52,6 +54,7 @@ router.post('/watchlist/:ticker', authenticate(), async (req, res) => {
     // Create watchlist item (unique constraint will prevent duplicates)
     const watchlistItem = await prisma.watchlistItem.create({
       data: {
+        id: randomUUID(),
         userId,
         ticker
       }
@@ -75,9 +78,9 @@ router.post('/watchlist/:ticker', authenticate(), async (req, res) => {
 
 /**
  * DELETE /api/watchlist/:ticker
- * Remove ticker from user's watchlist
+ * Remove a ticker from user's watchlist
  */
-router.delete('/watchlist/:ticker', authenticate(), async (req, res) => {
+router.delete('/watchlist/:ticker', generalLimiter, authenticate(), async (req, res) => {
   try {
     const userId = req.user.id;
     const ticker = req.params.ticker.toUpperCase().trim();

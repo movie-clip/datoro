@@ -16,15 +16,15 @@ const emit = defineEmits(['toggle'])
 
 const loading = ref(false)
 
-const toggle = async () => {
+const toggle = () => {
   if (loading.value) return
   
   loading.value = true
-  try {
-    emit('toggle', props.ticker)
-  } finally {
+  emit('toggle', props.ticker)
+  // Reset loading after a short delay to show feedback
+  setTimeout(() => {
     loading.value = false
-  }
+  }, 300)
 }
 </script>
 
