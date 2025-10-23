@@ -55,22 +55,25 @@ Analyzes key risks to consider:
 
 ## Generating Insights
 
-### Single Ticker
+### Using AI Insights Tool
+
+1. Navigate to the tool directory:
 ```bash
-node scripts/generate-ai-insights.mjs AAPL
+cd ai-insights-tool
 ```
 
-### Multiple Tickers
+2. Start the application:
 ```bash
-node scripts/generate-ai-insights.mjs AAPL MSFT GOOGL
+npm run start:dev
 ```
 
-### Test Portfolio
-```bash
-node scripts/generate-ai-insights.mjs AAPL MSFT AMZN GOOGL CRM ASML TSM DUOL SPGI MSCI
-```
+3. Open http://localhost:5174 in your browser
 
-See `scripts/generate-ai-insights.mjs` for generation details.
+4. Enter tickers and generate insights
+
+5. Copy the generated `output/ai-insights.json` to `public/ai-insights.json`
+
+See `ai-insights-tool/README.md` for detailed instructions.
 
 ## Usage Example
 
@@ -123,10 +126,10 @@ The bundle format is optimized for size and performance:
 ## Migrating to Static Approach
 
 If you previously used OpenAI/Ollama API:
-1. Generate insights: `node scripts/generate-ai-insights.mjs {TICKERS}`
-2. Review generated bundle in `public/ai-insights.json`
-3. Deploy with bundle file
-4. No API keys or configuration needed!
+1. Use the AI Insights Tool (see above) to generate insights
+2. Review generated bundle in `ai-insights-tool/output/ai-insights.json`
+3. Copy to `public/ai-insights.json` for deployment
+4. No API keys or configuration needed at runtime!
 
 ## Best Practices
 

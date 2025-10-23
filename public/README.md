@@ -4,20 +4,25 @@ Pre-generated AI insights served as a single optimized bundle (zero cost, fast d
 
 ## 🚀 Generate Insights
 
-**Prerequisites:**
-1. Configure your AI provider (OpenAI/Ollama) locally for generation
-2. See `scripts/generate-ai-insights.mjs` for configuration details
+**Using the AI Insights Tool:**
 
-**Generate specific tickers:**
+1. Navigate to the tool:
 ```bash
-node scripts/generate-ai-insights.mjs AAPL MSFT NVDA
-# Automatically creates optimized bundle (ai-insights.json)
+cd ai-insights-tool
 ```
 
-**Generate test set (10 tickers):**
+2. Start the application:
 ```bash
-node scripts/generate-ai-insights.mjs AAPL MSFT AMZN GOOGL CRM ASML TSM DUOL SPGI MSCI
+npm run start:dev
 ```
+
+3. Open http://localhost:5174 in your browser
+
+4. Enter tickers, generate insights, and download the bundle
+
+5. Copy `ai-insights-tool/output/ai-insights.json` to `public/ai-insights.json`
+
+See `ai-insights-tool/README.md` for detailed instructions.
 
 ## ⚡ Bundle Architecture
 
