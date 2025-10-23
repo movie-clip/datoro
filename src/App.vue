@@ -92,6 +92,16 @@ onMounted(async () => {
   }
 })
 
+// Watch for authentication changes to reinitialize watchlist
+watch(() => authStore.isAuthenticated, (isAuth) => {
+  if (isAuth) {
+    // User just logged in - force reinitialize watchlist
+    initializeWatchlist(true).catch(err => {
+      console.error('[App] Watchlist reinit failed:', err)
+    })
+  }
+})
+
 // Tab state with localStorage persistence
 const activeTab = ref('valuation')
 

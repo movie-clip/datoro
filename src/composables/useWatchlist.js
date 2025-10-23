@@ -10,8 +10,8 @@ export function useWatchlist() {
   /**
    * Initialize watchlist from server
    */
-  const initializeWatchlist = async () => {
-    if (initialized.value) return
+  const initializeWatchlist = async (forceRefresh = false) => {
+    if (initialized.value && !forceRefresh) return
     
     loading.value = true
     try {
