@@ -150,12 +150,8 @@ const watchlist = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-// Reset to menu view when menu closes
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    currentView.value = 'menu'
-  }
-})
+// Don't reset view when menu closes - keep it for next open
+// Removed the watch that was resetting currentView to 'menu'
 
 // Fetch watchlist when switching to watchlist view
 watch(currentView, async (view) => {
