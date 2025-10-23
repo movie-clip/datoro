@@ -21,6 +21,11 @@
       <div class="company-identity">
         <span class="company-name">{{ profile.companyName || ticker }}</span>
         <span class="company-ticker">({{ ticker }})</span>
+        <StarIcon 
+          :ticker="ticker"
+          :is-watchlisted="isWatchlisted(ticker)"
+          @toggle="handleToggleWatchlist"
+        />
       </div>
       <div class="price-info">
         <span class="current-price">${{ formatPrice(quote.price) }}</span>
@@ -46,12 +51,17 @@
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
+import { useWatchlist } from '../../composables/useWatchlist'
+import StarIcon from '../common/StarIcon.vue'
 
 const props = defineProps({
   ticker: { type: String, required: true }
 })
 
 const emit = defineEmits(['update:companyName', 'update:companyProfile'])
+
+// Watchlist composable
+const { isWatchlisted, toggleWatchlist } = useWatchlist()
 
 const imageError = ref(false)
 
@@ -84,6 +94,15 @@ watch(profile, (newProfile) => {
 
 const handleImageError = () => {
   imageError.value = true
+}
+
+const handleToggleWatchlist = async (ticker) => {
+  try {
+    await toggleWatchlist(ticker)
+  } catch (error) {
+    console.error('Error toggling watchlist:', error)
+    alert(error.message || 'Failed to update watchlist')
+  }
 }
 
 const formatPrice = (price) => {

@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, defineAsyncComponent } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 import { useAuthStore } from './stores/authStore'
+import { useWatchlist } from './composables/useWatchlist'
 
 // Layout components - Load immediately (visible on page load)
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
@@ -9,6 +10,7 @@ import HeroSection from './components/layout/HeroSection.vue'
 import TabNavigation from './components/layout/TabNavigation.vue'
 import TabPanel from './components/layout/TabPanel.vue'
 import AuthModal from './components/auth/AuthModal.vue'
+import WatchlistPanel from './components/common/WatchlistPanel.vue'
 
 // Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
 const AIAnalysisPanel = defineAsyncComponent(() =>
@@ -63,15 +65,25 @@ const authStore = useAuthStore()
 const inputTicker = ref('AAPL')
 const companyName = ref('Apple Inc.')
 
-// Auth modal state
 const showAuthModal = ref(false)
 const authModalTab = ref('signin') // 'signin' or 'signup'
 
+// Watchlist
+const { initializeWatchlist, toggleWatchlist, clearWatchlist } = useWatchlist()
+const showWatchlistPanel = ref(false)
+
 // Initialize auth store on mount
 onMounted(async () => {
-  // Don't await - let auth init in background to avoid blocking render
-  authStore.init().catch(err => {
+  // Wait for auth init before loading watchlist
+  try {
+    await authStore.init()
+  } catch (err) {
     console.error('[App] Auth init failed:', err)
+  }
+  
+  // Initialize watchlist after auth check
+  initializeWatchlist().catch(err => {
+    console.error('[App] Watchlist init failed:', err)
   })
   
   const savedTab = localStorage.getItem('factorly_active_tab')
@@ -140,7 +152,21 @@ function handleAuthSuccess() {
 
 function handleLogout() {
   if (confirm('Are you sure you want to sign out?')) {
+    clearWatchlist()
     authStore.logout()
+  }
+}
+
+function toggleWatchlistPanel() {
+  showWatchlistPanel.value = !showWatchlistPanel.value
+}
+
+async function handleToggleWatchlist(ticker) {
+  try {
+    await toggleWatchlist(ticker)
+  } catch (error) {
+    console.error('Error toggling watchlist:', error)
+    alert(error.message || 'Failed to update watchlist')
   }
 }
 </script>
@@ -160,6 +186,19 @@ function handleLogout() {
         </div>
         
         <div class="header-right">
+          <!-- Watchlist button (visible when logged in) -->
+          <button 
+            v-if="authStore.isAuthenticated"
+            class="watchlist-button" 
+            @click="toggleWatchlistPanel"
+            title="Watchlist"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <span>Watchlist</span>
+          </button>
+          
           <!-- Show auth buttons if not logged in -->
           <template v-if="!authStore.isAuthenticated">
             <button class="auth-button sign-in" @click="openSignIn">
@@ -327,6 +366,13 @@ function handleLogout() {
         <PriceTargetBar />
       </section>
     </section>
+    
+    <!-- Watchlist Panel -->
+    <WatchlistPanel 
+      :is-open="showWatchlistPanel"
+      @close="showWatchlistPanel = false"
+      @toggle-watchlist="handleToggleWatchlist"
+    />
   </main>
 </template>
 
@@ -510,6 +556,32 @@ function handleLogout() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.watchlist-button {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.watchlist-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.watchlist-button:hover {
+  background: rgba(255, 184, 0, 0.1);
+  border-color: rgba(255, 184, 0, 0.3);
+  color: #FFB800;
 }
 
 .logout-button {

@@ -48,6 +48,7 @@ model User {
   searches    Search[]
   apiRequests ApiRequest[]
   sessions    Session[]
+  watchlistItems WatchlistItem[]
 
   @@index([email])
   @@index([googleId])
@@ -100,6 +101,24 @@ model Search {
   @@index([userId, ticker, createdAt(sort: Desc)]) // User-specific ticker history
   @@index([source, createdAt(sort: Desc)]) // Search source analytics
   @@map("searches")
+}
+
+// ============================================
+// Watchlist
+// ============================================
+
+model WatchlistItem {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  ticker    String
+  addedAt   DateTime @default(now()) @map("added_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, ticker])
+  @@index([userId, addedAt(sort: Desc)])
+  @@index([ticker])
+  @@map("watchlist_items")
 }
 
 // ============================================

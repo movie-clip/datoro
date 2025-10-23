@@ -13,6 +13,7 @@ import { getCacheService, CacheTTL } from './services/cacheService.js'
 import { getMonitoringService } from './services/monitoringService.js'
 import * as sentryService from './services/sentryService.js'
 import authRoutes from './routes/authRoutes.js'
+import watchlistRoutes from './routes/watchlist.mjs'
 import { 
   validate,
   validateProfile,
@@ -184,6 +185,11 @@ async function fetchWithDeduplication(key, fetchFn) {
 // Authentication Routes
 // ============================================
 app.use('/api/auth', authRoutes)
+
+// ============================================
+// Watchlist Routes
+// ============================================
+app.use('/api', watchlistRoutes)
 
 // ============================================
 // API Version Endpoint
