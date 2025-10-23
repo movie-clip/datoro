@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { API_BASE_URL } from '../utils/apiConfig.js'
 
 // Shared state across all components
 const watchlistSet = ref(new Set())
@@ -14,7 +15,7 @@ export function useWatchlist() {
     
     loading.value = true
     try {
-      const response = await fetch('/api/watchlist')
+      const response = await fetch(`${API_BASE_URL}/api/watchlist`)
       
       if (response.ok) {
         const data = await response.json()
@@ -49,7 +50,7 @@ export function useWatchlist() {
     watchlistSet.value.add(upperTicker)
     
     try {
-      const response = await fetch(`/api/watchlist/${upperTicker}`, {
+      const response = await fetch(`${API_BASE_URL}/api/watchlist/${upperTicker}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
@@ -87,7 +88,7 @@ export function useWatchlist() {
     watchlistSet.value.delete(upperTicker)
     
     try {
-      const response = await fetch(`/api/watchlist/${upperTicker}`, {
+      const response = await fetch(`${API_BASE_URL}/api/watchlist/${upperTicker}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       })

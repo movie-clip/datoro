@@ -4,11 +4,11 @@
  */
 
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../middleware/auth.js';
+import { getPrismaClient } from '../services/databaseService.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 /**
  * GET /api/watchlist

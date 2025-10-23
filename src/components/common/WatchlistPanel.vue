@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useTickerStore } from '../../stores/tickerStore'
+import { API_BASE_URL } from '../../utils/apiConfig.js'
 import StarIcon from './StarIcon.vue'
 
 const props = defineProps({
@@ -29,7 +30,7 @@ const fetchWatchlist = async () => {
   error.value = null
   
   try {
-    const response = await fetch('/api/watchlist')
+    const response = await fetch(`${API_BASE_URL}/api/watchlist`)
     
     if (!response.ok) {
       if (response.status === 401) {
