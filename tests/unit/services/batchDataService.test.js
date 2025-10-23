@@ -429,7 +429,7 @@ describe('Batch Data Service', () => {
         .reply(200, [])
         
       nock(FMP_BASE_URL)
-        .get('/api/v3/score')
+        .get('/stable/financial-scores')
         .query({ symbol: TEST_TICKER, apikey: TEST_API_KEY })
         .reply(200, [])
         
