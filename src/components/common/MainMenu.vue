@@ -32,46 +32,51 @@
         </button>
       </div>
 
-      <!-- Menu Content (Main View) -->
-      <div v-if="currentView === 'menu'" class="menu-content">
-        <!-- Watchlist Button -->
-        <button 
-          v-if="isAuthenticated"
-          class="menu-item" 
-          @click="showWatchlist"
-        >
-          <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          <span>Watchlist</span>
-        </button>
+      <!-- Menu Content Container with animation -->
+      <div class="menu-content-container">
+        <!-- Menu Content (Main View) -->
+        <Transition name="slide-left">
+          <div v-if="currentView === 'menu'" key="menu" class="menu-content">
+            <!-- Watchlist Button -->
+            <button 
+              v-if="isAuthenticated"
+              class="menu-item" 
+              @click="showWatchlist"
+            >
+              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              <span>Watchlist</span>
+            </button>
 
-        <!-- Placeholder for future menu items -->
-        <div class="menu-section-divider"></div>
-        
-        <!-- Coming Soon items (examples) -->
-        <div class="menu-item disabled">
-          <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-          <span>Dashboard</span>
-          <span class="coming-soon-badge">Soon</span>
-        </div>
-        
-        <div class="menu-item disabled">
-          <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-          </svg>
-          <span>Analytics</span>
-          <span class="coming-soon-badge">Soon</span>
-        </div>
-      </div>
+            <!-- Placeholder for future menu items -->
+            <div class="menu-section-divider"></div>
+            
+            <!-- Coming Soon items (examples) -->
+            <div class="menu-item disabled">
+              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Dashboard</span>
+              <span class="coming-soon-badge">Soon</span>
+            </div>
+            
+            <div class="menu-item disabled">
+              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span>Analytics</span>
+              <span class="coming-soon-badge">Soon</span>
+            </div>
+          </div>
+        </Transition>
 
-      <!-- Watchlist Content View -->
-      <div v-else-if="currentView === 'watchlist'" class="menu-content watchlist-content">
+        <!-- Watchlist Content View -->
+        <Transition name="slide-right">
+          <div v-if="currentView === 'watchlist'" key="watchlist" class="menu-content watchlist-content">
         <!-- Loading state -->
         <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
@@ -123,6 +128,8 @@
             </button>
           </div>
         </div>
+          </div>
+        </Transition>
       </div>
     </div>
   </div>
@@ -328,9 +335,20 @@ const handleImageError = (event) => {
   color: #FF3B30;
 }
 
+/* Menu Content Container */
+.menu-content-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
 /* Menu Content */
 .menu-content {
-  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   padding: 1rem 0;
   overflow-y: auto;
 }
@@ -554,5 +572,38 @@ const handleImageError = (event) => {
 
 .remove-btn:active {
   transform: scale(0.95);
+}
+
+/* Slide Transitions */
+/* Slide left (menu to watchlist) */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-left-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-left-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+/* Slide right (watchlist back to menu) */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-right-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-right-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
 }
 </style>
