@@ -169,6 +169,13 @@ async function handleToggleWatchlist(ticker) {
     alert(error.message || 'Failed to update watchlist')
   }
 }
+
+function handleSelectTicker(ticker) {
+  // Update the input field
+  inputTicker.value = ticker
+  // Update the store (this will trigger data fetch)
+  tickerStore.setTicker(ticker)
+}
 </script>
 
 <template>
@@ -372,6 +379,7 @@ async function handleToggleWatchlist(ticker) {
       :is-open="showWatchlistPanel"
       @close="showWatchlistPanel = false"
       @toggle-watchlist="handleToggleWatchlist"
+      @select-ticker="handleSelectTicker"
     />
   </main>
 </template>

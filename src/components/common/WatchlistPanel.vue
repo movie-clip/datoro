@@ -10,7 +10,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'toggle-watchlist'])
+const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker'])
 
 const tickerStore = useTickerStore()
 const watchlist = ref([])
@@ -56,8 +56,8 @@ const handleToggleWatchlist = async (ticker) => {
 }
 
 const goToTicker = (ticker) => {
-  // Set the ticker in the store - this will update the entire app
-  tickerStore.setTicker(ticker)
+  // Emit to parent to update input field and set ticker in store
+  emit('select-ticker', ticker)
   emit('close')
 }
 
