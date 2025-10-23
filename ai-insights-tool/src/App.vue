@@ -13,6 +13,9 @@ const generationResults = ref([])
 const generationSummary = ref(null)
 const expandedTickers = ref(new Set())
 const selectedTickers = ref(new Set())
+const tickersToGenerate = ref(new Set()) // Tickers selected for generation
+const totalTickersToGenerate = ref(0) // Total count for progress tracking
+const completedTickers = ref(0) // Completed count for progress
 
 // Toggle ticker expansion
 function toggleTicker(ticker) {
@@ -33,6 +36,26 @@ function toggleSelection(ticker) {
     selectedTickers.value.add(ticker)
   }
   selectedTickers.value = new Set(selectedTickers.value)
+}
+
+// Toggle ticker for generation
+function toggleGenerationSelection(ticker) {
+  if (tickersToGenerate.value.has(ticker)) {
+    tickersToGenerate.value.delete(ticker)
+  } else {
+    tickersToGenerate.value.add(ticker)
+  }
+  tickersToGenerate.value = new Set(tickersToGenerate.value)
+}
+
+// Select/deselect all for generation
+function selectAllForGeneration() {
+  tickersToGenerate.value = new Set([...newTickers.value, ...existingTickers.value])
+}
+
+function deselectAllForGeneration() {
+  tickersToGenerate.value.clear()
+  tickersToGenerate.value = new Set(tickersToGenerate.value)
 }
 
 // Select all tickers
@@ -64,13 +87,26 @@ async function applyToMainProject() {
   try {
     const tickersToApply = Array.from(selectedTickers.value)
     
+    console.log('Applying tickers:', tickersToApply)
+    
     const res = await fetch('/api/apply-to-main', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tickers: tickersToApply })
     })
 
-    const data = await res.json()
+    console.log('Response status:', res.status)
+    console.log('Response headers:', res.headers.get('content-type'))
+    
+    const text = await res.text()
+    console.log('Response text:', text)
+    
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch (e) {
+      throw new Error('Server returned invalid JSON. Make sure the backend server is running on port 7072.')
+    }
 
     if (data.success) {
       alert(`✅ Successfully applied ${data.appliedCount} ticker(s) to main project!`)
@@ -79,6 +115,7 @@ async function applyToMainProject() {
       alert(`❌ Failed to apply: ${data.error}`)
     }
   } catch (error) {
+    console.error('Apply error:', error)
     alert(`❌ Failed to apply: ${error.message}`)
   }
 }
@@ -136,6 +173,11 @@ async function checkTickers() {
     const data = await res.json()
     checkedTickers.value = data.validTickers
     tickerStatuses.value = data.tickerInfo
+    
+    // Auto-select all valid tickers for generation
+    tickersToGenerate.value = new Set(data.validTickers.filter(ticker => 
+      data.tickerInfo[ticker].status !== 'invalid'
+    ))
   } catch (error) {
     alert('Failed to check tickers: ' + error.message)
   } finally {
@@ -149,27 +191,38 @@ async function generateInsights() {
     return
   }
 
-  // Determine which tickers to process
-  const tickersToProcess = checkedTickers.value.filter(ticker => {
+  // Use only the tickers selected for generation
+  const selectedForGeneration = Array.from(tickersToGenerate.value)
+  
+  if (selectedForGeneration.length === 0) {
+    alert('No tickers selected for generation. Please select at least one ticker.')
+    return
+  }
+
+  // Filter to only process tickers that are new or force regenerate is checked
+  const tickersToProcess = selectedForGeneration.filter(ticker => {
     const status = tickerStatuses.value[ticker]
     return status.status === 'new' || (status.status === 'exists' && forceRegenerate.value)
   })
 
-  if (tickersToProcess.length === 0) {
-    alert('No tickers to process. Check "Force regenerate" to update existing tickers.')
-    return
-  }
+  // If no tickers to process but forceRegenerate is not checked, 
+  // just process the selected existing tickers anyway
+  const finalTickersToProcess = tickersToProcess.length > 0 
+    ? tickersToProcess 
+    : selectedForGeneration
 
   isGenerating.value = true
   generationResults.value = []
   generationSummary.value = null
+  totalTickersToGenerate.value = finalTickersToProcess.length
+  completedTickers.value = 0
 
   try {
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        tickers: tickersToProcess,
+        tickers: finalTickersToProcess,
         force: forceRegenerate.value
       })
     })
@@ -190,6 +243,7 @@ async function generateInsights() {
           
           if (data.type === 'result') {
             generationResults.value.push(data)
+            completedTickers.value++
           } else if (data.type === 'summary') {
             generationSummary.value = data
           }
@@ -222,6 +276,11 @@ const invalidTickers = computed(() => {
   return Object.keys(tickerStatuses.value).filter(ticker =>
     tickerStatuses.value[ticker]?.status === 'invalid'
   )
+})
+
+const progressPercentage = computed(() => {
+  if (totalTickersToGenerate.value === 0) return 0
+  return Math.round((completedTickers.value / totalTickersToGenerate.value) * 100)
 })
 </script>
 
@@ -291,14 +350,20 @@ const invalidTickers = computed(() => {
 
         <!-- Ticker Status -->
         <div class="panel status-section" v-if="Object.keys(tickerStatuses).length > 0">
-          <h2>Ticker Status</h2>
+          <div class="status-header">
+            <h2>Ticker Status</h2>
+            <div class="status-controls">
+              <button @click="selectAllForGeneration" class="btn-tiny">Select All</button>
+              <button @click="deselectAllForGeneration" class="btn-tiny secondary">Deselect All</button>
+              <span class="text-small text-grey">{{ tickersToGenerate.size }} selected</span>
+            </div>
+          </div>
           <div class="status-list">
             <div 
               v-for="ticker in invalidTickers" 
               :key="ticker"
               class="status-item error"
             >
-              <span class="status-icon">❌</span>
               <div>
                 <strong>{{ ticker }}</strong>
                 <p class="text-small">{{ tickerStatuses[ticker].error }}</p>
@@ -310,7 +375,13 @@ const invalidTickers = computed(() => {
               :key="ticker"
               class="status-item success"
             >
-              <span class="status-icon">✅</span>
+              <input 
+                type="checkbox" 
+                :checked="tickersToGenerate.has(ticker)"
+                @change="toggleGenerationSelection(ticker)"
+                :disabled="isGenerating"
+                class="status-checkbox"
+              >
               <div>
                 <strong>{{ ticker }}</strong>
                 <p class="text-small">Already in bundle</p>
@@ -322,7 +393,13 @@ const invalidTickers = computed(() => {
               :key="ticker"
               class="status-item info"
             >
-              <span class="status-icon">➕</span>
+              <input 
+                type="checkbox" 
+                :checked="tickersToGenerate.has(ticker)"
+                @change="toggleGenerationSelection(ticker)"
+                :disabled="isGenerating"
+                class="status-checkbox"
+              >
               <div>
                 <strong>{{ ticker }}</strong>
                 <p class="text-small">New ticker</p>
@@ -357,13 +434,45 @@ const invalidTickers = computed(() => {
             </div>
           </div>
 
+          <!-- Progress Bar (shown during generation) -->
+          <div v-if="isGenerating" class="progress-container">
+            <div class="progress-header">
+              <h3>🚀 Generating AI Insights</h3>
+              <p class="progress-subtitle">
+                Processing {{ completedTickers }} of {{ totalTickersToGenerate }} tickers
+              </p>
+            </div>
+            
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar">
+                <div 
+                  class="progress-bar-fill" 
+                  :style="{ width: progressPercentage + '%' }"
+                >
+                  <span class="progress-text">{{ progressPercentage }}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="progress-info">
+              <div class="progress-stat">
+                <span class="stat-icon">✅</span>
+                <span>Completed: {{ completedTickers }}</span>
+              </div>
+              <div class="progress-stat">
+                <span class="stat-icon">⏳</span>
+                <span>Remaining: {{ totalTickersToGenerate - completedTickers }}</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Empty state -->
-          <div v-if="Object.keys(tickerStatuses).length === 0 && generationResults.length === 0" class="empty-state">
+          <div v-if="!isGenerating && Object.keys(tickerStatuses).length === 0 && generationResults.length === 0" class="empty-state">
             <p class="text-grey">👈 Enter tickers and click "Check Status" to begin</p>
           </div>
 
           <!-- Generation Results -->
-          <div v-if="generationResults.length > 0" class="results">
+          <div v-if="!isGenerating && generationResults.length > 0" class="results">
             <div v-for="result in generationResults" :key="result.ticker" class="result-item">
               <div :class="['result-header', result.success ? 'success' : 'error']">
                 <input 
@@ -673,6 +782,71 @@ const invalidTickers = computed(() => {
   cursor: pointer;
 }
 
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.status-header h2 {
+  margin: 0;
+}
+
+.status-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-tiny {
+  background: #2A2A2E;
+  color: #E5E5E5;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-tiny:hover {
+  background: #3A3A3E;
+}
+
+.btn-tiny.secondary {
+  background: transparent;
+  border: 1px solid #2A2A2E;
+}
+
+.btn-tiny.secondary:hover {
+  border-color: #3A3A3E;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.status-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.status-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .status-list {
   display: flex;
   flex-direction: column;
@@ -706,6 +880,141 @@ const invalidTickers = computed(() => {
 .status-icon {
   font-size: 1.25rem;
   flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.progress-container {
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 2px solid var(--color-brand-primary);
+  border-radius: 12px;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progress-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.progress-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-brand-primary);
+  margin-bottom: 0.5rem;
+}
+
+.progress-subtitle {
+  font-size: 1rem;
+  color: var(--color-grey);
+}
+
+.progress-bar-wrapper {
+  margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+  height: 40px;
+  background: #1E1E22;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid #2A2A2E;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, 
+    var(--color-brand-primary) 0%, 
+    #00C9A7 50%, 
+    var(--color-brand-primary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 20px rgba(0, 168, 142, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent
+  );
+  animation: slide 1.5s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+  position: relative;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-around;
+  gap: 2rem;
+}
+
+.progress-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: var(--color-grey);
+}
+
+.progress-stat .stat-icon {
+  font-size: 1.25rem;
 }
 
 .empty-state {
