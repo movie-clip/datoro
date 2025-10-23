@@ -6,61 +6,61 @@
         "description": "Apple has cultivated exceptional brand loyalty with a retention rate above 90%, creating predictable recurring revenue."
       },
       {
-        "title": "Ecosystem Lock-in",
-        "description": "The seamless integration across devices creates high switching costs for customers."
+        "title": "Network Effects",
+        "description": "The App Store's vast ecosystem and continuous innovation create high switching costs for customers, making it difficult for new entrants to gain traction."
       },
       {
-        "title": "Network Effects",
-        "description": "With over 1 billion active users, Apple's ecosystem benefits from increasing user base, driving growth and increasing customer value."
+        "title": "Moat of Exclusivity",
+        "description": "Apple's control over the entire ecosystem, from hardware to software, creates a significant barrier to entry for competitors, protecting its market position and brand strength."
       }
     ],
     "risks": [
       {
         "title": "Valuation Concerns",
-        "description": "Apple's high valuation and P/E ratio make it vulnerable to a decline in earnings or a change in market sentiment."
-      },
-      {
-        "title": "Market Concentration",
-        "description": "As a leader in the premium smartphone segment, Apple is heavily dependent on a limited group of customers and channels."
+        "description": "High stock price and P/E ratio may make the company vulnerable to a decline in earnings or changes in investor sentiment."
       },
       {
         "title": "Technological Disruption",
-        "description": "The rise of 5G technology and emerging players like Xiaomi could disrupt Apple's wireless business and ecosystem."
+        "description": "Apple's business model is heavily reliant on its ability to innovate and release popular products, which can be disrupted by competitors or changing consumer preferences."
+      },
+      {
+        "title": "Market Concentration",
+        "description": "The smartphone market has become increasingly concentrated, with a small number of players dominating sales. Apple faces competition from Samsung, Huawei, and other Chinese manufacturers."
       }
     ],
-    "updated": "2025-10-17",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "AMZN": {
     "advantages": [
       {
         "title": "Network Effects",
-        "description": "Amazon's vast network of sellers and buyers generates significant value through economies of scale and scope."
+        "description": "Amazon's vast marketplace and logistics capabilities create a self-reinforcing network effect, attracting more sellers and customers."
       },
       {
-        "title": "Brand Strength",
-        "description": "Amazon's strong brand reputation and customer trust drive loyalty and repeat business."
+        "title": "Brand Loyalty",
+        "description": "Amazon's customer obsession and trusted brand have fostered a loyal customer base with high retention rates."
       },
       {
-        "title": "Ecosystem Lock-in",
-        "description": "The seamless integration across devices, services, and platforms creates high switching costs for customers."
+        "title": "Switching Costs",
+        "description": "The convenience of Amazon Prime membership and seamless integration across devices create significant switching costs for customers."
       }
     ],
     "risks": [
       {
-        "title": "Regulatory Scrutiny",
-        "description": "Amazon faces increasing regulatory scrutiny over its market dominance and impact on small businesses."
+        "title": "Valuation Concerns",
+        "description": "High price-to-earnings ratio and reliance on stock buybacks may indicate overvaluation."
       },
       {
         "title": "Technological Disruption",
-        "description": "The rise of e-commerce alternatives and emerging technologies poses a threat to Amazon's core business model."
+        "description": "Rapid advancement in e-commerce, cloud computing, and artificial intelligence pose risks to existing business models."
       },
       {
-        "title": "Cyclicality Concerns",
-        "description": "Amazon's dependence on seasonal demand during holidays creates a cyclical risk that can impact revenue and profitability."
+        "title": "Market Concentration",
+        "description": "Amazon's dominant market position in e-commerce and cloud services makes it vulnerable to government intervention or competition from emerging players."
       }
     ],
-    "updated": "2025-10-20",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "AVGO": {
@@ -130,33 +130,33 @@
   "CRM": {
     "advantages": [
       {
-        "title": "Market Position Leadership",
-        "description": "Salesforce is a pioneer in cloud-based CRM, maintaining its market position through strong brand recognition and continuous innovation."
+        "title": "Strong Brand Loyalty",
+        "description": "Salesforce has a customer retention rate above 95%, driven by its comprehensive CRM platform and exceptional support."
       },
       {
         "title": "Network Effects",
-        "description": "Its expansive ecosystem of integrated apps and tools leverages user engagement to enhance customer value, fostering network effects that drive growth."
+        "description": "As more businesses adopt Salesforce, the value of the platform increases, attracting even more customers and creating a self-reinforcing cycle."
       },
       {
-        "title": "Unique Assets (AI-Powered Platform)",
-        "description": "Salesforce's proprietary Einstein AI platform provides predictive analytics capabilities, driving business insights and decision-making, and cementing its market dominance."
+        "title": "Ecosystem Lock-in",
+        "description": "Salesforce's interconnected suite of products and services makes it difficult for customers to switch to competitors, generating predictable recurring revenue."
       }
     ],
     "risks": [
       {
         "title": "Valuation Concerns",
-        "description": "Salesforce's stock price has historically been volatile and may be overvalued due to its high growth rate."
+        "description": "Salesforce's stock price has historically been volatile and may be subject to fluctuations based on quarterly earnings reports."
       },
       {
-        "title": "Market Concentration",
-        "description": "The company operates primarily in the cloud-based software market, making it vulnerable to disruptions from competitors."
+        "title": "Competition from Cloud Players",
+        "description": "New entrants in the CRM market, such as Microsoft and Google, pose a significant threat to Salesforce's dominance."
       },
       {
-        "title": "Cyclicality",
-        "description": "Salesforce's revenue is heavily influenced by the economic cycle, with fluctuations in enterprise spending affecting its top line."
+        "title": "Dependence on Enterprise Sales",
+        "description": "Salesforce relies heavily on sales cycles that can be affected by economic downturns, reducing revenue and profitability."
       }
     ],
-    "updated": "2025-10-17",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "EFX": {
@@ -227,32 +227,32 @@
     "advantages": [
       {
         "title": "Network Effects",
-        "description": "Google's search engine dominates the market, attracting more users and businesses, creating a self-reinforcing cycle."
+        "description": "Google's search dominance fosters network effects through its vast index and personalized results."
       },
       {
-        "title": "Brand Recognition",
-        "description": "The Google brand is synonymous with search, providing a strong competitive advantage in digital advertising."
+        "title": "Brand Strength",
+        "description": "Alphabet's strong brand presence, driven by Google's innovative products, attracts users and advertisers."
       },
       {
-        "title": "Moat Protection",
-        "description": "Google's large user base and vast content library create significant switching costs for users seeking alternative search engines."
+        "title": "Diversified Revenue Streams",
+        "description": "The company's diverse business segments (Google, YouTube, Life Sciences) reduce dependence on a single revenue source."
       }
     ],
     "risks": [
       {
+        "title": "Valuation Uncertainty",
+        "description": "High stock price volatility and P/E ratio may indicate overvaluation."
+      },
+      {
+        "title": "Ad Tech Disruption",
+        "description": "Google's advertising business faces increasing competition from tech giants and ad blockers."
+      },
+      {
         "title": "Regulatory Scrutiny",
-        "description": "Google's dominance raises antitrust concerns and potential regulatory challenges."
-      },
-      {
-        "title": "Ad Revenue Volatility",
-        "description": "Dependence on ad revenue creates cyclicality risks due to changes in online advertising trends."
-      },
-      {
-        "title": "Technological Disruption",
-        "description": "Investments in emerging technologies like AI, ML, and AR pose risks if not executed effectively."
+        "description": "GOOGL faces antitrust investigations in the US, Europe, and other regions."
       }
     ],
-    "updated": "2025-10-18",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "JNJ": {
@@ -451,32 +451,32 @@
     "advantages": [
       {
         "title": "Network Effects",
-        "description": "Meta's presence in various social media platforms contributes to its network effects, increasing user engagement and attracting new users."
+        "description": "Meta's large user base creates a self-reinforcing network effect, making it more valuable to users and advertisers alike."
       },
       {
-        "title": "Brand Strength",
-        "description": "The Meta brand is one of the most recognized and valuable in the world, providing a competitive advantage through marketing and advertising efforts."
+        "title": "Brand Recognition",
+        "description": "The Meta brand is synonymous with social media and online advertising, generating significant brand recognition and loyalty."
       },
       {
-        "title": "Moat Protection",
-        "description": "Meta's dominant position in social media platforms, such as Facebook and Instagram, provides a substantial economic moat, protecting its market share and revenue growth."
+        "title": "Moat of Innovation",
+        "description": "Meta's focus on emerging technologies like AI and AR creates a significant moat that protects its market position and generates competitive advantage."
       }
     ],
     "risks": [
       {
-        "title": "Regulatory Scrutiny",
-        "description": "Meta's dominance in social media and online advertising raises concerns about its compliance with evolving regulations and potential government crackdowns."
-      },
-      {
-        "title": "Market Saturation",
-        "description": "Meta's presence in highly competitive markets such as Facebook, Instagram, and WhatsApp may lead to decreased revenue growth as user adoption becomes saturated."
-      },
-      {
         "title": "Technological Disruption",
-        "description": "The rise of emerging technologies like AI, AR, and VR poses a threat to Meta's core business models and could disrupt its market position if not adapted to."
+        "description": "Rise of AI-powered social media and messaging platforms poses a threat to Meta's core business."
+      },
+      {
+        "title": "Regulatory Scrutiny",
+        "description": "Increased scrutiny from government agencies regarding data privacy and user protection could lead to significant fines or penalties."
+      },
+      {
+        "title": "Market Dependence on Ad Revenue",
+        "description": "Meta's revenue is heavily dependent on advertising, making it vulnerable to changes in the digital advertising market."
       }
     ],
-    "updated": "2025-10-18",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "MSCI": {
@@ -514,33 +514,33 @@
   "MSFT": {
     "advantages": [
       {
-        "title": "Strong Brand Loyalty",
-        "description": "Microsoft has invested heavily in its Surface brand, creating a loyal customer base that drives repeat business and positive word-of-mouth."
+        "title": "Brand Recognition",
+        "description": "Microsoft has invested heavily in building a strong brand identity, leveraging its Windows and Office presence to establish trust and credibility."
       },
       {
         "title": "Network Effects",
-        "description": "With over 1 billion active users on Microsoft 365, the company benefits from economies of scale and increased user engagement."
+        "description": "With a vast array of products and services, including Azure, Dynamics, and LinkedIn, Microsoft creates network effects through interconnectedness and interdependence."
       },
       {
         "title": "Patented Technology",
-        "description": "Microsoft holds numerous patents in AI and machine learning, providing a competitive edge in developing innovative products and services."
+        "description": "Microsoft holds numerous patents in areas such as AI, machine learning, and cloud computing, providing a competitive advantage and protecting its intellectual property."
       }
     ],
     "risks": [
       {
         "title": "Valuation Concerns",
-        "description": "Microsoft's high price-to-earnings ratio makes it vulnerable to market fluctuations and investor sentiment shifts."
+        "description": "High valuation multiples and revenue decline may indicate a bubble"
       },
       {
         "title": "Technological Disruption",
-        "description": "The shift to cloud computing and software-as-a-service models poses risks to Microsoft's traditional business model."
+        "description": "Competition from cloud computing giants like Amazon and Google threatens traditional software sales"
       },
       {
-        "title": "Market Concentration",
-        "description": "Microsoft's dominance in the PC and gaming markets exposes it to potential competition from emerging players."
+        "title": "Market Dependence",
+        "description": "Heavy reliance on enterprise clients in mature markets makes MSFT vulnerable to economic downturns"
       }
     ],
-    "updated": "2025-10-17",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "NVDA": {
@@ -578,33 +578,33 @@
   "SPGI": {
     "advantages": [
       {
-        "title": "Moat of Data",
-        "description": "S&P Global's extensive data network and proprietary methodologies provide a strong barrier to entry for competitors."
+        "title": "Moat through Data",
+        "description": "S&P's comprehensive dataset and analytics capabilities create a significant moat, making it difficult for competitors to replicate."
       },
       {
-        "title": "Brand Strength",
-        "description": "Established reputation as a trusted authority in credit ratings and market intelligence"
+        "title": "Brand Strength in Research",
+        "description": "S&P's reputation as a trusted source of credit ratings and research drives brand strength, attracting clients seeking reliable information."
       },
       {
-        "title": "Network Effects",
-        "description": "Growing demand for S&P Global's services from financial institutions creates a self-reinforcing cycle of adoption"
+        "title": "Network Effects through Ratings",
+        "description": "The S&P Global Ratings agency's network effects create a snowball effect, as more companies seek ratings from the same agency, increasing its market share."
       }
     ],
     "risks": [
       {
-        "title": "Global Economic Downturn",
-        "description": "S&P Global's revenue is highly correlated with global economic trends, making it vulnerable to recession and downturns."
+        "title": "Regulatory Risk",
+        "description": "Compliance with changing regulations and laws across various industries, such as energy and materials, may impact profitability."
       },
       {
-        "title": "Regulatory Scrutiny",
-        "description": "As a major credit rating agency, S&P Global faces regulatory scrutiny from government bodies, which can impact its ratings and business."
+        "title": "Market Concentration",
+        "description": "Dependence on a limited number of large clients, which can lead to revenue volatility and reduced bargaining power."
       },
       {
-        "title": "Valuation Uncertainty",
-        "description": "S&P Global's valuation is sensitive to changes in interest rates and market sentiment, which can lead to fluctuations in its stock price."
+        "title": "Valuation Concerns",
+        "description": "High price-to-earnings ratio compared to historical averages, potentially indicating overvaluation and increased risk of decline."
       }
     ],
-    "updated": "2025-10-17",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "TSLA": {
@@ -642,65 +642,65 @@
   "TSM": {
     "advantages": [
       {
-        "title": "Moat through Technology Leadership",
-        "description": "As the world's largest independent semiconductor foundry, TSM enjoys a moat of technological expertise and scale."
+        "title": "Moat of Leading-edge Technology",
+        "description": "TSM's expertise in advanced semiconductor manufacturing provides a strong competitive advantage."
       },
       {
-        "title": "Brand Strength in Supply Chain",
-        "description": "TSM's long-standing relationships with major tech companies provide a strong brand reputation in the supply chain."
+        "title": "Brand Strength through Global Footprint",
+        "description": "As the world's largest independent semiconductor foundry, TSM has established itself as a trusted brand across industries."
       },
       {
-        "title": "Network Effects through Customer Base",
-        "description": "With a large and diverse customer base, TSM benefits from network effects, enabling it to maintain market position."
+        "title": "Network Effects of Industrial Relationships",
+        "description": "TSM's extensive network of manufacturing partnerships and relationships with leading global companies contributes to its competitive advantage."
       }
     ],
     "risks": [
       {
-        "title": "Competition from China",
-        "description": "TSMC faces intense competition from Chinese semiconductor manufacturers such as SMIC and Huawei's chip arm."
+        "title": "Competition from TSMC Rivals",
+        "description": "TSMC faces intense competition from Chinese manufacturers such as SMIC and CSMC in the semiconductor market."
       },
       {
-        "title": "Regulatory Compliance Risks",
-        "description": "TSMC must navigate complex regulations related to export control, data privacy, and intellectual property protection."
+        "title": "Regulatory Risks in China",
+        "description": "China's strict regulations on foreign companies, including TSMC, pose a significant risk to the company's operations and revenue."
       },
       {
-        "title": "Valuation Concerns due to Dependence on Smartphone Sales",
-        "description": "TSMC's revenue is heavily dependent on smartphone sales, making it vulnerable to fluctuations in the global smartphone market."
+        "title": "Market Dependence on Taiwan",
+        "description": "TSMC's business is heavily reliant on the Taiwanese market, making it vulnerable to economic downturns or trade disputes with China."
       }
     ],
-    "updated": "2025-10-17",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "TW": {
     "advantages": [
       {
         "title": "Network Effects",
-        "description": "TW Corp.'s expanding user base generates significant economies of scale in content acquisition and distribution."
-      },
-      {
-        "title": "Switching Costs",
-        "description": "The complexity of transitioning to an alternative platform for TW's unique features creates substantial barriers to entry."
+        "description": "TW Corp.'s extensive network of users and partners generates significant revenue from data analytics and advertising."
       },
       {
         "title": "Brand Recognition",
-        "description": "TW's market presence and brand recognition make it a preferred choice among consumers, fostering loyal customer relationships."
+        "description": "TW's strong brand identity, established over decades, fosters customer loyalty and confidence in its products."
+      },
+      {
+        "title": "Switching Costs",
+        "description": "The complexity of TW Corp.'s software solutions creates substantial switching costs for customers, limiting market disruption."
       }
     ],
     "risks": [
       {
         "title": "Valuation Concerns",
-        "description": "TW's stock price has been volatile and may be overvalued due to high P/E ratio."
+        "description": "TW Corp.'s stock price is heavily influenced by its valuation multiples, making it susceptible to market fluctuations."
       },
       {
-        "title": "Technological Disruption",
-        "description": "TW operates in the rapidly evolving tech industry, vulnerable to disruptions from emerging technologies like AI and cloud computing."
+        "title": "Market Concentration",
+        "description": "TW's smartphone market share is significant, but vulnerable to disruptions from emerging players and changing consumer preferences."
       },
       {
-        "title": "Competition from Chinese Counterparts",
-        "description": "TW's reliance on exports to China exposes the company to intense competition from Chinese manufacturers and exporters."
+        "title": "Regulatory Compliance",
+        "description": "TW must navigate complex regulatory landscapes in various markets, including data protection laws and export restrictions."
       }
     ],
-    "updated": "2025-10-17",
+    "updated": "2025-10-23",
     "provider": "ollama"
   },
   "UBER": {
@@ -797,6 +797,134 @@
       }
     ],
     "updated": "2025-10-18",
+    "provider": "ollama"
+  },
+  "ASML": {
+    "advantages": [
+      {
+        "title": "Moat of Technology Leadership",
+        "description": "ASML's proprietary lithography technology provides a strong barrier to entry and maintains market share."
+      },
+      {
+        "title": "Brand Strength in High-Tech Industry",
+        "description": "ASML's reputation as a leader in the semiconductor industry fosters trust among customers and partners."
+      },
+      {
+        "title": "Network Effects through Large Customer Base",
+        "description": "ASML's extensive customer base creates a self-reinforcing network effect, driving growth and increasing switching costs."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Valuation Concerns",
+        "description": "High P/E ratio and dependence on a single technology node (NAND) make ASML vulnerable to valuation fluctuations."
+      },
+      {
+        "title": "Technological Disruption",
+        "description": "Increasing adoption of EUV lithography technology poses a risk due to high capital expenditures and limited scalability."
+      },
+      {
+        "title": "Regulatory Uncertainty",
+        "description": "Changes in semiconductor trade policies or regulatory frameworks in key markets, such as China or the US, could impact ASML's business."
+      }
+    ],
+    "updated": "2025-10-23",
+    "provider": "ollama"
+  },
+  "DUOL": {
+    "advantages": [
+      {
+        "title": "Network Effects",
+        "description": "Duolingo's vast library and gamified approach create a snowball effect as more users join, increasing user engagement."
+      },
+      {
+        "title": "Switching Costs",
+        "description": "The app's convenience and daily routine integration make it difficult for users to switch to competitors."
+      },
+      {
+        "title": "Acquired Moat Assets",
+        "description": "Duolingo's acquisition of Babbel and other language learning assets expands its offerings, reinforcing its market position."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Competition from Educational Apps",
+        "description": "Duolingo faces competition from established educational apps and emerging language learning platforms."
+      },
+      {
+        "title": "Regulatory Scrutiny of Personal Data",
+        "description": "As a popular app, Duolingo may be subject to increased regulatory scrutiny regarding user data privacy and protection."
+      },
+      {
+        "title": "Valuation Concerns due to High Growth Rate",
+        "description": "Duolingo's rapid growth has raised concerns about its valuation, particularly if it fails to maintain its current growth trajectory."
+      }
+    ],
+    "updated": "2025-10-23",
+    "provider": "ollama"
+  },
+  "TTD": {
+    "advantages": [
+      {
+        "title": "Network Effects",
+        "description": "As a leading social media platform, TTD's large user base generates significant revenue from advertising and data analytics."
+      },
+      {
+        "title": "Switching Costs",
+        "description": "The vast array of tools, services, and features within the TTD ecosystem creates high switching costs for users and customers."
+      },
+      {
+        "title": "Moat Protection",
+        "description": "TTD's strong brand and intellectual property protection strategies safeguard its market position and competitive advantage."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Regulatory Scrutiny",
+        "description": "Increased scrutiny from regulatory bodies due to growing antitrust concerns and changing laws."
+      },
+      {
+        "title": "Market Concentration",
+        "description": "High market concentration in the smartphone industry, making it vulnerable to disruption by new entrants."
+      },
+      {
+        "title": "Cyclicality Concerns",
+        "description": "Trends in gaming revenue are cyclical, with significant fluctuations between growth and decline periods"
+      }
+    ],
+    "updated": "2025-10-23",
+    "provider": "ollama"
+  },
+  "CRWD": {
+    "advantages": [
+      {
+        "title": "Strong Brand Loyalty",
+        "description": "CRWD's brand strength is built on its reputation as a disruptor in the real estate platform space, attracting repeat business and positive word-of-mouth."
+      },
+      {
+        "title": "Network Effects",
+        "description": "The growing user base of CRWD's platform creates a self-reinforcing cycle, increasing the value of the service to users and making it harder for competitors to attract them."
+      },
+      {
+        "title": "Market Position",
+        "description": "CRWD's position as a leading real estate platform provider gives it access to premium listings and high-quality user data, solidifying its market share."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Valuation Concerns",
+        "description": "CRWD Corp.'s high price-to-earnings ratio makes it vulnerable to market fluctuations and potential earnings surprises."
+      },
+      {
+        "title": "Competition from Disruptors",
+        "description": "The rapidly evolving tech landscape poses significant competition to CRWD's core products, including electric vehicles and autonomous driving solutions."
+      },
+      {
+        "title": "Cyclical Revenue Streams",
+        "description": "CRWD Corp.'s revenue is heavily reliant on the automotive industry cycle, which can be volatile and unpredictable."
+      }
+    ],
+    "updated": "2025-10-23",
     "provider": "ollama"
   }
 }

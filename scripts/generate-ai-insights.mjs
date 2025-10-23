@@ -2,10 +2,17 @@
 /**
  * Generate AI insights using local AI provider (OpenAI/Ollama)
  * Generates a single bundle file (ai-insights.json) for efficient deployment
+ * Features:
+ * - Automatic retry with exponential backoff for rate limits
+ * - Incremental progress saving (resume after interruption)
+ * - Network error handling
+ * - Force regeneration with --force flag
  * 
  * Usage:
- *   node scripts/generate-ai-insights.mjs              # Generate test tickers
- *   node scripts/generate-ai-insights.mjs AAPL MSFT    # Generate specific tickers
+ *   node scripts/generate-ai-insights.mjs                    # Generate test tickers
+ *   node scripts/generate-ai-insights.mjs CRM TSM META       # Generate specific tickers
+ *   node scripts/generate-ai-insights.mjs AAPL --force       # Force regenerate AAPL
+ *   node scripts/generate-ai-insights.mjs CRM TSM --force    # Force regenerate multiple
  * 
  * Configuration (via environment variables):
  *   AI_PROVIDER=ollama (or openai)
@@ -32,12 +39,18 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || process.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || process.env.VITE_OLLAMA_MODEL || 'llama3.2'
 const OUTPUT_FILE = path.join(__dirname, '../public/ai-insights.json')
+const PROGRESS_FILE = path.join(__dirname, '../.ai-insights-progress.json')
 const VERSION = '1.0'
+
+// Retry configuration
+const MAX_RETRIES = 5
+const INITIAL_RETRY_DELAY = 2000 // 2 seconds
+const MAX_RETRY_DELAY = 60000 // 60 seconds
 
 // Test tickers (as specified by user)
 const TEST_TICKERS = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'CRM', 'ASML', 'TSM', 'DUOL', 'SPGI', 'MSCI']
 
-// System prompts (from your prompts.js file)
+// System prompts
 const SYSTEM_PROMPTS = {
   advantages: `You are a financial analyst. Analyze the competitive advantages of the given company.
 
@@ -75,9 +88,16 @@ Return ONLY the JSON array, no other text.`
 }
 
 /**
- * Call AI provider directly (OpenAI or Ollama)
+ * Sleep for specified milliseconds
  */
-async function callAI(ticker, companyName, type) {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * Call AI provider with retry logic for rate limits
+ */
+async function callAIWithRetry(ticker, companyName, type, retryCount = 0) {
   const systemPrompt = SYSTEM_PROMPTS[type]
   const userPrompt = `Company: ${companyName} (${ticker})`
 
@@ -94,8 +114,24 @@ async function callAI(ticker, companyName, type) {
         })
       })
 
+      // Handle rate limiting and server errors
       if (!response.ok) {
-        throw new Error(`Ollama error: ${response.status}`)
+        const errorText = await response.text().catch(() => 'Unknown error')
+        
+        // Rate limit (429) or server overload (503) - retry
+        if ((response.status === 429 || response.status === 503) && retryCount < MAX_RETRIES) {
+          const delay = Math.min(
+            INITIAL_RETRY_DELAY * Math.pow(2, retryCount),
+            MAX_RETRY_DELAY
+          )
+          
+          console.log(`  ⏳ Rate limit hit (${response.status}). Waiting ${delay / 1000}s before retry ${retryCount + 1}/${MAX_RETRIES}...`)
+          await sleep(delay)
+          
+          return callAIWithRetry(ticker, companyName, type, retryCount + 1)
+        }
+        
+        throw new Error(`Ollama error ${response.status}: ${errorText}`)
       }
 
       const result = await response.json()
@@ -123,8 +159,22 @@ async function callAI(ticker, companyName, type) {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(`OpenAI error: ${response.status} - ${error.error?.message || 'Unknown error'}`)
+        const error = await response.json().catch(() => ({}))
+        
+        // Rate limit (429) - retry with exponential backoff
+        if (response.status === 429 && retryCount < MAX_RETRIES) {
+          const retryAfter = response.headers.get('retry-after')
+          const delay = retryAfter 
+            ? parseInt(retryAfter) * 1000 
+            : Math.min(INITIAL_RETRY_DELAY * Math.pow(2, retryCount), MAX_RETRY_DELAY)
+          
+          console.log(`  ⏳ OpenAI rate limit. Waiting ${delay / 1000}s before retry ${retryCount + 1}/${MAX_RETRIES}...`)
+          await sleep(delay)
+          
+          return callAIWithRetry(ticker, companyName, type, retryCount + 1)
+        }
+        
+        throw new Error(`OpenAI error ${response.status}: ${error.error?.message || 'Unknown error'}`)
       }
 
       const result = await response.json()
@@ -133,9 +183,31 @@ async function callAI(ticker, companyName, type) {
       throw new Error(`Unknown AI provider: ${AI_PROVIDER}`)
     }
   } catch (error) {
+    // Network errors - retry
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      if (retryCount < MAX_RETRIES) {
+        const delay = Math.min(
+          INITIAL_RETRY_DELAY * Math.pow(2, retryCount),
+          MAX_RETRY_DELAY
+        )
+        
+        console.log(`  ⏳ Connection error. Waiting ${delay / 1000}s before retry ${retryCount + 1}/${MAX_RETRIES}...`)
+        await sleep(delay)
+        
+        return callAIWithRetry(ticker, companyName, type, retryCount + 1)
+      }
+    }
+    
     console.error('  ✗ AI error:', error.message)
     throw error
   }
+}
+
+/**
+ * Backward compatibility wrapper
+ */
+async function callAI(ticker, companyName, type) {
+  return callAIWithRetry(ticker, companyName, type, 0)
 }
 
 /**
@@ -166,13 +238,6 @@ function parseAIResponse(rawResponse) {
 }
 
 /**
- * Format AI response data (array of {title, description} objects)
- */
-function formatInsights(items) {
-  return items.map(item => `**${item.title}**: ${item.description}`).join('\n\n')
-}
-
-/**
  * Generate insights for a single ticker
  */
 async function generateInsights(ticker, companyName) {
@@ -187,7 +252,7 @@ async function generateInsights(ticker, companyName) {
     console.log(`  ✓ Got ${advantages.length} advantages`)
     
     // Wait 2 seconds before next request
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await sleep(2000)
     
     // Generate investment risks
     console.log('  → Requesting investment risks...')
@@ -213,7 +278,48 @@ async function generateInsights(ticker, companyName) {
 }
 
 /**
- * Get company name from ticker (simplified version)
+ * Load existing bundle or progress
+ */
+async function loadExistingData() {
+  try {
+    const bundleContent = await fs.readFile(OUTPUT_FILE, 'utf8')
+    return JSON.parse(bundleContent)
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Save progress incrementally
+ */
+async function saveProgress(bundle, completedTickers) {
+  // Save current bundle state
+  const bundleContent = JSON.stringify(bundle, null, 2)
+  await fs.writeFile(OUTPUT_FILE, bundleContent, 'utf8')
+  
+  // Save progress metadata
+  const progress = {
+    lastUpdated: new Date().toISOString(),
+    completedTickers,
+    totalTickers: completedTickers.length
+  }
+  await fs.writeFile(PROGRESS_FILE, JSON.stringify(progress, null, 2), 'utf8')
+}
+
+/**
+ * Load progress from previous run
+ */
+async function loadProgress() {
+  try {
+    const progressContent = await fs.readFile(PROGRESS_FILE, 'utf8')
+    return JSON.parse(progressContent)
+  } catch {
+    return { completedTickers: [] }
+  }
+}
+
+/**
+ * Get company name from ticker
  */
 function getCompanyName(ticker) {
   const knownCompanies = {
@@ -226,7 +332,8 @@ function getCompanyName(ticker) {
     'TSM': 'Taiwan Semiconductor Manufacturing Company',
     'DUOL': 'Duolingo Inc.',
     'SPGI': 'S&P Global Inc.',
-    'MSCI': 'MSCI Inc.'
+    'MSCI': 'MSCI Inc.',
+    'META': 'Meta Platforms Inc.'
   }
   return knownCompanies[ticker.toUpperCase()] || `${ticker.toUpperCase()} Corp.`
 }
@@ -236,6 +343,10 @@ function getCompanyName(ticker) {
  */
 async function main() {
   const args = process.argv.slice(2)
+  
+  // Check for --force flag
+  const forceRegenerate = args.includes('--force')
+  const tickers = args.filter(arg => !arg.startsWith('--')).map(t => t.toUpperCase())
   
   console.log('🤖 AI Insights Generator')
   console.log('='.repeat(50))
@@ -260,38 +371,87 @@ async function main() {
       console.log(`✓ Ollama is running (${OLLAMA_MODEL})`)
     } catch (error) {
       console.error(`✗ Cannot connect to Ollama at ${OLLAMA_BASE_URL}`)
-      console.error('  Make sure Ollama is running:')
-      console.error('  ollama serve')
+      console.error('  Make sure Ollama is running: ollama serve')
       process.exit(1)
     }
   }
 
   // Determine which tickers to process
-  let tickers
-  if (args.length > 0) {
-    tickers = args.map(t => t.toUpperCase())
-    console.log(`\n📋 Custom mode: Generating insights for ${tickers.length} ticker(s)`)
+  const tickersToRequest = tickers.length > 0 ? tickers : TEST_TICKERS
+  
+  if (tickers.length > 0) {
+    console.log(`\n📋 Custom mode: Generating insights for ${tickersToRequest.length} ticker(s)`)
   } else {
-    tickers = TEST_TICKERS
     console.log(`\n📋 Default mode: Generating insights for test tickers`)
   }
+  
+  if (forceRegenerate) {
+    console.log('🔄 Force mode: Will overwrite existing insights')
+  }
 
-  console.log(`Tickers: ${tickers.join(', ')}`)
-  console.log('\n⚠️  This will use your AI provider (ChatGPT/Claude/etc)')
-  console.log('   Estimated time: ~10 seconds per ticker\n')
+  console.log(`Tickers: ${tickersToRequest.join(', ')}`)
+  
+  // Load existing bundle and progress
+  const existingBundle = await loadExistingData()
+  const progress = forceRegenerate ? { completedTickers: [] } : await loadProgress()
+  const completedTickers = new Set(progress.completedTickers || [])
+  
+  // Filter out already completed tickers (unless force flag is set)
+  const tickersToProcess = forceRegenerate 
+    ? tickersToRequest 
+    : tickersToRequest.filter(t => !completedTickers.has(t.toUpperCase()))
+  
+  if (tickersToProcess.length === 0) {
+    console.log('\n✅ All tickers already have insights!')
+    console.log('   Use --force to regenerate: node scripts/generate-ai-insights.mjs AAPL --force')
+    return
+  }
+  
+  if (tickersToProcess.length < tickersToRequest.length && !forceRegenerate) {
+    console.log(`\n📝 Resuming: ${tickersToProcess.length} remaining (${tickersToRequest.length - tickersToProcess.length} already done)`)
+    console.log(`   Remaining: ${tickersToProcess.join(', ')}`)
+    console.log(`   Use --force to regenerate all`)
+  }
+  
+  console.log('\n⚠️  This will use your AI provider')
+  console.log(`   Estimated time: ~10 seconds per ticker (${tickersToProcess.length} tickers)`)
+  console.log('   💾 Progress is saved after each ticker\n')
 
-  // Process each ticker
+  // Initialize bundle with existing data
+  const bundle = { ...existingBundle }
+  
+  // Process each ticker with incremental saving
   const results = []
-  for (let i = 0; i < tickers.length; i++) {
-    const ticker = tickers[i]
+  for (let i = 0; i < tickersToProcess.length; i++) {
+    const ticker = tickersToProcess[i]
     const companyName = getCompanyName(ticker)
+    
+    console.log(`\n[${i + 1}/${tickersToProcess.length}] Processing ${ticker}...`)
+    
     const result = await generateInsights(ticker, companyName)
     results.push(result)
     
+    // Save to bundle immediately if successful
+    if (result.success) {
+      const tickerUpper = ticker.toUpperCase()
+      bundle[tickerUpper] = {
+        advantages: result.data.advantages,
+        risks: result.data.risks,
+        updated: result.data.updated,
+        provider: AI_PROVIDER
+      }
+      
+      completedTickers.add(tickerUpper)
+      
+      // Save progress incrementally
+      await saveProgress(bundle, Array.from(completedTickers))
+      console.log(`  💾 Saved progress (${completedTickers.size} total)`)
+    }
+    
     // Rate limiting: wait 3 seconds between tickers
-    if (i < tickers.length - 1) {
-      console.log('  ⏳ Waiting 3 seconds...')
-      await new Promise(resolve => setTimeout(resolve, 3000))
+    if (i < tickersToProcess.length - 1) {
+      console.log('  ⏳ Waiting 3 seconds before next ticker...')
+      await sleep(3000)
     }
   }
 
@@ -302,7 +462,7 @@ async function main() {
   const successful = results.filter(r => r.success)
   const failed = results.filter(r => !r.success)
   
-  console.log(`✓ Successful: ${successful.length}/${tickers.length}`)
+  console.log(`✓ Successful: ${successful.length}/${tickersToProcess.length}`)
   console.log(`✗ Failed: ${failed.length}`)
   
   if (failed.length > 0) {
@@ -310,35 +470,30 @@ async function main() {
     failed.forEach(r => {
       console.log(`  - ${r.ticker}: ${r.error}`)
     })
+    console.log('\n💡 Run the script again with just the failed tickers:')
+    console.log(`   node scripts/generate-ai-insights.mjs ${failed.map(r => r.ticker).join(' ')}`)
   }
 
-  // Build bundle from successful results
-  if (successful.length > 0) {
-    console.log('\n� Building bundle...')
-    
-    const bundle = {}
-    for (const result of successful) {
-      const ticker = result.ticker.toUpperCase()
-      bundle[ticker] = {
-        advantages: result.data.advantages,
-        risks: result.data.risks,
-        updated: result.data.updated,
-        provider: AI_PROVIDER
-      }
+  // Final bundle stats (bundle already saved incrementally)
+  const bundleSize = (JSON.stringify(bundle).length / 1024).toFixed(1)
+  console.log(`\n📦 Bundle Info:`)
+  console.log(`  File: ${OUTPUT_FILE}`)
+  console.log(`  Size: ${bundleSize} KB`)
+  console.log(`  Tickers: ${Object.keys(bundle).length}`)
+
+  // Clean up progress file if everything succeeded
+  if (failed.length === 0 && tickersToProcess.length === tickers.length) {
+    try {
+      await fs.unlink(PROGRESS_FILE)
+      console.log('\n✅ All done! Progress file cleaned up.')
+    } catch {
+      // Progress file might not exist
     }
-    
-    // Write bundle file
-    const bundleContent = JSON.stringify(bundle, null, 2)
-    await fs.writeFile(OUTPUT_FILE, bundleContent, 'utf8')
-    
-    const bundleSize = (bundleContent.length / 1024).toFixed(1)
-    console.log(`✓ Bundle created: ${bundleSize} KB`)
-    console.log(`  File: ${OUTPUT_FILE}`)
-    console.log(`  Tickers: ${Object.keys(bundle).length}`)
+  } else {
+    console.log('\n💾 Progress saved. Run again to retry failed tickers.')
   }
 
-  console.log('\n✅ Done!')
-  console.log('   Test in browser: npm run dev, then search for a ticker')
+  console.log('\n🧪 Test in browser: npm run dev, then search for a ticker')
 }
 
 // Run
