@@ -31,37 +31,33 @@ app.use(express.json())
 const SYSTEM_PROMPTS = {
   advantages: `You are a financial analyst. Analyze the competitive advantages of the given company.
 
-Return ONLY a JSON array of objects, each with "title" and "description" fields.
-- Provide 3 key advantages
+You MUST return a valid JSON array with exactly 3 objects. Each object must have "title" and "description" fields.
 - Each title should be 2-5 words (e.g., "Strong Brand Loyalty", "Network Effects")
 - Each description should be 1-2 sentences max
 - Focus on: moat, brand strength, market position, technology, network effects, switching costs, or unique assets
 - Be specific and factual
 
-Example format:
+IMPORTANT: Return ONLY a JSON array like this, with no additional text:
 [
   {"title": "Brand Loyalty", "description": "Apple has cultivated exceptional brand loyalty with a retention rate above 90%, creating predictable recurring revenue."},
-  {"title": "Ecosystem Lock-in", "description": "The seamless integration across devices creates high switching costs for customers."}
-]
-
-Return ONLY the JSON array, no other text.`,
+  {"title": "Ecosystem Lock-in", "description": "The seamless integration across devices creates high switching costs for customers."},
+  {"title": "Innovation Pipeline", "description": "Continuous R&D investment maintains technological leadership in consumer electronics."}
+]`,
 
   risks: `You are a financial analyst. Analyze the key investment risks for the given company.
 
-Return ONLY a JSON array of objects, each with "title" and "description" fields.
-- Provide 3 key risks
+You MUST return a valid JSON array with exactly 3 objects. Each object must have "title" and "description" fields.
 - Each title should be 2-5 words (e.g., "Regulatory Risk", "Market Concentration")
 - Each description should be 1-2 sentences max
 - Focus on: competition, regulation, market dependence, technological disruption, cyclicality, or valuation concerns
 - Be specific and factual
 
-Example format:
+IMPORTANT: Return ONLY a JSON array like this, with no additional text:
 [
   {"title": "China Dependence", "description": "Over 40% of revenue comes from China, exposing the company to geopolitical and regulatory risks."},
-  {"title": "Market Saturation", "description": "Smartphone market growth has slowed significantly in developed markets."}
-]
-
-Return ONLY the JSON array, no other text.`
+  {"title": "Market Saturation", "description": "Smartphone market growth has slowed significantly in developed markets."},
+  {"title": "Competition Pressure", "description": "Intense competition from Android ecosystem and other smartphone manufacturers."}
+]`
 }
 
 // Helper functions
@@ -99,9 +95,13 @@ async function callOllama(ticker, companyName, type) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: OLLAMA_MODEL,
-      prompt: `${systemPrompt}\n\n${userPrompt}`,
+      prompt: userPrompt,
+      system: systemPrompt,
       stream: false,
-      options: { temperature: 0.7, num_predict: 400 }
+      options: { 
+        temperature: 1.0,
+        num_predict: 600
+      }
     })
   })
 
@@ -115,23 +115,60 @@ async function callOllama(ticker, companyName, type) {
 }
 
 function parseAIResponse(rawResponse) {
-  // Try to find complete JSON array
+  try {
+    // First, try to parse the entire response as JSON
+    const parsed = JSON.parse(rawResponse.trim())
+    
+    // If it's a single object, wrap it in an array
+    if (!Array.isArray(parsed) && typeof parsed === 'object' && parsed.title && parsed.description) {
+      console.log('⚠️  AI returned single object instead of array, wrapping it')
+      return [parsed]
+    }
+    
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => item.title && item.description)) {
+      return parsed
+    }
+  } catch (e) {
+    // Continue to regex matching
+  }
+
+  // Try to find complete JSON array in the response
   const jsonMatch = rawResponse.match(/\[[\s\S]*\]/)
-  if (!jsonMatch) {
-    throw new Error('No JSON array found in response')
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0])
+      
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error('Invalid array structure')
+      }
+      
+      if (!parsed.every(item => item.title && item.description)) {
+        throw new Error('Missing title or description')
+      }
+      
+      return parsed
+    } catch (e) {
+      console.error('Failed to parse JSON array:', e.message)
+      console.error('JSON string:', jsonMatch[0].substring(0, 200))
+    }
   }
   
-  const parsed = JSON.parse(jsonMatch[0])
-  
-  if (!Array.isArray(parsed) || parsed.length === 0) {
-    throw new Error('Invalid array structure')
+  // Try to find a single JSON object
+  const objectMatch = rawResponse.match(/\{[\s\S]*?\}/)
+  if (objectMatch) {
+    try {
+      const parsed = JSON.parse(objectMatch[0])
+      if (parsed.title && parsed.description) {
+        console.log('⚠️  Found single object in response, wrapping it')
+        return [parsed]
+      }
+    } catch (e) {
+      console.error('Failed to parse JSON object:', e.message)
+    }
   }
   
-  if (!parsed.every(item => item.title && item.description)) {
-    throw new Error('Missing title or description')
-  }
-  
-  return parsed
+  console.error('Failed to find JSON array in response:', rawResponse.substring(0, 200))
+  throw new Error('No valid JSON found in response')
 }
 
 async function generateInsightsForTicker(ticker, companyName = ticker) {
@@ -340,6 +377,116 @@ app.post('/api/apply-to-main', async (req, res) => {
   } catch (error) {
     console.error('Error applying to main project:', error)
     res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// Regenerate single advantage
+app.post('/api/regenerate-advantage', async (req, res) => {
+  try {
+    const { ticker, advantageIndex } = req.body
+    
+    if (!ticker || advantageIndex === undefined) {
+      return res.status(400).json({ error: 'Missing ticker or advantageIndex' })
+    }
+
+    // Load bundle
+    const bundle = await loadBundle()
+    const tickerData = bundle[ticker]
+    
+    if (!tickerData) {
+      return res.status(404).json({ error: `Ticker ${ticker} not found` })
+    }
+
+    // Get company name (use ticker if no name available)
+    const companyName = tickerData.ticker || ticker
+    
+    // Generate new advantage using Ollama
+    const systemPrompt = SYSTEM_PROMPTS.advantages
+    const userPrompt = `Company: ${companyName} (${ticker})\n\nGenerate ONE competitive advantage (different from existing ones).`
+
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        prompt: userPrompt,
+        system: systemPrompt,
+        stream: false
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Ollama error: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    const advantages = parseAIResponse(data.response)
+
+    // Get the first advantage from the response
+    const newAdvantage = advantages[0] || {
+      title: "Competitive Strength",
+      description: "Notable advantage in market positioning."
+    }
+
+    res.json({ advantage: newAdvantage })
+  } catch (error) {
+    console.error('Error regenerating advantage:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Regenerate single risk
+app.post('/api/regenerate-risk', async (req, res) => {
+  try {
+    const { ticker, riskIndex } = req.body
+    
+    if (!ticker || riskIndex === undefined) {
+      return res.status(400).json({ error: 'Missing ticker or riskIndex' })
+    }
+
+    // Load bundle
+    const bundle = await loadBundle()
+    const tickerData = bundle[ticker]
+    
+    if (!tickerData) {
+      return res.status(404).json({ error: `Ticker ${ticker} not found` })
+    }
+
+    // Get company name (use ticker if no name available)
+    const companyName = tickerData.ticker || ticker
+    
+    // Generate new risk using Ollama
+    const systemPrompt = SYSTEM_PROMPTS.risks
+    const userPrompt = `Company: ${companyName} (${ticker})\n\nGenerate ONE investment risk (different from existing ones).`
+
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        prompt: userPrompt,
+        system: systemPrompt,
+        stream: false
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Ollama error: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    const risks = parseAIResponse(data.response)
+
+    // Get the first risk from the response
+    const newRisk = risks[0] || {
+      title: "Investment Risk",
+      description: "Potential challenges to business performance."
+    }
+
+    res.json({ risk: newRisk })
+  } catch (error) {
+    console.error('Error regenerating risk:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 

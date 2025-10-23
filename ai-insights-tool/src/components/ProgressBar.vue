@@ -2,9 +2,12 @@
   <div class="progress-container">
     <div class="progress-header">
       <h3>🚀 Generating AI Insights</h3>
-      <p class="progress-subtitle">
-        Processing {{ completed }} of {{ total }} tickers
-      </p>
+      <div class="progress-subtitle-row">
+        <p class="progress-subtitle">
+          Processing {{ completed }} of {{ total }} tickers
+        </p>
+        <span class="progress-percentage">{{ percentage }}%</span>
+      </div>
     </div>
     
     <div class="progress-bar-wrapper">
@@ -13,19 +16,7 @@
           class="progress-bar-fill" 
           :style="{ width: percentage + '%' }"
         >
-          <span class="progress-text">{{ percentage }}%</span>
         </div>
-      </div>
-    </div>
-
-    <div class="progress-info">
-      <div class="progress-stat">
-        <span class="stat-icon">✅</span>
-        <span>Completed: {{ completed }}</span>
-      </div>
-      <div class="progress-stat">
-        <span class="stat-icon">⏳</span>
-        <span>Remaining: {{ total - completed }}</span>
       </div>
     </div>
   </div>
