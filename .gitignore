@@ -45,3 +45,9 @@ coverage
 # AI Insights - individual files (development only)
 # The bundle file (ai-insights.json in public root) is committed
 public/ai-insights/
+
+# AI Insights Tool - exclude sensitive files
+/ai-insights-tool/.env
+/ai-insights-tool/venv/
+/ai-insights-tool/*.log
+/ai-insights-tool/output/*.json
