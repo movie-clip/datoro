@@ -4,12 +4,25 @@
       <!-- Header -->
       <div class="menu-header">
         <div class="menu-title-section">
+          <!-- Back button (only show in watchlist view) -->
+          <button 
+            v-if="currentView === 'watchlist'" 
+            class="back-button" 
+            @click="currentView = 'menu'"
+            title="Back to menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          
           <img 
+            v-if="currentView === 'menu'"
             src="/logo.png" 
             alt="Factorly Logo" 
             class="menu-logo"
           >
-          <span class="menu-title">Menu</span>
+          <span class="menu-title">{{ currentView === 'menu' ? 'Menu' : 'Watchlist' }}</span>
         </div>
         <button class="close-button" @click="emit('close')" title="Close">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -19,13 +32,13 @@
         </button>
       </div>
 
-      <!-- Menu Content -->
-      <div class="menu-content">
+      <!-- Menu Content (Main View) -->
+      <div v-if="currentView === 'menu'" class="menu-content">
         <!-- Watchlist Button -->
         <button 
           v-if="isAuthenticated"
           class="menu-item" 
-          @click="handleWatchlistClick"
+          @click="showWatchlist"
         >
           <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -56,12 +69,62 @@
           <span class="coming-soon-badge">Soon</span>
         </div>
       </div>
+
+      <!-- Watchlist Content View -->
+      <div v-else-if="currentView === 'watchlist'" class="menu-content watchlist-content">
+        <!-- Loading state -->
+        <div v-if="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading watchlist...</p>
+        </div>
+        
+        <!-- Error state -->
+        <div v-else-if="error" class="error-state">
+          <p>{{ error }}</p>
+        </div>
+        
+        <!-- Empty state -->
+        <div v-else-if="!watchlist.length" class="empty-state">
+          <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <p>Your watchlist is empty</p>
+          <p class="empty-subtitle">Click the star icon next to any ticker to add it to your watchlist</p>
+        </div>
+        
+        <!-- Watchlist items -->
+        <div v-else class="watchlist-items">
+          <div 
+            v-for="item in watchlist" 
+            :key="item.ticker"
+            class="watchlist-item"
+            @click="goToTicker(item.ticker)"
+          >
+            <div class="ticker-info">
+              <span class="ticker-symbol">{{ item.ticker }}</span>
+              <span class="ticker-date">{{ formatDate(item.addedAt) }}</span>
+            </div>
+            <button 
+              class="remove-btn"
+              @click.stop="handleRemove(item.ticker)"
+              title="Remove from watchlist"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { ref, watch } from 'vue'
+import { API_BASE_URL } from '../../utils/apiConfig.js'
+
+const props = defineProps({
   isOpen: {
     type: Boolean,
     default: false
@@ -72,11 +135,80 @@ defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'toggle-watchlist'])
+const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker'])
 
-function handleWatchlistClick() {
-  emit('toggle-watchlist')
+const currentView = ref('menu') // 'menu' or 'watchlist'
+const watchlist = ref([])
+const loading = ref(false)
+const error = ref(null)
+
+// Reset to menu view when menu closes
+watch(() => props.isOpen, (isOpen) => {
+  if (!isOpen) {
+    currentView.value = 'menu'
+  }
+})
+
+// Fetch watchlist when switching to watchlist view
+watch(currentView, async (view) => {
+  if (view === 'watchlist') {
+    await fetchWatchlist()
+  }
+})
+
+function showWatchlist() {
+  currentView.value = 'watchlist'
+}
+
+const fetchWatchlist = async () => {
+  loading.value = true
+  error.value = null
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/watchlist`, {
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        error.value = 'Please log in to view your watchlist'
+        return
+      }
+      throw new Error('Failed to fetch watchlist')
+    }
+    
+    const data = await response.json()
+    watchlist.value = data.tickers || []
+  } catch (err) {
+    console.error('Error fetching watchlist:', err)
+    error.value = 'Failed to load watchlist'
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleRemove = async (ticker) => {
+  emit('toggle-watchlist', ticker)
+  // Remove from local state
+  watchlist.value = watchlist.value.filter(item => item.ticker !== ticker)
+}
+
+const goToTicker = (ticker) => {
+  emit('select-ticker', ticker)
   emit('close')
+}
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now - date
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+  return date.toLocaleDateString()
 }
 </script>
 
@@ -134,6 +266,25 @@ function handleWatchlistClick() {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.back-button {
+  padding: 0.375rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #9E9E9E;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-button:hover {
+  background: rgba(0, 168, 142, 0.1);
+  border-color: rgba(0, 168, 142, 0.3);
+  color: #00A88E;
 }
 
 .menu-logo {
@@ -251,5 +402,133 @@ function handleWatchlistClick() {
   .main-menu {
     width: 280px;
   }
+}
+
+/* Watchlist Content Styles */
+.watchlist-content {
+  padding: 0;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #9E9E9E;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 168, 142, 0.1);
+  border-top-color: #00A88E;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-state {
+  color: #FF3B30;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  color: #666;
+  margin-bottom: 1rem;
+  stroke-width: 1.5;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #9E9E9E;
+}
+
+.empty-state .empty-subtitle {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  color: #666;
+  max-width: 220px;
+  line-height: 1.4;
+}
+
+/* Watchlist Items */
+.watchlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.watchlist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.watchlist-item:hover {
+  background: rgba(0, 168, 142, 0.08);
+  border-color: rgba(0, 168, 142, 0.2);
+  transform: translateX(4px);
+}
+
+.ticker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ticker-symbol {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #E5E5E5;
+  letter-spacing: 0.02em;
+}
+
+.ticker-date {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.remove-btn {
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #FFB800;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.remove-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.remove-btn:hover {
+  background: rgba(255, 184, 0, 0.1);
+  color: #FFC933;
+  transform: scale(1.1);
+}
+
+.remove-btn:active {
+  transform: scale(0.95);
 }
 </style>

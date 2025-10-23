@@ -398,7 +398,8 @@ function handleSelectTicker(ticker) {
       :is-open="showMainMenu"
       :is-authenticated="authStore.isAuthenticated"
       @close="showMainMenu = false"
-      @toggle-watchlist="toggleWatchlistPanel"
+      @toggle-watchlist="handleToggleWatchlist"
+      @select-ticker="handleSelectTicker"
     />
     
     <!-- Watchlist Panel -->
