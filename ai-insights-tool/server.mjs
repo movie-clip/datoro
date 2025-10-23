@@ -296,6 +296,53 @@ app.post('/api/generate', async (req, res) => {
   }
 })
 
+// Apply selected tickers to main project
+app.post('/api/apply-to-main', async (req, res) => {
+  try {
+    const { tickers } = req.body
+    
+    if (!tickers || !Array.isArray(tickers) || tickers.length === 0) {
+      return res.status(400).json({ success: false, error: 'No tickers provided' })
+    }
+
+    // Load bundle from ai-insights-tool
+    const toolBundle = await loadBundle()
+    
+    // Load main project bundle
+    const mainBundlePath = path.join(__dirname, '..', 'public', 'ai-insights.json')
+    let mainBundle = {}
+    
+    try {
+      const mainData = await fs.readFile(mainBundlePath, 'utf-8')
+      mainBundle = JSON.parse(mainData)
+    } catch (error) {
+      // File doesn't exist or is invalid, start fresh
+      console.log('Main bundle not found, creating new one')
+    }
+
+    // Merge selected tickers
+    let appliedCount = 0
+    for (const ticker of tickers) {
+      if (toolBundle[ticker]) {
+        mainBundle[ticker] = toolBundle[ticker]
+        appliedCount++
+      }
+    }
+
+    // Save merged bundle to main project
+    await fs.writeFile(mainBundlePath, JSON.stringify(mainBundle, null, 2))
+
+    res.json({ 
+      success: true, 
+      appliedCount,
+      message: `Successfully applied ${appliedCount} ticker(s) to main project`
+    })
+  } catch (error) {
+    console.error('Error applying to main project:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
 // Start server
 app.listen(PORT, () => {
   console.log(`\n🚀 AI Insights Tool Server running on http://localhost:${PORT}`)

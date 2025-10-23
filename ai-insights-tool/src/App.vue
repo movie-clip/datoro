@@ -11,6 +11,84 @@ const bundleStats = ref(null)
 const ollamaStatus = ref('checking')
 const generationResults = ref([])
 const generationSummary = ref(null)
+const expandedTickers = ref(new Set())
+const selectedTickers = ref(new Set())
+
+// Toggle ticker expansion
+function toggleTicker(ticker) {
+  if (expandedTickers.value.has(ticker)) {
+    expandedTickers.value.delete(ticker)
+  } else {
+    expandedTickers.value.add(ticker)
+  }
+  // Force reactivity
+  expandedTickers.value = new Set(expandedTickers.value)
+}
+
+// Toggle ticker selection
+function toggleSelection(ticker) {
+  if (selectedTickers.value.has(ticker)) {
+    selectedTickers.value.delete(ticker)
+  } else {
+    selectedTickers.value.add(ticker)
+  }
+  selectedTickers.value = new Set(selectedTickers.value)
+}
+
+// Select all tickers
+function selectAll() {
+  selectedTickers.value = new Set([...existingTickers.value, ...successfulGenerations.value])
+}
+
+// Deselect all tickers
+function deselectAll() {
+  selectedTickers.value.clear()
+  selectedTickers.value = new Set(selectedTickers.value)
+}
+
+// Apply selected tickers to main project
+async function applyToMainProject() {
+  if (selectedTickers.value.size === 0) {
+    alert('Please select at least one ticker to apply')
+    return
+  }
+
+  const confirmed = confirm(
+    `Apply ${selectedTickers.value.size} ticker(s) to main project?\n\n` +
+    `This will merge the data into public/ai-insights.json.\n` +
+    `Existing tickers will be updated.`
+  )
+
+  if (!confirmed) return
+
+  try {
+    const tickersToApply = Array.from(selectedTickers.value)
+    
+    const res = await fetch('/api/apply-to-main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tickers: tickersToApply })
+    })
+
+    const data = await res.json()
+
+    if (data.success) {
+      alert(`✅ Successfully applied ${data.appliedCount} ticker(s) to main project!`)
+      deselectAll()
+    } else {
+      alert(`❌ Failed to apply: ${data.error}`)
+    }
+  } catch (error) {
+    alert(`❌ Failed to apply: ${error.message}`)
+  }
+}
+
+// Computed: successfully generated tickers from current session
+const successfulGenerations = computed(() => {
+  return generationResults.value
+    .filter(r => r.success)
+    .map(r => r.ticker)
+})
 
 // Check Ollama status on mount
 checkOllamaStatus()
@@ -257,7 +335,27 @@ const invalidTickers = computed(() => {
       <!-- Right Panel -->
       <div class="right-panel">
         <div class="panel preview-section">
-          <h2>Data Preview</h2>
+          <div class="preview-header">
+            <h2>Data Preview</h2>
+            
+            <!-- Selection controls -->
+            <div v-if="existingTickers.length > 0 || successfulGenerations.length > 0" class="selection-controls">
+              <div class="selection-actions">
+                <button @click="selectAll" class="btn-small">Select All</button>
+                <button @click="deselectAll" class="btn-small secondary">Deselect All</button>
+                <span class="selection-count text-small text-grey">
+                  {{ selectedTickers.size }} selected
+                </span>
+              </div>
+              <button 
+                @click="applyToMainProject" 
+                :disabled="selectedTickers.size === 0"
+                class="btn-apply"
+              >
+                📋 Apply to Main Project ({{ selectedTickers.size }})
+              </button>
+            </div>
+          </div>
 
           <!-- Empty state -->
           <div v-if="Object.keys(tickerStatuses).length === 0 && generationResults.length === 0" class="empty-state">
@@ -268,6 +366,13 @@ const invalidTickers = computed(() => {
           <div v-if="generationResults.length > 0" class="results">
             <div v-for="result in generationResults" :key="result.ticker" class="result-item">
               <div :class="['result-header', result.success ? 'success' : 'error']">
+                <input 
+                  v-if="result.success"
+                  type="checkbox" 
+                  :checked="selectedTickers.has(result.ticker)"
+                  @change="toggleSelection(result.ticker)"
+                  class="ticker-checkbox"
+                >
                 <span class="result-icon">{{ result.success ? '✅' : '❌' }}</span>
                 <strong>{{ result.ticker }}</strong>
                 <span class="result-status">{{ result.success ? 'Generated!' : 'Failed' }}</span>
@@ -320,34 +425,54 @@ const invalidTickers = computed(() => {
 
           <!-- Existing Ticker Preview -->
           <div v-else-if="existingTickers.length > 0" class="existing-preview">
-            <h3>Preview Existing Data</h3>
-            <div v-for="ticker in existingTickers" :key="ticker" class="ticker-preview">
-              <h4>{{ ticker }}</h4>
-              <p class="text-grey text-small">
-                Last updated: {{ tickerStatuses[ticker].data?.updated || 'N/A' }}
-              </p>
-
-              <div class="insights-section">
-                <h5>✅ Competitive Advantages</h5>
-                <div 
-                  v-for="(adv, i) in tickerStatuses[ticker].data?.advantages" 
-                  :key="i" 
-                  class="insight-item"
+            <div v-for="ticker in existingTickers" :key="ticker" class="ticker-card">
+              <div class="ticker-card-header">
+                <input 
+                  type="checkbox" 
+                  :checked="selectedTickers.has(ticker)"
+                  @change="toggleSelection(ticker)"
+                  @click.stop
+                  class="ticker-checkbox"
                 >
-                  <strong>{{ i + 1 }}. {{ adv.title }}</strong>
-                  <p>{{ adv.description }}</p>
+                <div 
+                  class="ticker-header-content"
+                  @click="toggleTicker(ticker)"
+                >
+                  <div class="ticker-info">
+                    <span class="ticker-symbol">{{ ticker }}</span>
+                    <span class="ticker-date text-grey text-small">
+                      {{ tickerStatuses[ticker].data?.updated || 'N/A' }}
+                    </span>
+                  </div>
+                  <span class="expand-icon">
+                    {{ expandedTickers.has(ticker) ? '▼' : '▶' }}
+                  </span>
                 </div>
               </div>
 
-              <div class="insights-section">
-                <h5>⚠️ Investment Risks</h5>
-                <div 
-                  v-for="(risk, i) in tickerStatuses[ticker].data?.risks" 
-                  :key="i" 
-                  class="insight-item"
-                >
-                  <strong>{{ i + 1 }}. {{ risk.title }}</strong>
-                  <p>{{ risk.description }}</p>
+              <div v-if="expandedTickers.has(ticker)" class="ticker-card-content">
+                <div class="insights-section">
+                  <h5>✅ Competitive Advantages</h5>
+                  <div 
+                    v-for="(adv, i) in tickerStatuses[ticker].data?.advantages" 
+                    :key="i" 
+                    class="insight-item"
+                  >
+                    <strong>{{ i + 1 }}. {{ adv.title }}</strong>
+                    <p>{{ adv.description }}</p>
+                  </div>
+                </div>
+
+                <div class="insights-section">
+                  <h5>⚠️ Investment Risks</h5>
+                  <div 
+                    v-for="(risk, i) in tickerStatuses[ticker].data?.risks" 
+                    :key="i" 
+                    class="insight-item"
+                  >
+                    <strong>{{ i + 1 }}. {{ risk.title }}</strong>
+                    <p>{{ risk.description }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -442,6 +567,88 @@ const invalidTickers = computed(() => {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 1rem;
+}
+
+.preview-header {
+  margin-bottom: 1.5rem;
+}
+
+.selection-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #2A2A2E;
+  flex-wrap: wrap;
+}
+
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-small {
+  background: #2A2A2E;
+  color: #E5E5E5;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+  background: #3A3A3E;
+}
+
+.btn-small.secondary {
+  background: transparent;
+  border: 1px solid #2A2A2E;
+}
+
+.btn-small.secondary:hover {
+  border-color: #3A3A3E;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.selection-count {
+  padding: 0.5rem;
+}
+
+.btn-apply {
+  background: var(--color-brand-primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-apply:hover:not(:disabled) {
+  background: var(--color-brand-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 168, 142, 0.3);
+}
+
+.btn-apply:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ticker-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .button-group {
@@ -585,17 +792,75 @@ const invalidTickers = computed(() => {
   line-height: 1.6;
 }
 
-.ticker-preview {
-  padding: 1.5rem;
+.ticker-card {
   border: 1px solid #2A2A2E;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-.ticker-preview h4 {
-  font-size: 1.5rem;
+.ticker-card:hover {
+  border-color: #3A3A3E;
+}
+
+.ticker-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.ticker-header-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.ticker-header-content:hover {
+  opacity: 0.8;
+}
+
+.ticker-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ticker-symbol {
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  color: var(--color-brand-primary);
+}
+
+.ticker-date {
+  font-size: 0.875rem;
+}
+
+.expand-icon {
+  font-size: 0.875rem;
+  color: var(--color-grey);
+  transition: transform 0.2s ease;
+}
+
+.ticker-card-content {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .generation-summary {
