@@ -1,115 +1,84 @@
 # AI Insights Generator
 
-Standalone Python-based tool for generating AI insights using local Ollama models and FMP API data.
+A Streamlit-based tool for generating AI insights using local Ollama models and FMP API data.
 
 ## Prerequisites
 
-- Python 3.10 or higher
-- Ollama installed and running locally
-- FMP API key (free tier works)
+- Python 3.10+
+- [Ollama](https://ollama.ai) installed and running
+- [FMP API key](https://financialmodelingprep.com) (free tier works)
 
-## Installation
+## Quick Start
 
-1. Navigate to the tool directory:
+1. **Setup:**
    ```bash
    cd ai-insights-tool
-   ```
-
-2. Create virtual environment:
-   ```bash
    python -m venv venv
-   ```
-
-3. Activate virtual environment:
-   ```bash
-   # Windows
-   venv\Scripts\activate
-   
-   # Linux/Mac
-   source venv/bin/activate
-   ```
-
-4. Install dependencies:
-   ```bash
+   venv\Scripts\activate  # Windows
+   # source venv/bin/activate  # Linux/Mac
    pip install -r requirements.txt
    ```
 
-5. Configure environment:
-   - Copy `.env.example` to `.env`
-   - Add your FMP API key
-   - Verify Ollama settings
+2. **Configure:**
+   - Create `.env` file with your FMP API key:
+     ```
+     FMP_API_KEY=your_api_key_here
+     OLLAMA_BASE_URL=http://localhost:11434
+     ```
 
-## Usage
-
-### Quick Start (Windows)
-
-**Option 1: PowerShell Launcher (Recommended)**
-```powershell
-cd ai-insights-tool
-.\run.ps1
-```
-
-**Option 2: Batch File**
-```cmd
-cd ai-insights-tool
-run.bat
-```
-
-**Option 3: Manual Command**
-```powershell
-cd d:\projects\Vue\factorly\ai-insights-tool
-& ".\venv\Scripts\Activate.ps1"
-streamlit run app.py --server.headless true
-```
-
-### Quick Start (Linux/Mac)
-
-```bash
-cd ai-insights-tool
-source venv/bin/activate
-streamlit run app.py --server.headless true
-```
-
-### Prerequisites Before Running
-
-1. **Ensure Ollama is running:**
+3. **Run:**
    ```bash
-   ollama serve
-   ```
-
-2. **Verify FMP API key is set in `.env` file**
-
-3. **Access the app:**
-   - The app will automatically open in your browser
-   - Or navigate to: http://localhost:8501
+   # Windows
+   .\run.ps1
+   # Or: run.bat
+   
+   # Linux/Mac
    streamlit run app.py
    ```
 
-3. Open browser to `http://localhost:8501`
+4. **Access:** Open browser to http://localhost:8501
 
 ## Features
 
-- Generate AI insights for stock tickers
-- Use FMP API for company data enrichment
-- Live streaming responses
-- Force regenerate existing insights
-- Save to bundle format
-- Copy to main project
+- 🤖 Generate AI-powered stock insights using local LLMs
+- 📊 Enrich data with FMP API company information
+- 💾 Save insights to JSON bundle
+- 🔄 Force regenerate existing insights
+- 📋 Export and copy insights
+
+## Project Structure
+
+```
+ai-insights-tool/
+├── app.py                  # Main Streamlit application
+├── components/             # Reusable UI components
+├── views/                  # Page layouts
+├── handlers/               # Business logic
+├── services/               # External API services
+├── utils/                  # Utilities and validators
+├── config/                 # Configuration and prompts
+└── output/                 # Generated insights
+```
 
 ## Troubleshooting
 
 **Ollama not connecting:**
-- Ensure Ollama is running (`ollama serve`)
-- Check `OLLAMA_BASE_URL` in `.env`
+- Start Ollama: `ollama serve`
+- Verify URL in `.env`: `OLLAMA_BASE_URL=http://localhost:11434`
 
 **FMP API errors:**
-- Verify API key in `.env`
-- Check rate limits (free tier: 300 calls/min)
+- Check API key in `.env`
+- Free tier limit: 250 requests/day
 
-**Module not found:**
-- Ensure virtual environment is activated
-- Run `pip install -r requirements.txt`
+**Module errors:**
+- Activate virtual environment: `venv\Scripts\activate`
+- Reinstall: `pip install -r requirements.txt`
 
-## Documentation
+## Stop Application
 
-See `AI_INSIGHTS_TOOL_PLAN.md` in the root directory for full implementation details.
+```bash
+# Ctrl+C in terminal, or:
+.\stop.ps1  # Windows PowerShell
+stop.bat    # Windows CMD
+```
+

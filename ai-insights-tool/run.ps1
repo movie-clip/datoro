@@ -22,6 +22,15 @@ if (-not (Test-Path ".\venv\Scripts\streamlit.exe")) {
 Write-Host "✅ Virtual environment found" -ForegroundColor Green
 Write-Host "🚀 Launching Streamlit app..." -ForegroundColor Cyan
 Write-Host ""
+Write-Host "💡 To stop the server, press Ctrl+C (may need to press multiple times)" -ForegroundColor Yellow
+Write-Host ""
 
 & ".\venv\Scripts\Activate.ps1"
-& streamlit run app.py --server.headless true
+
+# Run Streamlit with proper signal handling
+try {
+    & streamlit run app.py --server.headless true
+} finally {
+    Write-Host ""
+    Write-Host "🛑 Streamlit stopped" -ForegroundColor Red
+}

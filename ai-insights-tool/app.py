@@ -10,18 +10,60 @@ import time
 import os
 from services import bundle_service, ollama_service, fmp_service
 
-# Page configuration
+# Page configuration - Always wide mode, no top padding
 st.set_page_config(
     page_title="AI Insights Generator",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# Custom CSS to reduce top padding and improve layout
+st.markdown("""
+    <style>
+        /* Reduce top padding */
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 1rem !important;
+        }
+        
+        /* Make headers more compact */
+        h1 {
+            margin-top: 0 !important;
+            margin-bottom: 0.5rem !important;
+            font-size: 2rem !important;
+        }
+        
+        h2 {
+            font-size: 1.2rem !important;
+            margin-top: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        h3 {
+            font-size: 1rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.3rem !important;
+        }
+        
+        /* Improve button styling */
+        .stButton button {
+            width: 100%;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # Initialize session state
 if 'generated_count' not in st.session_state:
     st.session_state.generated_count = 0
 if 'failed_tickers' not in st.session_state:
     st.session_state.failed_tickers = []
+if 'checked_tickers' not in st.session_state:
+    st.session_state.checked_tickers = []
+if 'ticker_statuses' not in st.session_state:
+    st.session_state.ticker_statuses = {}
+if 'current_preview_ticker' not in st.session_state:
+    st.session_state.current_preview_ticker = None
 
 # Initialize settings in session state with defaults
 if 'ollama_model' not in st.session_state:
@@ -92,19 +134,24 @@ def validate_ticker(ticker: str) -> tuple[bool, str]:
     return True, ""
 
 
-def display_insight(insight: dict, index: int):
-    """Display a single insight with formatting."""
-    st.markdown(f"**{index}. {insight['title']}**")
-    st.write(insight['description'])
-    st.write("")
+@st.cache_data(ttl=60)
+def get_cached_bundle_stats():
+    """Get bundle statistics with caching."""
+    return bundle_service.get_bundle_stats()
+
+
+@st.cache_data(ttl=30)
+def check_ollama_status():
+    """Check Ollama connection with caching."""
+    return ollama_service.check_ollama_connection()
 
 
 # ============================================================================
-# HEADER
+# HEADER - Compact at the top
 # ============================================================================
 
 st.title("🤖 AI Insights Generator")
-st.markdown("Generate AI-powered investment insights using local Ollama models")
+st.caption("Generate AI-powered investment insights using local Ollama models and FMP data")
 
 # ============================================================================
 # SIDEBAR
@@ -113,8 +160,8 @@ st.markdown("Generate AI-powered investment insights using local Ollama models")
 with st.sidebar:
     st.header("📊 Bundle Statistics")
     
-    # Load and display current bundle stats
-    stats = bundle_service.get_bundle_stats()
+    # Use cached stats function
+    stats = get_cached_bundle_stats()
     
     col1, col2 = st.columns(2)
     with col1:
@@ -126,9 +173,9 @@ with st.sidebar:
     
     st.divider()
     
-    # Ollama connection status
+    # Ollama connection status with caching
     st.header("🔌 Ollama Status")
-    if ollama_service.check_ollama_connection():
+    if check_ollama_status():
         st.success("✅ Connected")
     else:
         st.error("❌ Not connected")
@@ -269,267 +316,350 @@ with st.sidebar:
         st.info("💡 Paths are relative to ai-insights-tool directory")
 
 # ============================================================================
-# MAIN CONTENT
+# MAIN CONTENT - Two Column Layout
 # ============================================================================
 
 # Load existing bundle
 bundle = bundle_service.load_bundle()
 
-# Ticker Input Section
-st.header("1️⃣ Enter Tickers")
+# Create two-column layout
+left_col, right_col = st.columns([1, 1.5])
 
-tickers_input = st.text_area(
-    "Ticker symbols (comma or newline separated)",
-    height=100,
-    placeholder="AAPL, MSFT, GOOGL\n\nor\n\nAAPL\nMSFT\nGOOGL",
-    help="Enter stock ticker symbols separated by commas or new lines"
-)
+# ============================================================================
+# LEFT COLUMN - Input and Controls
+# ============================================================================
 
-force_regenerate = st.checkbox(
-    "🔄 Force regenerate existing insights",
-    help="Regenerate insights even if they already exist in the bundle"
-)
+with left_col:
+    st.subheader("Enter Tickers")
 
-# Parse and validate tickers
-if tickers_input:
-    tickers = parse_tickers(tickers_input)
+    tickers_input = st.text_area(
+        "Ticker symbols",
+        height=120,
+        placeholder="AAPL, MSFT, GOOGL",
+        help="Enter stock ticker symbols (comma or newline separated)",
+        label_visibility="collapsed"
+    )
+
+    # Check Status and Generate buttons
+    col_check, col_generate = st.columns([1, 1])
     
-    if tickers:
-        st.write(f"**{len(tickers)} ticker(s) to process:**")
+    with col_check:
+        check_button = st.button("🔍 Check Status", use_container_width=True)
+    
+    with col_generate:
+        generate_button_placeholder = st.empty()
+    
+    # Force regenerate option (below buttons)
+    force_regenerate = st.checkbox(
+        "Force regenerate existing",
+        help="Regenerate insights even if they already exist"
+    )
+    
+    st.divider()
+    
+    # Status display area
+    status_container = st.container()
+
+# ============================================================================
+# RIGHT COLUMN - Data Preview and Results
+# ============================================================================
+
+with right_col:
+    st.subheader("Data Preview")
+    preview_container = st.container()
+
+# ============================================================================
+# CHECK STATUS LOGIC
+# ============================================================================
+
+if check_button and tickers_input:
+    with status_container:
+        st.write("**Ticker Status:**")
         
-        # Display ticker status
-        valid_tickers = []
-        invalid_tickers = []
+        tickers = parse_tickers(tickers_input)
         
-        for ticker in tickers:
-            is_valid, error_msg = validate_ticker(ticker)
+        if not tickers:
+            st.warning("No valid tickers entered")
+        else:
+            # Store checked tickers for later use
+            st.session_state.checked_tickers = []
+            st.session_state.ticker_statuses = {}
             
-            if not is_valid:
-                invalid_tickers.append((ticker, error_msg))
-                st.error(f"❌ {ticker} - {error_msg}")
-            else:
-                exists = bundle_service.ticker_exists(bundle, ticker)
+            for ticker in tickers:
+                is_valid, error_msg = validate_ticker(ticker)
                 
-                if exists and not force_regenerate:
-                    st.info(f"✅ {ticker} - Already exists (will skip)")
-                elif exists and force_regenerate:
-                    st.warning(f"🔄 {ticker} - Will regenerate")
-                    valid_tickers.append(ticker)
+                if not is_valid:
+                    st.error(f"❌ **{ticker}** - {error_msg}")
+                    st.session_state.ticker_statuses[ticker] = {'status': 'invalid', 'error': error_msg}
                 else:
-                    st.success(f"➕ {ticker} - New ticker")
-                    valid_tickers.append(ticker)
-        
-        # Filter tickers to process
-        tickers_to_process = valid_tickers
-        
-        st.divider()
-        
-        # Generation Section
-        if tickers_to_process:
-            st.header("2️⃣ Generate Insights")
+                    exists = bundle_service.ticker_exists(bundle, ticker)
+                    
+                    if exists:
+                        st.success(f"✅ **{ticker}** - Already in bundle")
+                        st.session_state.ticker_statuses[ticker] = {'status': 'exists', 'data': bundle.get(ticker)}
+                    else:
+                        st.info(f"➕ **{ticker}** - New ticker")
+                        st.session_state.ticker_statuses[ticker] = {'status': 'new'}
+                    
+                    st.session_state.checked_tickers.append(ticker)
             
-            st.write(f"Ready to generate insights for **{len(tickers_to_process)} ticker(s)**")
+            # Clear cache to refresh stats
+            get_cached_bundle_stats.clear()
+
+# ============================================================================
+# PREVIEW DISPLAY (only if tickers have been checked)
+# ============================================================================
+
+@st.fragment
+def render_ticker_preview():
+    """Fragment to render ticker preview without full page rerun."""
+    existing_tickers = [t for t, s in st.session_state.ticker_statuses.items() if s['status'] == 'exists']
+    
+    if existing_tickers:
+        selected_ticker = st.selectbox(
+            "View existing data for:",
+            existing_tickers,
+            key="preview_selector"
+        )
+        
+        if selected_ticker:
+            ticker_data = st.session_state.ticker_statuses[selected_ticker]['data']
             
-            # Check Ollama connection before allowing generation
-            if not ollama_service.check_ollama_connection():
-                st.error("❌ Ollama is not running. Please start Ollama before generating insights.")
-                st.code("ollama serve")
+            st.markdown(f"### {selected_ticker}")
+            st.caption(f"Last updated: {ticker_data.get('updated', 'N/A')}")
+            
+            # Advantages
+            st.markdown("**✅ Competitive Advantages:**")
+            for i, adv in enumerate(ticker_data.get('advantages', []), 1):
+                with st.expander(f"{i}. {adv['title']}", expanded=False):
+                    st.write(adv['description'])
+            
+            st.divider()
+            
+            # Risks
+            st.markdown("**⚠️ Investment Risks:**")
+            for i, risk in enumerate(ticker_data.get('risks', []), 1):
+                with st.expander(f"{i}. {risk['title']}", expanded=False):
+                    st.write(risk['description'])
+    else:
+        st.info("No existing data found for checked tickers")
+
+# Show preview for existing tickers ONLY if we have checked tickers
+if st.session_state.checked_tickers:
+    with preview_container:
+        render_ticker_preview()
+else:
+    # Show helpful message when no tickers have been checked yet
+    with preview_container:
+        st.info("👈 Enter tickers and click 'Check Status' to begin")
+
+# ============================================================================
+# GENERATE INSIGHTS LOGIC
+# ============================================================================
+
+# Show generate button only if we have checked tickers
+if st.session_state.checked_tickers:
+    # Determine which tickers need processing
+    tickers_to_process = []
+    
+    for ticker in st.session_state.checked_tickers:
+        status_info = st.session_state.ticker_statuses.get(ticker, {})
+        
+        if status_info.get('status') == 'new':
+            tickers_to_process.append(ticker)
+        elif status_info.get('status') == 'exists' and force_regenerate:
+            tickers_to_process.append(ticker)
+    
+    # Display generate button in left column
+    with left_col:
+        with generate_button_placeholder:
+            if not tickers_to_process:
+                if force_regenerate:
+                    st.info("✅ All tickers already exist")
+                else:
+                    st.info("✅ All tickers exist. Check 'Force regenerate' to update.")
             else:
-                # Generate button
-                if st.button("🚀 Generate Insights", type="primary", use_container_width=True):
-                    # Reset counters
-                    st.session_state.generated_count = 0
-                    st.session_state.failed_tickers = []
+                # Check Ollama connection
+                if not ollama_service.check_ollama_connection():
+                    st.error("❌ Ollama is not running")
+                    st.code("ollama serve", language="bash")
+                else:
+                    generate_button = st.button(
+                        f"🚀 Generate ({len(tickers_to_process)})",
+                        type="primary",
+                        use_container_width=True
+                    )
                     
-                    # Progress tracking
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    # Results containers
-                    results_container = st.container()
-                    
-                    # Process each ticker
-                    for i, ticker in enumerate(tickers_to_process):
-                        current = i + 1
-                        total = len(tickers_to_process)
+                    if generate_button:
+                        # Clear right column for live generation
+                        with preview_container:
+                            st.empty()
                         
-                        status_text.info(f"🔄 Processing {ticker} ({current}/{total})...")
+                        # Reset counters
+                        st.session_state.generated_count = 0
+                        st.session_state.failed_tickers = []
                         
-                        # Create two-column layout for this ticker
-                        with results_container:
-                            st.subheader(f"📈 {ticker}")
+                        # Progress tracking
+                        with status_container:
+                            progress_bar = st.progress(0)
+                            status_text = st.empty()
+                        
+                        # Process each ticker
+                        for i, ticker in enumerate(tickers_to_process):
+                            current = i + 1
+                            total = len(tickers_to_process)
                             
-                            col1, col2 = st.columns([1, 2])
+                            status_text.info(f"🔄 Processing {ticker} ({current}/{total})...")
                             
-                            with col1:
-                                st.write("**Status:**")
-                                status_placeholder = st.empty()
-                                status_placeholder.write("🔄 Fetching company data...")
-                            
-                            with col2:
-                                response_placeholder = st.empty()
+                            # Show live generation in right column
+                            with preview_container:
+                                st.markdown(f"### 🔄 Generating: {ticker}")
+                                
+                                generation_status = st.empty()
+                                generation_output = st.container()
                             
                             # Generate insights
                             try:
                                 # Fetch FMP data
+                                with generation_status:
+                                    st.info("📊 Fetching company data from FMP...")
+                                
                                 company_data = fmp_service.enrich_company_data(ticker)
                                 company_name = company_data.get('company_name', ticker) if company_data.get('has_data') else ticker
                                 
-                                # Update status
-                                with col1:
+                                # Show company info
+                                with generation_output:
                                     if company_data.get('has_data'):
-                                        status_placeholder.write(f"✅ {company_name}")
-                                        # Show enriched data
-                                        st.caption(f"**Industry:** {company_data.get('industry', 'N/A')}")
-                                        st.caption(f"**Sector:** {company_data.get('sector', 'N/A')}")
+                                        st.success(f"✅ **{company_name}**")
+                                        col_a, col_b = st.columns(2)
+                                        with col_a:
+                                            st.caption(f"**Industry:** {company_data.get('industry', 'N/A')}")
+                                        with col_b:
+                                            st.caption(f"**Sector:** {company_data.get('sector', 'N/A')}")
                                         if company_data.get('revenue'):
-                                            st.caption(f"**Revenue:** ${company_data.get('revenue')}B")
+                                            st.caption(f"**Revenue (TTM):** ${company_data.get('revenue')}B")
                                     else:
-                                        status_placeholder.write(f"⚠️ {ticker} (Limited data)")
+                                        st.warning(f"⚠️ Limited data for {ticker}")
                                 
-                                with response_placeholder:
-                                    st.write("**🤖 AI Response:**")
+                                # Generate insights with AI
+                                with generation_status:
+                                    st.info("🤖 Generating insights with Ollama...")
+                                
+                                insights = ollama_service.generate_insights(
+                                    ticker, 
+                                    company_name, 
+                                    company_data if company_data.get('has_data') else None
+                                )
+                                
+                                if insights:
+                                    # Display generated insights
+                                    with generation_output:
+                                        st.divider()
+                                        
+                                        # Advantages
+                                        st.markdown("**✅ Competitive Advantages:**")
+                                        for idx, adv in enumerate(insights.get('advantages', []), 1):
+                                            with st.expander(f"{idx}. {adv['title']}", expanded=True):
+                                                st.write(adv['description'])
+                                        
+                                        st.divider()
+                                        
+                                        # Risks
+                                        st.markdown("**⚠️ Investment Risks:**")
+                                        for idx, risk in enumerate(insights.get('risks', []), 1):
+                                            with st.expander(f"{idx}. {risk['title']}", expanded=True):
+                                                st.write(risk['description'])
                                     
-                                    # Show what we're doing
-                                    with st.spinner("Generating competitive advantages..."):
-                                        insights = ollama_service.generate_insights(
-                                            ticker, 
-                                            company_name, 
-                                            company_data if company_data.get('has_data') else None
-                                        )
+                                    # Save to bundle
+                                    bundle = bundle_service.add_ticker(
+                                        bundle, 
+                                        ticker, 
+                                        insights['advantages'], 
+                                        insights['risks']
+                                    )
+                                    bundle_service.save_bundle(bundle)
                                     
-                                    if insights:
-                                        # Display advantages
-                                        st.write("**Competitive Advantages:**")
-                                        for idx, adv in enumerate(insights['advantages'], 1):
-                                            display_insight(adv, idx)
-                                        
-                                        # Display risks
-                                        st.write("**Investment Risks:**")
-                                        for idx, risk in enumerate(insights['risks'], 1):
-                                            display_insight(risk, idx)
-                                        
-                                        # Save to bundle
-                                        bundle = bundle_service.add_ticker(
-                                            bundle,
-                                            ticker,
-                                            insights['advantages'],
-                                            insights['risks']
-                                        )
-                                        
-                                        # Save bundle to file
-                                        if bundle_service.save_bundle(bundle):
-                                            status_placeholder.success("✅ Saved!")
-                                            st.session_state.generated_count += 1
-                                        else:
-                                            status_placeholder.error("❌ Failed to save")
-                                            st.session_state.failed_tickers.append((ticker, "Save failed"))
-                                    else:
-                                        status_placeholder.error("❌ Generation failed")
-                                        st.session_state.failed_tickers.append((ticker, "AI generation failed"))
-                                        st.error("Failed to generate insights. Check Ollama logs.")
+                                    st.session_state.generated_count += 1
+                                    
+                                    with generation_status:
+                                        st.success(f"✅ Saved {ticker} to bundle!")
+                                
+                                else:
+                                    with generation_status:
+                                        st.error(f"❌ Failed to generate insights for {ticker}")
+                                    st.session_state.failed_tickers.append((ticker, "No insights returned"))
                             
                             except Exception as e:
-                                with col1:
-                                    status_placeholder.error("❌ Error")
+                                with generation_status:
+                                    st.error(f"❌ Error: {str(e)}")
                                 st.session_state.failed_tickers.append((ticker, str(e)))
-                                with col2:
-                                    st.error(f"Error: {e}")
                             
+                            # Update progress
+                            progress_bar.progress(current / total)
+                            
+                            # Delay between tickers (except for last one)
+                            if current < total:
+                                time.sleep(st.session_state.delay_between)
                         
-                        st.divider()
-                    
-                    # Brief delay between tickers (use setting from sidebar)
-                    if current < total:
-                        time.sleep(st.session_state.delay_between)
-                    
-                
-                # Update progress
-                progress_bar.progress(current / total)
-                
-                # Final status
-                status_text.success("✅ All done!")
-                progress_bar.progress(1.0)
-                
-                # Auto-copy if enabled
-                if st.session_state.auto_copy and st.session_state.generated_count > 0:
-                    with st.spinner("📋 Auto-copying to main project..."):
-                        if bundle_service.copy_to_main_project(create_backup=st.session_state.create_backup):
-                            st.success("✅ Auto-copied to ../public/ai-insights.json")
-                        else:
-                            st.warning("⚠️ Auto-copy failed. You can copy manually below.")
-                
-                # ============================================================================
-                # RESULTS SUMMARY
-                # ============================================================================
-                
-                st.divider()
-                st.header("3️⃣ Results Summary")
-                
-                # Success/failure metrics
-                success_count = st.session_state.generated_count
-                failed_count = len(st.session_state.failed_tickers)
-                
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric("✅ Successful", success_count)
-                with col2:
-                    st.metric("❌ Failed", failed_count)
-                    with col3:
-                        st.metric("� Total", len(tickers_to_process))
-                    
-                    # Failed tickers details
-                    if st.session_state.failed_tickers:
-                        st.error(f"❌ Failed to process {failed_count} ticker(s):")
-                        for ticker, error in st.session_state.failed_tickers:
-                            st.write(f"- **{ticker}**: {error}")
-                    
-                    # Updated bundle stats
-                    st.divider()
-                    st.subheader("📦 Updated Bundle Statistics")
-                    
-                    new_stats = bundle_service.get_bundle_stats()
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Total Tickers", new_stats['count'])
-                    with col2:
-                        st.metric("Bundle Size", f"{new_stats['size_kb']} KB")
-                    with col3:
-                        st.metric("Last Updated", new_stats['last_updated'])
-                    
-                    # Download and copy buttons
-                    st.divider()
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        # Download button
-                        try:
-                            with open(bundle_service.OUTPUT_PATH, 'r', encoding='utf-8') as f:
-                                bundle_json = f.read()
+                        # Final status
+                        status_text.success(f"✅ Complete! Processed {st.session_state.generated_count}/{total}")
+                        
+                        # Clear cache to refresh stats
+                        get_cached_bundle_stats.clear()
+                        
+                        # Auto-copy if enabled
+                        if st.session_state.auto_copy and st.session_state.generated_count > 0:
+                            with status_container:
+                                with st.spinner("📋 Auto-copying to main project..."):
+                                    if bundle_service.copy_to_main_project(create_backup=st.session_state.create_backup):
+                                        st.success("✅ Auto-copied to ../public/ai-insights.json")
+                                    else:
+                                        st.warning("⚠️ Auto-copy failed")
+                        
+                        # Show summary
+                        with status_container:
+                            st.divider()
+                            st.markdown("### 📊 Generation Summary")
                             
-                            st.download_button(
-                                label="📥 Download Bundle",
-                                data=bundle_json,
-                                file_name="ai-insights.json",
-                                mime="application/json",
-                                use_container_width=True
-                            )
-                        except Exception as e:
-                            st.error(f"Cannot download: {e}")
-                    
-                    with col2:
-                        # Copy to main project button
-                        if st.button("📋 Copy to Main Project", use_container_width=True):
-                            if bundle_service.copy_to_main_project(create_backup=True):
-                                st.success("✅ Copied to ../public/ai-insights.json")
-                            else:
-                                st.error("❌ Failed to copy")
-        else:
-            st.warning("⚠️ All tickers already exist in bundle. Enable 'Force regenerate' to update them.")
-    else:
-        st.info("👆 Enter ticker symbols above to get started")
-else:
-    st.info("👆 Enter ticker symbols above to get started")
+                            col_success, col_failed = st.columns(2)
+                            
+                            with col_success:
+                                st.metric("✅ Successful", st.session_state.generated_count)
+                            
+                            with col_failed:
+                                st.metric("❌ Failed", len(st.session_state.failed_tickers))
+                            
+                            # Show failed tickers
+                            if st.session_state.failed_tickers:
+                                st.error("**Failed Tickers:**")
+                                for ticker, error in st.session_state.failed_tickers:
+                                    st.write(f"- {ticker}: {error}")
+                            
+                            # Manual copy button
+                            if st.session_state.generated_count > 0:
+                                st.divider()
+                                
+                                if st.button("📋 Copy to Main Project", use_container_width=True):
+                                    if bundle_service.copy_to_main_project(create_backup=st.session_state.create_backup):
+                                        st.success("✅ Copied to ../public/ai-insights.json")
+                                    else:
+                                        st.error("❌ Failed to copy")
+
+# ============================================================================
+# FOOTER - Bundle Stats
+# ============================================================================
+
+st.divider()
+
+stats = get_cached_bundle_stats()
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("📊 Total Tickers", stats['count'])
+
+with col2:
+    st.metric("💾 Bundle Size", f"{stats['size_kb']} KB")
+
+with col3:
+    st.metric("🕒 Last Updated", stats['last_updated'])
