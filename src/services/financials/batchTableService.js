@@ -235,7 +235,7 @@ export function getBalanceFromBatch(batchData) {
     out.debt = fmtNumber(totalDebt)
     out.net = fmtNumber(netDebt)
     
-    // Process Altman Z-Score
+    // Process Altman Z-Score from financialScores
     if (financialScores && Array.isArray(financialScores) && financialScores.length > 0) {
       const zScoreData = financialScores[0]
       if (zScoreData.altmanZScore) {

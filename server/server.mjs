@@ -73,6 +73,9 @@ const app = express()
 // Render runs behind a proxy, so we need to trust X-Forwarded-* headers
 app.set('trust proxy', 1)
 
+// Disable Express automatic ETag generation (we handle it manually)
+app.set('etag', false)
+
 // Initialize Sentry FIRST (before any other middleware)
 sentryService.initSentry()
 
@@ -780,14 +783,18 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, re
         etag = cache.generateETag(cached.data)
       }
       
-      // Check if client has same version (ETag match)
-      const clientEtag = req.headers['if-none-match']
-      if (clientEtag === etag) {
-        console.log(`[Batch] ${t} (${mode}) → 304 Not Modified (ETag match)`)
-        res.setHeader('ETag', etag)
-        res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
-        return res.status(304).end()
-      }
+      // NOTE: ETag matching temporarily disabled (Oct 2025)
+      // When FMP endpoints change, ETags from old data can cause stale responses
+      // TODO: Implement cache versioning to automatically invalidate ETags when endpoints change
+      // For now, always send fresh data with 200 OK to prevent 304 Not Modified with stale data
+      
+      // const clientEtag = req.headers['if-none-match']
+      // if (clientEtag === etag) {
+      //   console.log(`[Batch] ${t} (${mode}) → 304 Not Modified (ETag match)`)
+      //   res.setHeader('ETag', etag)
+      //   res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+      //   return res.status(304).end()
+      // }
       
       // Track in database (truly async - don't block response)
       if (isDatabaseAvailable) {
@@ -799,9 +806,11 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, re
         })
       }
       
-      // Send cached data with ETag
-      res.setHeader('ETag', etag)
-      res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+      // Send cached data WITHOUT ETag (temporarily disabled to force fresh data)
+      // res.setHeader('ETag', etag)
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate') // Force fresh data
+      res.setHeader('Pragma', 'no-cache')
+      res.setHeader('Expires', '0')
       return res.json(responseData)
     }
     
