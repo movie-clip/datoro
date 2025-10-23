@@ -101,8 +101,16 @@
             @click="goToTicker(item.ticker)"
           >
             <div class="ticker-info">
-              <span class="ticker-symbol">{{ item.ticker }}</span>
-              <span class="ticker-date">{{ formatDate(item.addedAt) }}</span>
+              <img 
+                :src="`https://financialmodelingprep.com/image-stock/${item.ticker}.png`"
+                :alt="`${item.ticker} logo`"
+                class="company-icon"
+                @error="handleImageError"
+              >
+              <div class="ticker-text">
+                <span class="ticker-symbol">{{ item.ticker }}</span>
+                <span class="ticker-date">{{ formatDate(item.addedAt) }}</span>
+              </div>
             </div>
             <button 
               class="remove-btn"
@@ -209,6 +217,10 @@ const formatDate = (dateString) => {
   if (diffDays < 7) return `${diffDays} days ago`
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
   return date.toLocaleDateString()
+}
+
+const handleImageError = (event) => {
+  event.target.style.display = 'none'
 }
 </script>
 
@@ -487,6 +499,22 @@ const formatDate = (dateString) => {
 }
 
 .ticker-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.company-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.ticker-text {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
