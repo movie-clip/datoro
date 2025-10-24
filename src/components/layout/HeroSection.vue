@@ -1,13 +1,12 @@
 <template>
-  <section class="hero-section">
-    <div class="hero-container">
-      <!-- Primary: Price Chart (60% width) -->
-      <div class="price-chart-container">
-        <CompanyDescription 
-          v-if="!loading && companyDescription"
-          :description="companyDescription"
-        />
-        <PriceChart />
+  <div class="hero-container">
+    <!-- Primary: Price Chart (60% width) -->
+    <div class="price-chart-container">
+      <CompanyDescription 
+        v-if="!loading && companyDescription"
+        :description="companyDescription"
+      />
+      <PriceChart />
       </div>
 
       <!-- Secondary: Key Metrics Card (40% width) -->
@@ -84,7 +83,6 @@
         </div>
       </div>
     </div>
-  </section>
 </template>
 
 <script setup>
@@ -164,13 +162,6 @@ const getMarginClass = (marginStr) => {
 </script>
 
 <style scoped>
-.hero-section {
-  width: 100%;
-  max-width: 1400px;
-  margin: 24px auto;
-  padding: 0 12px;
-}
-
 .hero-container {
   display: grid;
   grid-template-columns: 1.5fr 1fr;

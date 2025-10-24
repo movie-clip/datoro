@@ -779,7 +779,7 @@ function handleSelectTicker(ticker) {
 /* Tab Navigation */
 .tab-navigation {
   max-width: 1400px;
-  margin: 32px auto 0;
+  margin: 0px auto 0;
   padding: 0 12px;
 }
 
