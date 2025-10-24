@@ -207,7 +207,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 32px;
+  padding: 16px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -216,8 +216,8 @@ onUnmounted(() => {
 }
 
 .modal-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
+  margin: 0 0 4px 0;
+  font-size: 18px;
   font-weight: 600;
   color: #fff;
 }
@@ -225,22 +225,22 @@ onUnmounted(() => {
 .company-context {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
+  gap: 10px;
+  font-size: 12px;
 }
 
 .ticker-badge {
   background: rgba(0, 89, 76, 0.2);
   color: #00b894;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .company-name {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .current-price {
@@ -255,12 +255,18 @@ onUnmounted(() => {
   border: none;
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
   transition: all 0.2s ease;
+  margin-left: 12px;
+}
+
+.close-button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .close-button:hover {
