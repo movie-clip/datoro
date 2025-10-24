@@ -63,9 +63,8 @@ export function getDcfDataFromBatch(batchData) {
       ? Number(latestCashflow.freeCashFlow) || 0 
       : 0
     
-    // Get shares outstanding
-    // Note: quote.sharesOutstanding is already in actual share count (not millions)
-    // weightedAverageShsOut from cash flow is also in actual count
+    // Get shares outstanding  
+    // Keep shares in actual count - financial values from FMP are also in actual dollars
     const sharesOutstanding = quote?.sharesOutstanding 
       ? Number(quote.sharesOutstanding)
       : (latestCashflow?.weightedAverageShsOut || 0)

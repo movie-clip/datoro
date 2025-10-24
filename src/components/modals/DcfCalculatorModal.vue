@@ -40,22 +40,21 @@
               </div>
             </div>
 
-            <!-- Valuation Results at the top -->
-            <DcfResults 
-              :intrinsic-value="intrinsicValue"
-              :current-price="companyData?.currentPrice || 0"
-              :upside="upside"
-              :recommendation="recommendation"
-            />
-
             <div class="dcf-content">
               <!-- Left column: Model Assumptions -->
               <div class="left-column">
                 <DcfInputs v-model="inputs" />
               </div>
               
-              <!-- Right column: Chart only -->
+              <!-- Right column: Valuation Results + Chart -->
               <div class="right-column">
+                <DcfResults 
+                  :intrinsic-value="intrinsicValue"
+                  :current-price="companyData?.currentPrice || 0"
+                  :upside="upside"
+                  class="compact-results"
+                />
+                
                 <DcfForecastChart 
                   :projected-prices="projectedPrices"
                   :current-price="companyData?.currentPrice || 0"
@@ -307,7 +306,7 @@ onUnmounted(() => {
   grid-template-columns: 320px 1fr !important;
   grid-auto-flow: column;
   gap: 24px;
-  margin-top: 24px;
+  margin-top: 0px;
   min-height: 600px;
   width: 100%;
 }
@@ -324,6 +323,46 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-width: 0; /* Prevents overflow */
+}
+
+.compact-results {
+  margin-bottom: 12px;
+}
+
+.compact-results :deep(.dcf-results) {
+  padding: 12px;
+  background: transparent;
+  border: none;
+}
+
+.compact-results :deep(.section-title) {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.compact-results :deep(.results-grid) {
+  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.compact-results :deep(.result-card) {
+  padding: 4px 10px;
+  min-height: auto;
+  gap: 4px;
+}
+
+.compact-results :deep(.card-label) {
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+.compact-results :deep(.card-value) {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.compact-results :deep(.card-hint) {
+  display: none;
 }
 
 /* Modal transition */

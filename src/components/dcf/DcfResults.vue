@@ -53,10 +53,6 @@ const props = defineProps({
   upside: {
     type: Number,
     default: null
-  },
-  recommendation: {
-    type: Object,
-    default: () => ({ label: 'N/A', color: '#666' })
   }
 })
 

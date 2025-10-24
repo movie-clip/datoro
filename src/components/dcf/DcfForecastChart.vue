@@ -61,23 +61,6 @@ const chartOptions = computed(() => {
   const years = props.projectedPrices.map(p => p.year)
   const prices = props.projectedPrices.map(p => p.price)
 
-  // Add current price as first point if available
-  const currentYear = new Date().getFullYear()
-  if (props.currentPrice) {
-    years.unshift(currentYear)
-    prices.unshift(props.currentPrice)
-  }
-
-  // Create baseline series (current price horizontal line)
-  const baseline = props.currentPrice 
-    ? new Array(years.length).fill(props.currentPrice)
-    : []
-
-  // Create intrinsic value line if available
-  const intrinsicLine = props.intrinsicValue
-    ? new Array(years.length).fill(props.intrinsicValue)
-    : []
-
   return {
     backgroundColor: 'transparent',
     grid: {
@@ -141,35 +124,7 @@ const chartOptions = computed(() => {
       }
     },
     series: [
-      // Current price baseline
-      ...(baseline.length > 0 ? [{
-        name: 'Current Price',
-        type: 'line',
-        data: baseline,
-        lineStyle: {
-          color: 'rgba(255, 255, 255, 0.3)',
-          width: 2,
-          type: 'dashed'
-        },
-        symbol: 'none',
-        animation: false,
-        z: 1
-      }] : []),
-      // Intrinsic value line
-      ...(intrinsicLine.length > 0 ? [{
-        name: 'Intrinsic Value',
-        type: 'line',
-        data: intrinsicLine,
-        lineStyle: {
-          color: 'rgba(0, 184, 148, 0.6)',
-          width: 2,
-          type: 'dashed'
-        },
-        symbol: 'none',
-        animation: false,
-        z: 2
-      }] : []),
-      // Projected prices
+      // Projected prices only
       {
         name: 'Projected Price',
         type: 'line',
@@ -208,14 +163,7 @@ const chartOptions = computed(() => {
       }
     ],
     legend: {
-      show: true,
-      bottom: 10,
-      textStyle: {
-        color: 'rgba(255, 255, 255, 0.7)',
-        fontSize: 12
-      },
-      itemWidth: 20,
-      itemHeight: 10
+      show: false
     }
   }
 })

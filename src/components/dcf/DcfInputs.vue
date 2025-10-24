@@ -3,6 +3,24 @@
     <h3 class="section-title">Model Assumptions</h3>
     
     <div class="inputs-grid">
+      <!-- Target P/E Ratio -->
+      <div class="input-group">
+        <label for="pe-ratio">Target P/E Ratio</label>
+        <div class="input-wrapper">
+          <input
+            id="pe-ratio"
+            v-model.number="localInputs.peRatio"
+            type="number"
+            step="0.5"
+            min="0"
+            max="100"
+            @input="handleInput('peRatio')"
+          />
+          <span class="input-suffix">x</span>
+        </div>
+        <span class="input-hint">Price-to-earnings multiple for valuation</span>
+      </div>
+
       <!-- FCF Growth Rate -->
       <div class="input-group">
         <label for="fcf-growth">FCF Growth Rate (%)</label>
@@ -57,25 +75,7 @@
         <span class="input-hint">Required rate of return (WACC)</span>
       </div>
 
-      <!-- P/E Ratio -->
-      <div class="input-group">
-        <label for="pe-ratio">Target P/E Ratio</label>
-        <div class="input-wrapper">
-          <input
-            id="pe-ratio"
-            v-model.number="localInputs.peRatio"
-            type="number"
-            step="0.5"
-            min="0"
-            max="100"
-            @input="handleInput('peRatio')"
-          />
-          <span class="input-suffix">x</span>
-        </div>
-        <span class="input-hint">Price-to-earnings multiple for valuation</span>
-      </div>
-
-      <!-- Projection Years -->
+      <!-- Projection Period -->
       <div class="input-group">
         <label for="projection-years">Projection Period (Years)</label>
         <div class="input-wrapper">
