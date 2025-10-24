@@ -64,10 +64,22 @@ export function getDcfDataFromBatch(batchData) {
       : 0
     
     // Get shares outstanding  
-    // Keep shares in actual count - financial values from FMP are also in actual dollars
-    const sharesOutstanding = quote?.sharesOutstanding 
-      ? Number(quote.sharesOutstanding)
-      : (latestCashflow?.weightedAverageShsOut || 0)
+    // Try multiple sources with defensive checks
+    // FMP returns shares in actual count (e.g., 15,204,000,000 for AAPL)
+    let sharesOutstanding = 0
+    
+    if (quote?.sharesOutstanding && Number(quote.sharesOutstanding) > 0) {
+      sharesOutstanding = Number(quote.sharesOutstanding)
+    } else if (latestCashflow?.weightedAverageShsOut && Number(latestCashflow.weightedAverageShsOut) > 0) {
+      sharesOutstanding = Number(latestCashflow.weightedAverageShsOut)
+    } else if (latestCashflow?.weightedAverageShsOutDil && Number(latestCashflow.weightedAverageShsOutDil) > 0) {
+      sharesOutstanding = Number(latestCashflow.weightedAverageShsOutDil)
+    }
+    
+    // Validation: Shares should be reasonable (> 1 million for any public company)
+    if (sharesOutstanding < 1_000_000) {
+      console.warn('[DCF Data] Suspicious shares outstanding:', sharesOutstanding, 'for ticker:', batchData.ticker)
+    }
     
     // Get current price
     const currentPrice = quote?.price || 0
@@ -124,37 +136,61 @@ export function getDcfDataFromBatch(batchData) {
  * @returns {Object} Validation result
  * @returns {boolean} return.valid - Whether data is valid for DCF
  * @returns {Array<string>} return.missingFields - List of missing required fields
+ * @returns {Object} return.details - Detailed validation info for debugging
  */
 export function validateDcfData(batchData) {
   const missingFields = []
+  const details = {}
   
   if (!batchData || !batchData.data) {
-    return { valid: false, missingFields: ['Batch data'] }
+    return { 
+      valid: false, 
+      missingFields: ['Batch data'], 
+      details: { error: 'No batch data available' }
+    }
   }
   
   const data = batchData.data
   
-  // Check for required data
+  // Check for required data arrays
   if (!data.cashflowAnnual || data.cashflowAnnual.length === 0) {
     missingFields.push('Cash flow statements')
+    details.cashflow = 'No cash flow data'
+  } else {
+    const latestCashflow = data.cashflowAnnual[0]
+    if (!latestCashflow.freeCashFlow || Number(latestCashflow.freeCashFlow) === 0) {
+      missingFields.push('Free cash flow values')
+      details.fcf = 'FCF is zero or missing'
+    }
   }
   
   if (!data.quote || data.quote.length === 0) {
     missingFields.push('Stock quote')
+    details.quote = 'No quote data'
+  } else {
+    const quote = data.quote[0]
+    if (!quote.price || Number(quote.price) <= 0) {
+      missingFields.push('Current stock price')
+      details.price = 'Price is zero or missing'
+    }
+    if (!quote.sharesOutstanding || Number(quote.sharesOutstanding) <= 0) {
+      // Check alternate source
+      const latestCashflow = data.cashflowAnnual?.[0]
+      if (!latestCashflow?.weightedAverageShsOut || Number(latestCashflow.weightedAverageShsOut) <= 0) {
+        missingFields.push('Shares outstanding')
+        details.shares = 'No shares data in quote or cashflow'
+      }
+    }
   }
   
   if (!data.balanceAnnual || data.balanceAnnual.length === 0) {
     missingFields.push('Balance sheet')
-  }
-  
-  // Check for minimum FCF history (at least 1 year for basic DCF)
-  const latestCashflow = data.cashflowAnnual?.[0]
-  if (!latestCashflow || !latestCashflow.freeCashFlow) {
-    missingFields.push('Free cash flow data')
+    details.balance = 'No balance sheet data'
   }
   
   return {
     valid: missingFields.length === 0,
-    missingFields
+    missingFields,
+    details
   }
 }

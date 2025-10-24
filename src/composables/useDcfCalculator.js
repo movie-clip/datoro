@@ -1,21 +1,44 @@
 import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../stores/tickerStore'
 import { calculateIntrinsicValue, getRecommendation } from '../services/dcf/dcfCalculator'
+import { getDcfDataFromBatch, validateDcfData } from '../services/dcf/dcfDataService'
 
 /**
  * DCF Calculator Composable
- * Manages state and calculations for DCF valuation model
- * 
- * @param {Object} companyData - Company financial data from batch
- * @param {number} companyData.currentFcf - Most recent free cash flow
- * @param {number} companyData.sharesOutstanding - Shares outstanding
- * @param {number} companyData.cashAndEquivalents - Cash position
- * @param {number} companyData.totalDebt - Total debt
- * @param {number} companyData.currentPrice - Current stock price
- * @param {number} companyData.historicalGrowthRate - Historical FCF CAGR
+ * Follows project pattern: uses Pinia store, extracts data internally, manages reactive state
+ * Matches design pattern of useRevenueSeries, useFcfSeries, etc.
  */
-export function useDcfCalculator(companyData = null) {
+export function useDcfCalculator() {
+  // Use Pinia store with storeToRefs to maintain reactivity (project pattern)
+  const tickerStore = useTickerStore()
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  
+  // Extract DCF data from batch (like other composables extract chart data)
+  const companyData = computed(() => {
+    if (!batchData.value) return null
+    return getDcfDataFromBatch(batchData.value)
+  })
+  
+  // Validation state
+  const dataValidation = computed(() => {
+    if (!batchData.value) {
+      return { valid: false, missingFields: ['No data loaded'] }
+    }
+    return validateDcfData(batchData.value)
+  })
+  
+  // Error state (follows project pattern)
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    if (!dataValidation.value.valid) {
+      return `Missing data: ${dataValidation.value.missingFields.join(', ')}`
+    }
+    return null
+  })
+  
   // Default input values with scenario-based structure
-  const baseGrowth = companyData?.historicalGrowthRate || 10
+  const baseGrowth = computed(() => companyData.value?.historicalGrowthRate || 10)
   
   const inputs = ref({
     peRatio: {
@@ -24,9 +47,9 @@ export function useDcfCalculator(companyData = null) {
       worst: 16      // 20 - 20%
     },
     fcfGrowthRate: {
-      best: Math.round(baseGrowth * 1.2 * 10) / 10,      // +20%
-      average: baseGrowth,
-      worst: Math.round(baseGrowth * 0.8 * 10) / 10       // -20%
+      best: Math.round(baseGrowth.value * 1.2 * 10) / 10,      // +20%
+      average: baseGrowth.value,
+      worst: Math.round(baseGrowth.value * 0.8 * 10) / 10       // -20%
     },
     terminalGrowthRate: {
       best: 3,       // 2.5 + 20%
@@ -40,6 +63,18 @@ export function useDcfCalculator(companyData = null) {
     },
     projectionYears: 10
   })
+  
+  // Watch for company data changes and update FCF growth rate scenarios
+  watch(companyData, (newData) => {
+    if (newData && newData.historicalGrowthRate) {
+      const growth = newData.historicalGrowthRate
+      inputs.value.fcfGrowthRate = {
+        best: Math.round(growth * 1.2 * 10) / 10,
+        average: growth,
+        worst: Math.round(growth * 0.8 * 10) / 10
+      }
+    }
+  }, { immediate: true })
 
   // Calculation results
   const intrinsicValue = ref(null)
@@ -59,13 +94,21 @@ export function useDcfCalculator(companyData = null) {
   // Calculate DCF whenever inputs change
   const calculate = () => {
     try {
-      // Use company data if available, otherwise use defaults for demonstration
-      const dataToUse = companyData || {
-        currentFcf: 10_000_000_000, // $10B default
-        sharesOutstanding: 1000, // 1B shares
-        cashAndEquivalents: 50_000_000_000,
-        totalDebt: 100_000_000_000,
-        currentPrice: 100
+      // Need valid company data to calculate
+      if (!companyData.value || !dataValidation.value.valid) {
+        // Reset to null state
+        intrinsicValue.value = null
+        projectedPrices.value = []
+        upside.value = null
+        recommendation.value = null
+        enterpriseValue.value = null
+        terminalValue.value = null
+        scenarios.value = {
+          best: { intrinsicValue: null, projectedPrices: [], upside: null },
+          average: { intrinsicValue: null, projectedPrices: [], upside: null },
+          worst: { intrinsicValue: null, projectedPrices: [], upside: null }
+        }
+        return
       }
 
       // Calculate for all three scenarios
@@ -80,7 +123,7 @@ export function useDcfCalculator(companyData = null) {
           projectionYears: inputs.value.projectionYears
         }
 
-        const results = calculateIntrinsicValue(scenarioInputs, dataToUse)
+        const results = calculateIntrinsicValue(scenarioInputs, companyData.value)
         
         scenarios.value[scenario] = {
           intrinsicValue: results.intrinsicValue,
@@ -105,7 +148,7 @@ export function useDcfCalculator(companyData = null) {
         recommendation.value = null
       }
     } catch (error) {
-      console.error('DCF calculation error:', error)
+      console.error('[DCF Calculator] Calculation error:', error)
       // Reset on error
       intrinsicValue.value = null
       projectedPrices.value = []
@@ -121,8 +164,11 @@ export function useDcfCalculator(companyData = null) {
     }
   }
 
-  // Watch for input changes and recalculate
+  // Watch for input changes and recalculate (debounced for performance)
   watch(inputs, calculate, { deep: true })
+  
+  // Recalculate when company data changes
+  watch(companyData, calculate)
 
   // Calculate on initialization
   calculate()
@@ -141,6 +187,15 @@ export function useDcfCalculator(companyData = null) {
     
     // All scenarios
     scenarios,
+    
+    // Company data & validation
+    companyData,
+    dataValidation,
+    
+    // State (follows project pattern)
+    loading,
+    error,
+    ticker: currentTicker,
     
     // Methods
     calculate

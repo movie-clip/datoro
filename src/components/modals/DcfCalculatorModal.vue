@@ -12,11 +12,13 @@
         <div class="modal-container">
           <div class="modal-header">
             <div class="header-content">
-              <h2>DCF Calculator</h2>
-              <div v-if="companyData" class="company-context">
-                <span class="ticker-badge">{{ companyData.ticker }}</span>
-                <span class="company-name">{{ companyData.companyName }}</span>
-              </div>
+              <h2>
+                DCF Calculator
+                <span v-if="companyData" class="company-context">
+                  <span class="ticker-badge">{{ companyData.ticker }}</span>
+                  <span class="company-name">{{ companyData.companyName }}</span>
+                </span>
+              </h2>
             </div>
             <button class="close-button" @click="handleClose" aria-label="Close modal">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -27,8 +29,19 @@
           </div>
 
           <div class="modal-body">
+            <!-- Loading state -->
+            <div v-if="loading" class="data-loading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" opacity="0.3"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round">
+                  <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                </path>
+              </svg>
+              <p>Loading financial data...</p>
+            </div>
+
             <!-- Data validation warning -->
-            <div v-if="!dataValidation.valid" class="data-warning">
+            <div v-else-if="!dataValidation.valid" class="data-warning">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -36,11 +49,11 @@
               </svg>
               <div>
                 <strong>Insufficient Data</strong>
-                <p>Missing: {{ dataValidation.missingFields.join(', ') }}</p>
+                <p>{{ error || `Missing: ${dataValidation.missingFields.join(', ')}` }}</p>
               </div>
             </div>
 
-            <div class="dcf-content">
+            <div v-else class="dcf-content">
               <!-- Left column: Model Assumptions -->
               <div class="left-column">
                 <DcfInputs v-model="inputs" />
@@ -70,11 +83,8 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../../stores/tickerStore'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useDcfCalculator } from '../../composables/useDcfCalculator'
-import { getDcfDataFromBatch, validateDcfData } from '../../services/dcf/dcfDataService'
 import DcfInputs from '../dcf/DcfInputs.vue'
 import DcfResults from '../dcf/DcfResults.vue'
 import DcfForecastChart from '../dcf/DcfForecastChart.vue'
@@ -90,58 +100,21 @@ const emit = defineEmits(['update:modelValue'])
 
 const overlayRef = ref(null)
 
-// Get ticker data from store
-const tickerStore = useTickerStore()
-const { batchData, currentTicker } = storeToRefs(tickerStore)
-
-// Extract DCF data from batch
-const companyData = computed(() => {
-  if (!batchData.value) return null
-  return getDcfDataFromBatch(batchData.value)
-})
-
-// Validate data
-const dataValidation = computed(() => {
-  if (!batchData.value) {
-    return { valid: false, missingFields: ['No data loaded'] }
-  }
-  return validateDcfData(batchData.value)
-})
-
-// DCF Calculator composable with company data
+// DCF Calculator composable - now self-contained (matches project pattern)
 const { 
   inputs, 
   intrinsicValue, 
-  projectedPrices, 
   upside, 
-  recommendation,
-  enterpriseValue,
-  terminalValue,
-  scenarios
-} = useDcfCalculator(companyData.value)
-
-// Watch for company data changes and update growth rate scenarios
-watch(companyData, (newData) => {
-  if (newData && newData.historicalGrowthRate) {
-    const baseGrowth = newData.historicalGrowthRate
-    inputs.value.fcfGrowthRate = {
-      best: Math.round(baseGrowth * 1.2 * 10) / 10,
-      average: baseGrowth,
-      worst: Math.round(baseGrowth * 0.8 * 10) / 10
-    }
-  }
-})
+  scenarios,
+  companyData,
+  dataValidation,
+  loading,
+  error,
+  ticker
+} = useDcfCalculator()
 
 const handleClose = () => {
   emit('update:modelValue', false)
-}
-
-const formatNumber = (num) => {
-  if (num === null || num === undefined) return 'N/A'
-  return num.toLocaleString('en-US', { 
-    minimumFractionDigits: 2, 
-    maximumFractionDigits: 2 
-  })
 }
 
 const handleEscKey = (event) => {
@@ -216,17 +189,21 @@ onUnmounted(() => {
 }
 
 .modal-header h2 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
+  margin: 0;
+  font-size: 20px;
   font-weight: 600;
   color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .company-context {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 12px;
+  font-weight: 400;
 }
 
 .ticker-badge {
@@ -235,12 +212,12 @@ onUnmounted(() => {
   padding: 3px 8px;
   border-radius: 4px;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .company-name {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .current-price {
@@ -294,6 +271,25 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 193, 7, 0.3);
   border-radius: 8px;
   color: #ffc107;
+}
+
+.data-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.data-loading svg {
+  color: #00b894;
+}
+
+.data-loading p {
+  margin: 0;
+  font-size: 14px;
 }
 
 .data-warning svg {

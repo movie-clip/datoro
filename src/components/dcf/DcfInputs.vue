@@ -15,34 +15,34 @@
         <div class="scenario-inputs">
           <div class="input-wrapper best-case">
             <input
-              v-model.number="localInputs.peRatio.best"
+              :value="modelValue.peRatio.best"
+              @input="updateField('peRatio', 'best', Number($event.target.value))"
               type="number"
               step="0.5"
               min="0"
               max="100"
-              @input="handleInput('peRatio')"
             />
             <span class="input-suffix">x</span>
           </div>
           <div class="input-wrapper average-case">
             <input
-              v-model.number="localInputs.peRatio.average"
+              :value="modelValue.peRatio.average"
+              @input="updateField('peRatio', 'average', Number($event.target.value))"
               type="number"
               step="0.5"
               min="0"
               max="100"
-              @input="handleInput('peRatio')"
             />
             <span class="input-suffix">x</span>
           </div>
           <div class="input-wrapper worst-case">
             <input
-              v-model.number="localInputs.peRatio.worst"
+              :value="modelValue.peRatio.worst"
+              @input="updateField('peRatio', 'worst', Number($event.target.value))"
               type="number"
               step="0.5"
               min="0"
               max="100"
-              @input="handleInput('peRatio')"
             />
             <span class="input-suffix">x</span>
           </div>
@@ -56,34 +56,34 @@
         <div class="scenario-inputs">
           <div class="input-wrapper best-case">
             <input
-              v-model.number="localInputs.fcfGrowthRate.best"
+              :value="modelValue.fcfGrowthRate.best"
+              @input="updateField('fcfGrowthRate', 'best', Number($event.target.value))"
               type="number"
               step="0.1"
               min="-50"
               max="100"
-              @input="handleInput('fcfGrowthRate')"
             />
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper average-case">
             <input
-              v-model.number="localInputs.fcfGrowthRate.average"
+              :value="modelValue.fcfGrowthRate.average"
+              @input="updateField('fcfGrowthRate', 'average', Number($event.target.value))"
               type="number"
               step="0.1"
               min="-50"
               max="100"
-              @input="handleInput('fcfGrowthRate')"
             />
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper worst-case">
             <input
-              v-model.number="localInputs.fcfGrowthRate.worst"
+              :value="modelValue.fcfGrowthRate.worst"
+              @input="updateField('fcfGrowthRate', 'worst', Number($event.target.value))"
               type="number"
               step="0.1"
               min="-50"
               max="100"
-              @input="handleInput('fcfGrowthRate')"
             />
             <span class="input-suffix">%</span>
           </div>
@@ -97,34 +97,34 @@
         <div class="scenario-inputs">
           <div class="input-wrapper best-case">
             <input
-              v-model.number="localInputs.terminalGrowthRate.best"
+              :value="modelValue.terminalGrowthRate.best"
+              @input="updateField('terminalGrowthRate', 'best', Number($event.target.value))"
               type="number"
               step="0.1"
               min="0"
               max="10"
-              @input="handleInput('terminalGrowthRate')"
             />
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper average-case">
             <input
-              v-model.number="localInputs.terminalGrowthRate.average"
+              :value="modelValue.terminalGrowthRate.average"
+              @input="updateField('terminalGrowthRate', 'average', Number($event.target.value))"
               type="number"
               step="0.1"
               min="0"
               max="10"
-              @input="handleInput('terminalGrowthRate')"
             />
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper worst-case">
             <input
-              v-model.number="localInputs.terminalGrowthRate.worst"
+              :value="modelValue.terminalGrowthRate.worst"
+              @input="updateField('terminalGrowthRate', 'worst', Number($event.target.value))"
               type="number"
               step="0.1"
               min="0"
               max="10"
-              @input="handleInput('terminalGrowthRate')"
             />
             <span class="input-suffix">%</span>
           </div>
@@ -138,34 +138,34 @@
         <div class="scenario-inputs">
           <div class="input-wrapper best-case">
             <input
-              v-model.number="localInputs.discountRate.best"
+              :value="modelValue.discountRate.best"
+              @input="updateField('discountRate', 'best', Number($event.target.value))"
               type="number"
               step="0.1"
               min="0"
               max="30"
-              @input="handleInput('discountRate')"
             />
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper average-case">
             <input
-              v-model.number="localInputs.discountRate.average"
+              :value="modelValue.discountRate.average"
+              @input="updateField('discountRate', 'average', Number($event.target.value))"
               type="number"
               step="0.1"
               min="0"
               max="30"
-              @input="handleInput('discountRate')"
             />
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper worst-case">
             <input
-              v-model.number="localInputs.discountRate.worst"
+              :value="modelValue.discountRate.worst"
+              @input="updateField('discountRate', 'worst', Number($event.target.value))"
               type="number"
               step="0.1"
               min="0"
               max="30"
-              @input="handleInput('discountRate')"
             />
             <span class="input-suffix">%</span>
           </div>
@@ -179,12 +179,12 @@
         <div class="single-input">
           <div class="input-wrapper best-case">
             <input
-              v-model.number="localInputs.projectionYears"
+              :value="modelValue.projectionYears"
+              @input="updateField('projectionYears', null, Number($event.target.value))"
               type="number"
               step="1"
               min="3"
               max="15"
-              @input="handleInput('projectionYears')"
             />
             <span class="input-suffix">yrs</span>
           </div>
@@ -206,8 +206,6 @@
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue'
-
 const props = defineProps({
   modelValue: {
     type: Object,
@@ -217,10 +215,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-// Local state for immediate UI updates
-const localInputs = reactive({ ...props.modelValue })
-
-// Default scenario values
+// Default scenario values for reset function
 const defaults = {
   peRatio: {
     best: 24,      // 20 + 20%
@@ -245,20 +240,22 @@ const defaults = {
   projectionYears: 10
 }
 
-const handleInput = (field) => {
-  // Emit changes to parent
-  emit('update:modelValue', { ...localInputs })
+// Update nested field and emit entire object (triggers parent reactivity)
+const updateField = (field, scenario, value) => {
+  const updated = { ...props.modelValue }
+  if (scenario) {
+    // Update scenario-based field
+    updated[field] = { ...updated[field], [scenario]: value }
+  } else {
+    // Update simple field (projectionYears)
+    updated[field] = value
+  }
+  emit('update:modelValue', updated)
 }
 
 const resetToDefaults = () => {
-  Object.assign(localInputs, defaults)
   emit('update:modelValue', { ...defaults })
 }
-
-// Sync with parent changes
-watch(() => props.modelValue, (newVal) => {
-  Object.assign(localInputs, newVal)
-}, { deep: true })
 </script>
 
 <style scoped>

@@ -71,6 +71,16 @@ const chartOptions = computed(() => {
   const bestPrices = props.scenarios.best.projectedPrices.map(p => p.price)
   const averagePrices = props.scenarios.average.projectedPrices.map(p => p.price)
   const worstPrices = props.scenarios.worst.projectedPrices.map(p => p.price)
+  
+  // Calculate Y-axis range from all scenario prices
+  const allPrices = [...bestPrices, ...averagePrices, ...worstPrices]
+  const minPrice = Math.min(...allPrices)
+  const maxPrice = Math.max(...allPrices)
+  const priceRange = maxPrice - minPrice
+  
+  // Add 5% padding on both sides for better visualization
+  const yAxisMin = Math.floor(minPrice - priceRange * 0.05)
+  const yAxisMax = Math.ceil(maxPrice + priceRange * 0.05)
 
   return {
     backgroundColor: 'transparent',
@@ -117,6 +127,8 @@ const chartOptions = computed(() => {
     },
     yAxis: {
       type: 'value',
+      min: yAxisMin,
+      max: yAxisMax,
       axisLine: {
         show: false
       },
