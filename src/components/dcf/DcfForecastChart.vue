@@ -73,6 +73,11 @@ const chartOptions = computed(() => {
     ? new Array(years.length).fill(props.currentPrice)
     : []
 
+  // Create intrinsic value line if available
+  const intrinsicLine = props.intrinsicValue
+    ? new Array(years.length).fill(props.intrinsicValue)
+    : []
+
   return {
     backgroundColor: 'transparent',
     grid: {
@@ -118,12 +123,6 @@ const chartOptions = computed(() => {
     },
     yAxis: {
       type: 'value',
-      name: 'Price ($)',
-      nameTextStyle: {
-        color: 'rgba(255, 255, 255, 0.6)',
-        fontSize: 13,
-        padding: [0, 0, 0, 0]
-      },
       axisLine: {
         show: false
       },
@@ -153,7 +152,22 @@ const chartOptions = computed(() => {
           type: 'dashed'
         },
         symbol: 'none',
-        animation: false
+        animation: false,
+        z: 1
+      }] : []),
+      // Intrinsic value line
+      ...(intrinsicLine.length > 0 ? [{
+        name: 'Intrinsic Value',
+        type: 'line',
+        data: intrinsicLine,
+        lineStyle: {
+          color: 'rgba(0, 184, 148, 0.6)',
+          width: 2,
+          type: 'dashed'
+        },
+        symbol: 'none',
+        animation: false,
+        z: 2
       }] : []),
       // Projected prices
       {
@@ -189,7 +203,8 @@ const chartOptions = computed(() => {
             borderColor: '#00594c',
             borderWidth: 2
           }
-        }
+        },
+        z: 3
       }
     ],
     legend: {

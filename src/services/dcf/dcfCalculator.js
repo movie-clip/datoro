@@ -1,8 +1,12 @@
 /**
  * DCF (Discounted Cash Flow) Calculator Service
  * 
- * This is a PLACEHOLDER implementation returning mock data.
- * The actual DCF calculation formula will be implemented later.
+ * Implements discounted cash flow valuation methodology:
+ * 1. Project future free cash flows based on growth rate
+ * 2. Calculate terminal value using perpetuity growth model
+ * 3. Discount all cash flows to present value
+ * 4. Sum to get enterprise value
+ * 5. Convert to equity value per share
  */
 
 /**
@@ -12,56 +16,131 @@
  * @param {number} inputs.fcfGrowthRate - Annual FCF growth rate (%)
  * @param {number} inputs.terminalGrowthRate - Terminal/perpetual growth rate (%)
  * @param {number} inputs.discountRate - Discount rate / WACC (%)
- * @param {number} inputs.peRatio - Target P/E ratio
  * @param {number} inputs.projectionYears - Number of years to project
- * @param {number} currentPrice - Current stock price
+ * @param {Object} companyData - Company financial data
+ * @param {number} companyData.currentFcf - Most recent free cash flow
+ * @param {number} companyData.sharesOutstanding - Shares outstanding (in millions)
+ * @param {number} companyData.cashAndEquivalents - Current cash position
+ * @param {number} companyData.totalDebt - Current total debt
+ * @param {number} companyData.currentPrice - Current stock price
  * 
  * @returns {Object} Calculation results
  * @returns {number} return.intrinsicValue - Calculated intrinsic value per share
- * @returns {Array<{year: number, price: number}>} return.projectedPrices - Year-by-year price projections
+ * @returns {Array<{year: number, price: number, fcf: number, pv: number}>} return.projectedPrices - Year-by-year projections
  * @returns {number} return.upside - Upside/downside percentage vs current price
+ * @returns {number} return.enterpriseValue - Total enterprise value
+ * @returns {number} return.terminalValue - Terminal value (undiscounted)
  */
-export function calculateIntrinsicValue(inputs, currentPrice = 100) {
+export function calculateIntrinsicValue(inputs, companyData) {
   const {
     fcfGrowthRate = 10,
     terminalGrowthRate = 2.5,
     discountRate = 10,
-    peRatio = 20,
     projectionYears = 10
   } = inputs
 
-  // PLACEHOLDER: Generate mock projected prices based on growth rate
-  // Real implementation will use actual DCF formula
+  const {
+    currentFcf = 0,
+    sharesOutstanding = 1,
+    cashAndEquivalents = 0,
+    totalDebt = 0,
+    currentPrice = 100
+  } = companyData || {}
+
+  // Validate inputs
+  if (currentFcf <= 0 || sharesOutstanding <= 0) {
+    console.warn('[DCF] Invalid company data:', { currentFcf, sharesOutstanding })
+    return {
+      intrinsicValue: null,
+      projectedPrices: [],
+      upside: null,
+      enterpriseValue: null,
+      terminalValue: null
+    }
+  }
+
+  // Convert percentages to decimals
+  const g = fcfGrowthRate / 100
+  const tg = terminalGrowthRate / 100
+  const r = discountRate / 100
+
+  // Project future FCFs and calculate present values
+  const fcfProjections = []
+  let fcf = currentFcf
+  let totalPV = 0
   const currentYear = new Date().getFullYear()
-  const projectedPrices = []
-  
-  let price = currentPrice
-  
-  for (let i = 1; i <= projectionYears; i++) {
-    // Simple compound growth for demonstration
-    // Real formula will discount future cash flows
-    price = price * (1 + fcfGrowthRate / 100)
+
+  for (let year = 1; year <= projectionYears; year++) {
+    // Project FCF with growth rate
+    fcf = fcf * (1 + g)
     
-    projectedPrices.push({
-      year: currentYear + i,
-      price: Math.round(price * 100) / 100
+    // Calculate present value of this year's FCF
+    const discountFactor = Math.pow(1 + r, year)
+    const pv = fcf / discountFactor
+    
+    totalPV += pv
+    
+    fcfProjections.push({
+      year: currentYear + year,
+      fcf: Math.round(fcf),
+      pv: Math.round(pv)
     })
   }
 
-  // PLACEHOLDER: Calculate terminal value with P/E approach
-  const terminalPrice = price * (1 + terminalGrowthRate / 100)
+  // Calculate terminal value using perpetuity growth model
+  // TV = FCF(final year) * (1 + terminal growth) / (discount rate - terminal growth)
+  const finalYearFcf = fcf
+  const terminalValue = (finalYearFcf * (1 + tg)) / (r - tg)
   
-  // PLACEHOLDER: Mock intrinsic value
-  // Real implementation will sum discounted cash flows + terminal value
-  const intrinsicValue = Math.round(terminalPrice * 0.85 * 100) / 100
+  // Discount terminal value to present
+  const terminalPV = terminalValue / Math.pow(1 + r, projectionYears)
+  
+  // Enterprise value = sum of discounted FCFs + discounted terminal value
+  const enterpriseValue = totalPV + terminalPV
+  
+  // Equity value = enterprise value + cash - debt
+  const equityValue = enterpriseValue + cashAndEquivalents - totalDebt
+  
+  // Intrinsic value per share
+  const intrinsicValue = equityValue / sharesOutstanding
+
+  // Calculate future stock prices based on FCF growth
+  // Assumption: If the company grows FCF at the projected rate, 
+  // the stock price should grow proportionally (maintaining same FCF yield)
+  const projectedPrices = []
+  
+  // Current FCF yield = Current FCF / Market Cap
+  const currentMarketCap = currentPrice * sharesOutstanding
+  const currentFcfYield = currentFcf / currentMarketCap
+  
+  fcf = currentFcf // Reset FCF counter
+  for (let i = 0; i < fcfProjections.length; i++) {
+    const yearData = fcfProjections[i]
+    fcf = fcfProjections[i].fcf // Use projected FCF
+    
+    // If FCF grows, and we maintain the same FCF yield, market cap should grow proportionally
+    // Market Cap = FCF / FCF Yield
+    const projectedMarketCap = fcf / currentFcfYield
+    const projectedPrice = projectedMarketCap / sharesOutstanding
+    
+    projectedPrices.push({
+      year: yearData.year,
+      fcf: yearData.fcf,
+      pv: yearData.pv,
+      price: Math.round(projectedPrice * 100) / 100
+    })
+  }
 
   // Calculate upside/downside
   const upside = ((intrinsicValue - currentPrice) / currentPrice) * 100
 
   return {
-    intrinsicValue,
+    intrinsicValue: Math.round(intrinsicValue * 100) / 100,
     projectedPrices,
-    upside: Math.round(upside * 10) / 10
+    upside: Math.round(upside * 10) / 10,
+    enterpriseValue: Math.round(enterpriseValue),
+    terminalValue: Math.round(terminalValue),
+    equityValue: Math.round(equityValue)
   }
 }
 

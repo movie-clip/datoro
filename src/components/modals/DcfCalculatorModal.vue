@@ -11,7 +11,13 @@
       >
         <div class="modal-container">
           <div class="modal-header">
-            <h2>DCF Calculator</h2>
+            <div class="header-content">
+              <h2>DCF Calculator</h2>
+              <div v-if="companyData" class="company-context">
+                <span class="ticker-badge">{{ companyData.ticker }}</span>
+                <span class="company-name">{{ companyData.companyName }}</span>
+              </div>
+            </div>
             <button class="close-button" @click="handleClose" aria-label="Close modal">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -21,17 +27,30 @@
           </div>
 
           <div class="modal-body">
+            <!-- Data validation warning -->
+            <div v-if="!dataValidation.valid" class="data-warning">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <div>
+                <strong>Insufficient Data</strong>
+                <p>Missing: {{ dataValidation.missingFields.join(', ') }}</p>
+              </div>
+            </div>
+
             <div class="dcf-content">
               <DcfInputs v-model="inputs" />
               <DcfResults 
                 :intrinsic-value="intrinsicValue"
-                :current-price="currentPrice"
+                :current-price="companyData?.currentPrice || 0"
                 :upside="upside"
                 :recommendation="recommendation"
               />
               <DcfForecastChart 
                 :projected-prices="projectedPrices"
-                :current-price="currentPrice"
+                :current-price="companyData?.currentPrice || 0"
                 :intrinsic-value="intrinsicValue"
               />
             </div>
@@ -43,8 +62,11 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTickerStore } from '../../stores/tickerStore'
 import { useDcfCalculator } from '../../composables/useDcfCalculator'
+import { getDcfDataFromBatch, validateDcfData } from '../../services/dcf/dcfDataService'
 import DcfInputs from '../dcf/DcfInputs.vue'
 import DcfResults from '../dcf/DcfResults.vue'
 import DcfForecastChart from '../dcf/DcfForecastChart.vue'
@@ -60,12 +82,52 @@ const emit = defineEmits(['update:modelValue'])
 
 const overlayRef = ref(null)
 
-// DCF Calculator composable
-const currentPrice = ref(100) // TODO: Get from ticker data
-const { inputs, intrinsicValue, projectedPrices, upside, recommendation } = useDcfCalculator(currentPrice)
+// Get ticker data from store
+const tickerStore = useTickerStore()
+const { batchData, currentTicker } = storeToRefs(tickerStore)
+
+// Extract DCF data from batch
+const companyData = computed(() => {
+  if (!batchData.value) return null
+  return getDcfDataFromBatch(batchData.value)
+})
+
+// Validate data
+const dataValidation = computed(() => {
+  if (!batchData.value) {
+    return { valid: false, missingFields: ['No data loaded'] }
+  }
+  return validateDcfData(batchData.value)
+})
+
+// DCF Calculator composable with company data
+const { 
+  inputs, 
+  intrinsicValue, 
+  projectedPrices, 
+  upside, 
+  recommendation,
+  enterpriseValue,
+  terminalValue 
+} = useDcfCalculator(companyData.value)
+
+// Watch for company data changes and update default growth rate
+watch(companyData, (newData) => {
+  if (newData && newData.historicalGrowthRate) {
+    inputs.value.fcfGrowthRate = newData.historicalGrowthRate
+  }
+})
 
 const handleClose = () => {
   emit('update:modelValue', false)
+}
+
+const formatNumber = (num) => {
+  if (num === null || num === undefined) return 'N/A'
+  return num.toLocaleString('en-US', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  })
 }
 
 const handleEscKey = (event) => {
@@ -135,14 +197,43 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.header-content {
+  flex: 1;
+}
+
 .modal-header h2 {
-  margin: 0;
+  margin: 0 0 8px 0;
   font-size: 24px;
   font-weight: 600;
   color: #fff;
+}
+
+.company-context {
   display: flex;
   align-items: center;
   gap: 12px;
+  font-size: 14px;
+}
+
+.ticker-badge {
+  background: rgba(0, 89, 76, 0.2);
+  color: #00b894;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.company-name {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.current-price {
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  margin-left: auto;
 }
 
 .close-button {
@@ -171,6 +262,41 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 32px;
+}
+
+.data-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  color: #ffc107;
+}
+
+.data-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.data-warning strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.data-warning p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.dcf-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 /* Modal transition */

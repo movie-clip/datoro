@@ -25,15 +25,6 @@
         </div>
         <div class="card-hint">Potential return</div>
       </div>
-
-      <!-- Recommendation Card -->
-      <div class="result-card recommendation" :style="{ borderColor: recommendation.color }">
-        <div class="card-label">Recommendation</div>
-        <div class="card-value" :style="{ color: recommendation.color }">
-          {{ recommendation.label }}
-        </div>
-        <div class="card-hint">Based on DCF model</div>
-      </div>
     </div>
 
     <div v-else class="results-placeholder">
