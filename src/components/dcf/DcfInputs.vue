@@ -377,7 +377,7 @@ const resetToDefaults = () => {
 .readonly-value {
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
   width: 100%;
 }
@@ -409,7 +409,7 @@ const resetToDefaults = () => {
   background: rgba(0, 0, 0, 0.3);
   border: 2px solid rgba(0, 89, 76, 0.3);
   border-radius: 6px;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
   font-weight: 600;
   transition: all 0.2s ease;
