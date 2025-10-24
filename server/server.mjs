@@ -62,8 +62,9 @@ const cache = getCacheService()
 const monitoring = getMonitoringService()
 
 // API Version - increment when FMP endpoints change to auto-invalidate caches
-const API_VERSION = 'v2.2'
-const API_UPDATED = '2025-10-23T00:00:00Z'
+// v2.3 - Added fmpDcf endpoint to batch data service
+const API_VERSION = 'v2.3'
+const API_UPDATED = '2025-10-24T22:20:00Z'
 
 // Database health flag (disabled if offline to prevent 5s timeouts)
 let isDatabaseAvailable = true

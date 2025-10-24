@@ -4,7 +4,7 @@
     
     <div v-if="intrinsicValue !== null || buffettValue?.intrinsicValue || fmpDcfValue?.intrinsicValue" class="results-grid">
       <!-- Custom DCF Intrinsic Value Card -->
-      <div class="result-card" :title="getDcfTooltip()">
+      <div class="result-card" :data-tooltip="getDcfTooltip()">
         <div class="card-label">DCF Model</div>
         <div v-if="intrinsicValue !== null" class="card-value" :class="getDcfValueClass(intrinsicValue)">
           ${{ formatNumber(intrinsicValue) }}
@@ -17,7 +17,7 @@
       </div>
 
       <!-- Buffett's Formula Card -->
-      <div class="result-card" :title="getBuffettTooltip()">
+      <div class="result-card" :data-tooltip="getBuffettTooltip()">
         <div class="card-label">Buffett Formula</div>
         <div v-if="buffettValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(buffettValue.intrinsicValue)">
           ${{ formatNumber(buffettValue.intrinsicValue) }}
@@ -30,7 +30,7 @@
       </div>
 
       <!-- FMP DCF Card -->
-      <div class="result-card" :title="getFmpTooltip()">
+      <div class="result-card" :data-tooltip="getFmpTooltip()">
         <div class="card-label">
           FMP Fair Value
           <span v-if="fmpDcfLoading" class="loading-indicator">⋯</span>
@@ -48,7 +48,7 @@
       </div>
 
       <!-- Current Price Card -->
-      <div class="result-card" :title="getCurrentPriceTooltip()">
+      <div class="result-card" :data-tooltip="getCurrentPriceTooltip()">
         <div class="card-label">Current Price</div>
         <div class="card-value">${{ formatNumber(currentPrice) }}</div>
         <div class="card-hint">Market price</div>
@@ -140,7 +140,8 @@ const getDcfTooltip = () => {
   if (props.intrinsicValue === null) return 'No DCF valuation available'
   const diff = props.intrinsicValue - props.currentPrice
   const pct = props.upside !== null ? props.upside.toFixed(1) : 'N/A'
-  return `DCF Intrinsic Value: $${formatNumber(props.intrinsicValue)}\nCurrent Price: $${formatNumber(props.currentPrice)}\nDifference: $${diff.toFixed(2)} (${pct}%)\n\nBased on discounted cash flow projections with your custom assumptions.`
+  const sign = diff >= 0 ? '+' : ''
+  return `DCF: $${formatNumber(props.intrinsicValue)} | Current: $${formatNumber(props.currentPrice)} | Diff: ${sign}$${diff.toFixed(2)} (${pct}%) • Based on custom DCF assumptions`
 }
 
 const getBuffettTooltip = () => {
@@ -150,7 +151,8 @@ const getBuffettTooltip = () => {
   const years = props.buffettValue.years || 10
   const growth = props.buffettValue.growthRate || 15
   const pe = props.buffettValue.fairPE || 15
-  return `Buffett Formula: $${formatNumber(props.buffettValue.intrinsicValue)}\nCurrent Price: $${formatNumber(props.currentPrice)}\nDifference: $${diff.toFixed(2)} (${pct}%)\n\nAssumptions:\n• ${growth}% annual earnings growth\n• Fair P/E ratio: ${pe}\n• ${years}-year timeframe`
+  const sign = diff >= 0 ? '+' : ''
+  return `Buffett: $${formatNumber(props.buffettValue.intrinsicValue)} | Current: $${formatNumber(props.currentPrice)} | Diff: ${sign}$${diff.toFixed(2)} (${pct}%) • Assumptions: ${growth}% growth, P/E ${pe}, ${years}yr horizon`
 }
 
 const getFmpTooltip = () => {
@@ -161,12 +163,13 @@ const getFmpTooltip = () => {
   }
   const diff = props.fmpDcfValue.intrinsicValue - props.currentPrice
   const pct = props.fmpDcfValue.upside !== null ? props.fmpDcfValue.upside.toFixed(1) : 'N/A'
-  const date = props.fmpDcfValue.date ? `\nCalculated: ${new Date(props.fmpDcfValue.date).toLocaleDateString()}` : ''
-  return `FMP Fair Value: $${formatNumber(props.fmpDcfValue.intrinsicValue)}\nCurrent Price: $${formatNumber(props.currentPrice)}\nDifference: $${diff.toFixed(2)} (${pct}%)${date}\n\nProfessional DCF calculation by Financial Modeling Prep using their proprietary models and assumptions.`
+  const date = props.fmpDcfValue.date ? ` • Calculated: ${new Date(props.fmpDcfValue.date).toLocaleDateString()}` : ''
+  const sign = diff >= 0 ? '+' : ''
+  return `FMP: $${formatNumber(props.fmpDcfValue.intrinsicValue)} | Current: $${formatNumber(props.currentPrice)} | Diff: ${sign}$${diff.toFixed(2)} (${pct}%)${date} • FMP proprietary model`
 }
 
 const getCurrentPriceTooltip = () => {
-  return `Current Market Price: $${formatNumber(props.currentPrice)}\n\nThis is the latest stock price from the market.`
+  return `Market Price: $${formatNumber(props.currentPrice)} • Latest stock price from the market`
 }
 </script>
 
@@ -215,6 +218,7 @@ const getCurrentPriceTooltip = () => {
   gap: 8px;
   transition: all 0.2s ease;
   cursor: help;
+  position: relative;
 }
 
 .result-card:hover {
@@ -222,6 +226,53 @@ const getCurrentPriceTooltip = () => {
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom tooltip styling matching project design */
+.result-card[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  background: rgba(30, 30, 34, 0.98);
+  color: #E5E5E5;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 89, 76, 0.3);
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  animation: tooltipFadeIn 0.2s ease;
+  max-width: 500px;
+  font-weight: 400;
+}
+
+.result-card[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(30, 30, 34, 0.98);
+  z-index: 1000;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .card-label {

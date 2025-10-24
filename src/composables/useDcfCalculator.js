@@ -120,8 +120,8 @@ export function useDcfCalculator() {
   
   const fmpDcfLoading = computed(() => loading.value)
   const fmpDcfError = computed(() => {
-    if (error.value) return error.value
-    if (!fmpDcfValue.value) return 'No FMP DCF data available'
+    // Only return error if there's an actual batch error, not just missing data
+    if (batchError.value) return batchError.value
     return null
   })
 
