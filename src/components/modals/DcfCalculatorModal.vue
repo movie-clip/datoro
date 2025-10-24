@@ -40,6 +40,14 @@
               </div>
             </div>
 
+            <!-- Valuation Results at the top -->
+            <DcfResults 
+              :intrinsic-value="intrinsicValue"
+              :current-price="companyData?.currentPrice || 0"
+              :upside="upside"
+              :recommendation="recommendation"
+            />
+
             <div class="dcf-content">
               <!-- Left column: Model Assumptions -->
               <div class="left-column">
@@ -55,14 +63,6 @@
                 />
               </div>
             </div>
-
-            <!-- Valuation Results below the grid -->
-            <DcfResults 
-              :intrinsic-value="intrinsicValue"
-              :current-price="companyData?.currentPrice || 0"
-              :upside="upside"
-              :recommendation="recommendation"
-            />
           </div>
         </div>
       </div>
@@ -304,10 +304,10 @@ onUnmounted(() => {
 
 .dcf-content {
   display: grid !important;
-  grid-template-columns: 400px 1fr !important;
+  grid-template-columns: 320px 1fr !important;
   grid-auto-flow: column;
   gap: 24px;
-  margin-bottom: 24px;
+  margin-top: 24px;
   min-height: 600px;
   width: 100%;
 }
@@ -316,7 +316,7 @@ onUnmounted(() => {
   grid-column: 1;
   display: flex;
   flex-direction: column;
-  width: 400px;
+  width: 320px;
 }
 
 .right-column {
