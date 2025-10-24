@@ -5,7 +5,7 @@
     <div v-if="intrinsicValue !== null || buffettValue?.intrinsicValue || fmpDcfValue?.intrinsicValue" class="results-grid">
       <!-- Custom DCF Intrinsic Value Card -->
       <div class="result-card" :data-tooltip="getDcfTooltip()">
-        <div class="card-label">DCF Model</div>
+        <div class="card-label">PEG Model</div>
         <div v-if="intrinsicValue !== null" class="card-value" :class="getDcfValueClass(intrinsicValue)">
           ${{ formatNumber(intrinsicValue) }}
           <span v-if="upside !== null" class="upside-inline" :class="getUpsideClass(upside)">
@@ -32,7 +32,7 @@
       <!-- FMP DCF Card -->
       <div class="result-card" :data-tooltip="getFmpTooltip()">
         <div class="card-label">
-          FMP Fair Value
+          DCF Model
           <span v-if="fmpDcfLoading" class="loading-indicator">⋯</span>
         </div>
         <div v-if="fmpDcfValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(fmpDcfValue.intrinsicValue)">
@@ -45,13 +45,6 @@
         <div v-else-if="fmpDcfError" class="card-value text-error">Error</div>
         <div v-else class="card-value text-muted">N/A</div>
         <div class="card-hint">FMP proprietary DCF</div>
-      </div>
-
-      <!-- Current Price Card -->
-      <div class="result-card" :data-tooltip="getCurrentPriceTooltip()">
-        <div class="card-label">Current Price</div>
-        <div class="card-value">${{ formatNumber(currentPrice) }}</div>
-        <div class="card-hint">Market price</div>
       </div>
     </div>
 

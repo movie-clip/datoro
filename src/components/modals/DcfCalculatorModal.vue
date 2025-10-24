@@ -4,18 +4,31 @@
       <div
         v-if="modelValue"
         class="modal-overlay"
-        @click.self="handleClose"
+        @mousedown="handleOverlayMouseDown"
+        @click="handleOverlayClick"
         @keydown.esc="handleClose"
         tabindex="0"
         ref="overlayRef"
       >
-        <div class="modal-container">
+        <div class="modal-container" @mousedown.stop>
           <div class="modal-header">
             <div class="header-content">
               <h2>
                 DCF Calculator
                 <span v-if="companyData" class="company-context">
-                  <span class="ticker-badge">{{ companyData.ticker }}</span>
+                  <img 
+                    v-if="companyData.image" 
+                    :src="companyData.image" 
+                    :alt="companyData.ticker"
+                    class="company-icon"
+                    @error="handleImageError"
+                  >
+                  <div
+                    v-else
+                    class="company-icon-placeholder"
+                  >
+                    {{ companyData.ticker?.substring(0, 1).toUpperCase() }}
+                  </div>
                   <span class="company-name">{{ companyData.companyName }}</span>
                 </span>
               </h2>
@@ -103,6 +116,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const overlayRef = ref(null)
+const mouseDownOnOverlay = ref(false)
 
 // DCF Calculator composable - now self-contained (matches project pattern)
 const { 
@@ -126,10 +140,28 @@ const handleClose = () => {
   emit('update:modelValue', false)
 }
 
+// Track if mousedown started on overlay (not on modal content)
+const handleOverlayMouseDown = (event) => {
+  mouseDownOnOverlay.value = event.target === event.currentTarget
+}
+
+// Only close if both mousedown and click happened on overlay
+const handleOverlayClick = (event) => {
+  if (mouseDownOnOverlay.value && event.target === event.currentTarget) {
+    handleClose()
+  }
+  mouseDownOnOverlay.value = false
+}
+
 const handleEscKey = (event) => {
   if (event.key === 'Escape' && props.modelValue) {
     handleClose()
   }
+}
+
+// Handle company logo error
+const handleImageError = (event) => {
+  event.target.style.display = 'none'
 }
 
 // Focus overlay when modal opens for ESC key handling
@@ -215,18 +247,32 @@ onUnmounted(() => {
   font-weight: 400;
 }
 
-.ticker-badge {
-  background: rgba(0, 89, 76, 0.2);
-  color: #00b894;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-weight: 600;
+.company-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: rgba(229, 229, 229, 0.05);
+  border: 1px solid #2A2A2E;
+  padding: 2px;
+}
+
+.company-icon-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #00594C 0%, #00755F 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
   font-size: 14px;
+  color: #E5E5E5;
 }
 
 .company-name {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .current-price {

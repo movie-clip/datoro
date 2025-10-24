@@ -23,14 +23,14 @@
         </div>
       </div>
 
-    <div class="scenario-labels">
-      <span class="scenario-label best">Best</span>
-      <span class="scenario-label average">Average</span>
-      <span class="scenario-label worst">Worst</span>
-    </div>
-
       <!-- EPS Growth Rate -->
       <div class="input-group">
+        <div class="scenario-labels">
+          <span class="scenario-label best">Best</span>
+          <span class="scenario-label average">Average</span>
+          <span class="scenario-label worst">Worst</span>
+        </div>
+
         <label>EPS Growth Rate (%)</label>
         <div class="scenario-inputs">
           <div class="input-wrapper best-case">
@@ -298,13 +298,13 @@ const resetToDefaults = () => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   padding-left: 0;
 }
 
 .scenario-label {
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -365,7 +365,7 @@ const resetToDefaults = () => {
 
 .input-wrapper.readonly {
   background: rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(0, 184, 148, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   padding: 8px 10px;
   min-height: 38px;

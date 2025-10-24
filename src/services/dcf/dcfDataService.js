@@ -105,6 +105,7 @@ export function getDcfDataFromBatch(batchData) {
     // Get company info
     const companyName = profile?.companyName || 'Unknown Company'
     const ticker = profile?.symbol || batchData.ticker || 'N/A'
+    const image = profile?.image || null
     
     // Get EPS, P/E ratio from quote and ratios
     const eps = quote?.eps || 0
@@ -134,6 +135,7 @@ export function getDcfDataFromBatch(batchData) {
       epsGrowth: Math.round(epsGrowth * 10) / 10,
       companyName,
       ticker,
+      image,
       lastUpdated: batchData.timestamp || new Date().toISOString(),
       // Additional context
       fcfHistory: cashflowAnnual.slice(0, 4).map(cf => ({
