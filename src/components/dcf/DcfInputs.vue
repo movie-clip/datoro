@@ -184,7 +184,7 @@
               type="number"
               step="1"
               min="3"
-              max="15"
+              max="10"
             />
             <span class="input-suffix">yrs</span>
           </div>
@@ -240,15 +240,33 @@ const defaults = {
   projectionYears: 10
 }
 
+// Validation constraints
+const constraints = {
+  peRatio: { min: 0, max: 100 },
+  fcfGrowthRate: { min: -50, max: 100 },
+  terminalGrowthRate: { min: 0, max: 10 },
+  discountRate: { min: 0, max: 30 },
+  projectionYears: { min: 3, max: 10 }
+}
+
 // Update nested field and emit entire object (triggers parent reactivity)
 const updateField = (field, scenario, value) => {
+  // Validate value against constraints
+  const constraint = constraints[field]
+  let validatedValue = value
+  
+  if (constraint) {
+    if (value < constraint.min) validatedValue = constraint.min
+    if (value > constraint.max) validatedValue = constraint.max
+  }
+  
   const updated = { ...props.modelValue }
   if (scenario) {
     // Update scenario-based field
-    updated[field] = { ...updated[field], [scenario]: value }
+    updated[field] = { ...updated[field], [scenario]: validatedValue }
   } else {
     // Update simple field (projectionYears)
-    updated[field] = value
+    updated[field] = validatedValue
   }
   emit('update:modelValue', updated)
 }
