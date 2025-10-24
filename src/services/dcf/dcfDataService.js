@@ -106,6 +106,22 @@ export function getDcfDataFromBatch(batchData) {
     const companyName = profile?.companyName || 'Unknown Company'
     const ticker = profile?.symbol || batchData.ticker || 'N/A'
     
+    // Get EPS, P/E ratio from quote and ratios
+    const eps = quote?.eps || 0
+    const ratios = data.ratiosAnnual?.[0]
+    const currentPE = ratios?.priceEarningsRatio || 0
+    
+    // Calculate EPS growth rate (using income statements if available)
+    const incomeAnnual = data.incomeAnnual || []
+    let epsGrowth = 0
+    if (incomeAnnual.length >= 2) {
+      const latestEps = incomeAnnual[0]?.eps || 0
+      const previousEps = incomeAnnual[1]?.eps || 0
+      if (latestEps > 0 && previousEps > 0) {
+        epsGrowth = ((latestEps - previousEps) / Math.abs(previousEps)) * 100
+      }
+    }
+    
     return {
       currentFcf,
       sharesOutstanding,
@@ -113,6 +129,9 @@ export function getDcfDataFromBatch(batchData) {
       totalDebt,
       currentPrice,
       historicalGrowthRate: Math.round(historicalGrowthRate * 10) / 10,
+      eps,
+      currentPE,
+      epsGrowth: Math.round(epsGrowth * 10) / 10,
       companyName,
       ticker,
       lastUpdated: batchData.timestamp || new Date().toISOString(),

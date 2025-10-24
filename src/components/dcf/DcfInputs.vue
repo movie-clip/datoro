@@ -2,13 +2,74 @@
   <div class="dcf-inputs">
     <h3 class="section-title">Model Assumptions</h3>
     
+    <div class="inputs-grid">
+      <!-- Current Company Data (Read-only) -->
+      <div class="input-group company-data">
+        <div class="company-data-labels">
+          <span class="data-label">EPS</span>
+          <span class="data-label">P/E</span>
+          <span class="data-label">EPS Growth</span>
+        </div>
+        <div class="scenario-inputs">
+          <div class="input-wrapper readonly">
+            <div class="readonly-value">{{ formatEps(companyData?.eps) }}</div>
+          </div>
+          <div class="input-wrapper readonly">
+            <div class="readonly-value">{{ formatPE(companyData?.currentPE) }}</div>
+          </div>
+          <div class="input-wrapper readonly">
+            <div class="readonly-value">{{ formatGrowth(companyData?.epsGrowth) }}</div>
+          </div>
+        </div>
+      </div>
+
     <div class="scenario-labels">
       <span class="scenario-label best">Best</span>
       <span class="scenario-label average">Average</span>
       <span class="scenario-label worst">Worst</span>
     </div>
-    
-    <div class="inputs-grid">
+
+      <!-- EPS Growth Rate -->
+      <div class="input-group">
+        <label>EPS Growth Rate (%)</label>
+        <div class="scenario-inputs">
+          <div class="input-wrapper best-case">
+            <input
+              :value="modelValue.fcfGrowthRate.best"
+              @input="updateField('fcfGrowthRate', 'best', Number($event.target.value))"
+              type="number"
+              step="0.1"
+              min="-50"
+              max="100"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper average-case">
+            <input
+              :value="modelValue.fcfGrowthRate.average"
+              @input="updateField('fcfGrowthRate', 'average', Number($event.target.value))"
+              type="number"
+              step="0.1"
+              min="-50"
+              max="100"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper worst-case">
+            <input
+              :value="modelValue.fcfGrowthRate.worst"
+              @input="updateField('fcfGrowthRate', 'worst', Number($event.target.value))"
+              type="number"
+              step="0.1"
+              min="-50"
+              max="100"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <span class="input-hint">Annual earnings per share growth rate</span>
+      </div>
+
       <!-- Target P/E Ratio -->
       <div class="input-group">
         <label>Target P/E Ratio</label>
@@ -50,91 +111,9 @@
         <span class="input-hint">Price-to-earnings multiple for valuation</span>
       </div>
 
-      <!-- FCF Growth Rate -->
+      <!-- Expected Return -->
       <div class="input-group">
-        <label>FCF Growth Rate (%)</label>
-        <div class="scenario-inputs">
-          <div class="input-wrapper best-case">
-            <input
-              :value="modelValue.fcfGrowthRate.best"
-              @input="updateField('fcfGrowthRate', 'best', Number($event.target.value))"
-              type="number"
-              step="0.1"
-              min="-50"
-              max="100"
-            />
-            <span class="input-suffix">%</span>
-          </div>
-          <div class="input-wrapper average-case">
-            <input
-              :value="modelValue.fcfGrowthRate.average"
-              @input="updateField('fcfGrowthRate', 'average', Number($event.target.value))"
-              type="number"
-              step="0.1"
-              min="-50"
-              max="100"
-            />
-            <span class="input-suffix">%</span>
-          </div>
-          <div class="input-wrapper worst-case">
-            <input
-              :value="modelValue.fcfGrowthRate.worst"
-              @input="updateField('fcfGrowthRate', 'worst', Number($event.target.value))"
-              type="number"
-              step="0.1"
-              min="-50"
-              max="100"
-            />
-            <span class="input-suffix">%</span>
-          </div>
-        </div>
-        <span class="input-hint">Annual free cash flow growth rate</span>
-      </div>
-
-      <!-- Terminal Growth Rate -->
-      <div class="input-group">
-        <label>Terminal Growth Rate (%)</label>
-        <div class="scenario-inputs">
-          <div class="input-wrapper best-case">
-            <input
-              :value="modelValue.terminalGrowthRate.best"
-              @input="updateField('terminalGrowthRate', 'best', Number($event.target.value))"
-              type="number"
-              step="0.1"
-              min="0"
-              max="10"
-            />
-            <span class="input-suffix">%</span>
-          </div>
-          <div class="input-wrapper average-case">
-            <input
-              :value="modelValue.terminalGrowthRate.average"
-              @input="updateField('terminalGrowthRate', 'average', Number($event.target.value))"
-              type="number"
-              step="0.1"
-              min="0"
-              max="10"
-            />
-            <span class="input-suffix">%</span>
-          </div>
-          <div class="input-wrapper worst-case">
-            <input
-              :value="modelValue.terminalGrowthRate.worst"
-              @input="updateField('terminalGrowthRate', 'worst', Number($event.target.value))"
-              type="number"
-              step="0.1"
-              min="0"
-              max="10"
-            />
-            <span class="input-suffix">%</span>
-          </div>
-        </div>
-        <span class="input-hint">Perpetual growth rate after projection period</span>
-      </div>
-
-      <!-- Discount Rate -->
-      <div class="input-group">
-        <label>Discount Rate (%)</label>
+        <label>Expected Return (%)</label>
         <div class="scenario-inputs">
           <div class="input-wrapper best-case">
             <input
@@ -170,7 +149,7 @@
             <span class="input-suffix">%</span>
           </div>
         </div>
-        <span class="input-hint">Required rate of return (WACC)</span>
+        <span class="input-hint">Target annualized return rate</span>
       </div>
 
       <!-- Projection Period -->
@@ -210,10 +189,31 @@ const props = defineProps({
   modelValue: {
     type: Object,
     required: true
+  },
+  companyData: {
+    type: Object,
+    default: null
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
+
+// Format company data for display
+const formatEps = (eps) => {
+  if (eps === null || eps === undefined) return 'N/A'
+  return `$${Number(eps).toFixed(1)}`
+}
+
+const formatPE = (pe) => {
+  if (pe === null || pe === undefined || pe <= 0) return 'N/A'
+  return `${Number(pe).toFixed(1)}`
+}
+
+const formatGrowth = (growth) => {
+  if (growth === null || growth === undefined) return 'N/A'
+  const value = Number(growth).toFixed(1)
+  return `${value}%`
+}
 
 // Default scenario values for reset function
 const defaults = {
@@ -344,6 +344,42 @@ const resetToDefaults = () => {
   font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
+}
+
+/* Company Data Section - Styled like regular inputs with green border */
+.company-data-labels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.data-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.input-wrapper.readonly {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(0, 184, 148, 0.5);
+  border-radius: 6px;
+  padding: 8px 10px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.readonly-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  width: 100%;
 }
 
 .scenario-inputs {

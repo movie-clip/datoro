@@ -56,7 +56,7 @@
             <div v-else class="dcf-content">
               <!-- Left column: Model Assumptions -->
               <div class="left-column">
-                <DcfInputs v-model="inputs" />
+                <DcfInputs v-model="inputs" :company-data="companyData" />
               </div>
               
               <!-- Right column: Valuation Results + Chart -->

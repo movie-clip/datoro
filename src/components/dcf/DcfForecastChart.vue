@@ -112,6 +112,7 @@ const chartOptions = computed(() => {
     xAxis: {
       type: 'category',
       data: years,
+      boundaryGap: false,
       axisLine: {
         lineStyle: {
           color: 'rgba(255, 255, 255, 0.1)'

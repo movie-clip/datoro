@@ -62,7 +62,7 @@ export function useDcfCalculator() {
       average: 10,
       worst: 12      // 10 + 20%
     },
-    projectionYears: 10
+    projectionYears: 5
   })
   
   // Watch for company data changes and update FCF growth rate scenarios
