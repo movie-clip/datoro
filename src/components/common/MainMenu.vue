@@ -89,7 +89,7 @@
         </div>
         
         <!-- Empty state -->
-        <div v-else-if="!watchlist.length" class="empty-state">
+        <div v-else-if="!watchlistItems.length" class="empty-state">
           <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
           </svg>
@@ -99,15 +99,16 @@
         
         <!-- Watchlist items -->
         <div v-else class="watchlist-items">
-          <div 
-            v-for="item in watchlist" 
-            :key="item.ticker"
-            class="watchlist-item"
-            @click="goToTicker(item.ticker)"
-          >
-            <div class="ticker-info">
-              <img 
-                :src="`https://financialmodelingprep.com/image-stock/${item.ticker}.png`"
+          <TransitionGroup name="watchlist-item">
+            <div 
+              v-for="item in watchlistItems" 
+              :key="item.ticker"
+              class="watchlist-item"
+              @click="goToTicker(item.ticker)"
+            >
+              <div class="ticker-info">
+                <img 
+                  :src="`https://financialmodelingprep.com/image-stock/${item.ticker}.png`"
                 :alt="`${item.ticker} logo`"
                 class="company-icon"
                 @error="handleImageError"
@@ -127,6 +128,7 @@
               </svg>
             </button>
           </div>
+          </TransitionGroup>
         </div>
           </div>
         </Transition>
@@ -137,6 +139,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useWatchlist } from '../../composables/useWatchlist'
 import { API_BASE_URL } from '../../utils/apiConfig.js'
 
 const props = defineProps({
@@ -153,9 +156,36 @@ const props = defineProps({
 const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker'])
 
 const currentView = ref('menu') // 'menu' or 'watchlist'
-const watchlist = ref([])
+
+// Use shared watchlist composable for sync
+const { watchlist: watchlistTickers } = useWatchlist()
+
+// Local state for full watchlist data (with dates)
+const watchlistItems = ref([])
 const loading = ref(false)
 const error = ref(null)
+
+// Smart watcher: detect additions vs removals
+watch(watchlistTickers, (newTickers, oldTickers) => {
+  if (currentView.value !== 'watchlist') return
+  
+  const newSet = new Set(newTickers)
+  const oldSet = new Set(oldTickers || [])
+  
+  // Check if it's an addition (new ticker not in old list)
+  const added = newTickers.find(ticker => !oldSet.has(ticker))
+  
+  if (added) {
+    // Addition: add the new item to the list without refetching
+    const newItem = {
+      ticker: added,
+      addedAt: new Date().toISOString()
+    }
+    // Add to beginning of list
+    watchlistItems.value = [newItem, ...watchlistItems.value]
+  }
+  // For removals, we handle optimistically in handleRemove, so do nothing here
+}, { deep: true })
 
 // Don't reset view when menu closes - keep it for next open
 // Removed the watch that was resetting currentView to 'menu'
@@ -189,7 +219,7 @@ const fetchWatchlist = async () => {
     }
     
     const data = await response.json()
-    watchlist.value = data.tickers || []
+    watchlistItems.value = data.tickers || []
   } catch (err) {
     console.error('Error fetching watchlist:', err)
     error.value = 'Failed to load watchlist'
@@ -199,9 +229,11 @@ const fetchWatchlist = async () => {
 }
 
 const handleRemove = async (ticker) => {
+  // Optimistic update - remove from local list immediately
+  watchlistItems.value = watchlistItems.value.filter(item => item.ticker !== ticker)
+  
+  // Then update the server
   emit('toggle-watchlist', ticker)
-  // Remove from local state
-  watchlist.value = watchlist.value.filter(item => item.ticker !== ticker)
 }
 
 const goToTicker = (ticker) => {
@@ -492,6 +524,28 @@ const handleImageError = (event) => {
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
+}
+
+/* TransitionGroup animations for smooth removal */
+.watchlist-item-move,
+.watchlist-item-enter-active,
+.watchlist-item-leave-active {
+  transition: all 0.3s ease;
+}
+
+.watchlist-item-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.watchlist-item-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.watchlist-item-leave-active {
+  position: absolute;
+  width: calc(100% - 2rem);
 }
 
 .watchlist-item {
