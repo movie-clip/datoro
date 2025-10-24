@@ -140,7 +140,6 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useWatchlist } from '../../composables/useWatchlist'
-import { API_BASE_URL } from '../../utils/apiConfig.js'
 
 const props = defineProps({
   isOpen: {
@@ -157,43 +156,26 @@ const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker'])
 
 const currentView = ref('menu') // 'menu' or 'watchlist'
 
-// Use shared watchlist composable for sync
-const { watchlist: watchlistTickers } = useWatchlist()
+// Use shared watchlist composable - now with full cached items
+const { 
+  watchlistItems,
+  loading, 
+  initializeWatchlist 
+} = useWatchlist()
 
-// Local state for full watchlist data (with dates)
-const watchlistItems = ref([])
-const loading = ref(false)
+// Computed to handle errors locally
 const error = ref(null)
-
-// Smart watcher: detect additions vs removals
-watch(watchlistTickers, (newTickers, oldTickers) => {
-  if (currentView.value !== 'watchlist') return
-  
-  const newSet = new Set(newTickers)
-  const oldSet = new Set(oldTickers || [])
-  
-  // Check if it's an addition (new ticker not in old list)
-  const added = newTickers.find(ticker => !oldSet.has(ticker))
-  
-  if (added) {
-    // Addition: add the new item to the list without refetching
-    const newItem = {
-      ticker: added,
-      addedAt: new Date().toISOString()
-    }
-    // Add to beginning of list
-    watchlistItems.value = [newItem, ...watchlistItems.value]
-  }
-  // For removals, we handle optimistically in handleRemove, so do nothing here
-}, { deep: true })
-
-// Don't reset view when menu closes - keep it for next open
-// Removed the watch that was resetting currentView to 'menu'
 
 // Fetch watchlist when switching to watchlist view
 watch(currentView, async (view) => {
   if (view === 'watchlist') {
-    await fetchWatchlist()
+    error.value = null
+    try {
+      await initializeWatchlist()
+    } catch (err) {
+      console.error('Error loading watchlist:', err)
+      error.value = 'Failed to load watchlist'
+    }
   }
 })
 
@@ -201,39 +183,10 @@ function showWatchlist() {
   currentView.value = 'watchlist'
 }
 
-const fetchWatchlist = async () => {
-  loading.value = true
-  error.value = null
-  
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/watchlist`, {
-      credentials: 'include'
-    })
-    
-    if (!response.ok) {
-      if (response.status === 401) {
-        error.value = 'Please log in to view your watchlist'
-        return
-      }
-      throw new Error('Failed to fetch watchlist')
-    }
-    
-    const data = await response.json()
-    watchlistItems.value = data.tickers || []
-  } catch (err) {
-    console.error('Error fetching watchlist:', err)
-    error.value = 'Failed to load watchlist'
-  } finally {
-    loading.value = false
-  }
-}
-
 const handleRemove = async (ticker) => {
-  // Optimistic update - remove from local list immediately
-  watchlistItems.value = watchlistItems.value.filter(item => item.ticker !== ticker)
-  
-  // Then update the server
+  // Emit to parent to handle actual removal via composable
   emit('toggle-watchlist', ticker)
+  // Optimistic update handled in useWatchlist composable
 }
 
 const goToTicker = (ticker) => {

@@ -3,15 +3,26 @@ import { API_BASE_URL } from '../utils/apiConfig.js'
 
 // Shared state across all components
 const watchlistSet = ref(new Set())
+const watchlistItemsCache = ref([]) // Cache full items with metadata
 const loading = ref(false)
 const initialized = ref(false)
+const lastFetchTime = ref(0)
+
+// Cache TTL: 5 minutes (same as other composables per project pattern)
+const CACHE_TTL = 5 * 60 * 1000
 
 export function useWatchlist() {
   /**
-   * Initialize watchlist from server
+   * Initialize watchlist from server with caching
    */
   const initializeWatchlist = async (forceRefresh = false) => {
-    if (initialized.value && !forceRefresh) return
+    const now = Date.now()
+    const isCacheValid = (now - lastFetchTime.value) < CACHE_TTL
+    
+    // Return cached data if valid and not forcing refresh
+    if (initialized.value && isCacheValid && !forceRefresh) {
+      return
+    }
     
     loading.value = true
     try {
@@ -21,15 +32,21 @@ export function useWatchlist() {
       
       if (response.ok) {
         const data = await response.json()
+        // Update both Set (for quick lookups) and full items (with metadata)
         watchlistSet.value = new Set(data.tickers.map(item => item.ticker))
+        watchlistItemsCache.value = data.tickers || []
         initialized.value = true
+        lastFetchTime.value = now
       } else if (response.status === 401) {
         // User not authenticated - clear watchlist
         watchlistSet.value.clear()
+        watchlistItemsCache.value = []
         initialized.value = true
+        lastFetchTime.value = now
       }
     } catch (error) {
       console.error('Error initializing watchlist:', error)
+      // Don't clear cache on network error - use stale data
     } finally {
       loading.value = false
     }
@@ -51,6 +68,13 @@ export function useWatchlist() {
     // Optimistic update
     watchlistSet.value.add(upperTicker)
     
+    // Also add to items cache optimistically
+    const newItem = {
+      ticker: upperTicker,
+      addedAt: new Date().toISOString()
+    }
+    watchlistItemsCache.value = [newItem, ...watchlistItemsCache.value]
+    
     try {
       const response = await fetch(`${API_BASE_URL}/api/watchlist/${upperTicker}`, {
         method: 'POST',
@@ -61,6 +85,7 @@ export function useWatchlist() {
       if (!response.ok) {
         // Revert on error
         watchlistSet.value.delete(upperTicker)
+        watchlistItemsCache.value = watchlistItemsCache.value.filter(item => item.ticker !== upperTicker)
         
         if (response.status === 401) {
           throw new Error('Please log in to add tickers to your watchlist')
@@ -84,6 +109,7 @@ export function useWatchlist() {
     } catch (error) {
       // Revert optimistic update on network error
       watchlistSet.value.delete(upperTicker)
+      watchlistItemsCache.value = watchlistItemsCache.value.filter(item => item.ticker !== upperTicker)
       console.error('Error adding to watchlist:', error)
       throw error
     }
@@ -97,6 +123,7 @@ export function useWatchlist() {
     
     // Optimistic update
     watchlistSet.value.delete(upperTicker)
+    watchlistItemsCache.value = watchlistItemsCache.value.filter(item => item.ticker !== upperTicker)
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/watchlist/${upperTicker}`, {
@@ -108,6 +135,12 @@ export function useWatchlist() {
       if (!response.ok) {
         // Revert on error
         watchlistSet.value.add(upperTicker)
+        // Re-add to cache (will be at end, not original position - acceptable tradeoff)
+        const restoredItem = {
+          ticker: upperTicker,
+          addedAt: new Date().toISOString()
+        }
+        watchlistItemsCache.value = [...watchlistItemsCache.value, restoredItem]
         
         if (response.status === 401) {
           throw new Error('Authentication required')
@@ -127,6 +160,11 @@ export function useWatchlist() {
     } catch (error) {
       // Revert optimistic update on network error
       watchlistSet.value.add(upperTicker)
+      const restoredItem = {
+        ticker: upperTicker,
+        addedAt: new Date().toISOString()
+      }
+      watchlistItemsCache.value = [...watchlistItemsCache.value, restoredItem]
       console.error('Error removing from watchlist:', error)
       throw error
     }
@@ -152,12 +190,15 @@ export function useWatchlist() {
    */
   const clearWatchlist = () => {
     watchlistSet.value.clear()
+    watchlistItemsCache.value = []
     initialized.value = false
+    lastFetchTime.value = 0
   }
 
   return {
     // State
     watchlist: computed(() => Array.from(watchlistSet.value)),
+    watchlistItems: computed(() => watchlistItemsCache.value),
     loading: computed(() => loading.value),
     initialized: computed(() => initialized.value),
     
