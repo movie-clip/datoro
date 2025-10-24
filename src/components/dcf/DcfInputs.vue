@@ -162,8 +162,8 @@ watch(() => props.modelValue, (newVal) => {
 }
 
 .inputs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   margin-bottom: 24px;
 }

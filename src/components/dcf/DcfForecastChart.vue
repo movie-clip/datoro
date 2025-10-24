@@ -227,6 +227,9 @@ const chartOptions = computed(() => {
   border-radius: 8px;
   padding: 24px;
   border: 1px solid rgba(0, 89, 76, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .chart-title {
@@ -234,12 +237,14 @@ const chartOptions = computed(() => {
   font-size: 18px;
   font-weight: 600;
   color: #fff;
+  flex-shrink: 0;
 }
 
 .chart-container {
   position: relative;
   width: 100%;
-  height: 400px;
+  flex: 1;
+  min-height: 400px;
 }
 
 .chart {

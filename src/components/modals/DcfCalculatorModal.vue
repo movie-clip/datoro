@@ -41,19 +41,28 @@
             </div>
 
             <div class="dcf-content">
-              <DcfInputs v-model="inputs" />
-              <DcfResults 
-                :intrinsic-value="intrinsicValue"
-                :current-price="companyData?.currentPrice || 0"
-                :upside="upside"
-                :recommendation="recommendation"
-              />
-              <DcfForecastChart 
-                :projected-prices="projectedPrices"
-                :current-price="companyData?.currentPrice || 0"
-                :intrinsic-value="intrinsicValue"
-              />
+              <!-- Left column: Model Assumptions -->
+              <div class="left-column">
+                <DcfInputs v-model="inputs" />
+              </div>
+              
+              <!-- Right column: Chart only -->
+              <div class="right-column">
+                <DcfForecastChart 
+                  :projected-prices="projectedPrices"
+                  :current-price="companyData?.currentPrice || 0"
+                  :intrinsic-value="intrinsicValue"
+                />
+              </div>
             </div>
+
+            <!-- Valuation Results below the grid -->
+            <DcfResults 
+              :intrinsic-value="intrinsicValue"
+              :current-price="companyData?.currentPrice || 0"
+              :upside="upside"
+              :recommendation="recommendation"
+            />
           </div>
         </div>
       </div>
@@ -294,9 +303,27 @@ onUnmounted(() => {
 }
 
 .dcf-content {
+  display: grid !important;
+  grid-template-columns: 400px 1fr !important;
+  grid-auto-flow: column;
+  gap: 24px;
+  margin-bottom: 24px;
+  min-height: 600px;
+  width: 100%;
+}
+
+.left-column {
+  grid-column: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  width: 400px;
+}
+
+.right-column {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevents overflow */
 }
 
 /* Modal transition */
@@ -340,6 +367,10 @@ onUnmounted(() => {
 
   .modal-body {
     padding: 20px;
+  }
+
+  .dcf-content {
+    grid-template-columns: 1fr;
   }
 }
 
