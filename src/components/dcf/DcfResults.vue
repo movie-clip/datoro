@@ -130,35 +130,31 @@ const getDcfValueClass = (value) => {
 
 // Tooltip generators
 const getDcfTooltip = () => {
-  if (props.intrinsicValue === null) return 'No DCF valuation available'
-  const diff = props.intrinsicValue - props.currentPrice
-  const pct = props.upside !== null ? props.upside.toFixed(1) : 'N/A'
-  const sign = diff >= 0 ? '+' : ''
-  return `DCF: $${formatNumber(props.intrinsicValue)} | Current: $${formatNumber(props.currentPrice)} | Diff: ${sign}$${diff.toFixed(2)} (${pct}%) • Based on custom DCF assumptions`
+  return `PEG Ratio-Based Valuation:
+Future EPS = Current EPS × (1 + Growth Rate)^Years
+Target Price = Future EPS × Target P/E`
 }
 
 const getBuffettTooltip = () => {
-  if (!props.buffettValue?.intrinsicValue) return 'No Buffett valuation available'
-  const diff = props.buffettValue.intrinsicValue - props.currentPrice
-  const pct = props.buffettValue.upside !== null ? props.buffettValue.upside.toFixed(1) : 'N/A'
-  const years = props.buffettValue.years || 10
-  const growth = props.buffettValue.growthRate || 15
-  const pe = props.buffettValue.fairPE || 15
-  const sign = diff >= 0 ? '+' : ''
-  return `Buffett: $${formatNumber(props.buffettValue.intrinsicValue)} | Current: $${formatNumber(props.currentPrice)} | Diff: ${sign}$${diff.toFixed(2)} (${pct}%) • Assumptions: ${growth}% growth, P/E ${pe}, ${years}yr horizon`
+  const years = props.buffettValue?.years || 10
+  const growth = props.buffettValue?.growthRate || 15
+  const pe = props.buffettValue?.fairPE || 15
+  return `Buffett's Formula:
+Fair P/E = EPS Growth Rate
+Fair Value = EPS × Fair P/E
+
+Assumptions: ${growth}% growth, P/E ${pe}, ${years}yr horizon`
 }
 
 const getFmpTooltip = () => {
-  if (!props.fmpDcfValue?.intrinsicValue) {
-    if (props.fmpDcfLoading) return 'Loading FMP DCF valuation...'
-    if (props.fmpDcfError) return `Error: ${props.fmpDcfError}`
-    return 'No FMP DCF data available'
-  }
-  const diff = props.fmpDcfValue.intrinsicValue - props.currentPrice
-  const pct = props.fmpDcfValue.upside !== null ? props.fmpDcfValue.upside.toFixed(1) : 'N/A'
-  const date = props.fmpDcfValue.date ? ` • Calculated: ${new Date(props.fmpDcfValue.date).toLocaleDateString()}` : ''
-  const sign = diff >= 0 ? '+' : ''
-  return `FMP: $${formatNumber(props.fmpDcfValue.intrinsicValue)} | Current: $${formatNumber(props.currentPrice)} | Diff: ${sign}$${diff.toFixed(2)} (${pct}%)${date} • FMP proprietary model`
+  if (props.fmpDcfLoading) return 'Loading FMP DCF valuation...'
+  if (props.fmpDcfError) return `Error: ${props.fmpDcfError}`
+  if (!props.fmpDcfValue?.intrinsicValue) return 'No FMP DCF data available'
+  
+  const date = props.fmpDcfValue.date ? `\nCalculated: ${new Date(props.fmpDcfValue.date).toLocaleDateString()}` : ''
+  return `FMP Discounted Cash Flow Model:
+Traditional DCF with free cash flow projections
+Discounted to present value using WACC${date}`
 }
 
 const getCurrentPriceTooltip = () => {
@@ -231,20 +227,22 @@ const getCurrentPriceTooltip = () => {
   top: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 14px;
+  padding: 12px 16px;
   background: rgba(30, 30, 34, 0.98);
   color: #E5E5E5;
   font-size: 0.8rem;
-  line-height: 1.4;
+  line-height: 1.6;
   border-radius: 6px;
   border: 1px solid rgba(0, 89, 76, 0.3);
-  white-space: nowrap;
+  white-space: pre-line;
   z-index: 1000;
   pointer-events: none;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   animation: tooltipFadeInBelow 0.2s ease;
-  max-width: 500px;
+  max-width: 400px;
+  min-width: 280px;
   font-weight: 400;
+  text-align: left;
 }
 
 .result-card[data-tooltip]:hover::before {

@@ -30,6 +30,7 @@
                     {{ companyData.ticker?.substring(0, 1).toUpperCase() }}
                   </div>
                   <span class="company-name">{{ companyData.companyName }}</span>
+                  <span v-if="companyData.currentPrice" class="company-price">${{ formatPrice(companyData.currentPrice) }}</span>
                 </span>
               </h2>
             </div>
@@ -164,6 +165,11 @@ const handleImageError = (event) => {
   event.target.style.display = 'none'
 }
 
+// Format price with commas
+const formatPrice = (price) => {
+  return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 // Focus overlay when modal opens for ESC key handling
 watch(() => props.modelValue, (isOpen) => {
   if (isOpen) {
@@ -272,6 +278,12 @@ onUnmounted(() => {
 
 .company-name {
   color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+}
+
+.company-price {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
   font-size: 16px;
 }
 
