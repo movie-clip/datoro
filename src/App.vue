@@ -418,7 +418,7 @@ function handleSelectTicker(ticker) {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 0.875rem 1.5rem;
+  padding: 0.875rem 0;
   background: rgba(15, 15, 16, 0.98);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -433,6 +433,7 @@ function handleSelectTicker(ticker) {
 .header-container {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 0 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -672,7 +673,7 @@ function handleSelectTicker(ticker) {
 
 /* Ticker Bar Section - spacing after header */
 .ticker-bar-section {
-  max-width: 900px;
+  max-width: 1400px;
   margin: 1.5rem auto 0;
   padding: 0 12px;
 }
@@ -680,7 +681,7 @@ function handleSelectTicker(ticker) {
 /* Header responsive */
 @media (max-width: 768px) {
   .app-header {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 0;
   }
 
   .brand-logo {
@@ -718,7 +719,7 @@ function handleSelectTicker(ticker) {
 
 @media (max-width: 480px) {
   .app-header {
-    padding: 0.625rem 0.75rem;
+    padding: 0.625rem 0;
   }
 
   .brand-logo {
@@ -786,7 +787,7 @@ function handleSelectTicker(ticker) {
 .tab-content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0;
+  padding: 0 0;
   width: 100%;
   position: relative;
   min-height: 500px;

@@ -51,8 +51,6 @@ defineEmits(['update:modelValue'])
 <style scoped>
 .tab-navigation {
   width: 100%;
-  margin: 24px auto;
-  max-width: 1200px;
 }
 
 .tab-list {
