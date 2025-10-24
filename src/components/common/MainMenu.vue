@@ -49,6 +49,19 @@
               <span>Watchlist</span>
             </button>
 
+            <!-- DCF Calculator Button -->
+            <button 
+              class="menu-item" 
+              @click="showDcfCalculator"
+            >
+              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="9"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+              <span>DCF Calculator</span>
+            </button>
+
             <!-- Placeholder for future menu items -->
             <div class="menu-section-divider"></div>
             
@@ -134,12 +147,16 @@
         </Transition>
       </div>
     </div>
+
+    <!-- DCF Calculator Modal -->
+    <DcfCalculatorModal v-model="isDcfModalOpen" />
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
 import { useWatchlist } from '../../composables/useWatchlist'
+import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
 
 const props = defineProps({
   isOpen: {
@@ -155,6 +172,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker'])
 
 const currentView = ref('menu') // 'menu' or 'watchlist'
+const isDcfModalOpen = ref(false)
 
 // Use shared watchlist composable - now with full cached items
 const { 
@@ -181,6 +199,11 @@ watch(currentView, async (view) => {
 
 function showWatchlist() {
   currentView.value = 'watchlist'
+}
+
+function showDcfCalculator() {
+  isDcfModalOpen.value = true
+  emit('close') // Close the main menu
 }
 
 const handleRemove = async (ticker) => {
