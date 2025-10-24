@@ -761,7 +761,7 @@ function handleSelectTicker(ticker) {
 
 .price-target-section {
   max-width: 1400px;
-  margin: 24px auto;
+  margin: 0px auto 24px;
   padding: 0 12px;
 }
 
@@ -790,7 +790,6 @@ function handleSelectTicker(ticker) {
   padding: 0 0;
   width: 100%;
   position: relative;
-  min-height: 500px;
 }
 
 /* Mobile-specific sections */
