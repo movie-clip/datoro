@@ -84,6 +84,20 @@
           {{ validationError }}
         </span>
       </div>
+
+      <!-- Ticker History (Desktop only) -->
+      <div v-if="isStandalone && tickerHistory.length > 0" class="ticker-history">
+        <button
+          v-for="ticker in tickerHistory"
+          :key="ticker"
+          class="history-ticker-btn"
+          @click="selectHistoryTicker(ticker)"
+          :title="`Switch to ${ticker}`"
+        >
+          {{ ticker }}
+        </button>
+      </div>
+
       <CompanyHeader 
         v-if="confirmedTicker" 
         :ticker="confirmedTicker" 
@@ -102,8 +116,25 @@
 import { ref, watch, onUnmounted } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
 import { useTickerSearch } from '../../composables/useTickerSearch'
+import { usePlatform } from '../../composables/usePlatform'
+import { useTickerHistory } from '../../composables/useTickerHistory'
 
 const companyProfile = ref(null)
+
+// Platform detection
+const { isStandalone } = usePlatform()
+
+// Ticker history
+const { tickerHistory, addToHistory } = useTickerHistory()
+
+// Debug logging
+watch([isStandalone, tickerHistory], ([standalone, history]) => {
+  console.log('[TickerHistory Debug]', {
+    isStandalone: standalone,
+    historyLength: history.length,
+    history: history
+  })
+}, { immediate: true, deep: true })
 
 // Props used in template (ESLint can't detect template usage)
 // eslint-disable-next-line no-unused-vars
@@ -178,6 +209,9 @@ const selectTicker = (symbol) => {
     inputRef.value.blur()
   }
   
+  // Add to history
+  addToHistory(symbol)
+  
   emit('submit')
 }
 
@@ -221,6 +255,16 @@ const handleSubmit = () => {
     inputRef.value.blur()
   }
   
+  // Add to history
+  addToHistory(value)
+  
+  emit('submit')
+}
+
+// Handle clicking a ticker from history
+const selectHistoryTicker = (ticker) => {
+  localInput.value = ticker
+  model.value = ticker
   emit('submit')
 }
 
@@ -233,10 +277,10 @@ watch(() => model.value, (newVal) => {
 <style scoped>
 .toolbar { 
   display: flex; 
-  gap: 16px; 
+  gap: 0; 
   align-items: stretch; 
-  max-width: 1200px; 
-  margin: 0 auto; 
+  width: 100%;
+  justify-content: space-between;
 }
 
 .ticker-input-section {
@@ -247,7 +291,7 @@ watch(() => model.value, (newVal) => {
   background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
   border-radius: 10px;
   border: 1px solid #2A2A2E;
-  flex: 1;
+  width: calc((100% - 20px) / 2.5 * 1.5);
   position: relative;
   flex-wrap: wrap;
   transition: all 0.2s;
@@ -261,6 +305,40 @@ watch(() => model.value, (newVal) => {
 .ticker-input-section.has-error {
   border-color: #ef4444;
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+}
+
+/* Ticker History */
+.ticker-history {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+  margin: 10px;
+}
+
+.history-ticker-btn {
+  padding: 10px 16px;
+  background: rgba(0, 89, 76, 0.02);
+  border: 1px solid rgba(0, 89, 76, 0.3);
+  border-radius: 8px;
+  color: #00705f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  width: 80px;
+  text-align: center;
+}
+
+.history-ticker-btn:hover {
+  border-color: rgba(0, 89, 76, 0.5);
+  transform: translateY(-1px);
+}
+
+.history-ticker-btn:active {
+  transform: scale(0.95);
+  background: rgba(0, 89, 76, 0.3);
 }
 
 .label { 
@@ -466,10 +544,12 @@ watch(() => model.value, (newVal) => {
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   .toolbar {
-    gap: 8px;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .ticker-input-section {
+    width: 100%;
     padding: 8px 12px;
     gap: 8px;
   }

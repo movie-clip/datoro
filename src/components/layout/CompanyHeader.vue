@@ -139,7 +139,8 @@ const formatMarketCap = (mktCap) => {
   background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
   border-radius: 10px;
   border: 1px solid #2A2A2E;
-  flex: 1;
+  width: calc((100% - 20px) / 2.5);
+  margin-left: auto;
   min-width: 0;
   transition: all 0.2s;
 }
@@ -242,6 +243,8 @@ const formatMarketCap = (mktCap) => {
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   .company-header {
+    width: 100%;
+    margin-left: 0;
     padding: 8px 12px;
     gap: 10px;
   }
