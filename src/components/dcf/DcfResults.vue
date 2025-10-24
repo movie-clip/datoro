@@ -194,6 +194,7 @@ const getCurrentPriceTooltip = () => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+  overflow: visible;
 }
 
 @media (max-width: 1200px) {
@@ -219,6 +220,7 @@ const getCurrentPriceTooltip = () => {
   transition: all 0.2s ease;
   cursor: help;
   position: relative;
+  overflow: visible;
 }
 
 .result-card:hover {
@@ -226,13 +228,14 @@ const getCurrentPriceTooltip = () => {
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: visible;
 }
 
-/* Custom tooltip styling matching project design */
+/* Custom tooltip styling matching project design - positioned BELOW */
 .result-card[data-tooltip]:hover::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: calc(100% + 10px);
+  top: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
   padding: 10px 14px;
@@ -246,7 +249,7 @@ const getCurrentPriceTooltip = () => {
   z-index: 1000;
   pointer-events: none;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  animation: tooltipFadeIn 0.2s ease;
+  animation: tooltipFadeInBelow 0.2s ease;
   max-width: 500px;
   font-weight: 400;
 }
@@ -254,20 +257,20 @@ const getCurrentPriceTooltip = () => {
 .result-card[data-tooltip]:hover::before {
   content: '';
   position: absolute;
-  bottom: calc(100% + 4px);
+  top: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: rgba(30, 30, 34, 0.98);
+  border-bottom-color: rgba(30, 30, 34, 0.98);
   z-index: 1000;
   pointer-events: none;
-  animation: tooltipFadeIn 0.2s ease;
+  animation: tooltipFadeInBelow 0.2s ease;
 }
 
-@keyframes tooltipFadeIn {
+@keyframes tooltipFadeInBelow {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(4px);
+    transform: translateX(-50%) translateY(-4px);
   }
   to {
     opacity: 1;
@@ -298,18 +301,7 @@ const getCurrentPriceTooltip = () => {
   font-size: 16px;
   font-weight: 600;
   margin-top: 4px;
-}
-
-.upside-inline.positive {
-  color: #00b894;
-}
-
-.upside-inline.negative {
-  color: #ff7675;
-}
-
-.upside-inline.neutral {
-  color: #fdcb6e;
+  color: inherit;
 }
 
 .card-value.positive {
