@@ -4,9 +4,9 @@
     
     <div v-if="intrinsicValue !== null" class="results-grid">
       <!-- Intrinsic Value Card -->
-      <div class="result-card primary">
+      <div class="result-card">
         <div class="card-label">Intrinsic Value</div>
-        <div class="card-value">${{ formatNumber(intrinsicValue) }}</div>
+        <div class="card-value" :class="intrinsicValueClass">${{ formatNumber(intrinsicValue) }}</div>
         <div class="card-hint">Fair value per share</div>
       </div>
 
@@ -18,9 +18,9 @@
       </div>
 
       <!-- Upside/Downside Card -->
-      <div class="result-card" :class="upsideClass">
+      <div class="result-card">
         <div class="card-label">Upside / Downside</div>
-        <div class="card-value">
+        <div class="card-value" :class="upsideClass">
           {{ upside > 0 ? '+' : '' }}{{ upside.toFixed(1) }}%
         </div>
         <div class="card-hint">Potential return</div>
@@ -70,6 +70,21 @@ const upsideClass = computed(() => {
   if (props.upside < 0) return 'negative'
   return 'neutral'
 })
+
+const intrinsicValueClass = computed(() => {
+  if (props.intrinsicValue === null || props.currentPrice === null) return ''
+  
+  const priceDiff = ((props.intrinsicValue - props.currentPrice) / props.currentPrice) * 100
+  
+  // Within ±5% range - neutral/yellow
+  if (priceDiff >= -5 && priceDiff <= 5) return 'neutral'
+  
+  // Intrinsic value higher than current price - positive/green
+  if (priceDiff > 5) return 'positive'
+  
+  // Intrinsic value lower than current price - negative/red
+  return 'negative'
+})
 </script>
 
 <style scoped>
@@ -109,31 +124,6 @@ const upsideClass = computed(() => {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-.result-card.primary {
-  border-color: rgba(0, 89, 76, 0.5);
-  background: rgba(0, 89, 76, 0.1);
-}
-
-.result-card.primary .card-value {
-  color: #00b894;
-}
-
-.result-card.positive .card-value {
-  color: #00b894;
-}
-
-.result-card.negative .card-value {
-  color: #ff7675;
-}
-
-.result-card.neutral .card-value {
-  color: #fdcb6e;
-}
-
-.result-card.recommendation {
-  border-width: 2px;
-}
-
 .card-label {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.6);
@@ -147,6 +137,18 @@ const upsideClass = computed(() => {
   font-weight: 700;
   color: #fff;
   line-height: 1;
+}
+
+.card-value.positive {
+  color: #00b894;
+}
+
+.card-value.negative {
+  color: #ff7675;
+}
+
+.card-value.neutral {
+  color: #fdcb6e;
 }
 
 .card-hint {
