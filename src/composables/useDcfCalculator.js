@@ -82,8 +82,6 @@ export function useDcfCalculator() {
   const projectedPrices = ref([])
   const upside = ref(null)
   const recommendation = ref(null)
-  const enterpriseValue = ref(null)
-  const terminalValue = ref(null)
   
   // Scenario results
   const scenarios = ref({
@@ -135,8 +133,6 @@ export function useDcfCalculator() {
         projectedPrices.value = []
         upside.value = null
         recommendation.value = null
-        enterpriseValue.value = null
-        terminalValue.value = null
         scenarios.value = {
           best: { intrinsicValue: null, projectedPrices: [], upside: null },
           average: { intrinsicValue: null, projectedPrices: [], upside: null },
@@ -163,9 +159,7 @@ export function useDcfCalculator() {
         scenarios.value[scenario] = {
           intrinsicValue: results.intrinsicValue,
           projectedPrices: results.projectedPrices,
-          upside: results.upside,
-          enterpriseValue: results.enterpriseValue,
-          terminalValue: results.terminalValue
+          upside: results.upside
         }
       })
       
@@ -173,8 +167,6 @@ export function useDcfCalculator() {
       intrinsicValue.value = scenarios.value.average.intrinsicValue
       projectedPrices.value = scenarios.value.average.projectedPrices
       upside.value = scenarios.value.average.upside
-      enterpriseValue.value = scenarios.value.average.enterpriseValue
-      terminalValue.value = scenarios.value.average.terminalValue
       
       // Only set recommendation if we have valid results
       if (scenarios.value.average.intrinsicValue !== null && scenarios.value.average.upside !== null) {
@@ -192,8 +184,6 @@ export function useDcfCalculator() {
       projectedPrices.value = []
       upside.value = null
       recommendation.value = null
-      enterpriseValue.value = null
-      terminalValue.value = null
       scenarios.value = {
         best: { intrinsicValue: null, projectedPrices: [], upside: null },
         average: { intrinsicValue: null, projectedPrices: [], upside: null },
@@ -250,8 +240,6 @@ export function useDcfCalculator() {
     projectedPrices,
     upside,
     recommendation,
-    enterpriseValue,
-    terminalValue,
     
     // All scenarios
     scenarios,

@@ -42,8 +42,7 @@ export function calculateIntrinsicValue(inputs, companyData) {
 
   const {
     eps = 0,
-    currentPrice = 100,
-    sharesOutstanding = 1
+    currentPrice = 100
   } = companyData || {}
 
   // Validate inputs
