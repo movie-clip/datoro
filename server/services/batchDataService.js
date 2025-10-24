@@ -27,13 +27,13 @@ async function fetchWithTimeout(url, options = {}, timeout = 10000) {
 /**
  * Fetch all data for a ticker in one batch
  * Returns everything needed for the dashboard in a single response
- * Now fetches 19 endpoints (added analyst price targets)
+ * Now fetches 20 endpoints (added FMP DCF valuation)
  */
 export async function fetchTickerBatch(ticker, fmpApiKey) {
   const t = ticker.toUpperCase().trim();
   const baseUrl = 'https://financialmodelingprep.com';
   
-  // All endpoints we need to fetch (19 total)
+  // All endpoints we need to fetch (20 total - added DCF)
   const endpoints = {
     // Core company data (Priority 1 - Always needed)
     profile: `/api/v3/profile/${t}?apikey=${fmpApiKey}`,
@@ -53,6 +53,9 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
     
     // Price data (Priority 1)
     priceHistory: `/api/v3/historical-price-full/${t}?apikey=${fmpApiKey}`,
+    
+    // Valuation (Priority 1 - DCF from FMP)
+    fmpDcf: `/api/v3/discounted-cash-flow/${t}?apikey=${fmpApiKey}`,
     
     // Additional data (Priority 2)
     revenueSegments: `/api/v4/revenue-product-segmentation?symbol=${t}&structure=flat&apikey=${fmpApiKey}`,

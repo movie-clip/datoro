@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { calculateIntrinsicValue, getRecommendation } from '../services/dcf/dcfCalculator'
 import { getDcfDataFromBatch, validateDcfData } from '../services/dcf/dcfDataService'
+import { calculateBuffettValue, getFmpDcfFromBatch, getValuationRecommendation } from '../services/dcf/valuationMethodsService'
 
 /**
  * DCF Calculator Composable
@@ -91,6 +92,39 @@ export function useDcfCalculator() {
     worst: { intrinsicValue: null, projectedPrices: [], upside: null }
   })
 
+  // Alternative valuation methods
+  const buffettInputs = ref({
+    growthRate: 15,  // Expected annual earnings growth %
+    fairPE: 15,      // Fair P/E multiple
+    years: 10        // Investment timeframe
+  })
+
+  const buffettValue = ref(null)
+  const fmpDcfValue = computed(() => {
+    if (!batchData.value) return null
+    
+    const fmpData = getFmpDcfFromBatch(batchData.value)
+    if (!fmpData?.intrinsicValue || !companyData.value?.currentPrice) {
+      return fmpData
+    }
+    
+    // Calculate upside vs current price
+    const upside = ((fmpData.intrinsicValue - companyData.value.currentPrice) / companyData.value.currentPrice) * 100
+    
+    return {
+      ...fmpData,
+      upside: upside,
+      recommendation: getValuationRecommendation(upside)
+    }
+  })
+  
+  const fmpDcfLoading = computed(() => loading.value)
+  const fmpDcfError = computed(() => {
+    if (error.value) return error.value
+    if (!fmpDcfValue.value) return 'No FMP DCF data available'
+    return null
+  })
+
   // Calculate DCF whenever inputs change
   const calculate = () => {
     try {
@@ -108,6 +142,7 @@ export function useDcfCalculator() {
           average: { intrinsicValue: null, projectedPrices: [], upside: null },
           worst: { intrinsicValue: null, projectedPrices: [], upside: null }
         }
+        buffettValue.value = null
         return
       }
 
@@ -147,6 +182,9 @@ export function useDcfCalculator() {
       } else {
         recommendation.value = null
       }
+
+      // Calculate Buffett's value
+      calculateBuffettMethod()
     } catch (error) {
       console.error('[DCF Calculator] Calculation error:', error)
       // Reset on error
@@ -161,8 +199,37 @@ export function useDcfCalculator() {
         average: { intrinsicValue: null, projectedPrices: [], upside: null },
         worst: { intrinsicValue: null, projectedPrices: [], upside: null }
       }
+      buffettValue.value = null
     }
   }
+
+  // Calculate Buffett's valuation
+  const calculateBuffettMethod = () => {
+    if (!companyData.value) {
+      buffettValue.value = null
+      return
+    }
+
+    // Extract data from batch
+    const quote = batchData.value?.data?.quote?.[0]
+    const ratios = batchData.value?.data?.ratiosAnnual?.[0]
+
+    if (!quote || !ratios) {
+      buffettValue.value = null
+      return
+    }
+
+    const buffettData = {
+      eps: quote.eps || 0,
+      currentPrice: quote.price || companyData.value.currentPrice || 0,
+      currentPE: ratios.priceEarningsRatio || 0
+    }
+
+    buffettValue.value = calculateBuffettValue(buffettData, buffettInputs.value)
+  }
+
+  // Watch for Buffett input changes
+  watch(buffettInputs, calculateBuffettMethod, { deep: true })
 
   // Watch for input changes and recalculate (debounced for performance)
   watch(inputs, calculate, { deep: true })
@@ -176,6 +243,7 @@ export function useDcfCalculator() {
   return {
     // Inputs
     inputs,
+    buffettInputs,
     
     // Results (average scenario)
     intrinsicValue,
@@ -188,6 +256,12 @@ export function useDcfCalculator() {
     // All scenarios
     scenarios,
     
+    // Alternative valuations
+    buffettValue,
+    fmpDcfValue,
+    fmpDcfLoading,
+    fmpDcfError,
+    
     // Company data & validation
     companyData,
     dataValidation,
@@ -198,6 +272,7 @@ export function useDcfCalculator() {
     ticker: currentTicker,
     
     // Methods
-    calculate
+    calculate,
+    calculateBuffettMethod
   }
 }

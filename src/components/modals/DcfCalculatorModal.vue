@@ -65,6 +65,10 @@
                   :intrinsic-value="intrinsicValue"
                   :current-price="companyData?.currentPrice || 0"
                   :upside="upside"
+                  :buffett-value="buffettValue"
+                  :fmp-dcf-value="fmpDcfValue"
+                  :fmp-dcf-loading="fmpDcfLoading"
+                  :fmp-dcf-error="fmpDcfError"
                   class="compact-results"
                 />
                 
@@ -102,10 +106,15 @@ const overlayRef = ref(null)
 
 // DCF Calculator composable - now self-contained (matches project pattern)
 const { 
-  inputs, 
+  inputs,
+  buffettInputs,
   intrinsicValue, 
   upside, 
   scenarios,
+  buffettValue,
+  fmpDcfValue,
+  fmpDcfLoading,
+  fmpDcfError,
   companyData,
   dataValidation,
   loading,
@@ -170,7 +179,7 @@ onUnmounted(() => {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   max-width: 1320px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(0, 89, 76, 0.2);
@@ -258,7 +267,8 @@ onUnmounted(() => {
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 32px;
+  padding: 24px 32px;
+  min-height: 0;
 }
 
 .data-warning {
@@ -311,30 +321,34 @@ onUnmounted(() => {
 
 .dcf-content {
   display: grid !important;
-  grid-template-columns: 320px 1fr !important;
+  grid-template-columns: 340px 2fr !important;
   grid-auto-flow: column;
   gap: 24px;
   margin-top: 0px;
-  min-height: 600px;
+  min-height: 0;
   width: 100%;
+  align-items: start;
 }
 
 .left-column {
   grid-column: 1;
   display: flex;
   flex-direction: column;
-  width: 320px;
+  width: 340px;
+  height: 100%;
 }
 
 .right-column {
   grid-column: 2;
   display: flex;
   flex-direction: column;
+  gap: 16px;
   min-width: 0; /* Prevents overflow */
+  height: 100%;
 }
 
 .compact-results {
-  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .compact-results :deep(.dcf-results) {

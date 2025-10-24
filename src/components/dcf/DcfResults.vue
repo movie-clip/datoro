@@ -2,28 +2,56 @@
   <div class="dcf-results">
     <h3 class="section-title">Valuation Results</h3>
     
-    <div v-if="intrinsicValue !== null" class="results-grid">
-      <!-- Intrinsic Value Card -->
-      <div class="result-card">
-        <div class="card-label">Intrinsic Value</div>
-        <div class="card-value" :class="intrinsicValueClass">${{ formatNumber(intrinsicValue) }}</div>
-        <div class="card-hint">Fair value per share</div>
+    <div v-if="intrinsicValue !== null || buffettValue?.intrinsicValue || fmpDcfValue?.intrinsicValue" class="results-grid">
+      <!-- Custom DCF Intrinsic Value Card -->
+      <div class="result-card" :title="getDcfTooltip()">
+        <div class="card-label">DCF Model</div>
+        <div v-if="intrinsicValue !== null" class="card-value" :class="getDcfValueClass(intrinsicValue)">
+          ${{ formatNumber(intrinsicValue) }}
+          <span v-if="upside !== null" class="upside-inline" :class="getUpsideClass(upside)">
+            ({{ upside > 0 ? '+' : '' }}{{ upside.toFixed(1) }}%)
+          </span>
+        </div>
+        <div v-else class="card-value text-muted">N/A</div>
+        <div class="card-hint">Custom cash flow model</div>
+      </div>
+
+      <!-- Buffett's Formula Card -->
+      <div class="result-card" :title="getBuffettTooltip()">
+        <div class="card-label">Buffett Formula</div>
+        <div v-if="buffettValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(buffettValue.intrinsicValue)">
+          ${{ formatNumber(buffettValue.intrinsicValue) }}
+          <span v-if="buffettValue?.upside" class="upside-inline" :class="getUpsideClass(buffettValue.upside)">
+            ({{ buffettValue.upside > 0 ? '+' : '' }}{{ buffettValue.upside.toFixed(1) }}%)
+          </span>
+        </div>
+        <div v-else class="card-value text-muted">N/A</div>
+        <div class="card-hint">EPS growth model</div>
+      </div>
+
+      <!-- FMP DCF Card -->
+      <div class="result-card" :title="getFmpTooltip()">
+        <div class="card-label">
+          FMP Fair Value
+          <span v-if="fmpDcfLoading" class="loading-indicator">⋯</span>
+        </div>
+        <div v-if="fmpDcfValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(fmpDcfValue.intrinsicValue)">
+          ${{ formatNumber(fmpDcfValue.intrinsicValue) }}
+          <span v-if="fmpDcfValue?.upside" class="upside-inline" :class="getUpsideClass(fmpDcfValue.upside)">
+            ({{ fmpDcfValue.upside > 0 ? '+' : '' }}{{ fmpDcfValue.upside.toFixed(1) }}%)
+          </span>
+        </div>
+        <div v-else-if="fmpDcfLoading" class="card-value text-muted">Loading...</div>
+        <div v-else-if="fmpDcfError" class="card-value text-error">Error</div>
+        <div v-else class="card-value text-muted">N/A</div>
+        <div class="card-hint">FMP proprietary DCF</div>
       </div>
 
       <!-- Current Price Card -->
-      <div class="result-card">
+      <div class="result-card" :title="getCurrentPriceTooltip()">
         <div class="card-label">Current Price</div>
         <div class="card-value">${{ formatNumber(currentPrice) }}</div>
         <div class="card-hint">Market price</div>
-      </div>
-
-      <!-- Upside/Downside Card -->
-      <div class="result-card">
-        <div class="card-label">Upside / Downside</div>
-        <div class="card-value" :class="upsideClass">
-          {{ upside > 0 ? '+' : '' }}{{ upside.toFixed(1) }}%
-        </div>
-        <div class="card-hint">Potential return</div>
       </div>
     </div>
 
@@ -53,6 +81,22 @@ const props = defineProps({
   upside: {
     type: Number,
     default: null
+  },
+  buffettValue: {
+    type: Object,
+    default: null
+  },
+  fmpDcfValue: {
+    type: Object,
+    default: null
+  },
+  fmpDcfLoading: {
+    type: Boolean,
+    default: false
+  },
+  fmpDcfError: {
+    type: String,
+    default: null
   }
 })
 
@@ -64,17 +108,22 @@ const formatNumber = (num) => {
   })
 }
 
-const upsideClass = computed(() => {
-  if (props.upside === null) return ''
-  if (props.upside > 0) return 'positive'
-  if (props.upside < 0) return 'negative'
+const getUpsideClass = (upsideValue) => {
+  if (upsideValue === null || upsideValue === undefined) return ''
+  if (upsideValue > 0) return 'positive'
+  if (upsideValue < 0) return 'negative'
   return 'neutral'
+}
+
+const upsideClass = computed(() => {
+  return getUpsideClass(props.upside)
 })
 
-const intrinsicValueClass = computed(() => {
-  if (props.intrinsicValue === null || props.currentPrice === null) return ''
+// Function to determine value class based on comparison to current price
+const getDcfValueClass = (value) => {
+  if (value === null || props.currentPrice === null) return ''
   
-  const priceDiff = ((props.intrinsicValue - props.currentPrice) / props.currentPrice) * 100
+  const priceDiff = ((value - props.currentPrice) / props.currentPrice) * 100
   
   // Within ±5% range - neutral/yellow
   if (priceDiff >= -5 && priceDiff <= 5) return 'neutral'
@@ -84,7 +133,41 @@ const intrinsicValueClass = computed(() => {
   
   // Intrinsic value lower than current price - negative/red
   return 'negative'
-})
+}
+
+// Tooltip generators
+const getDcfTooltip = () => {
+  if (props.intrinsicValue === null) return 'No DCF valuation available'
+  const diff = props.intrinsicValue - props.currentPrice
+  const pct = props.upside !== null ? props.upside.toFixed(1) : 'N/A'
+  return `DCF Intrinsic Value: $${formatNumber(props.intrinsicValue)}\nCurrent Price: $${formatNumber(props.currentPrice)}\nDifference: $${diff.toFixed(2)} (${pct}%)\n\nBased on discounted cash flow projections with your custom assumptions.`
+}
+
+const getBuffettTooltip = () => {
+  if (!props.buffettValue?.intrinsicValue) return 'No Buffett valuation available'
+  const diff = props.buffettValue.intrinsicValue - props.currentPrice
+  const pct = props.buffettValue.upside !== null ? props.buffettValue.upside.toFixed(1) : 'N/A'
+  const years = props.buffettValue.years || 10
+  const growth = props.buffettValue.growthRate || 15
+  const pe = props.buffettValue.fairPE || 15
+  return `Buffett Formula: $${formatNumber(props.buffettValue.intrinsicValue)}\nCurrent Price: $${formatNumber(props.currentPrice)}\nDifference: $${diff.toFixed(2)} (${pct}%)\n\nAssumptions:\n• ${growth}% annual earnings growth\n• Fair P/E ratio: ${pe}\n• ${years}-year timeframe`
+}
+
+const getFmpTooltip = () => {
+  if (!props.fmpDcfValue?.intrinsicValue) {
+    if (props.fmpDcfLoading) return 'Loading FMP DCF valuation...'
+    if (props.fmpDcfError) return `Error: ${props.fmpDcfError}`
+    return 'No FMP DCF data available'
+  }
+  const diff = props.fmpDcfValue.intrinsicValue - props.currentPrice
+  const pct = props.fmpDcfValue.upside !== null ? props.fmpDcfValue.upside.toFixed(1) : 'N/A'
+  const date = props.fmpDcfValue.date ? `\nCalculated: ${new Date(props.fmpDcfValue.date).toLocaleDateString()}` : ''
+  return `FMP Fair Value: $${formatNumber(props.fmpDcfValue.intrinsicValue)}\nCurrent Price: $${formatNumber(props.currentPrice)}\nDifference: $${diff.toFixed(2)} (${pct}%)${date}\n\nProfessional DCF calculation by Financial Modeling Prep using their proprietary models and assumptions.`
+}
+
+const getCurrentPriceTooltip = () => {
+  return `Current Market Price: $${formatNumber(props.currentPrice)}\n\nThis is the latest stock price from the market.`
+}
 </script>
 
 <style scoped>
@@ -93,6 +176,8 @@ const intrinsicValueClass = computed(() => {
   border-radius: 8px;
   padding: 24px;
   border: 1px solid rgba(0, 89, 76, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
 .section-title {
@@ -104,8 +189,20 @@ const intrinsicValueClass = computed(() => {
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .result-card {
@@ -117,11 +214,14 @@ const intrinsicValueClass = computed(() => {
   flex-direction: column;
   gap: 8px;
   transition: all 0.2s ease;
+  cursor: help;
 }
 
 .result-card:hover {
   background: rgba(0, 0, 0, 0.4);
   border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .card-label {
@@ -136,7 +236,29 @@ const intrinsicValueClass = computed(() => {
   font-size: 28px;
   font-weight: 700;
   color: #fff;
-  line-height: 1;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.upside-inline {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.upside-inline.positive {
+  color: #00b894;
+}
+
+.upside-inline.negative {
+  color: #ff7675;
+}
+
+.upside-inline.neutral {
+  color: #fdcb6e;
 }
 
 .card-value.positive {
@@ -149,6 +271,28 @@ const intrinsicValueClass = computed(() => {
 
 .card-value.neutral {
   color: #fdcb6e;
+}
+
+.card-value.text-muted {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 20px;
+}
+
+.card-value.text-error {
+  color: #ff7675;
+  font-size: 18px;
+}
+
+.loading-indicator {
+  display: inline-block;
+  margin-left: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
 .card-hint {

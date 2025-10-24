@@ -293,7 +293,7 @@ const chartOptions = computed(() => {
   position: relative;
   width: 100%;
   flex: 1;
-  min-height: 400px;
+  min-height: 350px;
 }
 
 .chart {

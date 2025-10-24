@@ -282,6 +282,9 @@ const resetToDefaults = () => {
   border-radius: 8px;
   padding: 24px;
   border: 1px solid rgba(0, 89, 76, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .section-title {
