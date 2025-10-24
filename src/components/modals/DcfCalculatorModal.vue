@@ -56,7 +56,7 @@
                 />
                 
                 <DcfForecastChart 
-                  :projected-prices="projectedPrices"
+                  :scenarios="scenarios"
                   :current-price="companyData?.currentPrice || 0"
                   :intrinsic-value="intrinsicValue"
                 />
@@ -116,13 +116,19 @@ const {
   upside, 
   recommendation,
   enterpriseValue,
-  terminalValue 
+  terminalValue,
+  scenarios
 } = useDcfCalculator(companyData.value)
 
-// Watch for company data changes and update default growth rate
+// Watch for company data changes and update growth rate scenarios
 watch(companyData, (newData) => {
   if (newData && newData.historicalGrowthRate) {
-    inputs.value.fcfGrowthRate = newData.historicalGrowthRate
+    const baseGrowth = newData.historicalGrowthRate
+    inputs.value.fcfGrowthRate = {
+      best: Math.round(baseGrowth * 1.2 * 10) / 10,
+      average: baseGrowth,
+      worst: Math.round(baseGrowth * 0.8 * 10) / 10
+    }
   }
 })
 

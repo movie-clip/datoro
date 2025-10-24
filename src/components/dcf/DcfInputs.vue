@@ -2,93 +2,192 @@
   <div class="dcf-inputs">
     <h3 class="section-title">Model Assumptions</h3>
     
+    <div class="scenario-labels">
+      <span class="scenario-label best">Best</span>
+      <span class="scenario-label average">Average</span>
+      <span class="scenario-label worst">Worst</span>
+    </div>
+    
     <div class="inputs-grid">
       <!-- Target P/E Ratio -->
       <div class="input-group">
-        <label for="pe-ratio">Target P/E Ratio</label>
-        <div class="input-wrapper">
-          <input
-            id="pe-ratio"
-            v-model.number="localInputs.peRatio"
-            type="number"
-            step="0.5"
-            min="0"
-            max="100"
-            @input="handleInput('peRatio')"
-          />
-          <span class="input-suffix">x</span>
+        <label>Target P/E Ratio</label>
+        <div class="scenario-inputs">
+          <div class="input-wrapper best-case">
+            <input
+              v-model.number="localInputs.peRatio.best"
+              type="number"
+              step="0.5"
+              min="0"
+              max="100"
+              @input="handleInput('peRatio')"
+            />
+            <span class="input-suffix">x</span>
+          </div>
+          <div class="input-wrapper average-case">
+            <input
+              v-model.number="localInputs.peRatio.average"
+              type="number"
+              step="0.5"
+              min="0"
+              max="100"
+              @input="handleInput('peRatio')"
+            />
+            <span class="input-suffix">x</span>
+          </div>
+          <div class="input-wrapper worst-case">
+            <input
+              v-model.number="localInputs.peRatio.worst"
+              type="number"
+              step="0.5"
+              min="0"
+              max="100"
+              @input="handleInput('peRatio')"
+            />
+            <span class="input-suffix">x</span>
+          </div>
         </div>
         <span class="input-hint">Price-to-earnings multiple for valuation</span>
       </div>
 
       <!-- FCF Growth Rate -->
       <div class="input-group">
-        <label for="fcf-growth">FCF Growth Rate (%)</label>
-        <div class="input-wrapper">
-          <input
-            id="fcf-growth"
-            v-model.number="localInputs.fcfGrowthRate"
-            type="number"
-            step="0.1"
-            min="-50"
-            max="100"
-            @input="handleInput('fcfGrowthRate')"
-          />
-          <span class="input-suffix">%</span>
+        <label>FCF Growth Rate (%)</label>
+        <div class="scenario-inputs">
+          <div class="input-wrapper best-case">
+            <input
+              v-model.number="localInputs.fcfGrowthRate.best"
+              type="number"
+              step="0.1"
+              min="-50"
+              max="100"
+              @input="handleInput('fcfGrowthRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper average-case">
+            <input
+              v-model.number="localInputs.fcfGrowthRate.average"
+              type="number"
+              step="0.1"
+              min="-50"
+              max="100"
+              @input="handleInput('fcfGrowthRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper worst-case">
+            <input
+              v-model.number="localInputs.fcfGrowthRate.worst"
+              type="number"
+              step="0.1"
+              min="-50"
+              max="100"
+              @input="handleInput('fcfGrowthRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
         </div>
         <span class="input-hint">Annual free cash flow growth rate</span>
       </div>
 
       <!-- Terminal Growth Rate -->
       <div class="input-group">
-        <label for="terminal-growth">Terminal Growth Rate (%)</label>
-        <div class="input-wrapper">
-          <input
-            id="terminal-growth"
-            v-model.number="localInputs.terminalGrowthRate"
-            type="number"
-            step="0.1"
-            min="0"
-            max="10"
-            @input="handleInput('terminalGrowthRate')"
-          />
-          <span class="input-suffix">%</span>
+        <label>Terminal Growth Rate (%)</label>
+        <div class="scenario-inputs">
+          <div class="input-wrapper best-case">
+            <input
+              v-model.number="localInputs.terminalGrowthRate.best"
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              @input="handleInput('terminalGrowthRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper average-case">
+            <input
+              v-model.number="localInputs.terminalGrowthRate.average"
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              @input="handleInput('terminalGrowthRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper worst-case">
+            <input
+              v-model.number="localInputs.terminalGrowthRate.worst"
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              @input="handleInput('terminalGrowthRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
         </div>
         <span class="input-hint">Perpetual growth rate after projection period</span>
       </div>
 
       <!-- Discount Rate -->
       <div class="input-group">
-        <label for="discount-rate">Discount Rate (%)</label>
-        <div class="input-wrapper">
-          <input
-            id="discount-rate"
-            v-model.number="localInputs.discountRate"
-            type="number"
-            step="0.1"
-            min="0"
-            max="30"
-            @input="handleInput('discountRate')"
-          />
-          <span class="input-suffix">%</span>
+        <label>Discount Rate (%)</label>
+        <div class="scenario-inputs">
+          <div class="input-wrapper best-case">
+            <input
+              v-model.number="localInputs.discountRate.best"
+              type="number"
+              step="0.1"
+              min="0"
+              max="30"
+              @input="handleInput('discountRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper average-case">
+            <input
+              v-model.number="localInputs.discountRate.average"
+              type="number"
+              step="0.1"
+              min="0"
+              max="30"
+              @input="handleInput('discountRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-wrapper worst-case">
+            <input
+              v-model.number="localInputs.discountRate.worst"
+              type="number"
+              step="0.1"
+              min="0"
+              max="30"
+              @input="handleInput('discountRate')"
+            />
+            <span class="input-suffix">%</span>
+          </div>
         </div>
         <span class="input-hint">Required rate of return (WACC)</span>
       </div>
 
       <!-- Projection Period -->
       <div class="input-group">
-        <label for="projection-years">Projection Period (Years)</label>
-        <div class="input-wrapper">
-          <input
-            id="projection-years"
-            v-model.number="localInputs.projectionYears"
-            type="number"
-            step="1"
-            min="3"
-            max="15"
-            @input="handleInput('projectionYears')"
-          />
-          <span class="input-suffix">yrs</span>
+        <label>Projection Period (Years)</label>
+        <div class="single-input">
+          <div class="input-wrapper best-case">
+            <input
+              v-model.number="localInputs.projectionYears"
+              type="number"
+              step="1"
+              min="3"
+              max="15"
+              @input="handleInput('projectionYears')"
+            />
+            <span class="input-suffix">yrs</span>
+          </div>
         </div>
         <span class="input-hint">Number of years to project</span>
       </div>
@@ -121,12 +220,28 @@ const emit = defineEmits(['update:modelValue'])
 // Local state for immediate UI updates
 const localInputs = reactive({ ...props.modelValue })
 
-// Default values
+// Default scenario values
 const defaults = {
-  fcfGrowthRate: 10,
-  terminalGrowthRate: 2.5,
-  discountRate: 10,
-  peRatio: 20,
+  peRatio: {
+    best: 24,      // 20 + 20%
+    average: 20,
+    worst: 16      // 20 - 20%
+  },
+  fcfGrowthRate: {
+    best: 12,      // 10 + 20%
+    average: 10,
+    worst: 8       // 10 - 20%
+  },
+  terminalGrowthRate: {
+    best: 3,       // 2.5 + 20%
+    average: 2.5,
+    worst: 2       // 2.5 - 20%
+  },
+  discountRate: {
+    best: 8,       // 10 - 20% (lower discount rate is better)
+    average: 10,
+    worst: 12      // 10 + 20%
+  },
   projectionYears: 10
 }
 
@@ -155,29 +270,77 @@ watch(() => props.modelValue, (newVal) => {
 }
 
 .section-title {
-  margin: 0 0 20px 0;
+  margin: 0 0 16px 0;
   font-size: 18px;
   font-weight: 600;
   color: #fff;
 }
 
+.scenario-labels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-left: 0;
+}
+
+.scenario-label {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.scenario-label.best {
+  color: #00b894;
+  background: rgba(0, 184, 148, 0.1);
+}
+
+.scenario-label.average {
+  color: #fdcb6e;
+  background: rgba(253, 203, 110, 0.1);
+}
+
+.scenario-label.worst {
+  color: #ff7675;
+  background: rgba(255, 118, 117, 0.1);
+}
+
 .inputs-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .input-group label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.scenario-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.single-input {
+  display: flex;
+  width: 100%;
+}
+
+.single-input .input-wrapper {
+  flex: 1;
 }
 
 .input-wrapper {
@@ -188,30 +351,60 @@ watch(() => props.modelValue, (newVal) => {
 
 .input-wrapper input {
   width: 100%;
-  padding: 10px 40px 10px 12px;
+  padding: 8px 28px 8px 10px;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 89, 76, 0.3);
+  border: 2px solid rgba(0, 89, 76, 0.3);
   border-radius: 6px;
   color: #fff;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   transition: all 0.2s ease;
 }
 
-.input-wrapper input:focus {
+/* Best case - Green border */
+.input-wrapper.best-case input {
+  border-color: rgba(0, 184, 148, 0.5);
+}
+
+.input-wrapper.best-case input:focus {
   outline: none;
-  border-color: #00594c;
-  background: rgba(0, 0, 0, 0.4);
+  border-color: #00b894;
+  background: rgba(0, 184, 148, 0.05);
+  box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+}
+
+/* Average case - Yellow border */
+.input-wrapper.average-case input {
+  border-color: rgba(253, 203, 110, 0.5);
+}
+
+.input-wrapper.average-case input:focus {
+  outline: none;
+  border-color: #fdcb6e;
+  background: rgba(253, 203, 110, 0.05);
+  box-shadow: 0 0 0 3px rgba(253, 203, 110, 0.1);
+}
+
+/* Worst case - Red border */
+.input-wrapper.worst-case input {
+  border-color: rgba(255, 118, 117, 0.5);
+}
+
+.input-wrapper.worst-case input:focus {
+  outline: none;
+  border-color: #ff7675;
+  background: rgba(255, 118, 117, 0.05);
+  box-shadow: 0 0 0 3px rgba(255, 118, 117, 0.1);
 }
 
 .input-wrapper input:hover {
-  border-color: rgba(0, 89, 76, 0.5);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .input-suffix {
   position: absolute;
-  right: 12px;
-  font-size: 13px;
+  right: 8px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 500;
   pointer-events: none;

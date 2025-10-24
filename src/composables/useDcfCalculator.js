@@ -14,12 +14,30 @@ import { calculateIntrinsicValue, getRecommendation } from '../services/dcf/dcfC
  * @param {number} companyData.historicalGrowthRate - Historical FCF CAGR
  */
 export function useDcfCalculator(companyData = null) {
-  // Default input values (will be overridden by company data if available)
+  // Default input values with scenario-based structure
+  const baseGrowth = companyData?.historicalGrowthRate || 10
+  
   const inputs = ref({
-    fcfGrowthRate: companyData?.historicalGrowthRate || 10,
-    terminalGrowthRate: 2.5,
-    discountRate: 10,
-    peRatio: 20, // Kept for potential future use
+    peRatio: {
+      best: 24,      // 20 + 20%
+      average: 20,
+      worst: 16      // 20 - 20%
+    },
+    fcfGrowthRate: {
+      best: Math.round(baseGrowth * 1.2 * 10) / 10,      // +20%
+      average: baseGrowth,
+      worst: Math.round(baseGrowth * 0.8 * 10) / 10       // -20%
+    },
+    terminalGrowthRate: {
+      best: 3,       // 2.5 + 20%
+      average: 2.5,
+      worst: 2       // 2.5 - 20%
+    },
+    discountRate: {
+      best: 8,       // 10 - 20%
+      average: 10,
+      worst: 12      // 10 + 20%
+    },
     projectionYears: 10
   })
 
@@ -30,6 +48,13 @@ export function useDcfCalculator(companyData = null) {
   const recommendation = ref(null)
   const enterpriseValue = ref(null)
   const terminalValue = ref(null)
+  
+  // Scenario results
+  const scenarios = ref({
+    best: { intrinsicValue: null, projectedPrices: [], upside: null },
+    average: { intrinsicValue: null, projectedPrices: [], upside: null },
+    worst: { intrinsicValue: null, projectedPrices: [], upside: null }
+  })
 
   // Calculate DCF whenever inputs change
   const calculate = () => {
@@ -43,17 +68,39 @@ export function useDcfCalculator(companyData = null) {
         currentPrice: 100
       }
 
-      const results = calculateIntrinsicValue(inputs.value, dataToUse)
+      // Calculate for all three scenarios
+      const scenarioTypes = ['best', 'average', 'worst']
       
-      intrinsicValue.value = results.intrinsicValue
-      projectedPrices.value = results.projectedPrices
-      upside.value = results.upside
-      enterpriseValue.value = results.enterpriseValue
-      terminalValue.value = results.terminalValue
+      scenarioTypes.forEach(scenario => {
+        const scenarioInputs = {
+          fcfGrowthRate: inputs.value.fcfGrowthRate[scenario],
+          terminalGrowthRate: inputs.value.terminalGrowthRate[scenario],
+          discountRate: inputs.value.discountRate[scenario],
+          peRatio: inputs.value.peRatio[scenario],
+          projectionYears: inputs.value.projectionYears
+        }
+
+        const results = calculateIntrinsicValue(scenarioInputs, dataToUse)
+        
+        scenarios.value[scenario] = {
+          intrinsicValue: results.intrinsicValue,
+          projectedPrices: results.projectedPrices,
+          upside: results.upside,
+          enterpriseValue: results.enterpriseValue,
+          terminalValue: results.terminalValue
+        }
+      })
+      
+      // Use average scenario for main display values
+      intrinsicValue.value = scenarios.value.average.intrinsicValue
+      projectedPrices.value = scenarios.value.average.projectedPrices
+      upside.value = scenarios.value.average.upside
+      enterpriseValue.value = scenarios.value.average.enterpriseValue
+      terminalValue.value = scenarios.value.average.terminalValue
       
       // Only set recommendation if we have valid results
-      if (results.intrinsicValue !== null && results.upside !== null) {
-        recommendation.value = getRecommendation(results.upside)
+      if (scenarios.value.average.intrinsicValue !== null && scenarios.value.average.upside !== null) {
+        recommendation.value = getRecommendation(scenarios.value.average.upside)
       } else {
         recommendation.value = null
       }
@@ -66,6 +113,11 @@ export function useDcfCalculator(companyData = null) {
       recommendation.value = null
       enterpriseValue.value = null
       terminalValue.value = null
+      scenarios.value = {
+        best: { intrinsicValue: null, projectedPrices: [], upside: null },
+        average: { intrinsicValue: null, projectedPrices: [], upside: null },
+        worst: { intrinsicValue: null, projectedPrices: [], upside: null }
+      }
     }
   }
 
@@ -79,13 +131,16 @@ export function useDcfCalculator(companyData = null) {
     // Inputs
     inputs,
     
-    // Results
+    // Results (average scenario)
     intrinsicValue,
     projectedPrices,
     upside,
     recommendation,
     enterpriseValue,
     terminalValue,
+    
+    // All scenarios
+    scenarios,
     
     // Methods
     calculate

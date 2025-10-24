@@ -39,9 +39,13 @@ use([
 ])
 
 const props = defineProps({
-  projectedPrices: {
-    type: Array,
-    default: () => []
+  scenarios: {
+    type: Object,
+    default: () => ({
+      best: { projectedPrices: [] },
+      average: { projectedPrices: [] },
+      worst: { projectedPrices: [] }
+    })
   },
   currentPrice: {
     type: Number,
@@ -54,12 +58,19 @@ const props = defineProps({
 })
 
 const chartOptions = computed(() => {
-  if (!props.projectedPrices || props.projectedPrices.length === 0) {
+  // Check if we have data for at least one scenario
+  const hasData = props.scenarios.average?.projectedPrices?.length > 0
+  if (!hasData) {
     return null
   }
 
-  const years = props.projectedPrices.map(p => p.year)
-  const prices = props.projectedPrices.map(p => p.price)
+  // Extract years from average scenario (all scenarios have same years)
+  const years = props.scenarios.average.projectedPrices.map(p => p.year)
+  
+  // Extract prices for each scenario
+  const bestPrices = props.scenarios.best.projectedPrices.map(p => p.price)
+  const averagePrices = props.scenarios.average.projectedPrices.map(p => p.price)
+  const worstPrices = props.scenarios.worst.projectedPrices.map(p => p.price)
 
   return {
     backgroundColor: 'transparent',
@@ -124,17 +135,17 @@ const chartOptions = computed(() => {
       }
     },
     series: [
-      // Projected prices only
+      // Best case scenario - Green
       {
-        name: 'Projected Price',
+        name: 'Best Case',
         type: 'line',
-        data: prices,
+        data: bestPrices,
         lineStyle: {
-          color: '#00594c',
-          width: 3
+          color: '#00b894',
+          width: 2.5
         },
         itemStyle: {
-          color: '#00594c'
+          color: '#00b894'
         },
         areaStyle: {
           color: {
@@ -144,8 +155,45 @@ const chartOptions = computed(() => {
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(0, 89, 76, 0.3)' },
-              { offset: 1, color: 'rgba(0, 89, 76, 0.05)' }
+              { offset: 0, color: 'rgba(0, 184, 148, 0.2)' },
+              { offset: 1, color: 'rgba(0, 184, 148, 0.02)' }
+            ]
+          }
+        },
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 5,
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            borderColor: '#00b894',
+            borderWidth: 2
+          }
+        },
+        z: 3
+      },
+      // Average case scenario - Yellow
+      {
+        name: 'Average Case',
+        type: 'line',
+        data: averagePrices,
+        lineStyle: {
+          color: '#fdcb6e',
+          width: 3
+        },
+        itemStyle: {
+          color: '#fdcb6e'
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(253, 203, 110, 0.25)' },
+              { offset: 1, color: 'rgba(253, 203, 110, 0.03)' }
             ]
           }
         },
@@ -155,15 +203,59 @@ const chartOptions = computed(() => {
         emphasis: {
           focus: 'series',
           itemStyle: {
-            borderColor: '#00594c',
+            borderColor: '#fdcb6e',
             borderWidth: 2
           }
         },
-        z: 3
+        z: 4
+      },
+      // Worst case scenario - Red
+      {
+        name: 'Worst Case',
+        type: 'line',
+        data: worstPrices,
+        lineStyle: {
+          color: '#ff7675',
+          width: 2.5
+        },
+        itemStyle: {
+          color: '#ff7675'
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(255, 118, 117, 0.2)' },
+              { offset: 1, color: 'rgba(255, 118, 117, 0.02)' }
+            ]
+          }
+        },
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 5,
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            borderColor: '#ff7675',
+            borderWidth: 2
+          }
+        },
+        z: 2
       }
     ],
     legend: {
-      show: false
+      show: true,
+      bottom: 10,
+      textStyle: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: 11
+      },
+      itemWidth: 20,
+      itemHeight: 10
     }
   }
 })
