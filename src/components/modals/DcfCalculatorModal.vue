@@ -326,39 +326,64 @@ onUnmounted(() => {
 }
 
 .compact-results {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .compact-results :deep(.dcf-results) {
-  padding: 12px;
+  padding: 0;
   background: transparent;
   border: none;
 }
 
 .compact-results :deep(.section-title) {
-  font-size: 16px;
-  margin-bottom: 8px;
+  display: none;
 }
 
 .compact-results :deep(.results-grid) {
-  gap: 6px;
+  gap: 12px;
   grid-template-columns: repeat(3, 1fr);
 }
 
 .compact-results :deep(.result-card) {
-  padding: 4px 10px;
+  padding: 12px 16px;
   min-height: auto;
-  gap: 4px;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.compact-results :deep(.result-card:hover) {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.compact-results :deep(.result-card.primary) {
+  border-color: rgba(0, 184, 148, 0.4);
+  background: rgba(0, 89, 76, 0.15);
 }
 
 .compact-results :deep(.card-label) {
-  font-size: 11px;
-  letter-spacing: 0.3px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
 }
 
 .compact-results :deep(.card-value) {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.compact-results :deep(.result-card.positive .card-value) {
+  color: #00b894;
+}
+
+.compact-results :deep(.result-card.negative .card-value) {
+  color: #ff7675;
 }
 
 .compact-results :deep(.card-hint) {
