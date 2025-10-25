@@ -110,6 +110,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ============================================ */
+/* MODAL OVERLAY & CONTAINER */
+/* ============================================ */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -139,6 +142,9 @@ onUnmounted(() => {
   border: 1px solid rgba(0, 89, 76, 0.2);
 }
 
+/* ============================================ */
+/* MODAL HEADER */
+/* ============================================ */
 .modal-header {
   display: flex;
   align-items: center;
@@ -170,6 +176,9 @@ onUnmounted(() => {
   margin-left: 8px;
 }
 
+/* ============================================ */
+/* CLOSE BUTTON */
+/* ============================================ */
 .close-button {
   background: transparent;
   border: none;
@@ -198,6 +207,9 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
+/* ============================================ */
+/* MODAL BODY */
+/* ============================================ */
 .modal-body {
   padding: 24px 32px;
   overflow-y: auto;
@@ -223,6 +235,9 @@ onUnmounted(() => {
   background: rgba(0, 89, 76, 0.5);
 }
 
+/* ============================================ */
+/* DESCRIPTION SECTION */
+/* ============================================ */
 .description {
   margin-bottom: 24px;
   padding: 16px 20px;
@@ -248,7 +263,9 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-/* Modal Transitions */
+/* ============================================ */
+/* MODAL TRANSITIONS */
+/* ============================================ */
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.3s ease;
@@ -269,7 +286,9 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
-/* Responsive */
+/* ============================================ */
+/* RESPONSIVE - MOBILE */
+/* ============================================ */
 @media (max-width: 768px) {
   .modal-overlay {
     padding: 0;

@@ -281,6 +281,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ============================================ */
+/* MAIN CONTAINER */
+/* ============================================ */
 .deep-finder-chart {
   width: 100%;
   min-height: 600px;
@@ -289,6 +292,9 @@ onUnmounted(() => {
   border-radius: 0;
 }
 
+/* ============================================ */
+/* LOADING STATE */
+/* ============================================ */
 .loading {
   display: flex;
   flex-direction: column;
@@ -312,6 +318,9 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
+/* ============================================ */
+/* ERROR STATE */
+/* ============================================ */
 .error {
   display: flex;
   align-items: center;
@@ -322,9 +331,12 @@ onUnmounted(() => {
   text-align: center;
 }
 
+/* ============================================ */
+/* CHART CONTAINER (SCROLLABLE) */
+/* ============================================ */
 .chart-container {
   width: 100%;
-  max-height: 500px; /* Fixed max height */
+  max-height: 530px; /* Fixed max height */
   overflow-y: auto; /* Enable vertical scrolling */
   overflow-x: hidden;
   border-radius: 8px;
@@ -351,16 +363,22 @@ onUnmounted(() => {
   background: #4A4A4E;
 }
 
+/* ============================================ */
+/* CHART ELEMENT */
+/* ============================================ */
 .chart {
   width: 100%;
   height: auto; /* Dynamic height based on stocks */
-  min-height: 450px;
+  min-height: 530px;
 }
 
+/* ============================================ */
+/* SUMMARY STATS (FOOTER) */
+/* ============================================ */
 .summary-stats {
   display: flex;
   justify-content: space-around;
-  margin-top: 15px; /* Increased from 24px to 48px to move it lower */
+  margin-top: 15px;
   padding: 16px 0px;
   background: rgba(0, 89, 76, 0.1);
   border-radius: 8px;
@@ -397,6 +415,9 @@ onUnmounted(() => {
   color: #00C087;
 }
 
+/* ============================================ */
+/* NO DATA STATE */
+/* ============================================ */
 .no-data {
   display: flex;
   align-items: center;
@@ -405,7 +426,9 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Responsive */
+/* ============================================ */
+/* RESPONSIVE - MOBILE */
+/* ============================================ */
 @media (max-width: 768px) {
   .deep-finder-chart {
     padding: 0;
