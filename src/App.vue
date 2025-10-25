@@ -12,6 +12,7 @@ import TabPanel from './components/layout/TabPanel.vue'
 import AuthModal from './components/auth/AuthModal.vue'
 import WatchlistPanel from './components/common/WatchlistPanel.vue'
 import MainMenu from './components/common/MainMenu.vue'
+import DeepFinderModal from './components/modals/DeepFinderModal.vue'
 
 // Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
 const AIAnalysisPanel = defineAsyncComponent(() =>
@@ -71,6 +72,9 @@ const authModalTab = ref('signin') // 'signin' or 'signup'
 
 // Main Menu
 const showMainMenu = ref(false)
+
+// Deep Finder
+const showDeepFinder = ref(false)
 
 // Watchlist
 const { initializeWatchlist, toggleWatchlist, clearWatchlist } = useWatchlist()
@@ -173,6 +177,10 @@ function handleLogout() {
 
 function toggleMainMenu() {
   showMainMenu.value = !showMainMenu.value
+}
+
+function toggleDeepFinder() {
+  showDeepFinder.value = !showDeepFinder.value
 }
 
 function toggleWatchlistPanel() {
@@ -410,7 +418,11 @@ function handleSelectTicker(ticker) {
       @close="showMainMenu = false"
       @toggle-watchlist="handleToggleWatchlist"
       @select-ticker="handleSelectTicker"
+      @show-deep-finder="toggleDeepFinder"
     />
+    
+    <!-- Deep Finder Modal -->
+    <DeepFinderModal v-model="showDeepFinder" />
     
     <!-- Watchlist Panel -->
     <WatchlistPanel 
@@ -771,7 +783,7 @@ function handleSelectTicker(ticker) {
 
 .price-target-section {
   max-width: 1400px;
-  margin: 0px auto 24px;
+  margin: 0px auto 16px; /* Negative top margin to pull it closer, reduced bottom margin */
   padding: 0 12px;
 }
 
@@ -800,7 +812,7 @@ function handleSelectTicker(ticker) {
   padding: 0 0;
   width: 100%;
   position: relative;
-  min-height: 500px; /* Prevent layout shift when switching tabs/tickers */
+  min-height: 430px; /* Prevent layout shift when switching tabs/tickers */
 }
 
 /* Mobile-specific sections */

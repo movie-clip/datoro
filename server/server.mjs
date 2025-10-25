@@ -927,6 +927,161 @@ app.get('/api/ticker-data/:ticker', fmpLimiter, globalFmpLimiter, async (req, re
   }
 })
 
+// -------------------- Deep Finder Endpoint --------------------
+// Get MA200 distance data for multiple stocks (for Deep Finder screener)
+app.get('/api/deep-finder', fmpLimiter, async (req, res) => {
+  const startTime = Date.now()
+  
+  // Get tickers from query param (comma-separated) or use default list
+  const tickersParam = req.query.tickers
+  let stockList
+  
+  if (tickersParam) {
+    // Use provided tickers (from watchlist)
+    stockList = tickersParam
+      .split(',')
+      .map(t => t.trim().toUpperCase())
+      .filter(t => t.length > 0)
+      .slice(0, 50) // Limit to 50 stocks max
+  } else {
+    // Fallback to default stock list (30 popular S&P 500 stocks)
+    stockList = [
+      'AAPL', 'MSFT', 'GOOGL', 'META', 'NVDA', 'TSLA', 'AVGO', 'ORCL', 'AMD', 'CRM',
+      'JPM', 'BAC', 'WFC', 'GS', 'MS',
+      'JNJ', 'UNH', 'LLY', 'PFE', 'ABBV',
+      'AMZN', 'WMT', 'HD', 'MCD', 'NKE', 'SBUX',
+      'XOM', 'CVX', 'BA', 'CAT'
+    ]
+  }
+  
+  // Include tickers in cache key for unique caching per ticker list
+  const tickerKey = stockList.sort().join(',')
+  const cacheKey = cache.generateKey('deep-finder', tickerKey, API_VERSION)
+  
+  try {
+    // Check cache first (5-minute TTL for Deep Finder)
+    console.log(`[DeepFinder] Checking cache for ${stockList.length} tickers (key: ${cacheKey})`)
+    const cached = await cache.get(cacheKey)
+    if (cached.data) {
+      console.log(`[DeepFinder] CACHE HIT (${cached.source})`)
+      res.setHeader('X-Cache', cached.source)
+      res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+      return res.json(cached.data)
+    }
+    
+    console.log(`[DeepFinder] CACHE MISS - Fetching from FMP...`)
+    
+    if (!FMP_API_KEY) {
+      console.error('[DeepFinder] API key not configured')
+      return res.status(500).json({ error: 'FMP_API_KEY is not set on the server' })
+    }
+    
+    // Fetch current quotes and 200-day MA in parallel
+    const baseUrl = 'https://financialmodelingprep.com'
+    
+    // OPTIMIZATION: Batch fetch all quotes in a single API call
+    const quotesUrl = `${baseUrl}/api/v3/quote/${stockList.join(',')}?apikey=${FMP_API_KEY}`
+    let quotesMap = new Map()
+    
+    try {
+      const quotesRes = await fetch(quotesUrl)
+      if (quotesRes.ok) {
+        const quotesData = await quotesRes.json()
+        quotesData.forEach(quote => {
+          if (quote && quote.symbol) {
+            quotesMap.set(quote.symbol, quote)
+          }
+        })
+        console.log(`[DeepFinder] Fetched ${quotesMap.size} quotes in batch`)
+      }
+    } catch (error) {
+      console.warn(`[DeepFinder] Batch quotes failed:`, error.message)
+    }
+    
+    // Fetch historical data for each stock (can't be batched)
+    const results = await Promise.allSettled(
+      stockList.map(async (ticker) => {
+        try {
+          // Get quote from batch fetch
+          const quote = quotesMap.get(ticker)
+          if (!quote || !quote.price) {
+            console.warn(`[DeepFinder] No price data for ${ticker}`)
+            return null
+          }
+          
+          // Fetch historical prices (last 250 days to ensure 200 trading days)
+          const toDate = new Date().toISOString().split('T')[0]
+          const fromDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          const historyUrl = `${baseUrl}/api/v3/historical-price-full/${ticker}?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`
+          const historyRes = await fetch(historyUrl)
+          if (!historyRes.ok) {
+            console.warn(`[DeepFinder] History failed for ${ticker}: ${historyRes.status}`)
+            return null
+          }
+          const historyData = await historyRes.json()
+          
+          // Calculate MA200 from historical data
+          const historical = historyData.historical || []
+          if (historical.length < 200) {
+            console.warn(`[DeepFinder] Insufficient data for ${ticker}: ${historical.length} days`)
+            return null
+          }
+          
+          // Get last 200 close prices
+          const last200Prices = historical.slice(0, 200).map(h => h.close)
+          const ma200 = last200Prices.reduce((sum, price) => sum + price, 0) / 200
+          
+          // Calculate distance from MA200
+          const distance = ((quote.price - ma200) / ma200) * 100
+          
+          return {
+            ticker,
+            name: quote.name || ticker,
+            price: quote.price,
+            ma200: parseFloat(ma200.toFixed(2)),
+            distance: parseFloat(distance.toFixed(2)),
+            change: quote.changesPercentage || 0
+          }
+        } catch (error) {
+          console.warn(`[DeepFinder] Error processing ${ticker}:`, error.message)
+          return null
+        }
+      })
+    )
+    
+    // Filter out failures and sort by distance (most negative first)
+    const validStocks = results
+      .filter(r => r.status === 'fulfilled' && r.value !== null)
+      .map(r => r.value)
+      .sort((a, b) => a.distance - b.distance)
+    
+    const responseData = {
+      stocks: validStocks,
+      timestamp: new Date().toISOString(),
+      fetchDuration: Date.now() - startTime,
+      totalStocks: validStocks.length
+    }
+    
+    // Cache for 5 minutes
+    await cache.set(cacheKey, responseData, CacheTTL.SHORT)
+    console.log(`[DeepFinder] Cached ${validStocks.length} stocks`)
+    
+    res.setHeader('X-Cache', 'MISS')
+    res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+    res.json(responseData)
+    
+  } catch (error) {
+    console.error(`[DeepFinder] Error:`, error)
+    res.status(500).json({
+      error: {
+        message: 'Failed to fetch Deep Finder data',
+        code: 'E007',
+        details: error.message
+      }
+    })
+  }
+})
+
 // -------------------- Health & Monitoring --------------------
 // Root path handler (for HEAD requests from monitoring tools)
 app.get('/', (_req, res) => {
