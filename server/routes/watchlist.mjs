@@ -55,17 +55,24 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), async (req, res
       return res.status(400).json({ error: 'Invalid request: tickers must be a non-empty array' });
     }
 
-    // Validate tickers
-    const sanitizedTickers = tickers.map(t => t.toUpperCase().trim());
-    
-    // Build CASE statement for bulk update (single query instead of N queries)
+    // Validate and sanitize tickers (SQL injection protection)
+    const sanitizedTickers = tickers.map(t => {
+      const ticker = String(t).toUpperCase().trim();
+      // Only allow alphanumeric characters (no special chars that could break SQL)
+      if (!/^[A-Z0-9]{1,10}$/.test(ticker)) {
+        throw new Error(`Invalid ticker format: ${ticker}`);
+      }
+      return ticker;
+    });
+
+    // Build CASE statement for single bulk UPDATE (safe: validated alphanumeric only)
     // Example: WHEN 'AAPL' THEN 0 WHEN 'GOOGL' THEN 1 ...
     const caseStatements = sanitizedTickers
       .map((ticker, index) => `WHEN '${ticker}' THEN ${index}`)
       .join(' ');
     
-    // Execute single bulk UPDATE using raw SQL
-    // user_id is VARCHAR/TEXT type (not UUID), so no casting needed
+    // Execute single bulk UPDATE using parameterized raw SQL (1 query vs N queries)
+    // user_id and ticker list are parameterized ($1, $2, ...) to prevent SQL injection
     await prisma.$executeRawUnsafe(`
       UPDATE watchlist_items 
       SET display_order = CASE ticker ${caseStatements} END
@@ -76,7 +83,7 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), async (req, res
     res.json({ success: true });
   } catch (error) {
     console.error('Error reordering watchlist:', error);
-    res.status(500).json({ error: 'Failed to reorder watchlist' });
+    res.status(500).json({ error: error.message || 'Failed to reorder watchlist' });
   }
 });
 

@@ -297,11 +297,15 @@ const handleDragLeave = () => {
 const handleDrop = async (event, dropIndex) => {
   event.preventDefault()
   
+  // Prevent duplicate drops or invalid drops
   if (draggedIndex.value === null || draggedIndex.value === dropIndex || isReordering.value) {
+    draggedIndex.value = null
+    dragOverIndex.value = null
     return
   }
   
   isReordering.value = true
+  error.value = null
   
   try {
     // Reorder the array
@@ -312,10 +316,16 @@ const handleDrop = async (event, dropIndex) => {
     // Extract tickers in new order
     const newOrder = items.map(item => item.ticker)
     
-    // Update server
+    // Update server (will throw on error for rollback)
     await reorderWatchlist(newOrder)
-  } catch (error) {
-    console.error('Error during drag and drop:', error)
+    
+  } catch (err) {
+    console.error('Error during drag and drop:', err)
+    error.value = 'Failed to reorder watchlist. Changes reverted.'
+    
+    // Error is already handled in composable (rollback)
+    // UI will automatically reflect the rollback via reactive state
+    
   } finally {
     isReordering.value = false
     draggedIndex.value = null

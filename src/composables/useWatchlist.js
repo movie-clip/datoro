@@ -199,13 +199,18 @@ export function useWatchlist() {
    * Reorder watchlist items
    */
   const reorderWatchlist = async (tickers) => {
-    // Optimistically update local state
-    const tickerSet = new Set(tickers)
-    const newItems = tickers.map(ticker => {
-      return watchlistItemsCache.value.find(item => item.ticker === ticker)
+    // Store original state for rollback
+    const originalItems = [...watchlistItemsCache.value]
+    
+    // Optimistically update local state with new displayOrder
+    const newItems = tickers.map((ticker, index) => {
+      const item = watchlistItemsCache.value.find(i => i.ticker === ticker)
+      return item ? { ...item, displayOrder: index } : null
     }).filter(Boolean)
     
+    // Update both cache structures
     watchlistItemsCache.value = newItems
+    watchlistSet.value = new Set(tickers)
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/watchlist/reorder`, {
@@ -221,12 +226,19 @@ export function useWatchlist() {
         throw new Error('Failed to reorder watchlist')
       }
       
-      // Invalidate cache to force refresh on next load
+      // Success - no need to refetch (optimistic update already applied)
+      // Just invalidate cache for next session
       lastFetchTime.value = 0
+      
     } catch (error) {
       console.error('Error reordering watchlist:', error)
-      // Revert on error by re-initializing
-      await initializeWatchlist(true)
+      
+      // Rollback on error
+      watchlistItemsCache.value = originalItems
+      watchlistSet.value = new Set(originalItems.map(item => item.ticker))
+      
+      // Show error to user
+      throw error
     }
   }
 
