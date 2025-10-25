@@ -195,6 +195,41 @@ export function useWatchlist() {
     lastFetchTime.value = 0
   }
 
+  /**
+   * Reorder watchlist items
+   */
+  const reorderWatchlist = async (tickers) => {
+    // Optimistically update local state
+    const tickerSet = new Set(tickers)
+    const newItems = tickers.map(ticker => {
+      return watchlistItemsCache.value.find(item => item.ticker === ticker)
+    }).filter(Boolean)
+    
+    watchlistItemsCache.value = newItems
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/watchlist/reorder`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ tickers })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to reorder watchlist')
+      }
+      
+      // Invalidate cache to force refresh on next load
+      lastFetchTime.value = 0
+    } catch (error) {
+      console.error('Error reordering watchlist:', error)
+      // Revert on error by re-initializing
+      await initializeWatchlist(true)
+    }
+  }
+
   return {
     // State
     watchlist: computed(() => Array.from(watchlistSet.value)),
@@ -208,6 +243,7 @@ export function useWatchlist() {
     addToWatchlist,
     removeFromWatchlist,
     toggleWatchlist,
-    clearWatchlist
+    clearWatchlist,
+    reorderWatchlist
   }
 }

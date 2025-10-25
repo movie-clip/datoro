@@ -108,14 +108,16 @@ model Search {
 // ============================================
 
 model WatchlistItem {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  ticker    String
-  addedAt   DateTime @default(now()) @map("added_at")
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  ticker       String
+  addedAt      DateTime @default(now()) @map("added_at")
+  displayOrder Int      @default(0) @map("display_order")
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@unique([userId, ticker])
+  @@index([userId, displayOrder])
   @@index([userId, addedAt(sort: Desc)])
   @@index([ticker])
   @@map("watchlist_items")

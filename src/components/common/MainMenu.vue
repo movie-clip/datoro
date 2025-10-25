@@ -128,9 +128,16 @@
         <div v-else class="watchlist-items">
           <TransitionGroup name="watchlist-item">
             <div 
-              v-for="item in watchlistItems" 
+              v-for="(item, index) in watchlistItems" 
               :key="item.ticker"
               class="watchlist-item"
+              :class="{ 'drag-over': dragOverIndex === index }"
+              draggable="true"
+              @dragstart="handleDragStart($event, index)"
+              @dragend="handleDragEnd"
+              @dragover="handleDragOver($event, index)"
+              @dragleave="handleDragLeave"
+              @drop="handleDrop($event, index)"
               @click="goToTicker(item.ticker)"
             >
               <div class="ticker-info">
@@ -197,8 +204,14 @@ const isDcfModalOpen = ref(false)
 const { 
   watchlistItems,
   loading, 
-  initializeWatchlist 
+  initializeWatchlist,
+  reorderWatchlist
 } = useWatchlist()
+
+// Drag and drop state
+const draggedIndex = ref(null)
+const dragOverIndex = ref(null)
+const isReordering = ref(false)
 
 // Computed to handle errors locally
 const error = ref(null)
@@ -256,6 +269,58 @@ const formatDate = (dateString) => {
 
 const handleImageError = (event) => {
   event.target.style.display = 'none'
+}
+
+// Drag and drop handlers
+const handleDragStart = (event, index) => {
+  draggedIndex.value = index
+  event.dataTransfer.effectAllowed = 'move'
+  event.target.style.opacity = '0.5'
+}
+
+const handleDragEnd = (event) => {
+  event.target.style.opacity = '1'
+  draggedIndex.value = null
+  dragOverIndex.value = null
+}
+
+const handleDragOver = (event, index) => {
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'move'
+  dragOverIndex.value = index
+}
+
+const handleDragLeave = () => {
+  dragOverIndex.value = null
+}
+
+const handleDrop = async (event, dropIndex) => {
+  event.preventDefault()
+  
+  if (draggedIndex.value === null || draggedIndex.value === dropIndex || isReordering.value) {
+    return
+  }
+  
+  isReordering.value = true
+  
+  try {
+    // Reorder the array
+    const items = [...watchlistItems.value]
+    const [draggedItem] = items.splice(draggedIndex.value, 1)
+    items.splice(dropIndex, 0, draggedItem)
+    
+    // Extract tickers in new order
+    const newOrder = items.map(item => item.ticker)
+    
+    // Update server
+    await reorderWatchlist(newOrder)
+  } catch (error) {
+    console.error('Error during drag and drop:', error)
+  } finally {
+    isReordering.value = false
+    draggedIndex.value = null
+    dragOverIndex.value = null
+  }
 }
 </script>
 
@@ -556,14 +621,25 @@ const handleImageError = (event) => {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.2s;
+}
+
+.watchlist-item:active {
+  cursor: grabbing;
 }
 
 .watchlist-item:hover {
   background: rgba(0, 168, 142, 0.08);
   border-color: rgba(0, 168, 142, 0.2);
   transform: translateX(4px);
+}
+
+.watchlist-item.drag-over {
+  border-color: rgba(0, 192, 135, 0.5);
+  border-width: 2px;
+  border-style: dashed;
+  background: rgba(0, 192, 135, 0.1);
 }
 
 .ticker-info {

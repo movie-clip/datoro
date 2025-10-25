@@ -20,13 +20,17 @@ router.get('/watchlist', generalLimiter, authenticate(), async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Fetch watchlist items sorted by most recently added
+    // Fetch watchlist items sorted by displayOrder, then by addedAt as fallback
     const watchlistItems = await prisma.watchlistItem.findMany({
       where: { userId },
-      orderBy: { addedAt: 'desc' },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { addedAt: 'desc' }
+      ],
       select: {
         ticker: true,
-        addedAt: true
+        addedAt: true,
+        displayOrder: true
       }
     });
 
@@ -34,6 +38,45 @@ router.get('/watchlist', generalLimiter, authenticate(), async (req, res) => {
   } catch (error) {
     console.error('Error fetching watchlist:', error);
     res.status(500).json({ error: 'Failed to fetch watchlist' });
+  }
+});
+
+/**
+ * PUT /api/watchlist/reorder
+ * Reorder watchlist items (update displayOrder)
+ * NOTE: Must come BEFORE parameterized routes to avoid route conflicts
+ */
+router.put('/watchlist/reorder', generalLimiter, authenticate(), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tickers } = req.body; // Array of tickers in new order
+
+    if (!Array.isArray(tickers) || tickers.length === 0) {
+      return res.status(400).json({ error: 'Invalid request: tickers must be a non-empty array' });
+    }
+
+    // Validate tickers
+    const sanitizedTickers = tickers.map(t => t.toUpperCase().trim());
+    
+    // Build CASE statement for bulk update (single query instead of N queries)
+    // Example: WHEN 'AAPL' THEN 0 WHEN 'GOOGL' THEN 1 ...
+    const caseStatements = sanitizedTickers
+      .map((ticker, index) => `WHEN '${ticker}' THEN ${index}`)
+      .join(' ');
+    
+    // Execute single bulk UPDATE using raw SQL
+    // user_id is VARCHAR/TEXT type (not UUID), so no casting needed
+    await prisma.$executeRawUnsafe(`
+      UPDATE watchlist_items 
+      SET display_order = CASE ticker ${caseStatements} END
+      WHERE user_id = $1 
+        AND ticker IN (${sanitizedTickers.map((_, i) => `$${i + 2}`).join(', ')})
+    `, userId, ...sanitizedTickers);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering watchlist:', error);
+    res.status(500).json({ error: 'Failed to reorder watchlist' });
   }
 });
 
