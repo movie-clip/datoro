@@ -11,7 +11,7 @@ export function useEpsSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract EPS data from batch
+  // Memoized data extraction - single source of truth
   const series = computed(() => getEpsSeriesFromBatch(batchData.value))
 
   const error = computed(() => {

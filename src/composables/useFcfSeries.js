@@ -13,7 +13,7 @@ export function useFcfSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract FCF data from batch
+  // Memoized raw data extraction - single source of truth
   const rawData = computed(() => 
     getFcfSeriesFromBatch(batchData.value, period.value)
   )

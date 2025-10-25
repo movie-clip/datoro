@@ -12,7 +12,7 @@ export function useNetIncomeSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract net income data from batch
+  // Memoized raw data extraction - single source of truth
   const rawData = computed(() =>
     getNetIncomeSeriesFromBatch(batchData.value, period.value)
   )

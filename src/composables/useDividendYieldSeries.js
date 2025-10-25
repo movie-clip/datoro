@@ -12,11 +12,13 @@ export function useDividendYieldSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
+  // Memoized raw data - single source of truth
+  const rawData = computed(() => getDividendYieldSeriesFromBatch(batchData.value, period.value))
+
   // Check if data is legitimately empty (company doesn't pay dividends)
   const hasNoDividends = computed(() => {
     if (!currentTicker.value || loading.value || batchError.value) return false
-    const rawData = getDividendYieldSeriesFromBatch(batchData.value, period.value)
-    return rawData.length === 0
+    return rawData.value.length === 0
   })
 
   const error = computed(() => {
@@ -26,9 +28,8 @@ export function useDividendYieldSeries() {
   })
 
   const series = computed(() => {
-    const rawData = getDividendYieldSeriesFromBatch(batchData.value, period.value)
-    if (!rawData.length) return []
-    return rawData
+    if (!rawData.value.length) return []
+    return rawData.value
   })
 
   // Update title based on ticker

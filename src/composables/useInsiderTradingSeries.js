@@ -12,10 +12,9 @@ export function useInsiderTradingSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract insider trading data from batch
+  // Memoized data extraction - single source of truth
   const insiderData = computed(() => getInsiderTradingFromBatch(batchData.value))
   
-  // Extract price data from batch
   const priceData = computed(() => getPriceSeriesFromBatch(batchData.value))
 
   // Compute series for ECharts (price line + insider bars)

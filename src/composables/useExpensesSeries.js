@@ -13,11 +13,13 @@ export function useExpensesSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
+  // Memoized raw data - single source of truth
+  const rawData = computed(() => getExpensesSeriesFromBatch(batchData.value, period.value))
+
   const error = computed(() => {
     if (batchError.value) return batchError.value
     const t = (currentTicker.value || '').toUpperCase()
-    const rawData = getExpensesSeriesFromBatch(batchData.value, period.value)
-    if (t && rawData.length === 0) {
+    if (t && rawData.value.length === 0) {
       return `No expense data for '${t}'`
     }
     return null
@@ -32,12 +34,11 @@ export function useExpensesSeries() {
 
   // Compute series based on selected segments
   const series = computed(() => {
-    const rawData = getExpensesSeriesFromBatch(batchData.value, period.value)
-    if (!rawData.length) return []
+    if (!rawData.value.length) return []
     
     // If only total is selected, return single series
     if (selectedSegments.value.length === 1 && selectedSegments.value[0] === 'total') {
-      return rawData.map(d => [d.date, d.total])
+      return rawData.value.map(d => [d.date, d.total])
     }
     
     // Filter out 'total' when other segments are selected
@@ -45,7 +46,7 @@ export function useExpensesSeries() {
     if (!segments.length) return []
     
     // Collect all dates
-    const allDates = [...new Set(rawData.map(d => d.date))].sort((a, b) => a - b)
+    const allDates = [...new Set(rawData.value.map(d => d.date))].sort((a, b) => a - b)
     
     // Create multi-series with stacking and colors
     const segmentColors = {
@@ -57,7 +58,7 @@ export function useExpensesSeries() {
     return segments.map(segment => {
       // Align all data to common dates
       const alignedData = allDates.map(date => {
-        const dataPoint = rawData.find(d => d.date === date)
+        const dataPoint = rawData.value.find(d => d.date === date)
         return [date, dataPoint ? dataPoint[segment] : 0]
       })
       

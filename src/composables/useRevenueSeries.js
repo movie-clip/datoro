@@ -13,7 +13,9 @@ export function useRevenueSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract revenue data from batch
+  // Memoized data extraction from batch
+  // Note: These intermediate computed are acceptable because they're accessed with .value
+  // in consuming computed functions, which maintains proper reactivity tracking
   const totalRevenue = computed(() => 
     getRevenueSeriesFromBatch(batchData.value, period.value)
   )

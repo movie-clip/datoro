@@ -11,7 +11,7 @@ export function useSharesSeries(periodRef) {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract shares data from batch
+  // Memoized data extraction - single source of truth
   const series = computed(() => {
     const period = periodRef?.value || 'annual'
     return getSharesSeriesFromBatch(batchData.value, period)

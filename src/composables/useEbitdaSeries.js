@@ -22,7 +22,7 @@ export function useEbitdaSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract EBITDA data from batch
+  // Memoized raw data extraction - single source of truth
   const rawData = computed(() => getEbitdaSeriesFromBatch(batchData.value, period.value))
 
   const error = computed(() => {
