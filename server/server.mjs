@@ -207,6 +207,55 @@ app.get('/api/version', (req, res) => {
   })
 })
 
+// ============================================
+// Company Icon Proxy Endpoint (optimized - no image caching)
+// ============================================
+app.get('/api/company-icon/:ticker', async (req, res) => {
+  const { ticker } = req.params
+  
+  if (!ticker || typeof ticker !== 'string') {
+    return res.status(400).json({ error: 'Invalid ticker' })
+  }
+  
+  const upperTicker = ticker.toUpperCase().trim()
+  
+  // Only cache 404s in Redis (tiny metadata vs full images)
+  const notFoundKey = `icon-404:${upperTicker}`
+  const is404 = await cache.get(notFoundKey)
+  
+  if (is404 === 'true') {
+    return res.status(404).json({ error: 'Icon not found' })
+  }
+  
+  try {
+    // Proxy directly to FMP (let their CDN handle bandwidth)
+    const iconUrl = `https://financialmodelingprep.com/image-stock/${upperTicker}.png`
+    const response = await fetch(iconUrl)
+    
+    if (!response.ok) {
+      // Cache 404s for 7 days to avoid repeated failed requests
+      await cache.set(notFoundKey, 'true', CacheTTL.WEEK)
+      return res.status(404).json({ error: 'Icon not found' })
+    }
+    
+    // Stream image directly to client (don't store in Redis)
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    
+    // Set aggressive browser cache (30 days)
+    res.set({
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=2592000, immutable', // 30 days, immutable
+      'X-Cache': 'PROXY'
+    })
+    res.send(buffer)
+    
+  } catch (error) {
+    console.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, error.message)
+    res.status(500).json({ error: 'Failed to fetch company icon' })
+  }
+})
+
 // Apply rate limiting to FMP endpoints
 app.use('/api/fmp', fmpLimiter, async (req, res) => {
   const startTime = Date.now()

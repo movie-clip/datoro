@@ -135,7 +135,7 @@
             >
               <div class="ticker-info">
                 <img 
-                  :src="`https://financialmodelingprep.com/image-stock/${item.ticker}.png`"
+                  :src="`/api/company-icon/${item.ticker}`"
                 :alt="`${item.ticker} logo`"
                 class="company-icon"
                 @error="handleImageError"

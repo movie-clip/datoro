@@ -144,19 +144,19 @@ const chartOption = computed(() => {
       data: tickers,
       axisLabel: {
         color: '#E5E5E5',
-        fontSize: 11,
+        fontSize: 14, // 11 * 1.3 ≈ 14
         fontWeight: 600,
         formatter: (value, index) => {
-          // Return format: {img|ticker} ticker
-          return `{img${index}|} ${value}`
+          // Return format: {img|ticker} ticker with padding
+          return `{img${index}|}  ${value}`
         },
         rich: tickers.reduce((acc, ticker, index) => {
           acc[`img${index}`] = {
             backgroundColor: {
-              image: `https://financialmodelingprep.com/image-stock/${ticker}.png`
+              image: `/api/company-icon/${ticker}`
             },
-            height: 14,
-            width: 14
+            height: 18, // 14 * 1.3 ≈ 18
+            width: 18
           }
           return acc
         }, {})
