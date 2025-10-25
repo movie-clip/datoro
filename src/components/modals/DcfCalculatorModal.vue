@@ -195,6 +195,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ============================================ */
+/* MODAL OVERLAY & CONTAINER */
+/* ============================================ */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -223,6 +226,9 @@ onUnmounted(() => {
   border: 1px solid rgba(0, 89, 76, 0.2);
 }
 
+/* ============================================ */
+/* MODAL HEADER */
+/* ============================================ */
 .modal-header {
   display: flex;
   align-items: center;
@@ -322,13 +328,38 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
+/* ============================================ */
+/* MODAL BODY */
+/* ============================================ */
 .modal-body {
   flex: 1;
   overflow-y: auto;
   padding: 24px 32px;
-  min-height: 0;
+  min-height: 85vh;
 }
 
+/* Custom scrollbar for modal body */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 89, 76, 0.3);
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 89, 76, 0.5);
+}
+
+/* ============================================ */
+/* DATA WARNING & LOADING STATES */
+/* ============================================ */
 .data-warning {
   display: flex;
   align-items: flex-start;
@@ -339,6 +370,23 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 193, 7, 0.3);
   border-radius: 8px;
   color: #ffc107;
+}
+
+.data-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.data-warning strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.data-warning p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
 }
 
 .data-loading {
@@ -360,30 +408,16 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
-.data-warning svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.data-warning strong {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 14px;
-}
-
-.data-warning p {
-  margin: 0;
-  font-size: 13px;
-  opacity: 0.9;
-}
-
+/* ============================================ */
+/* DCF CONTENT LAYOUT (2-COLUMN GRID) */
+/* ============================================ */
 .dcf-content {
   display: grid !important;
   grid-template-columns: 340px 2fr !important;
   grid-auto-flow: column;
   gap: 24px;
   margin-top: 0px;
-  min-height: 0;
+  min-height: 100%;
   width: 100%;
   align-items: start;
 }
@@ -401,10 +435,13 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-width: 0; /* Prevents overflow */
+  min-width: 0;
   height: 100%;
 }
 
+/* ============================================ */
+/* COMPACT RESULTS (NESTED DCF COMPONENT) */
+/* ============================================ */
 .compact-results {
   flex-shrink: 0;
 }
@@ -470,7 +507,9 @@ onUnmounted(() => {
   display: none;
 }
 
-/* Modal transition */
+/* ============================================ */
+/* MODAL TRANSITIONS */
+/* ============================================ */
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.3s ease;
@@ -492,7 +531,9 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* Mobile responsive */
+/* ============================================ */
+/* RESPONSIVE - MOBILE */
+/* ============================================ */
 @media (max-width: 768px) {
   .modal-overlay {
     padding: 0;
@@ -515,37 +556,6 @@ onUnmounted(() => {
 
   .dcf-content {
     grid-template-columns: 1fr;
-  }
-}
-
-/* Custom scrollbar for modal body */
-.modal-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-body::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background: rgba(0, 89, 76, 0.3);
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 89, 76, 0.5);
-}
-
-/* DCF Content Layout */
-.dcf-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-@media (max-width: 768px) {
-  .dcf-content {
     gap: 20px;
   }
 }

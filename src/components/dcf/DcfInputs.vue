@@ -277,6 +277,9 @@ const resetToDefaults = () => {
 </script>
 
 <style scoped>
+/* ============================================ */
+/* MAIN CONTAINER */
+/* ============================================ */
 .dcf-inputs {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
@@ -294,6 +297,9 @@ const resetToDefaults = () => {
   color: #fff;
 }
 
+/* ============================================ */
+/* SCENARIO LABELS (Best/Average/Worst Headers) */
+/* ============================================ */
 .scenario-labels {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -327,6 +333,9 @@ const resetToDefaults = () => {
   background: rgba(255, 118, 117, 0.1);
 }
 
+/* ============================================ */
+/* INPUT GROUPS & GRID LAYOUT */
+/* ============================================ */
 .inputs-grid {
   display: flex;
   flex-direction: column;
@@ -346,7 +355,9 @@ const resetToDefaults = () => {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* Company Data Section - Styled like regular inputs with green border */
+/* ============================================ */
+/* COMPANY DATA SECTION (Read-only values) */
+/* ============================================ */
 .company-data-labels {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -382,6 +393,9 @@ const resetToDefaults = () => {
   width: 100%;
 }
 
+/* ============================================ */
+/* INPUT FIELDS (Editable scenarios) */
+/* ============================================ */
 .scenario-inputs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -415,6 +429,28 @@ const resetToDefaults = () => {
   transition: all 0.2s ease;
 }
 
+.input-wrapper input:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.input-suffix {
+  position: absolute;
+  right: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.input-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: -2px;
+}
+
+/* ============================================ */
+/* SCENARIO-SPECIFIC INPUT BORDERS */
+/* ============================================ */
 /* Best case - Green border */
 .input-wrapper.best-case input {
   border-color: rgba(0, 184, 148, 0.5);
@@ -451,25 +487,9 @@ const resetToDefaults = () => {
   box-shadow: 0 0 0 3px rgba(255, 118, 117, 0.1);
 }
 
-.input-wrapper input:hover {
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.input-suffix {
-  position: absolute;
-  right: 8px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 500;
-  pointer-events: none;
-}
-
-.input-hint {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: -2px;
-}
-
+/* ============================================ */
+/* ACTIONS (Reset button) */
+/* ============================================ */
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -506,18 +526,9 @@ const resetToDefaults = () => {
   height: 16px;
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .inputs-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .dcf-inputs {
-    padding: 20px;
-  }
-}
-
+/* ============================================ */
+/* NUMBER INPUT CLEANUP */
+/* ============================================ */
 /* Remove number input spinners for cleaner look */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -528,5 +539,19 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
+}
+
+/* ============================================ */
+/* RESPONSIVE - MOBILE */
+/* ============================================ */
+@media (max-width: 768px) {
+  .inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .dcf-inputs {
+    padding: 20px;
+  }
 }
 </style>
