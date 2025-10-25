@@ -135,7 +135,7 @@
             >
               <div class="ticker-info">
                 <img 
-                  :src="`/api/company-icon/${item.ticker}`"
+                  :src="getIconUrl(item.ticker)"
                 :alt="`${item.ticker} logo`"
                 class="company-icon"
                 @error="handleImageError"
@@ -171,6 +171,11 @@
 import { ref, watch } from 'vue'
 import { useWatchlist } from '../../composables/useWatchlist'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
+
+// Helper to get full icon URL for production compatibility
+const getIconUrl = (ticker) => {
+  return `${window.location.origin}/api/company-icon/${ticker}`
+}
 
 const props = defineProps({
   isOpen: {

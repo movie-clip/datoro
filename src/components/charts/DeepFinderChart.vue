@@ -60,6 +60,12 @@ import {
 import { fetchDeepFinderData, getDistanceColor } from '../../services/deepFinder/deepFinderService'
 import { DEEP_FINDER_CONFIG } from '../../config/deepFinderStocks'
 
+// Helper to get full icon URL (ECharts needs absolute URLs in production)
+const getIconUrl = (ticker) => {
+  const baseUrl = window.location.origin
+  return `${baseUrl}/api/company-icon/${ticker}`
+}
+
 // Register ECharts components
 use([
   CanvasRenderer,
@@ -153,7 +159,7 @@ const chartOption = computed(() => {
         rich: tickers.reduce((acc, ticker, index) => {
           acc[`img${index}`] = {
             backgroundColor: {
-              image: `/api/company-icon/${ticker}`
+              image: getIconUrl(ticker)
             },
             height: 18, // 14 * 1.3 ≈ 18
             width: 18
