@@ -114,10 +114,11 @@ const chartOption = computed(() => {
   
   return {
     grid: {
-      left: '10%',
+      left: '12%',
       right: '10%',
-      top: '5%',
-      bottom: '5%'
+      top: '3%',
+      bottom: '3%',
+      containLabel: false
     },
     xAxis: {
       type: 'value',
@@ -150,7 +151,7 @@ const chartOption = computed(() => {
       data: tickers,
       axisLabel: {
         color: '#E5E5E5',
-        fontSize: 14, // 11 * 1.3 ≈ 14
+        fontSize: 12, // Reduced from 14 to 12 for compact layout
         fontWeight: 600,
         formatter: (value, index) => {
           // Return format: {img|ticker} ticker with padding
@@ -161,8 +162,8 @@ const chartOption = computed(() => {
             backgroundColor: {
               image: getIconUrl(ticker)
             },
-            height: 18, // 14 * 1.3 ≈ 18
-            width: 18
+            height: 16, // Reduced from 18 to 16
+            width: 16 // Reduced from 18 to 16
           }
           return acc
         }, {})
@@ -192,7 +193,8 @@ const chartOption = computed(() => {
           color: '#E5E5E5',
           fontSize: 10
         },
-        barWidth: '60%',
+        barWidth: '40%', // Reduced from 60% to 40% (33% smaller)
+        barGap: '20%', // Add gap between bars
         emphasis: {
           disabled: true
         }
@@ -317,8 +319,8 @@ onUnmounted(() => {
 
 .chart {
   width: 100%;
-  height: 800px;
-  min-height: 600px;
+  height: 600px; /* Reduced from 800px to 600px */
+  min-height: 450px; /* Reduced from 600px to 450px */
 }
 
 .summary-stats {
