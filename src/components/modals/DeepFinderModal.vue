@@ -30,7 +30,6 @@
                   <line x1="11" y1="8" x2="11" y2="14"></line>
                 </svg>
                 Deep Finder
-                <span class="subtitle">MA200 Stock Screener</span>
               </h2>
             </div>
             <button class="close-button" @click="handleClose" aria-label="Close modal">

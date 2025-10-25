@@ -13,16 +13,19 @@
       <p>Add stocks to your watchlist to analyze them here</p>
     </div>
     
-    <div v-else-if="stocks.length > 0" class="chart-container">
-      <!-- ECharts horizontal bar chart -->
-      <v-chart 
-        ref="chartRef"
-        :option="chartOption" 
-        :autoresize="true"
-        class="chart"
-      />
+    <div v-else-if="stocks.length > 0">
+      <!-- Chart with scrolling -->
+      <div class="chart-container">
+        <v-chart 
+          ref="chartRef"
+          :option="chartOption" 
+          :autoresize="true"
+          :style="{ height: chartHeight }"
+          class="chart"
+        />
+      </div>
       
-      <!-- Summary stats -->
+      <!-- Summary stats - outside scrollable container -->
       <div class="summary-stats">
         <div class="stat-item oversold">
           <span class="stat-label">Most Oversold</span>
@@ -101,6 +104,12 @@ const mostOverbought = computed(() => {
   if (stocks.value.length === 0) return 'N/A'
   const stock = stocks.value[stocks.value.length - 1] // Highest distance
   return `${stock.ticker} (+${stock.distance.toFixed(1)}%)`
+})
+
+// Dynamic chart height based on number of stocks
+const chartHeight = computed(() => {
+  const height = Math.max(450, stocks.value.length * 40)
+  return `${height}px`
 })
 
 // Chart configuration
@@ -315,19 +324,44 @@ onUnmounted(() => {
 
 .chart-container {
   width: 100%;
+  max-height: 500px; /* Fixed max height */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden;
+  border-radius: 8px;
+  background: rgba(50, 50, 55, 0.4); /* Greyish background */
+  padding: 0px;
+}
+
+/* Custom scrollbar styling */
+.chart-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chart-container::-webkit-scrollbar-track {
+  background: #1E1E22;
+  border-radius: 4px;
+}
+
+.chart-container::-webkit-scrollbar-thumb {
+  background: #3A3A3E;
+  border-radius: 4px;
+}
+
+.chart-container::-webkit-scrollbar-thumb:hover {
+  background: #4A4A4E;
 }
 
 .chart {
   width: 100%;
-  height: 600px; /* Reduced from 800px to 600px */
-  min-height: 450px; /* Reduced from 600px to 450px */
+  height: auto; /* Dynamic height based on stocks */
+  min-height: 450px;
 }
 
 .summary-stats {
   display: flex;
   justify-content: space-around;
-  margin-top: 24px;
-  padding: 16px 20px;
+  margin-top: 15px; /* Increased from 24px to 48px to move it lower */
+  padding: 16px 0px;
   background: rgba(0, 89, 76, 0.1);
   border-radius: 8px;
   border: 1px solid rgba(0, 192, 135, 0.2);
