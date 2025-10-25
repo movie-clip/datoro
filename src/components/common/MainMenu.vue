@@ -140,6 +140,13 @@
               @drop="handleDrop($event, index)"
               @click="goToTicker(item.ticker)"
             >
+              <!-- Drag handle icon -->
+              <div class="drag-handle">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm4-16h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+                </svg>
+              </div>
+              
               <div class="ticker-info">
                 <img 
                   :src="getIconUrl(item.ticker)"
@@ -626,11 +633,11 @@ const handleDrop = async (event, dropIndex) => {
 .watchlist-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
+  gap: 0.5rem;
+  padding: 0.68rem 0.85rem; /* 15% smaller: 0.8rem -> 0.68rem, 1rem -> 0.85rem */
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: 6.8px; /* 15% smaller: 8px -> 6.8px */
   cursor: grab;
   transition: all 0.2s;
 }
@@ -645,6 +652,10 @@ const handleDrop = async (event, dropIndex) => {
   transform: translateX(4px);
 }
 
+.watchlist-item:hover .drag-handle {
+  opacity: 1;
+}
+
 .watchlist-item.drag-over {
   border-color: rgba(0, 192, 135, 0.5);
   border-width: 2px;
@@ -652,42 +663,65 @@ const handleDrop = async (event, dropIndex) => {
   background: rgba(0, 192, 135, 0.1);
 }
 
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.3;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: grab;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.drag-handle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.watchlist-item:active .drag-handle {
+  cursor: grabbing;
+}
+
 .ticker-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.64rem; /* 15% smaller: 0.75rem -> 0.64rem */
+  flex: 1;
 }
 
 .company-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 27.2px; /* 15% smaller: 32px -> 27.2px */
+  height: 27.2px;
+  border-radius: 5.1px; /* 15% smaller: 6px -> 5.1px */
   object-fit: contain;
   background: rgba(255, 255, 255, 0.05);
-  padding: 4px;
+  padding: 3.4px; /* 15% smaller: 4px -> 3.4px */
   flex-shrink: 0;
 }
 
 .ticker-text {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.21rem; /* 15% smaller: 0.25rem -> 0.21rem */
 }
 
 .ticker-symbol {
-  font-size: 1rem;
+  font-size: 0.85rem; /* 15% smaller: 1rem -> 0.85rem */
   font-weight: 600;
   color: #E5E5E5;
   letter-spacing: 0.02em;
 }
 
 .ticker-date {
-  font-size: 0.75rem;
+  font-size: 0.64rem; /* 15% smaller: 0.75rem -> 0.64rem */
   color: #666;
 }
 
 .remove-btn {
-  padding: 0.5rem;
+  padding: 0.425rem; /* 15% smaller: 0.5rem -> 0.425rem */
   background: transparent;
   border: none;
   color: #FFB800;
@@ -696,12 +730,13 @@ const handleDrop = async (event, dropIndex) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 3.4px; /* 15% smaller: 4px -> 3.4px */
+  flex-shrink: 0;
 }
 
 .remove-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 17px; /* 15% smaller: 20px -> 17px */
+  height: 17px;
 }
 
 .remove-btn:hover {
