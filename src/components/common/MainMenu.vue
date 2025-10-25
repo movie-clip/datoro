@@ -54,11 +54,7 @@
               class="menu-item" 
               @click="showDcfCalculator"
             >
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
-              </svg>
+              <img class="menu-item-icon" src="/icons/dcf.png" alt="DCF Calculator">
               <span>DCF Calculator</span>
             </button>
 
@@ -67,12 +63,7 @@
               class="menu-item" 
               @click="showDeepFinder"
             >
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-                <line x1="8" y1="11" x2="14" y2="11"></line>
-                <line x1="11" y1="8" x2="11" y2="14"></line>
-              </svg>
+              <img class="menu-item-icon" src="/icons/deepFinder.png" alt="Deep Finder">
               <span>Deep Finder</span>
             </button>
 
@@ -495,8 +486,8 @@ const handleDrop = async (event, dropIndex) => {
 }
 
 .menu-item-icon {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 
