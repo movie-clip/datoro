@@ -54,7 +54,13 @@
               class="menu-item" 
               @click="showDcfCalculator"
             >
-              <img class="menu-item-icon" src="/icons/dcf.png" alt="DCF Calculator">
+              <img 
+                class="menu-item-icon" 
+                src="/icons/dcf.png" 
+                alt="DCF Calculator"
+                loading="eager"
+                decoding="async"
+              >
               <span>DCF Calculator</span>
             </button>
 
@@ -63,7 +69,13 @@
               class="menu-item" 
               @click="showDeepFinder"
             >
-              <img class="menu-item-icon" src="/icons/deepFinder.png" alt="Deep Finder">
+              <img 
+                class="menu-item-icon" 
+                src="/icons/deepFinder.png" 
+                alt="Deep Finder"
+                loading="eager"
+                decoding="async"
+              >
               <span>Deep Finder</span>
             </button>
 
@@ -141,10 +153,12 @@
               <div class="ticker-info">
                 <img 
                   :src="getIconUrl(item.ticker)"
-                :alt="`${item.ticker} logo`"
-                class="company-icon"
-                @error="handleImageError"
-              >
+                  :alt="`${item.ticker} logo`"
+                  class="company-icon"
+                  loading="lazy"
+                  decoding="async"
+                  @error="handleImageError"
+                >
               <div class="ticker-text">
                 <span class="ticker-symbol">{{ item.ticker }}</span>
                 <span class="ticker-date">{{ formatDate(item.addedAt) }}</span>
