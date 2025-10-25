@@ -13,13 +13,11 @@ export function useExpensesSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract expenses data from batch
-  const rawData = computed(() => getExpensesSeriesFromBatch(batchData.value, period.value))
-
   const error = computed(() => {
     if (batchError.value) return batchError.value
     const t = (currentTicker.value || '').toUpperCase()
-    if (t && rawData.value.length === 0) {
+    const rawData = getExpensesSeriesFromBatch(batchData.value, period.value)
+    if (t && rawData.length === 0) {
       return `No expense data for '${t}'`
     }
     return null
@@ -34,11 +32,12 @@ export function useExpensesSeries() {
 
   // Compute series based on selected segments
   const series = computed(() => {
-    if (!rawData.value.length) return []
+    const rawData = getExpensesSeriesFromBatch(batchData.value, period.value)
+    if (!rawData.length) return []
     
     // If only total is selected, return single series
     if (selectedSegments.value.length === 1 && selectedSegments.value[0] === 'total') {
-      return rawData.value.map(d => [d.date, d.total])
+      return rawData.map(d => [d.date, d.total])
     }
     
     // Filter out 'total' when other segments are selected
@@ -46,7 +45,7 @@ export function useExpensesSeries() {
     if (!segments.length) return []
     
     // Collect all dates
-    const allDates = [...new Set(rawData.value.map(d => d.date))].sort((a, b) => a - b)
+    const allDates = [...new Set(rawData.map(d => d.date))].sort((a, b) => a - b)
     
     // Create multi-series with stacking and colors
     const segmentColors = {
@@ -58,7 +57,7 @@ export function useExpensesSeries() {
     return segments.map(segment => {
       // Align all data to common dates
       const alignedData = allDates.map(date => {
-        const dataPoint = rawData.value.find(d => d.date === date)
+        const dataPoint = rawData.find(d => d.date === date)
         return [date, dataPoint ? dataPoint[segment] : 0]
       })
       
@@ -89,7 +88,7 @@ export function useExpensesSeries() {
   }
 
   // Update title based on ticker
-  // Optimized: Only watch ticker (rawData/loading change when ticker changes)
+  // Optimized: Only watch ticker (series/loading change when ticker changes)
   watch(() => currentTicker.value, (ticker) => {
     if (!ticker) {
       title.value = 'Operating Expenses — Empty'
@@ -98,7 +97,7 @@ export function useExpensesSeries() {
       // Keep original title, show error in message
       title.value = 'Operating Expenses'
       message.value = error.value
-    } else if (rawData.value.length === 0 && !loading.value) {
+    } else if (series.value.length === 0 && !loading.value) {
       title.value = 'Operating Expenses — No data'
       message.value = `No expense data for '${ticker}'`
     } else {

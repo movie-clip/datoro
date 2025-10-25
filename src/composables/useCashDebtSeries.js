@@ -11,41 +11,39 @@ export function useCashDebtSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract cash/debt data from batch
-  const rawData = computed(() => getCashDebtSeriesFromBatch(batchData.value, 'annual'))
-
-  const error = computed(() => {
-    if (batchError.value) return batchError.value
-    const t = (currentTicker.value || '').toUpperCase()
-    if (t && rawData.value.length === 0) {
-      return `No cash/debt data for '${t}'`
-    }
-    return null
-  })
-
   // Transform raw data into multi-series format for dual-bar chart
   const series = computed(() => {
-    if (!rawData.value.length) return []
+    const rawData = getCashDebtSeriesFromBatch(batchData.value, 'annual')
+    if (!rawData.length) return []
     
     return [
       {
         name: 'Cash',
-        data: rawData.value.map(d => [d.date, d.cash])
+        data: rawData.map(d => [d.date, d.cash])
       },
       {
         name: 'Debt',
-        data: rawData.value.map(d => [d.date, d.debt]),
+        data: rawData.map(d => [d.date, d.debt]),
         itemStyle: { color: '#ff6b6b' }
       }
     ]
   });
+
+  const error = computed(() => {
+    if (batchError.value) return batchError.value
+    const t = (currentTicker.value || '').toUpperCase()
+    if (t && series.value.length === 0) {
+      return `No cash/debt data for '${t}'`
+    }
+    return null
+  })
 
   // Update title based on ticker
   watch(currentTicker, (ticker) => {
     if (!ticker) {
       title.value = 'Cash & Debt — Empty'
       message.value = 'Enter a ticker'
-    } else if (rawData.value.length > 0) {
+    } else if (series.value.length > 0) {
       // Have data - show it
       title.value = 'Cash & Debt'
       message.value = ''

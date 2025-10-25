@@ -12,13 +12,11 @@ export function useCapitalReturnedSeries() {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
-  // Extract capital returned data from batch (always annual)
-  const rawData = computed(() => getCapitalReturnedSeriesFromBatch(batchData.value, 'annual'))
-
   // Check if data is legitimately empty (company doesn't return capital)
   const hasNoCapitalReturns = computed(() => {
     if (!currentTicker.value || loading.value || batchError.value) return false
-    return rawData.value.length === 0
+    const rawData = getCapitalReturnedSeriesFromBatch(batchData.value, 'annual')
+    return rawData.length === 0
   })
 
   const error = computed(() => {
@@ -29,7 +27,8 @@ export function useCapitalReturnedSeries() {
 
   // Transform raw data into chart series based on selected segments
   const series = computed(() => {
-    if (!rawData.value.length) return []
+    const rawData = getCapitalReturnedSeriesFromBatch(batchData.value, 'annual')
+    if (!rawData.length) return []
     
     const chartSeries = []
     
@@ -37,7 +36,7 @@ export function useCapitalReturnedSeries() {
     if (selectedSegments.value.includes('dividends')) {
       chartSeries.push({
         name: 'Dividends',
-        data: rawData.value.map(row => [row.date, row.dividends]),
+        data: rawData.map(row => [row.date, row.dividends]),
         itemStyle: { color: '#60a5fa' }, // Blue
         stack: 'total'
       })
@@ -47,7 +46,7 @@ export function useCapitalReturnedSeries() {
     if (selectedSegments.value.includes('buybacks')) {
       chartSeries.push({
         name: 'Share Buybacks',
-        data: rawData.value.map(row => [row.date, row.buybacks]),
+        data: rawData.map(row => [row.date, row.buybacks]),
         itemStyle: { color: '#34d399' }, // Green
         stack: 'total'
       })

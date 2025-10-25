@@ -51,20 +51,30 @@ export function createXAxisConfig(kind, options = {}) {
  * @param {string} options.yFormat - Y-axis format ('short', 'currency', 'percent', 'int')
  * @param {boolean} options.isLarge - Large view mode
  * @param {boolean} options.isMobile - Mobile device
+ * @param {string} options.chartTitle - Chart title for special handling
  * @returns {Object} ECharts Y-axis configuration
  */
 export function createSingleYAxisConfig(options = {}) {
   const {
     yFormat = 'short',
     isLarge = false,
-    isMobile = false
+    isMobile = false,
+    chartTitle = ''
   } = options
+
+  // Special handling for Shares Outstanding chart
+  const isSharesChart = chartTitle && chartTitle.includes('Shares Outstanding')
 
   return {
     type: 'value',
     scale: true,
     splitNumber: 4, // Limit to 4 intervals (5 lines total) for cleaner axis
     min: (v) => {
+      // Special handling for Shares Outstanding: min is 20% below lowest value
+      if (isSharesChart) {
+        return v.min * 0.8
+      }
+      
       const r = v.max - v.min
       if (r === 0) {
         const p = Math.abs(v.min) * 0.05 || 1
