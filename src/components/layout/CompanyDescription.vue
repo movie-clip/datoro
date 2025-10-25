@@ -52,6 +52,7 @@ const toggleExpanded = () => {
   padding: 16px 0;
   border-bottom: 1px solid #2A2A2E;
   margin-bottom: 16px;
+  min-height: 110px; /* Fixed minimum height to prevent layout shift */
 }
 
 .description-title {

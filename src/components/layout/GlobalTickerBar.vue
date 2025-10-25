@@ -281,6 +281,7 @@ watch(() => model.value, (newVal) => {
   align-items: stretch; 
   width: 100%;
   justify-content: space-between;
+  min-height: 72px; /* Ensure consistent height even when components reload */
 }
 
 .ticker-input-section {
@@ -295,6 +296,7 @@ watch(() => model.value, (newVal) => {
   position: relative;
   flex-wrap: wrap;
   transition: all 0.2s;
+  min-height: 72px; /* Fixed minimum height to match company header */
 }
 
 .ticker-input-section:hover {
@@ -546,12 +548,14 @@ watch(() => model.value, (newVal) => {
   .toolbar {
     flex-direction: column;
     gap: 12px;
+    min-height: auto; /* Allow natural height on mobile */
   }
 
   .ticker-input-section {
     width: 100%;
     padding: 8px 12px;
     gap: 8px;
+    min-height: 56px; /* Smaller but still fixed on mobile */
   }
 
   .label {

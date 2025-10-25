@@ -1,6 +1,27 @@
 <template>
+  <!-- Loading State with Skeleton -->
   <div
-    v-if="ticker && !loading"
+    v-if="loading"
+    class="company-header company-header-skeleton"
+  >
+    <div class="company-logo-skeleton">
+      <SkeletonLoader variant="card" :style="{ width: '48px', height: '48px', borderRadius: '8px' }" />
+    </div>
+    <div class="company-info">
+      <div class="company-identity">
+        <SkeletonLoader variant="text" :style="{ width: '150px', height: '16px' }" />
+        <SkeletonLoader variant="text" :style="{ width: '60px', height: '14px', marginLeft: '8px' }" />
+      </div>
+      <div class="price-info">
+        <SkeletonLoader variant="text" :style="{ width: '80px', height: '20px' }" />
+        <SkeletonLoader variant="text" :style="{ width: '100px', height: '14px', marginLeft: '8px' }" />
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loaded State -->
+  <div
+    v-else-if="ticker"
     class="company-header"
   >
     <img 
@@ -39,12 +60,6 @@
       </div>
     </div>
   </div>
-  <div
-    v-else-if="loading"
-    class="company-header loading-placeholder"
-  >
-    Loading company info...
-  </div>
 </template>
 
 <script setup>
@@ -53,6 +68,7 @@ import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { useWatchlist } from '../../composables/useWatchlist'
 import StarIcon from '../common/StarIcon.vue'
+import SkeletonLoader from '../common/SkeletonLoader.vue'
 
 const props = defineProps({
   ticker: { type: String, required: true }
@@ -143,11 +159,27 @@ const formatMarketCap = (mktCap) => {
   margin-left: auto;
   min-width: 0;
   transition: all 0.2s;
+  min-height: 72px; /* Fixed minimum height to prevent layout shift */
 }
 
 .company-header:hover {
   border-color: #00594C;
   box-shadow: 0 0 12px rgba(0, 89, 76, 0.2);
+}
+
+/* Skeleton Loading State */
+.company-header-skeleton {
+  pointer-events: none;
+}
+
+.company-header-skeleton:hover {
+  border-color: #2A2A2E; /* No hover effect while loading */
+  box-shadow: none;
+  transform: none;
+}
+
+.company-logo-skeleton {
+  flex-shrink: 0;
 }
 
 .company-logo {
@@ -247,6 +279,7 @@ const formatMarketCap = (mktCap) => {
     margin-left: 0;
     padding: 8px 12px;
     gap: 10px;
+    min-height: 56px; /* Smaller but still fixed on mobile */
   }
 
   .company-logo,

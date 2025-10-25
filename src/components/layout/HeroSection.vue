@@ -2,12 +2,31 @@
   <div class="hero-container">
     <!-- Primary: Price Chart (60% width) -->
     <div class="price-chart-container">
-      <CompanyDescription 
-        v-if="!loading && companyDescription"
-        :description="companyDescription"
-      />
-      <PriceChart />
+      <!-- Company Description - with skeleton loading -->
+      <div class="company-description-section">
+        <div v-if="loading" class="description-skeleton">
+          <div class="description-title-skeleton">
+            <SkeletonLoader variant="text" :style="{ width: '60px', height: '14px' }" />
+          </div>
+          <SkeletonLoader 
+            v-for="i in 3" 
+            :key="i" 
+            variant="text" 
+            :style="{ marginBottom: '8px', height: '14px' }" 
+          />
+        </div>
+        <CompanyDescription 
+          v-else-if="companyDescription"
+          :description="companyDescription"
+        />
+        <div v-else class="description-placeholder">
+          <!-- Empty state when no description available -->
+        </div>
       </div>
+      
+      <!-- Price Chart -->
+      <PriceChart />
+    </div>
 
       <!-- Secondary: Key Metrics Card (40% width) -->
       <div class="key-metrics-card">
@@ -18,8 +37,8 @@
           <SkeletonLoader 
             v-for="i in 6" 
             :key="i" 
-            variant="text" 
-            :style="{ marginBottom: '16px', height: '60px' }" 
+            variant="card" 
+            :style="{ marginBottom: '16px', height: '90px', borderRadius: '8px' }" 
           />
         </div>
 
@@ -175,12 +194,34 @@ const getMarginClass = (marginStr) => {
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
+  min-height: 500px; /* Fixed minimum height to prevent scaling */
 }
 
 .price-chart-container:hover {
   border-color: #00594C;
   box-shadow: 0 4px 20px rgba(0, 89, 76, 0.3);
   transform: translateY(-2px);
+}
+
+/* Company Description Section - Fixed sizing */
+.company-description-section {
+  min-height: 110px; /* Fixed height to prevent layout shift */
+  margin-bottom: 16px;
+}
+
+.description-skeleton {
+  padding: 16px 0;
+  border-bottom: 1px solid #2A2A2E;
+  margin-bottom: 16px;
+  min-height: 110px; /* Match company description height */
+}
+
+.description-title-skeleton {
+  margin-bottom: 10px;
+}
+
+.description-placeholder {
+  min-height: 110px; /* Reserve space even when no description */
 }
 
 .key-metrics-card {
@@ -190,6 +231,7 @@ const getMarginClass = (marginStr) => {
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
+  min-height: 500px; /* Fixed minimum height to match price chart */
 }
 
 .key-metrics-card:hover {
@@ -216,6 +258,10 @@ const getMarginClass = (marginStr) => {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.2s ease;
+  min-height: 90px; /* Fixed minimum height to prevent resizing */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .metric-item:hover {
@@ -225,6 +271,7 @@ const getMarginClass = (marginStr) => {
 
 .metric-item-full {
   grid-column: 1 / -1;
+  min-height: 100px; /* Slightly taller for health indicators */
 }
 
 .metric-label {
@@ -234,6 +281,7 @@ const getMarginClass = (marginStr) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
+  min-height: 18px; /* Fixed height for label */
 }
 
 .metric-value {
@@ -241,6 +289,9 @@ const getMarginClass = (marginStr) => {
   font-weight: 700;
   color: #E5E5E5;
   line-height: 1.2;
+  min-height: 34px; /* Fixed height for value */
+  display: flex;
+  align-items: center;
 }
 
 .metric-value.positive {
@@ -389,6 +440,11 @@ const getMarginClass = (marginStr) => {
 
   .metric-value {
     font-size: 1.5rem;
+    min-height: 30px; /* Adjust for smaller font */
+  }
+
+  .metric-item {
+    min-height: 85px; /* Slightly smaller on tablet */
   }
 }
 
@@ -415,6 +471,15 @@ const getMarginClass = (marginStr) => {
 
   .metric-value {
     font-size: 1.35rem;
+    min-height: 28px; /* Adjust for mobile font size */
+  }
+
+  .metric-item {
+    min-height: 80px; /* Smaller on mobile but still fixed */
+  }
+
+  .metric-item-full {
+    min-height: 90px;
   }
 
   .health-indicators {

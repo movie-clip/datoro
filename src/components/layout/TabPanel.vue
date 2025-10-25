@@ -57,6 +57,7 @@ const shouldRender = computed(() => {
   top: 0;
   left: 0;
   right: 0;
+  min-height: 450px; /* Maintain height during transitions to prevent layout shift */
 }
 
 .tab-panel.is-active {

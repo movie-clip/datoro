@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, defineAsyncComponent } from 'vue'
+import { ref, watch, onMounted, nextTick, defineAsyncComponent } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 import { useAuthStore } from './stores/authStore'
 import { useWatchlist } from './composables/useWatchlist'
@@ -189,10 +189,20 @@ async function handleToggleWatchlist(ticker) {
 }
 
 function handleSelectTicker(ticker) {
+  // Save current scroll position before updating ticker
+  const scrollY = window.scrollY
+  
   // Update the input field
   inputTicker.value = ticker
+  
   // Update the store (this will trigger data fetch)
   tickerStore.setTicker(ticker)
+  
+  // Restore scroll position after Vue updates the DOM
+  // Use nextTick to ensure DOM has updated
+  nextTick(() => {
+    window.scrollTo(0, scrollY)
+  })
 }
 </script>
 
@@ -790,6 +800,7 @@ function handleSelectTicker(ticker) {
   padding: 0 0;
   width: 100%;
   position: relative;
+  min-height: 500px; /* Prevent layout shift when switching tabs/tickers */
 }
 
 /* Mobile-specific sections */
