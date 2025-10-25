@@ -26,4 +26,17 @@ export function getApiBaseUrl() {
   return ''
 }
 
+/**
+ * Get absolute API URL (for cases like image URLs in ECharts that require absolute paths)
+ * - If VITE_API_BASE_URL is set, use it (already absolute)
+ * - Otherwise, use window.location.origin (same-origin deployment)
+ * 
+ * Use API_BASE_URL for fetch() calls (supports relative URLs)
+ * Use API_ABSOLUTE_URL for image src, ECharts backgrounds, etc. (require absolute URLs)
+ */
+export function getAbsoluteApiUrl() {
+  return getApiBaseUrl() || window.location.origin
+}
+
 export const API_BASE_URL = getApiBaseUrl()
+export const API_ABSOLUTE_URL = getAbsoluteApiUrl()

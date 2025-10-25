@@ -190,10 +190,11 @@
 import { ref, watch } from 'vue'
 import { useWatchlist } from '../../composables/useWatchlist'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
+import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 
 // Helper to get full icon URL for production compatibility
 const getIconUrl = (ticker) => {
-  return `${window.location.origin}/api/company-icon/${ticker}`
+  return `${API_ABSOLUTE_URL}/api/company-icon/${ticker}`
 }
 
 const props = defineProps({

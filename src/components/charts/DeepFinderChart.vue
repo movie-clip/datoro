@@ -62,11 +62,11 @@ import {
 } from 'echarts/components'
 import { fetchDeepFinderData, getDistanceColor } from '../../services/deepFinder/deepFinderService'
 import { DEEP_FINDER_CONFIG } from '../../config/deepFinderStocks'
+import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 
 // Helper to get full icon URL (ECharts needs absolute URLs in production)
 const getIconUrl = (ticker) => {
-  const baseUrl = window.location.origin
-  return `${baseUrl}/api/company-icon/${ticker}`
+  return `${API_ABSOLUTE_URL}/api/company-icon/${ticker}`
 }
 
 // Register ECharts components
