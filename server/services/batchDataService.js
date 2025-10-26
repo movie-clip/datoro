@@ -33,7 +33,7 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
   const t = ticker.toUpperCase().trim();
   const baseUrl = 'https://financialmodelingprep.com';
   
-  // All endpoints we need to fetch (20 total - added DCF)
+  // All endpoints we need to fetch (23 total - added TTM endpoints for DCF)
   const endpoints = {
     // Core company data (Priority 1 - Always needed)
     profile: `/api/v3/profile/${t}?apikey=${fmpApiKey}`,
@@ -46,6 +46,10 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
     balanceQuarter: `/api/v3/balance-sheet-statement/${t}?period=quarter&limit=20&apikey=${fmpApiKey}`,
     cashflowAnnual: `/api/v3/cash-flow-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
     cashflowQuarter: `/api/v3/cash-flow-statement/${t}?period=quarter&limit=20&apikey=${fmpApiKey}`,
+    
+    // TTM data for DCF (Priority 1 - More accurate current metrics)
+    ratiosTTM: `/api/v3/ratios-ttm/${t}?apikey=${fmpApiKey}`,
+    keyMetricsTTM: `/api/v3/key-metrics-ttm/${t}?apikey=${fmpApiKey}`,
     
     // Ratios and metrics (Priority 1)
     ratiosAnnual: `/api/v3/ratios/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,

@@ -20,6 +20,11 @@ function calculateCAGR(startValue, endValue, years) {
 /**
  * Extract company data needed for DCF calculation from batch data
  * 
+ * Uses TTM (Trailing Twelve Months) data for most current metrics:
+ * - EPS: From quote endpoint (TTM)
+ * - P/E Ratio: From ratiosTTM endpoint, fallback to annual
+ * - EPS Growth: Calculated from quarterly data (TTM vs previous TTM)
+ * 
  * @param {Object} batchData - Batch data from ticker store
  * @returns {Object} DCF-ready company data
  * @returns {number} return.currentFcf - Most recent free cash flow
@@ -28,6 +33,9 @@ function calculateCAGR(startValue, endValue, years) {
  * @returns {number} return.totalDebt - Current total debt
  * @returns {number} return.currentPrice - Current stock price
  * @returns {number} return.historicalGrowthRate - 3-year FCF CAGR (%)
+ * @returns {number} return.eps - TTM earnings per share
+ * @returns {number} return.currentPE - TTM P/E ratio
+ * @returns {number} return.epsGrowth - TTM YoY EPS growth (%)
  * @returns {string} return.companyName - Company name
  * @returns {string} return.ticker - Stock ticker
  * @returns {string} return.lastUpdated - Last data update timestamp
@@ -107,19 +115,56 @@ export function getDcfDataFromBatch(batchData) {
     const ticker = profile?.symbol || batchData.ticker || 'N/A'
     const image = profile?.image || null
     
-    // Get EPS, P/E ratio from quote and ratios
-    const eps = quote?.eps || 0
-    const ratios = data.ratiosAnnual?.[0]
-    const currentPE = ratios?.priceEarningsRatio || 0
+    // Get TTM EPS, P/E ratio, and EPS growth
+    // Priority 1: Use TTM data (most current)
+    // Priority 2: Fall back to quote/annual data
+    const ratiosTTM = data.ratiosTTM?.[0] || null
+    const keyMetricsTTM = data.keyMetricsTTM?.[0] || null
     
-    // Calculate EPS growth rate (using income statements if available)
-    const incomeAnnual = data.incomeAnnual || []
+    // EPS from quote (already TTM)
+    const eps = quote?.eps || 0
+    
+    // P/E Ratio - prefer TTM, fallback to annual
+    let currentPE = 0
+    if (ratiosTTM?.peRatioTTM) {
+      currentPE = ratiosTTM.peRatioTTM
+    } else if (ratiosTTM?.priceEarningsRatioTTM) {
+      currentPE = ratiosTTM.priceEarningsRatioTTM
+    } else {
+      // Fallback to annual data if TTM not available
+      const ratiosAnnual = data.ratiosAnnual?.[0]
+      currentPE = ratiosAnnual?.priceEarningsRatio || 0
+    }
+    
+    // EPS Growth - calculate from quarterly data for TTM comparison
+    const incomeQuarter = data.incomeQuarter || []
     let epsGrowth = 0
-    if (incomeAnnual.length >= 2) {
-      const latestEps = incomeAnnual[0]?.eps || 0
-      const previousEps = incomeAnnual[1]?.eps || 0
-      if (latestEps > 0 && previousEps > 0) {
-        epsGrowth = ((latestEps - previousEps) / Math.abs(previousEps)) * 100
+    
+    if (incomeQuarter.length >= 8) {
+      // Compare TTM (last 4 quarters) vs previous TTM (quarters 5-8)
+      const ttmEps = incomeQuarter.slice(0, 4).reduce((sum, q) => sum + (q.eps || 0), 0)
+      const prevTtmEps = incomeQuarter.slice(4, 8).reduce((sum, q) => sum + (q.eps || 0), 0)
+      
+      if (ttmEps !== 0 && prevTtmEps !== 0) {
+        epsGrowth = ((ttmEps - prevTtmEps) / Math.abs(prevTtmEps)) * 100
+      }
+    } else if (incomeQuarter.length >= 4) {
+      // If we don't have 8 quarters, compare latest quarter to year-ago quarter
+      const latestEps = incomeQuarter[0]?.eps || 0
+      const yearAgoEps = incomeQuarter[3]?.eps || 0
+      
+      if (latestEps !== 0 && yearAgoEps !== 0) {
+        epsGrowth = ((latestEps - yearAgoEps) / Math.abs(yearAgoEps)) * 100
+      }
+    } else {
+      // Final fallback to annual data
+      const incomeAnnual = data.incomeAnnual || []
+      if (incomeAnnual.length >= 2) {
+        const latestEps = incomeAnnual[0]?.eps || 0
+        const previousEps = incomeAnnual[1]?.eps || 0
+        if (latestEps > 0 && previousEps > 0) {
+          epsGrowth = ((latestEps - previousEps) / Math.abs(previousEps)) * 100
+        }
       }
     }
     
