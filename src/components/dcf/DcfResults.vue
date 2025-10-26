@@ -150,10 +150,9 @@ const getFmpTooltip = () => {
   if (props.fmpDcfError) return `Error: ${props.fmpDcfError}`
   if (!props.fmpDcfValue?.intrinsicValue) return 'No FMP DCF data available'
   
-  const date = props.fmpDcfValue.date ? `\nCalculated: ${new Date(props.fmpDcfValue.date).toLocaleDateString()}` : ''
   return `FMP Discounted Cash Flow Model:
 Traditional DCF with free cash flow projections
-Discounted to present value using WACC${date}`
+Discounted to present value using WACC`
 }
 
 const getCurrentPriceTooltip = () => {
