@@ -31,13 +31,32 @@
             title="Invalid ticker"
           >⚠️</span>
           
-          <!-- Search Results Dropdown - Optimized rendering -->
+          <!-- Search Results Dropdown - With Recent Searches -->
           <div
-            v-if="showDropdown && (searching || searchResults.length > 0)"
+            v-if="showDropdown && (searching || searchResults.length > 0 || (!localInput && recentSearches.length > 0))"
             class="search-dropdown"
             role="listbox"
             @mousedown.prevent
           >
+            <!-- Recent Searches Section (shown when input is empty) -->
+            <div v-if="!localInput && recentSearches.length > 0 && !searching" class="recent-section">
+              <div class="recent-header">
+                <span class="recent-icon">🕐</span>
+                <span class="recent-title">Recent Searches</span>
+              </div>
+              <button
+                v-for="ticker in recentSearches"
+                :key="ticker"
+                type="button"
+                class="recent-item"
+                @click="selectTicker(ticker)"
+              >
+                <span class="recent-ticker">{{ ticker }}</span>
+                <span class="recent-arrow">→</span>
+              </button>
+            </div>
+
+            <!-- Loading State -->
             <div 
               v-if="searching" 
               class="search-loading"
@@ -49,8 +68,10 @@
                 <span>Searching...</span>
               </div>
             </div>
+
+            <!-- Search Results -->
             <button
-              v-else
+              v-else-if="localInput && searchResults.length > 0"
               v-for="result in searchResults"
               :key="result.symbol"
               type="button"
@@ -85,19 +106,6 @@
         </span>
       </div>
 
-      <!-- Ticker History (Desktop only) -->
-      <div v-if="isStandalone && tickerHistory.length > 0" class="ticker-history">
-        <button
-          v-for="ticker in tickerHistory"
-          :key="ticker"
-          class="history-ticker-btn"
-          @click="selectHistoryTicker(ticker)"
-          :title="`Switch to ${ticker}`"
-        >
-          {{ ticker }}
-        </button>
-      </div>
-
       <CompanyHeader 
         v-if="confirmedTicker" 
         :ticker="confirmedTicker" 
@@ -116,25 +124,12 @@
 import { ref, watch, onUnmounted } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
 import { useTickerSearch } from '../../composables/useTickerSearch'
-import { usePlatform } from '../../composables/usePlatform'
-import { useTickerHistory } from '../../composables/useTickerHistory'
+import { useRecentSearch } from '../../composables/useRecentSearch'
 
 const companyProfile = ref(null)
 
-// Platform detection
-const { isStandalone } = usePlatform()
-
-// Ticker history
-const { tickerHistory, addToHistory } = useTickerHistory()
-
-// Debug logging
-watch([isStandalone, tickerHistory], ([standalone, history]) => {
-  console.log('[TickerHistory Debug]', {
-    isStandalone: standalone,
-    historyLength: history.length,
-    history: history
-  })
-}, { immediate: true, deep: true })
+// Recent searches (client-side only, no API calls)
+const { recentSearches, addToRecent } = useRecentSearch()
 
 // Props used in template (ESLint can't detect template usage)
 // eslint-disable-next-line no-unused-vars
@@ -194,7 +189,8 @@ const handleInputChange = () => {
     showDropdown.value = true
   } else {
     clearSearch()
-    showDropdown.value = false
+    // Keep dropdown open to show recent searches when input is empty
+    showDropdown.value = true
   }
 }
 
@@ -209,8 +205,8 @@ const selectTicker = (symbol) => {
     inputRef.value.blur()
   }
   
-  // Add to history
-  addToHistory(symbol)
+  // Add to recent searches (client-side only)
+  addToRecent(symbol)
   
   emit('submit')
 }
@@ -255,16 +251,9 @@ const handleSubmit = () => {
     inputRef.value.blur()
   }
   
-  // Add to history
-  addToHistory(value)
+  // Add to recent searches (client-side only)
+  addToRecent(value)
   
-  emit('submit')
-}
-
-// Handle clicking a ticker from history
-const selectHistoryTicker = (ticker) => {
-  localInput.value = ticker
-  model.value = ticker
   emit('submit')
 }
 
@@ -309,38 +298,67 @@ watch(() => model.value, (newVal) => {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
 }
 
-/* Ticker History */
-.ticker-history {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-shrink: 0;
-  margin: 10px;
+/* Recent Searches Section in Dropdown */
+.recent-section {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(42, 42, 46, 0.5);
 }
 
-.history-ticker-btn {
-  padding: 10px 16px;
-  background: rgba(0, 89, 76, 0.02);
-  border: 1px solid rgba(0, 89, 76, 0.3);
-  border-radius: 8px;
-  color: #00705f;
-  font-size: 13px;
+.recent-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 11px;
   font-weight: 600;
+  color: rgba(229, 229, 229, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recent-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.recent-title {
+  flex: 1;
+}
+
+.recent-item {
+  width: 100%;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  white-space: nowrap;
-  width: 80px;
-  text-align: center;
+  text-align: left;
 }
 
-.history-ticker-btn:hover {
-  border-color: rgba(0, 89, 76, 0.5);
-  transform: translateY(-1px);
+.recent-item:hover {
+  background: rgba(0, 168, 142, 0.08);
 }
 
-.history-ticker-btn:active {
-  transform: scale(0.95);
-  background: rgba(0, 89, 76, 0.3);
+.recent-ticker {
+  font-size: 14px;
+  font-weight: 600;
+  color: #00A88E;
+  letter-spacing: 0.3px;
+}
+
+.recent-arrow {
+  font-size: 14px;
+  color: rgba(0, 168, 142, 0.4);
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.recent-item:hover .recent-arrow {
+  opacity: 1;
+  transform: translateX(2px);
 }
 
 .label { 
@@ -576,6 +594,7 @@ watch(() => model.value, (newVal) => {
     font-size: 10px;
     margin-left: 50px;
   }
+
 }
 
 @media (max-width: 480px) {
