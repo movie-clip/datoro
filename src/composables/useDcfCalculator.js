@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { calculateIntrinsicValue, getRecommendation } from '../services/dcf/dcfCalculator'
 import { getDcfDataFromBatch, validateDcfData } from '../services/dcf/dcfDataService'
-import { calculateBuffettValue, getFmpDcfFromBatch, getValuationRecommendation } from '../services/dcf/valuationMethodsService'
+import { calculateAdvancedDcfValue, getFmpDcfFromBatch, getValuationRecommendation } from '../services/dcf/valuationMethodsService'
 
 /**
  * DCF Calculator Composable
@@ -91,13 +91,7 @@ export function useDcfCalculator() {
   })
 
   // Alternative valuation methods
-  const buffettInputs = ref({
-    growthRate: 15,  // Expected annual earnings growth %
-    fairPE: 15,      // Fair P/E multiple
-    years: 10        // Investment timeframe
-  })
-
-  const buffettValue = ref(null)
+  const advancedDcfValue = ref(null)
   const fmpDcfValue = computed(() => {
     if (!batchData.value) return null
     
@@ -128,21 +122,19 @@ export function useDcfCalculator() {
     try {
       // Need valid company data to calculate
       if (!companyData.value || !dataValidation.value.valid) {
-        // Reset to null state
-        intrinsicValue.value = null
-        projectedPrices.value = []
-        upside.value = null
-        recommendation.value = null
-        scenarios.value = {
-          best: { intrinsicValue: null, projectedPrices: [], upside: null },
-          average: { intrinsicValue: null, projectedPrices: [], upside: null },
-          worst: { intrinsicValue: null, projectedPrices: [], upside: null }
-        }
-        buffettValue.value = null
-        return
+      // Reset to null state
+      intrinsicValue.value = null
+      projectedPrices.value = []
+      upside.value = null
+      recommendation.value = null
+      scenarios.value = {
+        best: { intrinsicValue: null, projectedPrices: [], upside: null },
+        average: { intrinsicValue: null, projectedPrices: [], upside: null },
+        worst: { intrinsicValue: null, projectedPrices: [], upside: null }
       }
-
-      // Calculate for all three scenarios
+      advancedDcfValue.value = null
+      return
+    }      // Calculate for all three scenarios
       const scenarioTypes = ['best', 'average', 'worst']
       
       scenarioTypes.forEach(scenario => {
@@ -175,8 +167,7 @@ export function useDcfCalculator() {
         recommendation.value = null
       }
 
-      // Calculate Buffett's value
-      calculateBuffettMethod()
+      // Advanced DCF calculated separately via watch
     } catch (error) {
       console.error('[DCF Calculator] Calculation error:', error)
       // Reset on error
@@ -193,33 +184,24 @@ export function useDcfCalculator() {
     }
   }
 
-  // Calculate Buffett's valuation
-  const calculateBuffettMethod = () => {
-    if (!companyData.value) {
-      buffettValue.value = null
+  // Calculate Advanced DCF valuation from FMP
+  const calculateAdvancedDcfMethod = () => {
+    console.log('[DCF Calculator] calculateAdvancedDcfMethod called')
+    console.log('[DCF Calculator] batchData.value:', batchData.value)
+    
+    if (!batchData.value) {
+      advancedDcfValue.value = null
       return
     }
 
-    // Extract data from batch
-    const quote = batchData.value?.data?.quote?.[0]
-    const ratios = batchData.value?.data?.ratiosAnnual?.[0]
-
-    if (!quote || !ratios) {
-      buffettValue.value = null
-      return
-    }
-
-    const buffettData = {
-      eps: quote.eps || 0,
-      currentPrice: quote.price || companyData.value.currentPrice || 0,
-      currentPE: ratios.priceEarningsRatio || 0
-    }
-
-    buffettValue.value = calculateBuffettValue(buffettData, buffettInputs.value)
+    console.log('[DCF Calculator] advancedDcf data:', batchData.value.data?.advancedDcf)
+    const result = calculateAdvancedDcfValue(batchData.value.data)
+    console.log('[DCF Calculator] Advanced DCF result:', result)
+    advancedDcfValue.value = result
   }
 
-  // Watch for Buffett input changes
-  watch(buffettInputs, calculateBuffettMethod, { deep: true })
+  // Watch for batch data changes to recalculate Advanced DCF
+  watch(batchData, calculateAdvancedDcfMethod, { deep: true })
 
   // Watch for input changes and recalculate (debounced for performance)
   watch(inputs, calculate, { deep: true })
@@ -229,11 +211,11 @@ export function useDcfCalculator() {
 
   // Calculate on initialization
   calculate()
+  calculateAdvancedDcfMethod()
 
   return {
     // Inputs
     inputs,
-    buffettInputs,
     
     // Results (average scenario)
     intrinsicValue,
@@ -245,7 +227,7 @@ export function useDcfCalculator() {
     scenarios,
     
     // Alternative valuations
-    buffettValue,
+    advancedDcfValue,
     fmpDcfValue,
     fmpDcfLoading,
     fmpDcfError,
@@ -261,6 +243,6 @@ export function useDcfCalculator() {
     
     // Methods
     calculate,
-    calculateBuffettMethod
+    calculateAdvancedDcfMethod
   }
 }

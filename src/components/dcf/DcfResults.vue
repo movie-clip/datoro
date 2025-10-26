@@ -2,7 +2,7 @@
   <div class="dcf-results">
     <h3 class="section-title">Valuation Results</h3>
     
-    <div v-if="intrinsicValue !== null || buffettValue?.intrinsicValue || fmpDcfValue?.intrinsicValue" class="results-grid">
+    <div v-if="intrinsicValue !== null || advancedDcfValue?.intrinsicValue || fmpDcfValue?.intrinsicValue" class="results-grid">
       <!-- Custom DCF Intrinsic Value Card -->
       <div class="result-card" :data-tooltip="getDcfTooltip()">
         <div class="card-label">PEG Model</div>
@@ -16,17 +16,17 @@
         <div class="card-hint">Custom cash flow model</div>
       </div>
 
-      <!-- Buffett's Formula Card -->
-      <div class="result-card" :data-tooltip="getBuffettTooltip()">
-        <div class="card-label">Buffett Formula</div>
-        <div v-if="buffettValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(buffettValue.intrinsicValue)">
-          ${{ formatNumber(buffettValue.intrinsicValue) }}
-          <span v-if="buffettValue?.upside" class="upside-inline" :class="getUpsideClass(buffettValue.upside)">
-            ({{ buffettValue.upside > 0 ? '+' : '' }}{{ buffettValue.upside.toFixed(1) }}%)
+      <!-- Advanced DCF Card -->
+      <div class="result-card" :data-tooltip="getAdvancedDcfTooltip()">
+        <div class="card-label">Advanced DCF</div>
+        <div v-if="advancedDcfValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(advancedDcfValue.intrinsicValue)">
+          ${{ formatNumber(advancedDcfValue.intrinsicValue) }}
+          <span v-if="advancedDcfValue?.upside" class="upside-inline" :class="getUpsideClass(advancedDcfValue.upside)">
+            ({{ advancedDcfValue.upside > 0 ? '+' : '' }}{{ advancedDcfValue.upside.toFixed(1) }}%)
           </span>
         </div>
-        <div v-else class="card-value text-muted">N/A</div>
-        <div class="card-hint">EPS growth model</div>
+        <div v-else class="card-value text-muted">—</div>
+        <div class="card-hint">FMP 10-year model</div>
       </div>
 
       <!-- FMP DCF Card -->
@@ -75,7 +75,7 @@ const props = defineProps({
     type: Number,
     default: null
   },
-  buffettValue: {
+  advancedDcfValue: {
     type: Object,
     default: null
   },
@@ -135,15 +135,14 @@ Future EPS = Current EPS × (1 + Growth Rate)^Years
 Target Price = Future EPS × Target P/E`
 }
 
-const getBuffettTooltip = () => {
-  const years = props.buffettValue?.years || 10
-  const growth = props.buffettValue?.growthRate || 15
-  const pe = props.buffettValue?.fairPE || 15
-  return `Buffett's Formula:
-Fair P/E = EPS Growth Rate
-Fair Value = EPS × Fair P/E
-
-Assumptions: ${growth}% growth, P/E ${pe}, ${years}yr horizon`
+const getAdvancedDcfTooltip = () => {
+  if (!props.advancedDcfValue?.intrinsicValue) return 'No data available'
+  const wacc = props.advancedDcfValue?.wacc || 'N/A'
+  const terminalGrowth = props.advancedDcfValue?.terminalGrowthRate || 'N/A'
+  return `Advanced DCF Model (FMP):
+10-year projection with terminal value
+WACC: ${wacc}%
+Terminal Growth: ${terminalGrowth}%`
 }
 
 const getFmpTooltip = () => {

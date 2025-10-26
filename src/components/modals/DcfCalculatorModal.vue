@@ -79,7 +79,7 @@
                   :intrinsic-value="intrinsicValue"
                   :current-price="companyData?.currentPrice || 0"
                   :upside="upside"
-                  :buffett-value="buffettValue"
+                  :advanced-dcf-value="advancedDcfValue"
                   :fmp-dcf-value="fmpDcfValue"
                   :fmp-dcf-loading="fmpDcfLoading"
                   :fmp-dcf-error="fmpDcfError"
@@ -122,11 +122,10 @@ const mouseDownOnOverlay = ref(false)
 // DCF Calculator composable - now self-contained (matches project pattern)
 const { 
   inputs,
-  buffettInputs,
   intrinsicValue, 
   upside, 
   scenarios,
-  buffettValue,
+  advancedDcfValue,
   fmpDcfValue,
   fmpDcfLoading,
   fmpDcfError,

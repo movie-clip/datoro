@@ -27,13 +27,13 @@ async function fetchWithTimeout(url, options = {}, timeout = 10000) {
 /**
  * Fetch all data for a ticker in one batch
  * Returns everything needed for the dashboard in a single response
- * Now fetches 20 endpoints (added FMP DCF valuation)
+ * Now fetches 24 endpoints (added Advanced DCF for detailed valuation)
  */
 export async function fetchTickerBatch(ticker, fmpApiKey) {
   const t = ticker.toUpperCase().trim();
   const baseUrl = 'https://financialmodelingprep.com';
   
-  // All endpoints we need to fetch (23 total - added TTM endpoints for DCF)
+  // All endpoints we need to fetch (24 total - added Advanced DCF)
   const endpoints = {
     // Core company data (Priority 1 - Always needed)
     profile: `/api/v3/profile/${t}?apikey=${fmpApiKey}`,
@@ -60,6 +60,9 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
     
     // Valuation (Priority 1 - DCF from FMP)
     fmpDcf: `/api/v3/discounted-cash-flow/${t}?apikey=${fmpApiKey}`,
+    
+    // Advanced DCF (Priority 1 - Full 10-year projection model)
+    advancedDcf: `/api/v4/advanced_discounted_cash_flow?symbol=${t}&apikey=${fmpApiKey}`,
     
     // Additional data (Priority 2)
     revenueSegments: `/api/v4/revenue-product-segmentation?symbol=${t}&structure=flat&apikey=${fmpApiKey}`,
@@ -92,10 +95,17 @@ export async function fetchTickerBatch(ticker, fmpApiKey) {
           
           if (!res.ok) {
             console.warn(`[BatchData] ${key} failed: ${res.status}`);
+            if (key === 'advancedDcf') {
+              console.error(`[BatchData] advancedDcf endpoint failed: ${baseUrl}${endpoint}`);
+              console.error(`[BatchData] advancedDcf status: ${res.status}, statusText: ${res.statusText}`);
+            }
             return [key, null];
           }
           
           const data = await res.json();
+          if (key === 'advancedDcf') {
+            console.log(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+          }
           return [key, data];
         } catch (error) {
           console.warn(`[BatchData] ${key} error:`, error.message);

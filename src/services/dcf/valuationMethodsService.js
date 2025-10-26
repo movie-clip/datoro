@@ -1,78 +1,102 @@
 /**
  * Alternative Valuation Methods Service
- * Implements Warren Buffett's PEG-based formula and integrates FMP's DCF API
+ * Integrates FMP's Advanced DCF model and other professional valuation methods
  */
 
 import { API_BASE_URL } from '../../utils/apiConfig.js'
 
 /**
- * Warren Buffett's Simplified Valuation Formula
- * Formula: Intrinsic Value = EPS × Fair P/E × (1 + Growth Rate)^Years
+ * Get FMP's Advanced DCF Valuation
  * 
- * This is a simplified PEG-based approach:
- * 1. Start with current EPS
- * 2. Apply a "fair" P/E multiple based on growth expectations
- * 3. Project earnings growth over investment timeframe
- * 4. Calculate intrinsic value per share
+ * FMP's Advanced DCF provides a complete 10-year projection model with:
+ * - Revenue, EBITDA, EBIT projections
+ * - Free cash flow (UFCF) calculations
+ * - WACC calculation (cost of equity, cost of debt, weights)
+ * - Terminal value and enterprise value
+ * - Equity value per share (intrinsic value)
  * 
- * @param {Object} companyData - Company financial data
- * @param {number} companyData.eps - Trailing 12-month EPS
- * @param {number} companyData.currentPrice - Current stock price
- * @param {number} companyData.currentPE - Current P/E ratio
- * @param {Object} inputs - User assumptions
- * @param {number} inputs.growthRate - Expected annual earnings growth rate (%)
- * @param {number} inputs.fairPE - Fair P/E multiple to apply
- * @param {number} inputs.years - Investment timeframe in years
- * @returns {Object} Valuation result
+ * This is a professional-grade DCF model with full transparency of all assumptions.
+ * 
+ * @param {Object} batchData - Batch data containing advancedDcf
+ * @param {Object} inputs - Optional user inputs (not used, FMP model is pre-calculated)
+ * @returns {Object} Valuation result with intrinsic value and model details
  */
-export function calculateBuffettValue(companyData, inputs) {
-  const {
-    eps = 0,
-    currentPrice = 0,
-    currentPE = 0
-  } = companyData || {}
-
-  const {
-    growthRate = 15, // Default 15% growth
-    fairPE = 15,     // Default fair P/E of 15
-    years = 10       // Default 10-year horizon
-  } = inputs || {}
-
-  // Validate inputs
-  if (eps <= 0 || currentPrice <= 0) {
+export function calculateAdvancedDcfValue(batchData, inputs = {}) {
+  const advancedDcf = batchData?.advancedDcf
+  const quote = batchData?.quote?.[0]
+  
+  if (!advancedDcf || !Array.isArray(advancedDcf) || advancedDcf.length === 0) {
     return {
       intrinsicValue: null,
-      futureEPS: null,
-      impliedReturn: null,
-      marginOfSafety: null,
-      error: 'Invalid EPS or price data'
+      error: 'Advanced DCF data not available'
     }
   }
 
-  // Calculate future EPS with compounding growth
-  const growthMultiplier = Math.pow(1 + (growthRate / 100), years)
-  const futureEPS = eps * growthMultiplier
+  if (!quote || !quote.price) {
+    return {
+      intrinsicValue: null,
+      error: 'Current price data not available'
+    }
+  }
 
-  // Calculate intrinsic value using fair P/E
-  const intrinsicValue = futureEPS * fairPE
+  // Get the most recent projection (last item has summary values)
+  const latestProjection = advancedDcf[advancedDcf.length - 1]
+  
+  const intrinsicValue = latestProjection.equityValuePerShare
+  const currentPrice = quote.price
+  
+  if (!intrinsicValue || intrinsicValue <= 0) {
+    return {
+      intrinsicValue: null,
+      error: 'Invalid Advanced DCF calculation'
+    }
+  }
 
-  // Calculate implied annual return if bought at current price
-  const impliedReturn = (Math.pow(intrinsicValue / currentPrice, 1 / years) - 1) * 100
-
-  // Calculate margin of safety
+  // Calculate margin of safety and upside
   const marginOfSafety = ((intrinsicValue - currentPrice) / intrinsicValue) * 100
+  const upside = ((intrinsicValue - currentPrice) / currentPrice) * 100
+
+  // Get key model assumptions from the projection
+  const wacc = latestProjection.wacc || null
+  const terminalGrowthRate = latestProjection.longTermGrowthRate || null
+  const beta = latestProjection.beta || null
+  const costOfEquity = latestProjection.costOfEquity || null
+  const costOfDebt = latestProjection.costofDebt || null
+
+  // Get projections (first 5 years for summary)
+  const projections = advancedDcf.slice(0, 5).reverse().map(year => ({
+    year: year.year,
+    revenue: year.revenue,
+    freeCashFlow: year.ufcf,
+    ebitda: year.ebitda
+  }))
 
   return {
     intrinsicValue: Math.round(intrinsicValue * 100) / 100,
-    futureEPS: Math.round(futureEPS * 100) / 100,
-    impliedReturn: Math.round(impliedReturn * 10) / 10,
-    marginOfSafety: Math.round(marginOfSafety * 10) / 10,
-    currentPE: currentPE,
-    fairPE: fairPE,
-    years: years,
-    growthRate: growthRate,
     currentPrice: currentPrice,
-    upside: ((intrinsicValue - currentPrice) / currentPrice) * 100
+    marginOfSafety: Math.round(marginOfSafety * 10) / 10,
+    upside: Math.round(upside * 10) / 10,
+    
+    // Model assumptions
+    wacc: wacc ? Math.round(wacc * 100) / 100 : null,
+    terminalGrowthRate: terminalGrowthRate || null,
+    beta: beta ? Math.round(beta * 1000) / 1000 : null,
+    costOfEquity: costOfEquity ? Math.round(costOfEquity * 100) / 100 : null,
+    costOfDebt: costOfDebt ? Math.round(costOfDebt * 100) / 100 : null,
+    
+    // Enterprise value components
+    enterpriseValue: latestProjection.enterpriseValue,
+    terminalValue: latestProjection.terminalValue,
+    presentTerminalValue: latestProjection.presentTerminalValue,
+    
+    // Projections summary
+    projections: projections,
+    
+    // Metadata
+    methodology: 'Advanced DCF (FMP)',
+    note: 'Professional 10-year DCF model from Financial Modeling Prep',
+    symbol: latestProjection.symbol,
+    calculatedBy: 'FMP'
   }
 }
 
