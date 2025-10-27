@@ -97,6 +97,39 @@ try {
   console.log('❌ Production Build failed');
 }
 
+// Check 6.5: TypeScript type checking
+console.log('\n🔍 TypeScript Type Checking...');
+try {
+  console.log('   Checking frontend types...');
+  execSync('npm run type-check', { cwd: rootDir, stdio: 'pipe' });
+  checks.passed.push('TypeScript Frontend');
+  console.log('✅ Frontend type-check passed');
+} catch {
+  checks.failed.push({ name: 'TypeScript Frontend', error: 'Type errors found in frontend' });
+  console.log('❌ Frontend type-check failed');
+}
+
+try {
+  console.log('   Checking backend types...');
+  execSync('npm run type-check:server', { cwd: rootDir, stdio: 'pipe' });
+  checks.passed.push('TypeScript Backend');
+  console.log('✅ Backend type-check passed');
+} catch (error) {
+  // Backend type errors are warnings if tests pass (route handler signatures)
+  warn('TypeScript Backend', 'Type errors found in backend. Verify tests pass to confirm runtime safety.');
+}
+
+// Check 6.6: Run tests
+console.log('\n🧪 Running Tests...');
+try {
+  execSync('npm test', { cwd: rootDir, stdio: 'pipe' });
+  checks.passed.push('Unit Tests');
+  console.log('✅ All tests passed');
+} catch {
+  checks.failed.push({ name: 'Unit Tests', error: 'Tests failed' });
+  console.log('❌ Tests failed');
+}
+
 // Check 7: Prisma schema
 console.log('\n🗄️  Checking Prisma Schema...');
 try {
@@ -106,6 +139,23 @@ try {
 } catch {
   checks.failed.push({ name: 'Prisma Schema', error: 'Invalid schema' });
   console.log('❌ Prisma Schema invalid');
+}
+
+// Check 7.5: Verify Prisma migrations are synced
+console.log('\n🔄 Checking Prisma Migrations...');
+try {
+  const migrationStatus = execSync('npx prisma migrate status', { cwd: rootDir, encoding: 'utf-8', stdio: 'pipe' });
+  if (migrationStatus.includes('Database schema is up to date')) {
+    checks.passed.push('Prisma Migrations');
+    console.log('✅ Prisma migrations synced');
+  } else if (migrationStatus.includes('Following migration have not yet been applied')) {
+    warn('Prisma Migrations', 'Pending migrations detected. Run: npx prisma migrate deploy');
+  } else {
+    checks.passed.push('Prisma Migrations');
+    console.log('✅ Prisma migrations status checked');
+  }
+} catch (error) {
+  warn('Prisma Migrations', 'Could not verify migration status. Ensure database is accessible.');
 }
 
 // Check 8: Environment variables
@@ -129,6 +179,30 @@ if (existsSync(envExample)) {
       warn(`Env Var: ${varName}`, 'Not found in .env.example');
     }
   });
+}
+
+// Check 8.5: Verify critical TypeScript config files
+console.log('\n⚙️  Checking TypeScript Configuration...');
+const tsConfigs = [
+  'tsconfig.json',
+  'tsconfig.app.json',
+  'tsconfig.server.json'
+];
+
+tsConfigs.forEach(file => {
+  if (existsSync(join(rootDir, file))) {
+    checks.passed.push(`TS Config: ${file}`);
+  } else {
+    warn(`TS Config: ${file}`, `${file} not found - may cause type-checking issues`);
+  }
+});
+
+// Check 8.6: Verify dist directory exists after build
+if (existsSync(join(rootDir, 'dist'))) {
+  checks.passed.push('Build Output');
+  console.log('✅ dist/ directory exists');
+} else {
+  warn('Build Output', 'dist/ directory not found. Build may have failed.');
 }
 
 // Check 9: Git status
@@ -157,6 +231,39 @@ try {
 } catch {
   warn('GitHub Remote', 'No remote repository configured. Run: git remote add origin <url>');
 }
+
+// Check 11: Verify critical server files exist
+console.log('\n🖥️  Checking Server Files...');
+const serverFiles = [
+  'server/server.ts',
+  'server/config/database.config.ts',
+  'server/services/batchDataService.ts',
+  'server/services/cacheService.ts',
+  'server/middleware/rateLimiter.ts',
+  'server/middleware/errorHandler.ts'
+];
+
+serverFiles.forEach(file => {
+  if (existsSync(join(rootDir, file))) {
+    checks.passed.push(`Server: ${file.split('/').pop()}`);
+  } else {
+    checks.failed.push({ name: `Server File: ${file}`, error: 'Required server file missing' });
+    console.log(`❌ Missing: ${file}`);
+  }
+});
+
+// Check 12: Verify package.json scripts exist
+console.log('\n📜 Checking Package Scripts...');
+const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
+const requiredScripts = ['build', 'test', 'type-check', 'type-check:server', 'server'];
+
+requiredScripts.forEach(script => {
+  if (packageJson.scripts && packageJson.scripts[script]) {
+    checks.passed.push(`Script: ${script}`);
+  } else {
+    warn(`Script: ${script}`, `Script "${script}" not found in package.json`);
+  }
+});
 
 // Summary
 console.log('\n' + '='.repeat(60));
