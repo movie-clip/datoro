@@ -186,17 +186,12 @@ export function useDcfCalculator() {
 
   // Calculate Advanced DCF valuation from FMP
   const calculateAdvancedDcfMethod = () => {
-    console.log('[DCF Calculator] calculateAdvancedDcfMethod called')
-    console.log('[DCF Calculator] batchData.value:', batchData.value)
-    
     if (!batchData.value) {
       advancedDcfValue.value = null
       return
     }
 
-    console.log('[DCF Calculator] advancedDcf data:', batchData.value.data?.advancedDcf)
     const result = calculateAdvancedDcfValue(batchData.value.data)
-    console.log('[DCF Calculator] Advanced DCF result:', result)
     advancedDcfValue.value = result
   }
 
