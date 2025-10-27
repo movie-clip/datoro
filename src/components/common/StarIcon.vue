@@ -1,22 +1,24 @@
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 
-const props = defineProps({
-  ticker: {
-    type: String,
-    required: true
-  },
-  isWatchlisted: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  ticker: string
+  isWatchlisted?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isWatchlisted: false
 })
 
-const emit = defineEmits(['toggle'])
+interface Emits {
+  (e: 'toggle', ticker: string): void
+}
+
+const emit = defineEmits<Emits>()
 
 const loading = ref(false)
 
-const toggle = () => {
+const toggle = (): void => {
   if (loading.value) return
   
   loading.value = true

@@ -23,12 +23,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../../stores/tickerStore'
+import { useTickerStore, type BatchData } from '../../stores/tickerStore'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
+import type { Component } from 'vue'
 
 // Import all chart components
 import RevenueChart from '../charts/RevenueChart.vue'
@@ -47,14 +48,26 @@ import InsiderTradingChart from '../charts/InsiderTradingChart.vue'
 const tickerStore = useTickerStore()
 const { batchData, loading: storeLoading } = storeToRefs(tickerStore)
 
+interface SelectedMetric {
+  key: string
+  component: Component
+}
+
 const showChartModal = ref(false)
-const selectedMetric = ref(null)
+const selectedMetric = ref<SelectedMetric | null>(null)
 
 const loading = computed(() => storeLoading.value && !batchData.value)
 const error = computed(() => null)
 
+interface MetricDefinition {
+  key: string
+  label: string
+  component: Component
+  getValue: (data: BatchData | null) => number | null
+}
+
 // Define all available metrics with their chart components
-const metricsDefinitions = [
+const metricsDefinitions: MetricDefinition[] = [
   { 
     key: 'revenue', 
     label: 'Revenue', 
@@ -165,7 +178,7 @@ const metricsDefinitions = [
 ]
 
 // Format value for display
-const formatValue = (value) => {
+const formatValue = (value: number | null): string => {
   if (value === null || value === undefined) return '—'
   
   const abs = Math.abs(value)
@@ -177,24 +190,29 @@ const formatValue = (value) => {
   return value.toFixed(4)
 }
 
+interface MetricRow {
+  metricKey: string
+  label: string
+  value: string
+  component: Component
+  rawValue: number | null
+}
+
 // Build table rows from metrics
 const metricsRows = computed(() => {
   if (!batchData.value) return []
   
-  return metricsDefinitions.map(metric => {
-    const value = metric.getValue(batchData.value)
-    return {
-      metricKey: metric.key,
-      label: metric.label,
-      value: formatValue(value),
-      component: metric.component,
-      // Store raw data for potential use
-      rawValue: value
-    }
-  })
+  return metricsDefinitions.map(metric => ({
+    metricKey: metric.key,
+    label: metric.label,
+    value: formatValue(metric.getValue(batchData.value)),
+    component: metric.component,
+    // Store raw data for potential use
+    rawValue: metric.getValue(batchData.value)
+  } as MetricRow))
 })
 
-const handleRowClick = (row) => {
+const handleRowClick = (row: any): void => {
   selectedMetric.value = {
     key: row.metricKey,
     component: row.component
@@ -202,7 +220,7 @@ const handleRowClick = (row) => {
   showChartModal.value = true
 }
 
-const closeChartModal = () => {
+const closeChartModal = (): void => {
   showChartModal.value = false
   selectedMetric.value = null
 }

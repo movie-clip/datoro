@@ -48,7 +48,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -60,12 +60,13 @@ import {
   GridComponent,
   LegendComponent
 } from 'echarts/components'
-import { fetchDeepFinderData, getDistanceColor } from '../../services/deepFinder/deepFinderService'
+import type { EChartsOption } from 'echarts'
+import { fetchDeepFinderData, getDistanceColor, type DeepFinderStock } from '../../services/deepFinder/deepFinderService'
 import { DEEP_FINDER_CONFIG } from '../../config/deepFinderStocks'
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 
 // Helper to get full icon URL (ECharts needs absolute URLs in production)
-const getIconUrl = (ticker) => {
+const getIconUrl = (ticker: string): string => {
   return `${API_ABSOLUTE_URL}/api/company-icon/${ticker}`
 }
 
@@ -79,30 +80,34 @@ use([
   LegendComponent
 ])
 
+// Types
+interface Props {
+  tickers?: string[]
+}
+
 // Props
-const props = defineProps({
-  tickers: {
-    type: Array,
-    default: () => []
-  }
+const props = withDefaults(defineProps<Props>(), {
+  tickers: () => []
 })
 
 // State
-const stocks = ref([])
+const stocks = ref<DeepFinderStock[]>([])
 const loading = ref(true)
-const error = ref(null)
-const chartRef = ref(null)
+const error = ref<string | null>(null)
+const chartRef = ref<InstanceType<typeof VChart> | null>(null)
 
 // Computed
 const mostOversold = computed(() => {
   if (stocks.value.length === 0) return 'N/A'
   const stock = stocks.value[0] // Already sorted by distance (lowest first)
+  if (!stock) return 'N/A'
   return `${stock.ticker} (${stock.distance.toFixed(1)}%)`
 })
 
 const mostOverbought = computed(() => {
   if (stocks.value.length === 0) return 'N/A'
   const stock = stocks.value[stocks.value.length - 1] // Highest distance
+  if (!stock) return 'N/A'
   return `${stock.ticker} (+${stock.distance.toFixed(1)}%)`
 })
 
@@ -113,7 +118,7 @@ const chartHeight = computed(() => {
 })
 
 // Chart configuration
-const chartOption = computed(() => {
+const chartOption = computed<EChartsOption>(() => {
   if (stocks.value.length === 0) return {}
   
   // Prepare data for horizontal bar chart
@@ -162,7 +167,7 @@ const chartOption = computed(() => {
         color: '#E5E5E5',
         fontSize: 12, // Reduced from 14 to 12 for compact layout
         fontWeight: 600,
-        formatter: (value, index) => {
+        formatter: (value: string, index: number) => {
           // Return format: {img|ticker} ticker with padding
           return `{img${index}|}  ${value}`
         },
@@ -175,7 +180,7 @@ const chartOption = computed(() => {
             width: 16 // Reduced from 18 to 16
           }
           return acc
-        }, {})
+        }, {} as Record<string, any>)
       },
       axisLine: {
         lineStyle: {
@@ -195,8 +200,9 @@ const chartOption = computed(() => {
         label: {
           show: true,
           position: 'right',
-          formatter: (params) => {
+          formatter: (params: any) => {
             const stock = stocks.value[params.dataIndex]
+            if (!stock) return ''
             return `${stock.distance > 0 ? '+' : ''}${stock.distance.toFixed(1)}%`
           },
           color: '#E5E5E5',
@@ -213,7 +219,7 @@ const chartOption = computed(() => {
 })
 
 // Methods
-async function loadData() {
+async function loadData(): Promise<void> {
   // Don't fetch if no tickers
   if (!props.tickers || props.tickers.length === 0) {
     stocks.value = []
@@ -229,14 +235,14 @@ async function loadData() {
     stocks.value = data.stocks || []
   } catch (err) {
     console.error('[DeepFinderChart] Error loading data:', err)
-    error.value = err.message || 'Failed to load data'
+    error.value = err instanceof Error ? err.message : 'Failed to load data'
   } finally {
     loading.value = false
   }
 }
 
 // Debounce timer
-let debounceTimer = null
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 // Lifecycle
 onMounted(() => {

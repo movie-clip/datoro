@@ -62,19 +62,26 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../../stores/tickerStore'
+import { useTickerStore, type FMPProfile } from '../../stores/tickerStore'
 import { useWatchlist } from '../../composables/useWatchlist'
 import StarIcon from '../common/StarIcon.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 
-const props = defineProps({
-  ticker: { type: String, required: true }
-})
+interface Props {
+  ticker: string
+}
 
-const emit = defineEmits(['update:companyName', 'update:companyProfile'])
+const props = defineProps<Props>()
+
+interface Emits {
+  (e: 'update:companyName', name: string): void
+  (e: 'update:companyProfile', profile: FMPProfile | null): void
+}
+
+const emit = defineEmits<Emits>()
 
 // Watchlist composable
 const { isWatchlisted, toggleWatchlist } = useWatchlist()
@@ -95,7 +102,7 @@ const earningsDate = computed(() => {
   const now = new Date()
   const upcoming = earningsData
     .filter(e => e.date && new Date(e.date) >= now)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   return upcoming.length > 0 ? upcoming[0].date : null
 })
 
@@ -108,25 +115,25 @@ watch(profile, (newProfile) => {
   emit('update:companyProfile', newProfile)
 }, { immediate: true })
 
-const handleImageError = () => {
+const handleImageError = (): void => {
   imageError.value = true
 }
 
-const handleToggleWatchlist = async (ticker) => {
+const handleToggleWatchlist = async (ticker: string): Promise<void> => {
   try {
     await toggleWatchlist(ticker)
   } catch (error) {
     console.error('Error toggling watchlist:', error)
-    alert(error.message || 'Failed to update watchlist')
+    alert((error as Error).message || 'Failed to update watchlist')
   }
 }
 
-const formatPrice = (price) => {
+const formatPrice = (price: number | null | undefined): string => {
   if (!price) return '0.00'
   return Number(price).toFixed(2)
 }
 
-const formatEarningsDate = (date) => {
+const formatEarningsDate = (date: string | null): string => {
   if (!date) return 'N/A'
   const d = new Date(date)
   return d.toLocaleDateString('en-US', { 
@@ -136,7 +143,7 @@ const formatEarningsDate = (date) => {
   })
 }
 
-const formatMarketCap = (mktCap) => {
+const formatMarketCap = (mktCap: number | null | undefined): string => {
   if (!mktCap) return 'N/A'
   const num = Number(mktCap)
   if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`

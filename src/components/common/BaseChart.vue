@@ -27,14 +27,14 @@
         </button>
       </div>
       <VChart
-        v-if="isMounted && modalOption.series?.length"
+        v-if="isMounted && hasSeriesData(modalOption)"
         class="echart-modal"
         :option="modalOption"
         :class="{ 'loading-chart': loading }"
         autoresize
       />
       <div
-        v-if="loading && modalOption.series?.length"
+        v-if="loading && hasSeriesData(modalOption)"
         class="chart-loading-overlay"
       >
         <div class="loading-spinner">
@@ -52,11 +52,11 @@
     <!-- Normal Mode: Show compact view with expand button -->
     <template v-else>
       <SkeletonLoader
-        v-if="loading && !option.series?.length"
+        v-if="loading && !hasSeriesData(option)"
         variant="chart"
       />
       <VChart 
-        v-else-if="isMounted && (option.series?.length || hasEmptyData)"
+        v-else-if="isMounted && (hasSeriesData(option) || hasEmptyData)"
         class="echart" 
         :class="{ 'clickable': !isModal, 'loading-chart': loading, 'empty-chart': hasEmptyData }" 
         :option="option" 
@@ -73,7 +73,7 @@
         </div>
       </div>
       <div
-        v-if="loading && option.series?.length"
+        v-if="loading && hasSeriesData(option)"
         class="chart-loading-overlay"
       >
         <div class="loading-spinner">
@@ -149,13 +149,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import VChart from 'vue-echarts'
+import type { EChartsOption } from 'echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 import GrowthLabels from './GrowthLabels.vue'
-import { calculateGrowthRates, formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator.js'
+import { calculateGrowthRates, formatGrowth as formatGrowthUtil, type GrowthRates } from '../../utils/growthCalculator.js'
 import { getCachedGrowthRates } from '../../services/financials/growthService.js'
 import { fmtShort, yFormatter } from '../../utils/chartFormatters.js'
 import { convertToCategoryData, extractYearsFromSeries, getAllDataPoints } from '../../utils/chartDataTransformers.js'
@@ -182,54 +183,105 @@ onBeforeUnmount(() => {
   isMounted.value = false
 })
 
-const props = defineProps({
-  title:      { type: String, default: '' },
-  series:     { type: [Array, Object], default: () => [] },
-  compactSeries: { type: [Array, Object], default: null },
-  kind:       { type: String, default: 'line' },
-  yFormat:    { type: String, default: 'int' },
-  smooth:     { type: Number, default: 0.15 },
-  barMaxWidth:{ type: Number, default: 28 },
-  isModal:    { type: Boolean, default: false },
-  forceExpanded: { type: Boolean, default: false }, // Show expanded version directly (for table modals)
-  viewMode:   { type: String, default: null },
-  selectedSegments: { type: Array, default: null },
-  viewModeOptions: { type: Array, default: () => [] },
-  loading:    { type: Boolean, default: false },
-  showLegend: { type: Boolean, default: false },
-  stacked:    { type: Boolean, default: false },
-  useLegend:  { type: Boolean, default: false },
-  dualAxis:   { type: Boolean, default: false },
-  rightAxisType: { type: String, default: 'symmetric' }, // 'symmetric' (for insider trading) or 'percentage' (for margins)
-  showGrowthLabels: { type: Boolean, default: false },
-  invertGrowth: { type: Boolean, default: false }, // For expenses: decreases are positive
-  ticker: { type: String, default: null }, // For cached growth calculations
-  dataType: { type: String, default: 'generic' }, // Data type for cache key (e.g., 'revenue', 'netIncome')
-  customGrowthData: { type: Object, default: null }, // Custom growth data (e.g., for price chart with 1D/1W/1M)
-  error:      { type: String, default: null },
-  message:    { type: String, default: null },
-  emptyDataMessage: { type: String, default: null }, // Friendly message when data is legitimately empty (not an error)
+type ChartKind = 'line' | 'bar'
+type YFormat = 'int' | 'currency' | 'percent' | 'short' | 'price'
+type RightAxisType = 'symmetric' | 'percentage'
+
+interface ViewModeOption {
+  value: string
+  label: string
+}
+
+interface SeriesDataPoint {
+  data?: Array<[number, number]>
+  name?: string
+  [key: string]: any
+}
+
+interface Props {
+  title?: string
+  series?: Array<[number, number]> | SeriesDataPoint[] | Record<string, any>
+  compactSeries?: Array<[number, number]> | SeriesDataPoint[] | null
+  kind?: ChartKind
+  yFormat?: YFormat
+  smooth?: number
+  barMaxWidth?: number
+  isModal?: boolean
+  forceExpanded?: boolean
+  viewMode?: string | null
+  selectedSegments?: string[] | null
+  viewModeOptions?: ViewModeOption[]
+  loading?: boolean
+  showLegend?: boolean
+  stacked?: boolean
+  useLegend?: boolean
+  dualAxis?: boolean
+  rightAxisType?: RightAxisType
+  showGrowthLabels?: boolean
+  invertGrowth?: boolean
+  ticker?: string | null
+  dataType?: string
+  customGrowthData?: GrowthRates | null
+  error?: string | null
+  message?: string | null
+  emptyDataMessage?: string | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  title: '',
+  series: () => [],
+  compactSeries: null,
+  kind: 'line',
+  yFormat: 'int',
+  smooth: 0.15,
+  barMaxWidth: 28,
+  isModal: false,
+  forceExpanded: false,
+  viewMode: null,
+  selectedSegments: null,
+  viewModeOptions: () => [],
+  loading: false,
+  showLegend: false,
+  stacked: false,
+  useLegend: false,
+  dualAxis: false,
+  rightAxisType: 'symmetric',
+  showGrowthLabels: false,
+  invertGrowth: false,
+  ticker: null,
+  dataType: 'generic',
+  customGrowthData: null,
+  error: null,
+  message: null,
+  emptyDataMessage: null
 })
 
 const showModal = ref(false)
-const emit = defineEmits(['update:viewMode', 'update:selectedSegments', 'modal-closed'])
 
-const handleClick = () => {
+interface Emits {
+  (e: 'update:viewMode', mode: string): void
+  (e: 'update:selectedSegments', segments: string[]): void
+  (e: 'modal-closed'): void
+}
+
+const emit = defineEmits<Emits>()
+
+const handleClick = (): void => {
   if (!props.isModal) {
     showModal.value = true
   }
 }
 
-const closeModal = () => {
+const closeModal = (): void => {
   showModal.value = false
   emit('modal-closed')
 }
 
-const updateViewMode = (mode) => {
+const updateViewMode = (mode: string): void => {
   emit('update:viewMode', mode)
 }
 
-const toggleSegment = (segmentValue) => {
+const toggleSegment = (segmentValue: string): void => {
   if (!props.selectedSegments) return
   
   const current = [...props.selectedSegments]
@@ -249,7 +301,7 @@ const toggleSegment = (segmentValue) => {
 }
 
 // Computed property to check if data is empty (but valid, not an error)
-const hasEmptyData = computed(() => {
+const hasEmptyData = computed((): boolean => {
   if (!props.emptyDataMessage) return false
   if (props.error) return false // Has a real error, not just empty
   if (props.loading) return false // Still loading
@@ -257,7 +309,7 @@ const hasEmptyData = computed(() => {
   // Check if series is empty
   const isEmpty = !props.series || 
     (Array.isArray(props.series) && props.series.length === 0) ||
-    (Array.isArray(props.series) && props.series.every(s => 
+    (Array.isArray(props.series) && props.series.every((s: any) => 
       !s?.data || (Array.isArray(s.data) && s.data.length === 0)
     ))
   
@@ -266,28 +318,28 @@ const hasEmptyData = computed(() => {
 
 // Growth calculation and formatting
 // Calculate growth data for the chart
-const growthData = computed(() => {
+const growthData = computed((): GrowthRates | null => {
   if (!props.showGrowthLabels) return null
   
   // Use custom growth data if provided (e.g., for price chart with 1D/1W/1M)
   if (props.customGrowthData) return props.customGrowthData
   
   // Handle both simple array and multi-series object
-  let dataToAnalyze = []
+  let dataToAnalyze: Array<[number, number]> = []
   
   if (Array.isArray(props.series)) {
     if (props.series.length > 0 && Array.isArray(props.series[0])) {
       // Simple array of [timestamp, value] pairs
-      dataToAnalyze = props.series
-    } else if (props.series.length > 0 && props.series[0]?.data) {
+      dataToAnalyze = props.series as Array<[number, number]>
+    } else if (props.series.length > 0 && (props.series[0] as any)?.data) {
       // Multi-series: use the first series or sum all series
       // For stacked charts, we should sum all series values at each timestamp
       if (props.stacked && props.series.length > 1) {
         // Sum all series values at each timestamp
-        const dateMap = new Map()
-        props.series.forEach(s => {
+        const dateMap = new Map<number, number>()
+        props.series.forEach((s: any) => {
           if (s.data && Array.isArray(s.data)) {
-            s.data.forEach(([date, value]) => {
+            s.data.forEach(([date, value]: [number, number]) => {
               dateMap.set(date, (dateMap.get(date) || 0) + value)
             })
           }
@@ -295,7 +347,7 @@ const growthData = computed(() => {
         dataToAnalyze = Array.from(dateMap.entries()).sort((a, b) => a[0] - b[0])
       } else {
         // Use first series
-        dataToAnalyze = props.series[0].data || []
+        dataToAnalyze = (props.series[0] as any).data || []
       }
     }
   }
@@ -312,7 +364,7 @@ const growthData = computed(() => {
 })
 
 // Format growth for display
-const formatGrowth = (growth) => {
+const formatGrowth = (growth: number | undefined): string => {
   // Don't invert the actual number - show the real growth percentage
   // The inversion only affects the CSS class (color)
   return formatGrowthUtil(growth)
@@ -321,27 +373,35 @@ const formatGrowth = (growth) => {
 // Use reactive mobile detection composable
 const { isMobile } = useIsMobile()
 
-const createOption = (isLarge = false) => {
+// Helper to check if option has series data
+const hasSeriesData = (opt: EChartsOption): boolean => {
+  if (!opt.series) return false
+  return Array.isArray(opt.series) ? opt.series.length > 0 : true
+}
+
+const createOption = (isLarge = false): EChartsOption => {
   // For bar charts, extract years and create category axis
   // For line charts, use time axis
-  let uniqueYears = null
-  let yearsList = []
-  let categoryData = []
+  let uniqueYears: number | null = null
+  let yearsList: number[] = []
+  let categoryData: string[] = []
   
   // Use compactSeries for compact view if provided, otherwise use series
   const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
   
   if (props.kind === 'bar') {
     // Get all data points from series using utility function
-    const allDataPoints = getAllDataPoints(dataSource)
-    
-    // Extract unique years and sort using utility function
-    if (allDataPoints.length > 0) {
-      yearsList = extractYearsFromSeries(allDataPoints)
-      uniqueYears = yearsList.length
+    if (Array.isArray(dataSource)) {
+      const allDataPoints = getAllDataPoints(dataSource as any)
       
-      // For bar charts, create category data (year strings)
-      categoryData = yearsList.map(y => String(y))
+      // Extract unique years and sort using utility function
+      if (allDataPoints.length > 0) {
+        yearsList = extractYearsFromSeries(allDataPoints)
+        uniqueYears = yearsList.length
+        
+        // For bar charts, create category data (year strings)
+        categoryData = yearsList.map(y => String(y))
+      }
     }
   }
   
@@ -354,17 +414,17 @@ const createOption = (isLarge = false) => {
   
   // Build legend selection: only first series (typically 'Total Revenue') selected by default
   // Apply this whenever useLegend is true, not just in modal view
-  const legendSelected = {}
-  if (props.useLegend && Array.isArray(props.series) && props.series.length > 0 && props.series[0]?.name) {
-    props.series.forEach((s, idx) => {
+  const legendSelected: Record<string, boolean> = {}
+  if (props.useLegend && Array.isArray(props.series) && props.series.length > 0 && (props.series[0] as any)?.name) {
+    props.series.forEach((s: any, idx: number) => {
       legendSelected[s.name] = idx === 0 // Only first item selected
     })
   }
   
-  const base = {
+  const base: any = {
     backgroundColor: 'transparent',
     // Only show title in non-modal view (in modal, it's shown as HTML element)
-    title: isLarge ? undefined : { 
+    title: isLarge ? undefined : {
       text: props.title, 
       left: 'center', 
       textStyle: { color: '#fff', fontSize: 14 } 

@@ -20,16 +20,17 @@
   </ChartModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../../stores/tickerStore'
-import { getCashFlowFactsFromBatch } from '../../services/financials/batchTableService.js'
+import { useTickerStore, type BatchData } from '../../stores/tickerStore'
+import { getCashFlowFactsFromBatch } from '../../services/financials/batchTableService'
 import { useIsMobile } from '../../composables/useIsMobile'
-import BaseTable from '../common/BaseTable.vue'
+import BaseTable, { type TableRow } from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
-import { calculateGrowthRates } from '../../utils/growthCalculator.js'
-import { COLORS, getFCFYieldColor } from '../../utils/colors.js'
+import { calculateGrowthRates } from '../../utils/growthCalculator'
+import { COLORS, getFCFYieldColor } from '../../utils/colors'
+import type { Component } from 'vue'
 
 // Import chart components
 import RevenueChart from '../charts/RevenueChart.vue'
@@ -49,10 +50,16 @@ const data = computed(() => getCashFlowFactsFromBatch(batchData.value))
 
 // Modal state
 const showChartModal = ref(false)
-const selectedMetric = shallowRef(null)
+
+interface SelectedMetric {
+  label: string
+  component: Component
+}
+
+const selectedMetric = shallowRef<SelectedMetric | null>(null)
 
 // Metric to chart component mapping
-const metricChartMap = {
+const metricChartMap: Record<string, Component> = {
   'Revenue': RevenueChart,
   'Net Income': NetIncomeChart,
   'Free Cash Flow': FcfChart,
@@ -63,7 +70,7 @@ const metricChartMap = {
 }
 
 // Handle row click
-const handleRowClick = (row) => {
+const handleRowClick = (row: TableRow): void => {
   const component = metricChartMap[row.label]
   if (component) {
     selectedMetric.value = { label: row.label, component }
@@ -72,7 +79,7 @@ const handleRowClick = (row) => {
 }
 
 // Helper functions to get latest values from batch data
-const getLatestRevenue = (batchData) => {
+const getLatestRevenue = (batchData: BatchData | null): string => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
   if (latest?.revenue === undefined || latest?.revenue === null) return 'N/A'
@@ -85,7 +92,7 @@ const getLatestRevenue = (batchData) => {
   return `${sign}$${(absRevenue / 1e3).toFixed(2)}K`
 }
 
-const getLatestNetIncome = (batchData) => {
+const getLatestNetIncome = (batchData: BatchData | null): string => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
   if (latest?.netIncome === undefined || latest?.netIncome === null) return 'N/A'
@@ -98,14 +105,14 @@ const getLatestNetIncome = (batchData) => {
   return `${sign}$${(absNetIncome / 1e3).toFixed(2)}K`
 }
 
-const getLatestEPS = (batchData) => {
+const getLatestEPS = (batchData: BatchData | null): string => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
   if (!latest?.eps) return 'N/A'
   return `$${latest.eps.toFixed(2)}`
 }
 
-const getLatestFCF = (batchData) => {
+const getLatestFCF = (batchData: BatchData | null): string => {
   // Use most recent annual FCF (same as chart default)
   if (batchData?.data?.cashflowAnnual && Array.isArray(batchData.data.cashflowAnnual) && batchData.data.cashflowAnnual.length > 0) {
     const latest = batchData.data.cashflowAnnual[0]
@@ -123,14 +130,14 @@ const getLatestFCF = (batchData) => {
 }
 
 // Calculate growth color based on 5-year growth rate
-const getGrowthColor = (batchData, dataKey, dataSource = 'incomeAnnual') => {
-  const statements = batchData?.data?.[dataSource]
+const getGrowthColor = (batchData: BatchData | null, dataKey: string, dataSource = 'incomeAnnual'): string | null => {
+  const statements = batchData?.data?.[dataSource as keyof typeof batchData.data] as any[] | undefined
   if (!statements || !Array.isArray(statements) || statements.length < 2) {
     return null
   }
   
   // Convert to [timestamp, value] format for growth calculator
-  const seriesData = statements.map(row => [
+  const seriesData: [number, number][] = statements.map(row => [
     Date.parse(row.date),
     Number(row[dataKey]) || 0
   ])
@@ -146,7 +153,7 @@ const getGrowthColor = (batchData, dataKey, dataSource = 'incomeAnnual') => {
 }
 
 // Helper to get FCF growth color
-const getFCFGrowthColor = (batchData) => {
+const getFCFGrowthColor = (batchData: BatchData | null): string | null => {
   return getGrowthColor(batchData, 'freeCashFlow', 'cashflowAnnual')
 }
 
@@ -155,8 +162,8 @@ const rows = computed(() => [
   { label: 'Net Income', value: getLatestNetIncome(batchData.value), color: getGrowthColor(batchData.value, 'netIncome', 'incomeAnnual') },
   { label: 'Free Cash Flow', value: getLatestFCF(batchData.value), color: getFCFGrowthColor(batchData.value) },
   { label: 'Free Cash Flow Yield', value: data.value.fcfYield ?? '—' },
-  { label: 'FCF Yield (Adj. SBC)', value: data.value.fcfYieldAdjSBC ?? '—', color: getFCFYieldColor(data.value.fcfYieldAdjSBCRaw) },
+  { label: 'FCF Yield (Adj. SBC)', value: data.value.fcfYieldAdjSBC ?? '—', color: getFCFYieldColor(data.value.fcfYieldAdjSBCRaw ?? 0) },
   { label: 'EPS', value: getLatestEPS(batchData.value) },
   { label: 'SBC Impact', value: data.value.sbcImpact ?? '—' },
-])
+] as TableRow[])
 </script>

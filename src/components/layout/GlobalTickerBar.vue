@@ -120,30 +120,40 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { ref, watch, onUnmounted, type Ref } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
 import { useTickerSearch } from '../../composables/useTickerSearch'
 import { useRecentSearch } from '../../composables/useRecentSearch'
 
-const companyProfile = ref(null)
+const companyProfile = ref<any>(null)
 
 // Recent searches (client-side only, no API calls)
 const { recentSearches, addToRecent } = useRecentSearch()
 
+interface Props {
+  confirmedTicker?: string
+}
+
 // Props used in template (ESLint can't detect template usage)
 // eslint-disable-next-line no-unused-vars
-const props = defineProps({
-  confirmedTicker: { type: String, default: '' }
+const props = withDefaults(defineProps<Props>(), {
+  confirmedTicker: ''
 })
 
-const model = defineModel()
-const emit = defineEmits(['submit', 'update:companyName'])
+const model = defineModel<string>()
+
+interface Emits {
+  (e: 'submit'): void
+  (e: 'update:companyName', value: string): void
+}
+
+const emit = defineEmits<Emits>()
 
 const localInput = ref(model.value || '')
 const validationError = ref('')
 const showDropdown = ref(false)
-const inputRef = ref(null)
+const inputRef = ref<HTMLInputElement | null>(null)
 
 // Search functionality with cleanup
 const { searchResults, searching, searchTickers, clearSearch, cleanup } = useTickerSearch()
@@ -154,7 +164,7 @@ onUnmounted(() => {
 })
 
 // Validate ticker format: 1-10 uppercase letters/numbers, no special chars except dots
-const validateInput = () => {
+const validateInput = (): void => {
   // Automatically uppercase the input as user types
   localInput.value = localInput.value.toUpperCase()
   
@@ -179,7 +189,7 @@ const validateInput = () => {
   validationError.value = ''
 }
 
-const handleInputChange = () => {
+const handleInputChange = (): void => {
   validateInput()
   
   // Trigger search if input is valid and at least 1 character
@@ -194,7 +204,7 @@ const handleInputChange = () => {
   }
 }
 
-const selectTicker = (symbol) => {
+const selectTicker = (symbol: string): void => {
   localInput.value = symbol
   model.value = symbol
   showDropdown.value = false
@@ -211,25 +221,28 @@ const selectTicker = (symbol) => {
   emit('submit')
 }
 
-const handleBlur = () => {
+const handleBlur = (): void => {
   // Delay hiding dropdown to allow click events to fire
   setTimeout(() => {
     showDropdown.value = false
   }, 200)
 }
 
-const handleEnterKey = () => {
+const handleEnterKey = (): void => {
   // If there are search results, select the first one
   if (searchResults.value && searchResults.value.length > 0) {
-    selectTicker(searchResults.value[0].symbol)
-    return
+    const firstResult = searchResults.value[0]
+    if (firstResult) {
+      selectTicker(firstResult.symbol)
+      return
+    }
   }
   
   // Otherwise, proceed with normal submit
   handleSubmit()
 }
 
-const handleSubmit = () => {
+const handleSubmit = (): void => {
   const value = localInput.value.trim().toUpperCase()
   
   if (!value) {

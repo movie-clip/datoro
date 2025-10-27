@@ -8,35 +8,35 @@
     y-format="price"
     :view-mode-options="timeframeOptions"
     :loading="loading"
-    :error="error"
-    :message="message"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
     aria-label="Price chart"
     :force-expanded="forceExpanded"
     :show-growth-labels="true"
-    :custom-growth-data="growthData"
+    :custom-growth-data="growthData ?? undefined"
   />
 </template>
 
-<script setup>
-import { computed } from 'vue';
-import { TF_ORDER } from '../../models/timeframe';
-import { usePriceSeries } from '../../composables/usePriceSeries';
-import BaseChart from '../common/BaseChart.vue';
+<script setup lang="ts">
+import { computed } from 'vue'
+import { TF_ORDER } from '../../models/timeframe'
+import { usePriceSeries } from '../../composables/usePriceSeries'
+import BaseChart from '../common/BaseChart.vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop needed - using Pinia store
-const { tfKey, series, title, message, loading, error, retry, growthData } = usePriceSeries();
+const { tfKey, series, title, message, loading, error, retry, growthData } = usePriceSeries()
 
 const timeframeOptions = computed(() => 
   TF_ORDER.map(key => ({ label: key, value: key }))
-);
+)
 </script>
 
 <style scoped>

@@ -36,7 +36,7 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.fcfGrowthRate.best"
-              @input="updateField('fcfGrowthRate', 'best', Number($event.target.value))"
+              @input="handleInput('fcfGrowthRate', 'best', $event)"
               type="number"
               step="0.1"
               min="-50"
@@ -47,7 +47,7 @@
           <div class="input-wrapper average-case">
             <input
               :value="modelValue.fcfGrowthRate.average"
-              @input="updateField('fcfGrowthRate', 'average', Number($event.target.value))"
+              @input="handleInput('fcfGrowthRate', 'average', $event)"
               type="number"
               step="0.1"
               min="-50"
@@ -58,7 +58,7 @@
           <div class="input-wrapper worst-case">
             <input
               :value="modelValue.fcfGrowthRate.worst"
-              @input="updateField('fcfGrowthRate', 'worst', Number($event.target.value))"
+              @input="handleInput('fcfGrowthRate', 'worst', $event)"
               type="number"
               step="0.1"
               min="-50"
@@ -77,7 +77,7 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.peRatio.best"
-              @input="updateField('peRatio', 'best', Number($event.target.value))"
+              @input="handleInput('peRatio', 'best', $event)"
               type="number"
               step="0.5"
               min="0"
@@ -88,7 +88,7 @@
           <div class="input-wrapper average-case">
             <input
               :value="modelValue.peRatio.average"
-              @input="updateField('peRatio', 'average', Number($event.target.value))"
+              @input="handleInput('peRatio', 'average', $event)"
               type="number"
               step="0.5"
               min="0"
@@ -99,7 +99,7 @@
           <div class="input-wrapper worst-case">
             <input
               :value="modelValue.peRatio.worst"
-              @input="updateField('peRatio', 'worst', Number($event.target.value))"
+              @input="handleInput('peRatio', 'worst', $event)"
               type="number"
               step="0.5"
               min="0"
@@ -118,7 +118,7 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.discountRate.best"
-              @input="updateField('discountRate', 'best', Number($event.target.value))"
+              @input="handleInput('discountRate', 'best', $event)"
               type="number"
               step="0.1"
               min="0"
@@ -129,7 +129,7 @@
           <div class="input-wrapper average-case">
             <input
               :value="modelValue.discountRate.average"
-              @input="updateField('discountRate', 'average', Number($event.target.value))"
+              @input="handleInput('discountRate', 'average', $event)"
               type="number"
               step="0.1"
               min="0"
@@ -140,7 +140,7 @@
           <div class="input-wrapper worst-case">
             <input
               :value="modelValue.discountRate.worst"
-              @input="updateField('discountRate', 'worst', Number($event.target.value))"
+              @input="handleInput('discountRate', 'worst', $event)"
               type="number"
               step="0.1"
               min="0"
@@ -159,7 +159,7 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.projectionYears"
-              @input="updateField('projectionYears', null, Number($event.target.value))"
+              @input="handleInput('projectionYears', null, $event)"
               type="number"
               step="1"
               min="3"
@@ -184,39 +184,57 @@
   </div>
 </template>
 
-<script setup>
-const props = defineProps({
-  modelValue: {
-    type: Object,
-    required: true
-  },
-  companyData: {
-    type: Object,
-    default: null
-  }
+<script setup lang="ts">
+import type { CompanyDataForDcf } from '../../services/dcf/dcfDataService'
+
+interface ScenarioValues {
+  best: number
+  average: number
+  worst: number
+}
+
+interface DcfInputs {
+  peRatio: ScenarioValues
+  fcfGrowthRate: ScenarioValues
+  terminalGrowthRate: ScenarioValues
+  discountRate: ScenarioValues
+  projectionYears: number
+}
+
+interface Props {
+  modelValue: DcfInputs
+  companyData?: CompanyDataForDcf | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  companyData: null
 })
 
-const emit = defineEmits(['update:modelValue'])
+interface Emits {
+  (e: 'update:modelValue', value: DcfInputs): void
+}
+
+const emit = defineEmits<Emits>()
 
 // Format company data for display
-const formatEps = (eps) => {
+const formatEps = (eps: number | null | undefined): string => {
   if (eps === null || eps === undefined) return 'N/A'
   return `$${Number(eps).toFixed(1)}`
 }
 
-const formatPE = (pe) => {
+const formatPE = (pe: number | null | undefined): string => {
   if (pe === null || pe === undefined || pe <= 0) return 'N/A'
   return `${Number(pe).toFixed(1)}`
 }
 
-const formatGrowth = (growth) => {
+const formatGrowth = (growth: number | null | undefined): string => {
   if (growth === null || growth === undefined) return 'N/A'
   const value = Number(growth).toFixed(1)
   return `${value}%`
 }
 
 // Default scenario values for reset function
-const defaults = {
+const defaults: DcfInputs = {
   peRatio: {
     best: 24,      // 20 + 20%
     average: 20,
@@ -241,7 +259,12 @@ const defaults = {
 }
 
 // Validation constraints
-const constraints = {
+interface Constraint {
+  min: number
+  max: number
+}
+
+const constraints: Record<keyof DcfInputs, Constraint | undefined> = {
   peRatio: { min: 0, max: 100 },
   fcfGrowthRate: { min: -50, max: 100 },
   terminalGrowthRate: { min: 0, max: 10 },
@@ -250,7 +273,7 @@ const constraints = {
 }
 
 // Update nested field and emit entire object (triggers parent reactivity)
-const updateField = (field, scenario, value) => {
+const updateField = (field: keyof DcfInputs, scenario: keyof ScenarioValues | null, value: number): void => {
   // Validate value against constraints
   const constraint = constraints[field]
   let validatedValue = value
@@ -263,15 +286,24 @@ const updateField = (field, scenario, value) => {
   const updated = { ...props.modelValue }
   if (scenario) {
     // Update scenario-based field
-    updated[field] = { ...updated[field], [scenario]: validatedValue }
+    const fieldValue = updated[field]
+    if (typeof fieldValue === 'object' && fieldValue !== null) {
+      updated[field] = { ...fieldValue, [scenario]: validatedValue } as any
+    }
   } else {
     // Update simple field (projectionYears)
-    updated[field] = validatedValue
+    updated[field] = validatedValue as any
   }
   emit('update:modelValue', updated)
 }
 
-const resetToDefaults = () => {
+// Helper to handle input events
+const handleInput = (field: keyof DcfInputs, scenario: keyof ScenarioValues | null, event: Event): void => {
+  const target = event.target as HTMLInputElement
+  updateField(field, scenario, Number(target.value))
+}
+
+const resetToDefaults = (): void => {
   emit('update:modelValue', { ...defaults })
 }
 </script>

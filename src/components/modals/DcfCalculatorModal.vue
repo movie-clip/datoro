@@ -15,11 +15,11 @@
             <div class="header-content">
               <h2>
                 DCF Calculator
-                <span v-if="companyData" class="company-context">
+                <span v-if="typedCompanyData" class="company-context">
                   <img 
-                    v-if="companyData.image" 
-                    :src="companyData.image" 
-                    :alt="companyData.ticker"
+                    v-if="typedCompanyData.image" 
+                    :src="typedCompanyData.image" 
+                    :alt="typedCompanyData.ticker"
                     class="company-icon"
                     @error="handleImageError"
                   >
@@ -27,10 +27,10 @@
                     v-else
                     class="company-icon-placeholder"
                   >
-                    {{ companyData.ticker?.substring(0, 1).toUpperCase() }}
+                    {{ typedCompanyData.ticker?.substring(0, 1).toUpperCase() }}
                   </div>
-                  <span class="company-name">{{ companyData.companyName }}</span>
-                  <span v-if="companyData.currentPrice" class="company-price">${{ formatPrice(companyData.currentPrice) }}</span>
+                  <span class="company-name">{{ typedCompanyData.companyName }}</span>
+                  <span v-if="typedCompanyData.currentPrice" class="company-price">${{ formatPrice(typedCompanyData.currentPrice) }}</span>
                 </span>
               </h2>
             </div>
@@ -70,26 +70,26 @@
             <div v-else class="dcf-content">
               <!-- Left column: Model Assumptions -->
               <div class="left-column">
-                <DcfInputs v-model="inputs" :company-data="companyData" />
+                <DcfInputs v-model="inputs" :company-data="typedCompanyData ?? undefined" />
               </div>
               
               <!-- Right column: Valuation Results + Chart -->
               <div class="right-column">
                 <DcfResults 
-                  :intrinsic-value="intrinsicValue"
-                  :current-price="companyData?.currentPrice || 0"
-                  :upside="upside"
-                  :advanced-dcf-value="advancedDcfValue"
-                  :fmp-dcf-value="fmpDcfValue"
+                  :intrinsic-value="intrinsicValue ?? undefined"
+                  :current-price="typedCompanyData?.currentPrice || 0"
+                  :upside="upside ?? undefined"
+                  :advanced-dcf-value="typedAdvancedDcfValue ?? undefined"
+                  :fmp-dcf-value="typedFmpDcfValue"
                   :fmp-dcf-loading="fmpDcfLoading"
-                  :fmp-dcf-error="fmpDcfError"
+                  :fmp-dcf-error="fmpDcfError ?? undefined"
                   class="compact-results"
                 />
                 
                 <DcfForecastChart 
-                  :scenarios="scenarios"
-                  :current-price="companyData?.currentPrice || 0"
-                  :intrinsic-value="intrinsicValue"
+                  :scenarios="typedScenarios"
+                  :current-price="typedCompanyData?.currentPrice || 0"
+                  :intrinsic-value="intrinsicValue ?? undefined"
                 />
               </div>
             </div>
@@ -100,23 +100,28 @@
   </Teleport>
 </template>
 
-<script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { ref, watch, onMounted, onUnmounted, type Ref } from 'vue'
 import { useDcfCalculator } from '../../composables/useDcfCalculator'
 import DcfInputs from '../dcf/DcfInputs.vue'
 import DcfResults from '../dcf/DcfResults.vue'
 import DcfForecastChart from '../dcf/DcfForecastChart.vue'
+import type { CompanyDataForDcf } from '../../services/dcf/dcfDataService'
+import type { AdvancedDcfResult, FmpDcfValueExtended } from '../../services/dcf/valuationMethodsService'
 
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true
-  }
-})
+interface Props {
+  modelValue: boolean
+}
 
-const emit = defineEmits(['update:modelValue'])
+const props = defineProps<Props>()
 
-const overlayRef = ref(null)
+interface Emits {
+  (e: 'update:modelValue', value: boolean): void
+}
+
+const emit = defineEmits<Emits>()
+
+const overlayRef = ref<HTMLDivElement | null>(null)
 const mouseDownOnOverlay = ref(false)
 
 // DCF Calculator composable - now self-contained (matches project pattern)
@@ -136,36 +141,43 @@ const {
   ticker
 } = useDcfCalculator()
 
-const handleClose = () => {
+// Type assertions for composable returns (composable is JS, we know the actual types)
+const typedCompanyData = companyData as Ref<CompanyDataForDcf | null>
+const typedAdvancedDcfValue = advancedDcfValue as Ref<AdvancedDcfResult | FmpDcfValueExtended | null>
+const typedFmpDcfValue = fmpDcfValue as Ref<any> // Computed, actual type varies
+const typedScenarios = scenarios as Ref<any> // scenarios from JS composable
+
+const handleClose = (): void => {
   emit('update:modelValue', false)
 }
 
 // Track if mousedown started on overlay (not on modal content)
-const handleOverlayMouseDown = (event) => {
+const handleOverlayMouseDown = (event: MouseEvent): void => {
   mouseDownOnOverlay.value = event.target === event.currentTarget
 }
 
 // Only close if both mousedown and click happened on overlay
-const handleOverlayClick = (event) => {
+const handleOverlayClick = (event: MouseEvent): void => {
   if (mouseDownOnOverlay.value && event.target === event.currentTarget) {
     handleClose()
   }
   mouseDownOnOverlay.value = false
 }
 
-const handleEscKey = (event) => {
+const handleEscKey = (event: KeyboardEvent): void => {
   if (event.key === 'Escape' && props.modelValue) {
     handleClose()
   }
 }
 
 // Handle company logo error
-const handleImageError = (event) => {
-  event.target.style.display = 'none'
+const handleImageError = (event: Event): void => {
+  const target = event.target as HTMLImageElement
+  target.style.display = 'none'
 }
 
 // Format price with commas
-const formatPrice = (price) => {
+const formatPrice = (price: number): string => {
   return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 

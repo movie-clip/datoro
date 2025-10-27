@@ -59,41 +59,42 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  intrinsicValue: {
-    type: Number,
-    default: null
-  },
-  currentPrice: {
-    type: Number,
-    default: null
-  },
-  upside: {
-    type: Number,
-    default: null
-  },
-  advancedDcfValue: {
-    type: Object,
-    default: null
-  },
-  fmpDcfValue: {
-    type: Object,
-    default: null
-  },
-  fmpDcfLoading: {
-    type: Boolean,
-    default: false
-  },
-  fmpDcfError: {
-    type: String,
-    default: null
-  }
+interface AdvancedDcfValue {
+  intrinsicValue?: number | null
+  upside?: number | null
+  wacc?: number | null
+  terminalGrowthRate?: number | null
+}
+
+interface FmpDcfValue {
+  intrinsicValue?: number | null
+  upside?: number | null
+}
+
+interface Props {
+  intrinsicValue?: number | null
+  currentPrice?: number | null
+  upside?: number | null
+  advancedDcfValue?: AdvancedDcfValue | null
+  fmpDcfValue?: FmpDcfValue | null
+  fmpDcfLoading?: boolean
+  fmpDcfError?: string | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  intrinsicValue: null,
+  currentPrice: null,
+  upside: null,
+  advancedDcfValue: null,
+  fmpDcfValue: null,
+  fmpDcfLoading: false,
+  fmpDcfError: null
 })
 
-const formatNumber = (num) => {
+const formatNumber = (num: number | null | undefined): string => {
   if (num === null || num === undefined) return 'N/A'
   return num.toLocaleString('en-US', { 
     minimumFractionDigits: 2, 
@@ -101,7 +102,7 @@ const formatNumber = (num) => {
   })
 }
 
-const getUpsideClass = (upsideValue) => {
+const getUpsideClass = (upsideValue: number | null | undefined): string => {
   if (upsideValue === null || upsideValue === undefined) return ''
   if (upsideValue > 0) return 'positive'
   if (upsideValue < 0) return 'negative'
@@ -113,8 +114,8 @@ const upsideClass = computed(() => {
 })
 
 // Function to determine value class based on comparison to current price
-const getDcfValueClass = (value) => {
-  if (value === null || props.currentPrice === null) return ''
+const getDcfValueClass = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || props.currentPrice === null || props.currentPrice === undefined) return ''
   
   const priceDiff = ((value - props.currentPrice) / props.currentPrice) * 100
   
@@ -129,13 +130,13 @@ const getDcfValueClass = (value) => {
 }
 
 // Tooltip generators
-const getDcfTooltip = () => {
+const getDcfTooltip = (): string => {
   return `PEG Ratio-Based Valuation:
 Future EPS = Current EPS × (1 + Growth Rate)^Years
 Target Price = Future EPS × Target P/E`
 }
 
-const getAdvancedDcfTooltip = () => {
+const getAdvancedDcfTooltip = (): string => {
   if (!props.advancedDcfValue?.intrinsicValue) return 'No data available'
   const wacc = props.advancedDcfValue?.wacc || 'N/A'
   const terminalGrowth = props.advancedDcfValue?.terminalGrowthRate || 'N/A'
@@ -145,7 +146,7 @@ WACC: ${wacc}%
 Terminal Growth: ${terminalGrowth}%`
 }
 
-const getFmpTooltip = () => {
+const getFmpTooltip = (): string => {
   if (props.fmpDcfLoading) return 'Loading FMP DCF valuation...'
   if (props.fmpDcfError) return `Error: ${props.fmpDcfError}`
   if (!props.fmpDcfValue?.intrinsicValue) return 'No FMP DCF data available'
@@ -155,7 +156,7 @@ Traditional DCF with free cash flow projections
 Discounted to present value using WACC`
 }
 
-const getCurrentPriceTooltip = () => {
+const getCurrentPriceTooltip = (): string => {
   return `Market Price: $${formatNumber(props.currentPrice)} • Latest stock price from the market`
 }
 </script>

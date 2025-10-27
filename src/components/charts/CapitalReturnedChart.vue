@@ -7,9 +7,9 @@
     kind="bar"
     y-format="currency"
     :loading="loading"
-    :error="error"
-    :message="message"
-    :empty-data-message="emptyDataMessage"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
+    :empty-data-message="emptyDataMessage ?? undefined"
     :stacked="true"
     :view-mode-options="segmentOptions"
     :show-growth-labels="true"
@@ -18,25 +18,25 @@
   />
 </template>
 
-<script setup>
-import { useCapitalReturnedSeries } from '../../composables/useCapitalReturnedSeries';
-import BaseChart from '../common/BaseChart.vue';
+<script setup lang="ts">
+import { useCapitalReturnedSeries } from '../../composables/useCapitalReturnedSeries'
+import BaseChart from '../common/BaseChart.vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error, emptyDataMessage, selectedSegments } = useCapitalReturnedSeries();
+const { series, title, message, loading, error, emptyDataMessage, selectedSegments } = useCapitalReturnedSeries()
 
 const segmentOptions = [
   { value: 'dividends', label: 'Dividends' },
   { value: 'buybacks', label: 'Buybacks' }
-];
+]
 </script>
 
 <style scoped>

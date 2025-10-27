@@ -20,15 +20,16 @@
   </ChartModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTickerStore } from '../../stores/tickerStore'
-import { getBalanceFromBatch } from '../../services/financials/batchTableService.js'
+import { useTickerStore, type BatchData } from '../../stores/tickerStore'
+import { getBalanceFromBatch } from '../../services/financials/batchTableService'
 import { useIsMobile } from '../../composables/useIsMobile'
-import BaseTable from '../common/BaseTable.vue'
+import BaseTable, { type TableRow } from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
-import { COLORS } from '../../utils/colors.js'
+import { COLORS } from '../../utils/colors'
+import type { Component } from 'vue'
 
 // Import chart components
 import CashDebtChart from '../charts/CashDebtChart.vue'
@@ -45,10 +46,16 @@ const data = computed(() => getBalanceFromBatch(batchData.value))
 
 // Modal state
 const showChartModal = ref(false)
-const selectedMetric = shallowRef(null)
+
+interface SelectedMetric {
+  label: string
+  component: Component
+}
+
+const selectedMetric = shallowRef<SelectedMetric | null>(null)
 
 // Metric to chart component mapping
-const metricChartMap = {
+const metricChartMap: Record<string, Component | null> = {
   'Cash': CashDebtChart,
   'Debt': CashDebtChart,
   'Net': CashDebtChart,
@@ -57,7 +64,7 @@ const metricChartMap = {
 }
 
 // Handle row click
-const handleRowClick = (row) => {
+const handleRowClick = (row: TableRow): void => {
   const component = metricChartMap[row.label]
   if (component) {
     selectedMetric.value = { label: row.label, component }
@@ -66,7 +73,7 @@ const handleRowClick = (row) => {
 }
 
 // Get Cash & Debt combined value
-const getCashAndDebt = (batchData) => {
+const getCashAndDebt = (batchData: BatchData | null): string => {
   if (!batchData?.data?.balanceQuarter) return 'N/A'
   const latest = batchData.data.balanceQuarter[0]
   if (!latest) return 'N/A'
@@ -75,7 +82,7 @@ const getCashAndDebt = (batchData) => {
   const debt = latest.totalDebt || 0
   const net = cash - debt
   
-  const formatValue = (val) => {
+  const formatValue = (val: number): string => {
     const abs = Math.abs(val)
     if (abs >= 1e9) return `$${(val / 1e9).toFixed(2)}B`
     if (abs >= 1e6) return `$${(val / 1e6).toFixed(2)}M`
@@ -85,8 +92,8 @@ const getCashAndDebt = (batchData) => {
   return `${formatValue(cash)} / ${formatValue(debt)} (Net: ${formatValue(net)})`
 }
 
-const rows = computed(() => {
-  const colorMap = {
+const rows = computed<TableRow[]>(() => {
+  const colorMap: Record<string, string> = {
     green: COLORS.status.success,
     red: COLORS.status.danger,
     grey: '#aaa'

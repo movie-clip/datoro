@@ -8,7 +8,7 @@
     kind="bar"
     y-format="short"
     :loading="loading"
-    :error="error"
+    :error="error ?? undefined"
     :message="message"
     aria-label="Free Cash Flow chart"
     :view-mode-options="viewModeOptions"
@@ -20,32 +20,32 @@
   />
 </template>
 
-<script setup>
-import { useFcfSeries } from '../../composables/useFcfSeries';
-import { useTickerStore } from '../../stores/tickerStore';
-import BaseChart from '../common/BaseChart.vue';
+<script setup lang="ts">
+import { useFcfSeries } from '../../composables/useFcfSeries'
+import { useTickerStore } from '../../stores/tickerStore'
+import BaseChart from '../common/BaseChart.vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store
-const tickerStore = useTickerStore();
-const { viewMode, series, compactSeries, title, message, loading, error, ticker, dataType } = useFcfSeries();
+const tickerStore = useTickerStore()
+const { viewMode, series, compactSeries, title, message, loading, error, ticker, dataType } = useFcfSeries()
 
 const viewModeOptions = [
   { label: 'FCF', value: 'fcf' },
   { label: 'FCF Per Share', value: 'fcfPerShare' },
-  { label: 'FCF & SBC', value: 'fcfAndSbc' },
-];
+  { label: 'FCF & SBC', value: 'fcfAndSbc' }
+]
 
-const resetViewMode = () => {
-  viewMode.value = 'fcfAndSbc'; // Reset to showing both FCF and SBC
-};
+const resetViewMode = (): void => {
+  viewMode.value = 'fcfAndSbc' // Reset to showing both FCF and SBC
+}
 </script>
 
 <style scoped>

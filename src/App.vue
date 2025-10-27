@@ -1,8 +1,15 @@
-<script setup>
-import { ref, watch, onMounted, nextTick, defineAsyncComponent } from 'vue'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, nextTick, defineAsyncComponent } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 import { useAuthStore } from './stores/authStore'
 import { useWatchlist } from './composables/useWatchlist'
+
+// Temporary type for auth user until authStore is fully typed
+interface AuthUser {
+  name?: string | null
+  email?: string | null
+  avatarUrl?: string | null
+}
 
 // Layout components - Load immediately (visible on page load)
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
@@ -64,11 +71,16 @@ const CashDebtChart = defineAsyncComponent(() =>
 const tickerStore = useTickerStore()
 const authStore = useAuthStore()
 
+// Cast user to proper type (authStore not fully typed yet)
+const user = computed(() => authStore.user as AuthUser | null)
+
 const inputTicker = ref('AAPL')
 const companyName = ref('Apple Inc.')
 
+type AuthTab = 'signin' | 'signup'
+
 const showAuthModal = ref(false)
-const authModalTab = ref('signin') // 'signin' or 'signup'
+const authModalTab = ref<AuthTab>('signin')
 
 // Main Menu
 const showMainMenu = ref(false)
@@ -113,8 +125,15 @@ watch(() => authStore.isAuthenticated, (isAuth) => {
 // Tab state with localStorage persistence
 const activeTab = ref('valuation')
 
+interface Tab {
+  id: string
+  label: string
+  icon: string
+  badge: string | null
+}
+
 // Tab configuration with PNG icon paths
-const tabs = [
+const tabs: Tab[] = [
   { id: 'valuation', label: 'Valuation', icon: '/icons/valuation.png', badge: null },
   { id: 'performance', label: 'Performance', icon: '/icons/performance.png', badge: null },
   { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null },
@@ -134,9 +153,9 @@ watch(() => inputTicker.value, (newTicker) => {
   }
 }, { immediate: true })
 
-function applyTicker(){ 
-  const t=(inputTicker.value||'').trim().toUpperCase()
-  if(t) {
+const applyTicker = (): void => {
+  const t = (inputTicker.value || '').trim().toUpperCase()
+  if (t) {
     tickerStore.setTicker(t)
     // Reset company name when ticker changes - it will be updated by CompanyHeader
     companyName.value = ''
@@ -144,59 +163,61 @@ function applyTicker(){
 }
 
 // Hide logo if image fails to load
-function handleImageError(event) {
-  event.target.style.display = 'none'
+const handleImageError = (event: Event): void => {
+  const target = event.target as HTMLImageElement
+  target.style.display = 'none'
 }
 
 // Auth modal functions
-function openSignIn() {
+const openSignIn = (): void => {
   authModalTab.value = 'signin'
   showAuthModal.value = true
 }
 
-function openSignUp() {
+const openSignUp = (): void => {
   authModalTab.value = 'signup'
   showAuthModal.value = true
 }
 
-function closeAuthModal() {
+const closeAuthModal = (): void => {
   showAuthModal.value = false
 }
 
-function handleAuthSuccess() {
+const handleAuthSuccess = (): void => {
   console.log('[App] User authenticated:', authStore.user)
   // Could show a success toast here
 }
 
-function handleLogout() {
+const handleLogout = (): void => {
   if (confirm('Are you sure you want to sign out?')) {
     clearWatchlist()
     authStore.logout()
   }
 }
 
-function toggleMainMenu() {
+const toggleMainMenu = (): void => {
   showMainMenu.value = !showMainMenu.value
 }
 
-function toggleDeepFinder() {
+const toggleDeepFinder = (): void => {
   showDeepFinder.value = !showDeepFinder.value
 }
 
-function toggleWatchlistPanel() {
+const toggleWatchlistPanel = (): void => {
   showWatchlistPanel.value = !showWatchlistPanel.value
 }
 
-async function handleToggleWatchlist(ticker) {
+const handleToggleWatchlist = async (ticker: string): Promise<void> => {
   try {
     await toggleWatchlist(ticker)
   } catch (error) {
     console.error('Error toggling watchlist:', error)
-    alert(error.message || 'Failed to update watchlist')
+    const message = error instanceof Error ? error.message : 'Failed to update watchlist'
+    alert(message)
   }
 }
 
-function handleSelectTicker(ticker) {
+const handleSelectTicker = (ticker: string): void => {
   // Save current scroll position before updating ticker
   const scrollY = window.scrollY
   
@@ -257,15 +278,15 @@ function handleSelectTicker(ticker) {
           <template v-else>
             <div class="user-menu">
               <img 
-                v-if="authStore.user?.avatarUrl" 
-                :src="authStore.user.avatarUrl" 
-                :alt="authStore.user.name || 'User'"
+                v-if="user?.avatarUrl" 
+                :src="user.avatarUrl" 
+                :alt="user.name || 'User'"
                 class="user-avatar"
               />
               <div v-else class="user-avatar-placeholder">
-                {{ (authStore.user?.name || authStore.user?.email || 'U')[0].toUpperCase() }}
+                {{ (user?.name || user?.email || 'U')[0]?.toUpperCase() || 'U' }}
               </div>
-              <span class="user-name">{{ authStore.user?.name || authStore.user?.email }}</span>
+              <span class="user-name">{{ user?.name || user?.email }}</span>
               <button class="logout-button" @click="handleLogout" title="Sign Out">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

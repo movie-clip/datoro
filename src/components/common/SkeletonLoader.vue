@@ -8,18 +8,23 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  variant: {
-    type: String,
-    default: 'text', // text, chart, table, card
-    validator: (v) => ['text', 'chart', 'table', 'card'].includes(v)
-  },
-  width: { type: String, default: '100%' },
-  height: { type: String, default: 'auto' },
-  lines: { type: Number, default: 1 } // For text variant
+type SkeletonVariant = 'text' | 'chart' | 'table' | 'card'
+
+interface Props {
+  variant?: SkeletonVariant
+  width?: string
+  height?: string
+  lines?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  variant: 'text',
+  width: '100%',
+  height: 'auto',
+  lines: 1
 })
 
 const customStyle = computed(() => ({

@@ -3,9 +3,9 @@
     :title="title"
     :series="series"
     :loading="loading"
-    :error="error"
-    :message="message"
-    :empty-data-message="emptyDataMessage"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
+    :empty-data-message="emptyDataMessage ?? undefined"
     kind="bar"
     y-format="percent"
     :bar-max-width="40"
@@ -14,16 +14,16 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import BaseChart from '../common/BaseChart.vue'
-import { useDividendYieldSeries } from '../../composables/useDividendYieldSeries.js'
+import { useDividendYieldSeries } from '../../composables/useDividendYieldSeries'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store

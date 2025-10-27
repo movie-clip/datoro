@@ -6,8 +6,8 @@
     kind="bar"
     y-format="currency"
     :loading="loading"
-    :error="error"
-    :message="message"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
     aria-label="Net Income chart"
     :period-options="viewModeOptions"
     :show-growth-labels="true"
@@ -17,17 +17,17 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useNetIncomeSeries } from '../../composables/useNetIncomeSeries'
 import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store

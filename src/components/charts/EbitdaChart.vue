@@ -7,8 +7,8 @@
     kind="bar"
     y-format="currency"
     :loading="loading"
-    :error="error"
-    :message="message"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
     :stacked="chartView === 'bridge'"
     :dual-axis="chartView === 'margin'"
     right-axis-type="percentage"
@@ -41,18 +41,18 @@
   </BaseChart>
 </template>
 
-<script setup>
-import { useEbitdaSeries } from '../../composables/useEbitdaSeries';
-import BaseChart from '../common/BaseChart.vue';
+<script setup lang="ts">
+import { useEbitdaSeries } from '../../composables/useEbitdaSeries'
+import BaseChart from '../common/BaseChart.vue'
 
-import { computed } from 'vue';
+import { computed } from 'vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store
@@ -67,11 +67,11 @@ const {
   chartView,
   selectedSegments, 
   viewModeOptions
-} = useEbitdaSeries();
+} = useEbitdaSeries()
 
 // Combined EBITDA bars with margin line for dual-axis view
 const ebitdaWithMargin = computed(() => {
-  if (Array.isArray(compactSeries.value) && compactSeries.value.length > 0 && compactSeries.value[0].name) {
+  if (Array.isArray(compactSeries.value) && compactSeries.value.length > 0 && compactSeries.value[0] && 'name' in compactSeries.value[0]) {
     // compactSeries is already a multi-series array, use it
     return [
       ...compactSeries.value,
@@ -81,7 +81,7 @@ const ebitdaWithMargin = computed(() => {
         type: 'line',
         yAxisIndex: 1
       }
-    ];
+    ]
   }
   // compactSeries is a simple array for margin view
   return [
@@ -96,15 +96,15 @@ const ebitdaWithMargin = computed(() => {
       type: 'line',
       yAxisIndex: 1
     }
-  ];
-});
+  ]
+})
 
-const resetView = () => {
+const resetView = (): void => {
   // Reset to margin view by default
-  chartView.value = 'margin';
+  chartView.value = 'margin'
   // Also reset bridge components if switching back
-  selectedSegments.value = ['revenue', 'costOfRevenue', 'operatingExpenses', 'depreciationAndAmortization'];
-};
+  selectedSegments.value = ['revenue', 'costOfRevenue', 'operatingExpenses', 'depreciationAndAmortization']
+}
 </script>
 
 <style scoped>

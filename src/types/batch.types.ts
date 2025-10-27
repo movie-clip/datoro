@@ -60,48 +60,39 @@ export interface BatchData {
     /** Quarterly cash flow statements */
     cashflowQuarter: FMPCashFlow[]
     
-    /** Annual key metrics */
-    keyMetricsAnnual: FMPKeyMetrics[]
+    /** Annual ratios */
+    ratiosAnnual?: any[]
     
-    /** Quarterly key metrics */
-    keyMetricsQuarter: FMPKeyMetrics[]
+    /** Key metrics (combined annual/quarter) */
+    keyMetrics?: any[]
     
-    /** Trailing twelve months ratios */
-    ratiosTTM: FMPRatiosTTM[]
+    /** Historical price data with structure { symbol, historical: [...] } */
+    priceHistory?: { symbol: string; historical: FMPHistoricalPrice[] }
     
-    /** Annual enterprise value */
-    enterpriseValueAnnual: FMPEnterpriseValue[]
+    /** Revenue segments by product/geography */
+    revenueSegments?: any[]
     
-    /** Quarterly enterprise value */
-    enterpriseValueQuarter: FMPEnterpriseValue[]
+    /** Dividend history with structure { symbol, historical: [...] } */
+    dividendHistory?: { symbol: string; historical: FMPDividend[] }
     
-    /** Annual financial growth metrics */
-    financialGrowthAnnual: FMPFinancialGrowth[]
+    /** Stock split history */
+    stockSplit?: { symbol: string; historical: FMPStockSplit[] }
     
-    /** Quarterly financial growth metrics */
-    financialGrowthQuarter: FMPFinancialGrowth[]
+    /** Earnings calendar */
+    earningsCalendar?: any[]
+    
+    /** Financial scores (Altman Z, Piotroski, etc.) */
+    financialScores?: any[]
+    
+    /** Price target summary */
+    priceTargetSummary?: any[]
+    
+    /** Price target consensus */
+    priceTargetConsensus?: any[]
     
     /** Insider trading transactions */
     insiderTrading: FMPInsiderTrading[]
-    
-    /** Stock split history */
-    stockSplit: FMPStockSplit[]
-    
-    /** Dividend history */
-    dividend: FMPDividend[]
-    
-    /** Historical daily prices (1 year) */
-    historicalPrices: FMPHistoricalPrice[]
-    
-    /** Price target summary from analysts */
-    priceTarget: FMPPriceTarget[]
-    
-    /** DCF valuation */
-    dcf: FMPDCF[]
   }
-  
-  /** List of endpoints that failed to fetch (if any) */
-  failures: string[]
 }
 
 /**

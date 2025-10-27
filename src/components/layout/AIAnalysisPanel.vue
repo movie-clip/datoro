@@ -38,24 +38,40 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 // AI insights from static JSON files (pre-generated locally)
 import { getCompetitiveAdvantages, getInvestmentRisks } from '../../services/ai/insightsService'
 
-const props = defineProps({
-  companyName: { type: String, default: '' },
-  type: { type: String, required: true, validator: (v) => ['advantages', 'risks'].includes(v) }
+type AnalysisType = 'advantages' | 'risks'
+
+interface Props {
+  companyName?: string
+  type: AnalysisType
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  companyName: ''
 })
+
+interface InsightItem {
+  title?: string
+  description?: string
+}
+
+interface InsightData {
+  data: InsightItem[]
+  success?: boolean
+}
 
 // Use Pinia store for ticker with storeToRefs to maintain reactivity
 const tickerStore = useTickerStore()
 const { currentTicker } = storeToRefs(tickerStore)
-const data = ref(null)
+const data = ref<InsightData | null>(null)
 const loading = ref(false)
-const error = ref(null)
+const error = ref<string | null>(null)
 
 const title = computed(() => 
   props.type === 'advantages' ? 'Competitive Advantages' : 'Investment Risks'
@@ -79,7 +95,7 @@ const formattedData = computed(() => {
   return ''
 })
 
-async function fetchAnalysis() {
+async function fetchAnalysis(): Promise<void> {
   const t = (currentTicker.value || '').trim().toUpperCase()
   if (!t) {
     return
@@ -99,7 +115,7 @@ async function fetchAnalysis() {
       data.value = result.data
     }
   } catch (e) {
-    error.value = e.message || 'Failed to load analysis'
+    error.value = (e as Error).message || 'Failed to load analysis'
   } finally {
     loading.value = false
   }

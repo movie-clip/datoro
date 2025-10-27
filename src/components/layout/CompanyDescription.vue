@@ -22,18 +22,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 
-const props = defineProps({
-  description: {
-    type: String,
-    default: ''
-  },
-  collapsedLength: {
-    type: Number,
-    default: 150 // Characters to show when collapsed
-  }
+interface Props {
+  description?: string
+  collapsedLength?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  description: '',
+  collapsedLength: 150 // Characters to show when collapsed
 })
 
 const isExpanded = ref(false)
@@ -42,7 +41,7 @@ const shouldShowToggle = computed(() => {
   return props.description && props.description.length > props.collapsedLength
 })
 
-const toggleExpanded = () => {
+const toggleExpanded = (): void => {
   isExpanded.value = !isExpanded.value
 }
 </script>

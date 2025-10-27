@@ -11,22 +11,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 
-const props = defineProps({
-  id: {
-    type: String,
-    required: true
-  },
-  active: {
-    type: Boolean,
-    default: false
-  },
-  lazyLoad: {
-    type: Boolean,
-    default: true
-  }
+interface Props {
+  id: string
+  active?: boolean
+  lazyLoad?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  active: false,
+  lazyLoad: true
 })
 
 const hasBeenActivated = ref(false)

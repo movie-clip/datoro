@@ -21,13 +21,13 @@
   </ChartModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
-import { getValuationFromBatch } from '../../services/financials/batchTableService.js'
+import { getValuationFromBatch } from '../../services/financials/batchTableService'
 import { useIsMobile } from '../../composables/useIsMobile'
-import BaseTable from '../common/BaseTable.vue'
+import BaseTable, { type TableRow } from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 
 // Import chart components
@@ -35,6 +35,8 @@ import PriceChart from '../charts/PriceChart.vue'
 import RevenueChart from '../charts/RevenueChart.vue'
 import EbitdaChart from '../charts/EbitdaChart.vue'
 import InsiderTradingChart from '../charts/InsiderTradingChart.vue'
+import type { Component } from 'vue'
+import type { BatchData } from '../../stores/tickerStore'
 
 // Use Pinia store instead of prop
 const tickerStore = useTickerStore()
@@ -52,10 +54,16 @@ const data = computed(() => getValuationFromBatch(batchData.value))
 
 // Modal state
 const showChartModal = ref(false)
-const selectedMetric = shallowRef(null)
+
+interface SelectedMetric {
+  label: string
+  component: Component
+}
+
+const selectedMetric = shallowRef<SelectedMetric | null>(null)
 
 // Metric to chart component mapping
-const metricChartMap = {
+const metricChartMap: Record<string, Component> = {
   'Market Cap': PriceChart,
   'P/E Ratio': PriceChart,
   'Price to Sales': RevenueChart,
@@ -65,7 +73,7 @@ const metricChartMap = {
 }
 
 // Handle row click
-const handleRowClick = (row) => {
+const handleRowClick = (row: TableRow): void => {
   const component = metricChartMap[row.label]
   if (component) {
     selectedMetric.value = { label: row.label, component }
@@ -74,15 +82,16 @@ const handleRowClick = (row) => {
 }
 
 // Get insider trading summary
-const getInsiderTradingSummary = (batchData) => {
-  if (!batchData?.data?.insiderTrades) return 'N/A'
+const getInsiderTradingSummary = (batchData: BatchData | null): string => {
+  if (!batchData?.data?.insiderTrading) return 'N/A'
   
-  const trades = batchData.data.insiderTrades
+  const trades = batchData.data.insiderTrading
   if (!Array.isArray(trades) || trades.length === 0) return 'No recent trades'
   
   // Get last 3 months of trades
   const threeMonthsAgo = Date.now() - (90 * 24 * 60 * 60 * 1000)
   const recentTrades = trades.filter(trade => {
+    if (!trade.transactionDate) return false
     const tradeDate = new Date(trade.transactionDate).getTime()
     return tradeDate > threeMonthsAgo
   })
@@ -95,7 +104,7 @@ const getInsiderTradingSummary = (batchData) => {
   return `${buys} buys, ${sells} sells (90d)`
 }
 
-const rows = computed(() => [
+const rows = computed<TableRow[]>(() => [
   { label: 'Market Cap', value: data.value.marketCap },
   { label: 'P/E Ratio', value: data.value.pe },
   { label: 'Price to Sales', value: data.value.ps },

@@ -145,35 +145,55 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch } from 'vue'
+<script setup lang="ts">
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    required: true
-  },
-  defaultTab: {
-    type: String,
-    default: 'signin' // 'signin' or 'signup'
-  }
+type AuthTab = 'signin' | 'signup'
+
+interface Props {
+  isOpen: boolean
+  defaultTab?: AuthTab
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  defaultTab: 'signin'
 })
 
-const emit = defineEmits(['close', 'success'])
+interface SuccessPayload {
+  type: AuthTab
+}
+
+interface Emits {
+  (e: 'close'): void
+  (e: 'success', payload: SuccessPayload): void
+}
+
+const emit = defineEmits<Emits>()
 
 const authStore = useAuthStore()
 
-const activeTab = ref(props.defaultTab)
+const activeTab = ref<AuthTab>(props.defaultTab)
 const loading = ref(false)
-const error = ref(null)
+const error = ref<string | null>(null)
 
-const signInForm = ref({
+interface SignInForm {
+  email: string
+  password: string
+}
+
+interface SignUpForm {
+  name: string
+  email: string
+  password: string
+}
+
+const signInForm = ref<SignInForm>({
   email: '',
   password: ''
 })
 
-const signUpForm = ref({
+const signUpForm = ref<SignUpForm>({
   name: '',
   email: '',
   password: ''
@@ -190,11 +210,11 @@ watch(() => props.isOpen, (isOpen) => {
   }
 })
 
-function closeModal() {
+const closeModal = (): void => {
   emit('close')
 }
 
-async function handleSignIn() {
+const handleSignIn = async (): Promise<void> => {
   loading.value = true
   error.value = null
   
@@ -210,7 +230,7 @@ async function handleSignIn() {
   }
 }
 
-async function handleSignUp() {
+const handleSignUp = async (): Promise<void> => {
   loading.value = true
   error.value = null
   
@@ -230,21 +250,29 @@ async function handleSignUp() {
   }
 }
 
-async function handleGoogleSignIn() {
+const handleGoogleSignIn = async (): Promise<void> => {
   // Google OAuth will be implemented next
   error.value = 'Google Sign-In coming soon! For now, use email/password.'
 }
 
 // Close modal on Escape key
-function handleKeydown(e) {
+const handleKeydown = (e: KeyboardEvent): void => {
   if (e.key === 'Escape' && props.isOpen) {
     closeModal()
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('keydown', handleKeydown)
-}
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', handleKeydown)
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handleKeydown)
+  }
+})
 </script>
 
 <style scoped>

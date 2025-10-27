@@ -15,7 +15,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -27,6 +27,7 @@ import {
   GridComponent,
   LegendComponent
 } from 'echarts/components'
+import type { EChartsOption } from 'echarts'
 
 // Register ECharts components
 use([
@@ -38,26 +39,40 @@ use([
   LegendComponent
 ])
 
-const props = defineProps({
-  scenarios: {
-    type: Object,
-    default: () => ({
-      best: { projectedPrices: [] },
-      average: { projectedPrices: [] },
-      worst: { projectedPrices: [] }
-    })
-  },
-  currentPrice: {
-    type: Number,
-    default: null
-  },
-  intrinsicValue: {
-    type: Number,
-    default: null
-  }
+interface ProjectedPrice {
+  year: number
+  price: number
+}
+
+interface ScenarioData {
+  projectedPrices: ProjectedPrice[]
+  intrinsicValue?: number | null
+  upside?: number | null
+}
+
+interface Scenarios {
+  best: ScenarioData
+  average: ScenarioData
+  worst: ScenarioData
+}
+
+interface Props {
+  scenarios?: Scenarios
+  currentPrice?: number | null
+  intrinsicValue?: number | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  scenarios: () => ({
+    best: { projectedPrices: [] },
+    average: { projectedPrices: [] },
+    worst: { projectedPrices: [] }
+  }),
+  currentPrice: null,
+  intrinsicValue: null
 })
 
-const chartOptions = computed(() => {
+const chartOptions = computed((): EChartsOption | null => {
   // Check if we have data for at least one scenario
   const hasData = props.scenarios.average?.projectedPrices?.length > 0
   if (!hasData) {
@@ -97,9 +112,9 @@ const chartOptions = computed(() => {
         color: '#fff',
         fontSize: 13
       },
-      formatter: (params) => {
+      formatter: (params: any) => {
         let tooltip = `<strong>${params[0].axisValue}</strong><br/>`
-        params.forEach(param => {
+        params.forEach((param: any) => {
           const color = param.color
           const value = param.value !== null 
             ? `$${param.value.toFixed(2)}`
@@ -141,7 +156,7 @@ const chartOptions = computed(() => {
       axisLabel: {
         color: 'rgba(255, 255, 255, 0.6)',
         fontSize: 12,
-        formatter: (value) => `$${value.toFixed(0)}`
+        formatter: (value: number) => `$${value.toFixed(0)}`
       }
     },
     series: [
@@ -267,7 +282,7 @@ const chartOptions = computed(() => {
       itemWidth: 20,
       itemHeight: 10
     }
-  }
+  } as EChartsOption
 })
 </script>
 

@@ -4,8 +4,8 @@
     :series="series"
     :compact-series="compactSeries"
     :loading="loading"
-    :error="error"
-    :message="message"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
     kind="bar"
     y-format="currency"
     :bar-max-width="40"
@@ -20,17 +20,17 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import BaseChart from '../common/BaseChart.vue'
-import { useExpensesSeries } from '../../composables/useExpensesSeries.js'
+import { useExpensesSeries } from '../../composables/useExpensesSeries'
 import { useTickerStore } from '../../stores/tickerStore'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store

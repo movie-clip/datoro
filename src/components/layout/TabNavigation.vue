@@ -32,20 +32,28 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  tabs: {
-    type: Array,
-    required: true,
-    // Expected format: [{ id: 'performance', label: 'Performance', icon: '📊', badge: null }]
-  },
-  modelValue: {
-    type: String,
-    required: true
-  }
-})
+<script setup lang="ts">
+import type { Component } from 'vue'
 
-defineEmits(['update:modelValue'])
+interface Tab {
+  id: string
+  label: string
+  icon?: string | Component
+  badge?: string | number | null
+}
+
+interface Props {
+  tabs: Tab[]
+  modelValue: string
+}
+
+defineProps<Props>()
+
+interface Emits {
+  (e: 'update:modelValue', value: string): void
+}
+
+defineEmits<Emits>()
 </script>
 
 <style scoped>

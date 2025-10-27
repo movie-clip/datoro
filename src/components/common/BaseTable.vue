@@ -87,51 +87,43 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 
-const props = defineProps({
-  title: {
-    type: String,
-    required: true
-  },
-  rows: {
-    type: Array,
-    required: true,
-    // Expected format: [{ label: 'Market Cap', value: '$100B' }, ...]
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  error: {
-    type: String,
-    default: null
-  },
-  ariaLabel: {
-    type: String,
-    default: null
-  },
-  onRetry: {
-    type: Function,
-    default: null
-  },
-  audioName: {
-    type: String,
-    default: null
-  },
-  clickable: {
-    type: Boolean,
-    default: false
-  },
-  collapsible: {
-    type: Boolean,
-    default: true
-  }
+export interface TableRow {
+  label: string
+  value: string | number
+  color?: string
+}
+
+interface Props {
+  title: string
+  rows: TableRow[]
+  loading?: boolean
+  error?: string | null
+  ariaLabel?: string | null
+  onRetry?: (() => void) | null
+  audioName?: string | null
+  clickable?: boolean
+  collapsible?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+  error: null,
+  ariaLabel: null,
+  onRetry: null,
+  audioName: null,
+  clickable: false,
+  collapsible: true
 })
 
-const emit = defineEmits(['row-click'])
+interface Emits {
+  (e: 'row-click', row: TableRow): void
+}
+
+const emit = defineEmits<Emits>()
 
 // Expand/collapse state
 const isExpanded = ref(false)
@@ -144,15 +136,15 @@ const displayedRows = computed(() => {
   return isExpanded.value ? props.rows : props.rows.slice(0, 3)
 })
 
-function toggleExpanded() {
+function toggleExpanded(): void {
   isExpanded.value = !isExpanded.value
 }
 
 // Audio playback
-const audioPlayer = ref(null)
+const audioPlayer = ref<HTMLAudioElement | null>(null)
 const isPlaying = ref(false)
 
-function toggleAudio() {
+function toggleAudio(): void {
   if (!audioPlayer.value || !props.audioName) return
 
   // Load audio source if not already loaded
@@ -169,15 +161,15 @@ function toggleAudio() {
       .then(() => {
         isPlaying.value = true
       })
-      .catch((err) => {
+      .catch((err: Error) => {
         console.error('Audio playback failed:', err)
-        console.error('Attempted path:', audioPlayer.value.src)
-        alert(`Audio file not found for ${props.audioName}. Please generate voiceover first.\nPath: ${audioPlayer.value.src}`)
+        console.error('Attempted path:', audioPlayer.value?.src)
+        alert(`Audio file not found for ${props.audioName}. Please generate voiceover first.\nPath: ${audioPlayer.value?.src}`)
       })
   }
 }
 
-function onAudioEnded() {
+function onAudioEnded(): void {
   isPlaying.value = false
 }
 

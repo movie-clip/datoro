@@ -104,12 +104,12 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
-import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch, getBalanceFromBatch } from '../../services/financials/batchTableService.js'
-import { calculateAllHealthIndicators } from '../../services/health/healthIndicatorService.js'
+import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch, getBalanceFromBatch } from '../../services/financials/batchTableService'
+import { calculateAllHealthIndicators, type HealthIndicator } from '../../services/health/healthIndicatorService'
 import PriceChart from '../charts/PriceChart.vue'
 import CompanyDescription from './CompanyDescription.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
@@ -144,10 +144,12 @@ const data = computed(() => {
 
 // Health indicators using centralized service with caching
 // This prevents duplicate growth calculations and improves performance
-const healthIndicators = computed(() => {
+const healthIndicators = computed<HealthIndicator[]>(() => {
   const valuation = getValuationFromBatch(batchData.value)
   const cashFlow = getCashFlowFactsFromBatch(batchData.value)
   const balance = getBalanceFromBatch(batchData.value)
+  
+  if (!batchData.value) return []
   
   return calculateAllHealthIndicators({
     valuation: {
@@ -163,7 +165,7 @@ const healthIndicators = computed(() => {
 })
 
 // Helper functions
-const getYieldClass = (yieldStr) => {
+const getYieldClass = (yieldStr: string): string => {
   const val = parseFloat(yieldStr)
   if (isNaN(val)) return ''
   if (val > 5) return 'positive'
@@ -171,7 +173,7 @@ const getYieldClass = (yieldStr) => {
   return 'negative'
 }
 
-const getMarginClass = (marginStr) => {
+const getMarginClass = (marginStr: string): string => {
   const val = parseFloat(marginStr)
   if (isNaN(val)) return ''
   if (val > 20) return 'positive'

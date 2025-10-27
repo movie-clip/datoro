@@ -6,27 +6,27 @@
     kind="bar"
     y-format="short"
     :loading="loading"
-    :error="error"
-    :message="message"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
     aria-label="Cash and Debt chart"
     :force-expanded="forceExpanded"
   />
 </template>
 
-<script setup>
-import { useCashDebtSeries } from '../../composables/useCashDebtSeries';
-import BaseChart from '../common/BaseChart.vue';
+<script setup lang="ts">
+import { useCashDebtSeries } from '../../composables/useCashDebtSeries'
+import BaseChart from '../common/BaseChart.vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error } = useCashDebtSeries();
+const { series, title, message, loading, error } = useCashDebtSeries()
 </script>
 
 <style scoped>

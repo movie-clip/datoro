@@ -58,28 +58,38 @@
   </div>
 </template>
 
-<script setup>
-import { formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator.js'
+<script setup lang="ts">
+import { formatGrowth as formatGrowthUtil } from '../../utils/growthCalculator'
 
-const props = defineProps({
-  growthData: {
-    type: Object,
-    default: null,
-  },
-  invertGrowth: {
-    type: Boolean,
-    default: false,
-  },
+interface GrowthData {
+  // Short-term mode
+  oneDay?: number | null
+  oneWeek?: number | null
+  oneMonth?: number | null
+  // Long-term mode
+  oneYear?: number | null
+  twoYear?: number | null
+  fiveYear?: number | null
+}
+
+interface Props {
+  growthData?: GrowthData | null
+  invertGrowth?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  growthData: null,
+  invertGrowth: false
 })
 
 // Format growth value for display
-const formatGrowth = (growth) => {
+const formatGrowth = (growth: number | null | undefined): string => {
   if (growth === null || growth === undefined) return 'N/A'
   return formatGrowthUtil(growth)
 }
 
 // Get CSS class for growth label (handling inversion)
-const getGrowthClass = (growth) => {
+const getGrowthClass = (growth: number | null | undefined): string => {
   if (growth === null || growth === undefined || isNaN(growth)) return ''
 
   // For inverted growth (expenses), negative is good (positive class)

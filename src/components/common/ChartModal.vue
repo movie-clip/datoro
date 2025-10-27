@@ -26,16 +26,22 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { watch } from 'vue'
 
-const props = defineProps({
-  isOpen: { type: Boolean, required: true }
-})
+interface Props {
+  isOpen: boolean
+}
 
-const emit = defineEmits(['close'])
+const props = defineProps<Props>()
 
-const close = () => emit('close')
+interface Emits {
+  (e: 'close'): void
+}
+
+const emit = defineEmits<Emits>()
+
+const close = (): void => emit('close')
 
 // Prevent body scroll when modal is open
 watch(() => props.isOpen, (isOpen) => {

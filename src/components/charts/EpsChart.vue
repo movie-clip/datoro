@@ -6,7 +6,7 @@
     kind="bar"
     y-format="int"
     :loading="loading"
-    :error="error"
+    :error="error ?? undefined"
     :message="message"
     aria-label="EPS chart"
     :show-growth-labels="true"
@@ -14,20 +14,20 @@
   />
 </template>
 
-<script setup>
-import { useEpsSeries } from '../../composables/useEpsSeries';
-import BaseChart from '../common/BaseChart.vue';
+<script setup lang="ts">
+import { useEpsSeries } from '../../composables/useEpsSeries'
+import BaseChart from '../common/BaseChart.vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error } = useEpsSeries();
+const { series, title, message, loading, error } = useEpsSeries()
 </script>
 
 <style scoped>

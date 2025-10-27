@@ -58,37 +58,40 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import DeepFinderChart from '../charts/DeepFinderChart.vue'
 import { useWatchlist } from '../../composables/useWatchlist'
 
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true
-  }
-})
+interface Props {
+  modelValue: boolean
+}
 
-const emit = defineEmits(['update:modelValue'])
+const props = defineProps<Props>()
 
-const overlayRef = ref(null)
+interface Emits {
+  (e: 'update:modelValue', value: boolean): void
+}
+
+const emit = defineEmits<Emits>()
+
+const overlayRef = ref<HTMLDivElement | null>(null)
 const mouseDownOnOverlay = ref(false)
 
 // Get watchlist tickers
 const { watchlist } = useWatchlist()
 
-const handleClose = () => {
+const handleClose = (): void => {
   emit('update:modelValue', false)
 }
 
 // Track if mousedown started on overlay (not on modal content)
-const handleOverlayMouseDown = (event) => {
+const handleOverlayMouseDown = (event: MouseEvent): void => {
   mouseDownOnOverlay.value = event.target === event.currentTarget
 }
 
 // Only close if both mousedown and click happened on overlay
-const handleOverlayClick = (event) => {
+const handleOverlayClick = (event: MouseEvent): void => {
   if (event.target === event.currentTarget && mouseDownOnOverlay.value) {
     handleClose()
   }

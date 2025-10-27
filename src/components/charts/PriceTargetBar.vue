@@ -88,7 +88,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
@@ -96,8 +96,23 @@ import { useTickerStore } from '../../stores/tickerStore'
 const tickerStore = useTickerStore()
 const { batchData, loading, currentTicker } = storeToRefs(tickerStore)
 
+interface PriceTarget {
+  symbol?: string
+  targetConsensus: number
+  targetHigh: number
+  targetLow: number
+  targetMedian?: number
+}
+
+interface PriceTargetSummary {
+  lastMonth?: number
+  lastQuarter?: number
+  lastYear?: number
+  allTime?: number
+}
+
 // Extract analyst price targets from batch data
-const priceTargetData = computed(() => {
+const priceTargetData = computed<PriceTarget | null>(() => {
   // FMP API returns array: [{ symbol, targetConsensus, targetHigh, targetLow, targetMedian }]
   return batchData.value?.data?.priceTargetConsensus?.[0] || null
 })
@@ -116,7 +131,7 @@ const targetLow = computed(() => {
 
 const analystCount = computed(() => {
   // FMP API returns array: [{ lastMonth, lastQuarter, lastYear, allTime, ... }]
-  const summary = batchData.value?.data?.priceTargetSummary?.[0]
+  const summary = batchData.value?.data?.priceTargetSummary?.[0] as PriceTargetSummary | undefined
   // Use most recent analyst count (last quarter is good balance of recency vs sample size)
   return summary?.lastQuarter || summary?.lastMonth || summary?.lastYear || 0
 })
@@ -149,7 +164,7 @@ const maxPrice = computed(() => {
 })
 
 // Calculate current price position on the bar (0-100%)
-const currentPricePosition = computed(() => {
+const currentPricePosition = computed<number | null>(() => {
   if (!hasData.value) return null
   
   const min = minPrice.value

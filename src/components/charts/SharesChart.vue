@@ -6,8 +6,8 @@
     kind="bar"
     y-format="short"
     :loading="loading"
-    :error="error"
-    :message="message"
+    :error="error ?? undefined"
+    :message="message ?? undefined"
     :show-growth-labels="true"
     :invert-growth="true"
     aria-label="Shares Outstanding chart"
@@ -15,22 +15,22 @@
   />
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import { useSharesSeries } from '../../composables/useSharesSeries';
-import BaseChart from '../common/BaseChart.vue';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useSharesSeries } from '../../composables/useSharesSeries'
+import BaseChart from '../common/BaseChart.vue'
 
-// Accept forceExpanded prop
-const props = defineProps({
-  forceExpanded: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  forceExpanded?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceExpanded: false
 })
 
 // No ticker prop - using Pinia store
-const period = ref('annual');
-const { series, title, message, loading, error } = useSharesSeries(period);
+const period = ref<'annual' | 'quarterly'>('annual')
+const { series, title, message, loading, error } = useSharesSeries(period)
 </script>
 
 <style scoped>
