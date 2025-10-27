@@ -71,7 +71,7 @@ check(
 
 // Check 5: Required files
 const requiredFiles = [
-  'server/server.mjs',
+  'server/server.ts',
   'vite.config.js',
   'prisma/schema.prisma',
   'render.yaml',
