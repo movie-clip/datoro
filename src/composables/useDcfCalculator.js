@@ -180,7 +180,7 @@ export function useDcfCalculator() {
         average: { intrinsicValue: null, projectedPrices: [], upside: null },
         worst: { intrinsicValue: null, projectedPrices: [], upside: null }
       }
-      buffettValue.value = null
+      advancedDcfValue.value = null
     }
   }
 
