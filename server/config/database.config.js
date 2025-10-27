@@ -19,16 +19,6 @@ export const CONNECTION_POOL_CONFIG = {
   
   // Connection limits per worker for different providers
   providers: {
-    'supabase-free': {
-      maxConnections: 60,
-      connectionsPerWorker: 14,  // (60 - 4 buffer) / 4 workers
-      buffer: 4
-    },
-    'supabase-pro': {
-      maxConnections: 200,
-      connectionsPerWorker: 48,  // (200 - 8 buffer) / 4 workers
-      buffer: 8
-    },
     'render-postgres': {
       maxConnections: 97,
       connectionsPerWorker: 22,  // (97 - 9 buffer) / 4 workers
@@ -42,7 +32,7 @@ export const CONNECTION_POOL_CONFIG = {
   },
   
   // Default provider (auto-detected or set via DATABASE_PROVIDER env var)
-  defaultProvider: 'supabase-free',
+  defaultProvider: 'local-postgres',
   
   // Connection pool parameters (applied to all connections)
   poolParams: {
@@ -51,9 +41,6 @@ export const CONNECTION_POOL_CONFIG = {
     connect_timeout: 5,          // Seconds for initial connection
     statement_cache: true,       // Cache prepared statements for performance
     prepared_statements: true,   // Enable prepared statements
-    
-    // PgBouncer-specific (for Supabase)
-    pgbouncer: null,            // Set to true if URL contains 'pooler.supabase'
   },
   
   // Query timeout strategies (milliseconds)
@@ -70,9 +57,6 @@ export const CONNECTION_POOL_CONFIG = {
 export function detectProvider(databaseUrl) {
   if (!databaseUrl) return CONNECTION_POOL_CONFIG.defaultProvider
   
-  if (databaseUrl.includes('pooler.supabase.com')) {
-    return 'supabase-free'  // Assume free tier unless specified
-  }
   if (databaseUrl.includes('render.com')) {
     return 'render-postgres'
   }
@@ -110,15 +94,9 @@ export function buildDatabaseUrl(baseUrl, providerOverride = null) {
   // Get pooling configuration
   const config = { ...CONNECTION_POOL_CONFIG.poolParams }
   config.connection_limit = provider.connectionsPerWorker
-  config.pgbouncer = baseUrl.includes('pooler.supabase.com')
   
   // Build parameter string
   const params = []
-  
-  // PgBouncer mode (for Supabase)
-  if (config.pgbouncer) {
-    params.push('pgbouncer=true')
-  }
   
   // Connection pool parameters
   params.push(`connection_limit=${config.connection_limit}`)

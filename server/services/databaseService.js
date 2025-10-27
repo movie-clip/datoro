@@ -25,9 +25,8 @@ let prisma;
  * 
  * Connection pooling parameters (set in DATABASE_URL):
  * - connection_limit: Max concurrent connections per worker
- *   • Supabase Free (60 total): 14 per worker (56 + 4 buffer)
- *   • Supabase Paid (200+ total): 45 per worker (180 + 20 buffer)
  *   • Render PostgreSQL (97 total): 22 per worker (88 + 9 buffer)
+ *   • Local PostgreSQL (100 total): 23 per worker (92 + 8 buffer)
  * 
  * - pool_timeout: 10s (max wait for available connection)
  * - connect_timeout: 5s (initial connection timeout)

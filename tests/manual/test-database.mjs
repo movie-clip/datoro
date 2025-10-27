@@ -3,7 +3,7 @@
 /**
  * Database Connection Test
  * 
- * Tests connection to Supabase/PostgreSQL database
+ * Tests connection to PostgreSQL database (Render or Local)
  * Run: node test-database.mjs
  */
 
@@ -71,9 +71,9 @@ async function testDatabase() {
     console.error('   Error:', error.message);
     console.error('\n🔧 Troubleshooting:');
     console.error('   1. Check DATABASE_URL in .env.local');
-    console.error('   2. Verify Supabase project is active');
+    console.error('   2. Verify database is running (docker-compose up or Render)');
     console.error('   3. Run migrations: npx prisma migrate dev');
-    console.error('   4. See SUPABASE_SETUP.md for help');
+    console.error('   4. Check connection pooling settings');
     process.exit(1);
   } finally {
     // Disconnect
