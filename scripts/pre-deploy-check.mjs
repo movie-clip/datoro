@@ -265,6 +265,46 @@ requiredScripts.forEach(script => {
   }
 });
 
+// Check 13: Verify render.yaml configuration matches TypeScript files
+console.log('\n🚀 Checking Render.com Configuration...');
+if (existsSync(join(rootDir, 'render.yaml'))) {
+  const renderConfig = readFileSync(join(rootDir, 'render.yaml'), 'utf-8');
+  
+  // Check if startCommand uses the correct file extension
+  if (renderConfig.includes('server.mjs')) {
+    checks.failed.push({ 
+      name: 'Render Config', 
+      error: 'render.yaml still references server.mjs but file is now server.ts. Update startCommand to use tsx.' 
+    });
+    console.log('❌ render.yaml uses old server.mjs path');
+  } else if (renderConfig.includes('tsx server/server.ts') || renderConfig.includes('node --import tsx server/server.ts')) {
+    checks.passed.push('Render Config');
+    console.log('✅ render.yaml correctly configured for TypeScript');
+  } else {
+    warn('Render Config', 'render.yaml startCommand may need verification');
+  }
+  
+  // Check if tsx is in production dependencies (not devDependencies)
+  if (packageJson.dependencies && packageJson.dependencies.tsx) {
+    checks.passed.push('TSX Dependency');
+    console.log('✅ tsx in production dependencies');
+  } else if (packageJson.devDependencies && packageJson.devDependencies.tsx) {
+    checks.failed.push({
+      name: 'TSX Dependency',
+      error: 'tsx is in devDependencies but needs to be in dependencies for production deployment'
+    });
+    console.log('❌ tsx must be moved from devDependencies to dependencies');
+  } else {
+    checks.failed.push({
+      name: 'TSX Dependency',
+      error: 'tsx not found in package.json - required to run TypeScript in production'
+    });
+    console.log('❌ tsx not found in dependencies');
+  }
+} else {
+  warn('Render Config', 'render.yaml not found');
+}
+
 // Summary
 console.log('\n' + '='.repeat(60));
 console.log('📊 DEPLOYMENT READINESS SUMMARY');

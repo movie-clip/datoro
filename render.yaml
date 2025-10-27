@@ -13,7 +13,7 @@ services:
     runtime: node
     plan: free # FREE: sleeps after 15min inactivity | STARTER ($7/mo): 24/7 uptime
     buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
-    startCommand: node server/server.mjs
+    startCommand: npx tsx server/server.ts
     healthCheckPath: /api/health
     
     # Only rebuild backend when these files change
