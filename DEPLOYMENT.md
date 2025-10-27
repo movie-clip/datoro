@@ -23,9 +23,10 @@ Complete guide for deploying Factorly to production on Render.com (or any other 
    - Starter tier: $14/month for 750 requests/day
 
 ### Optional Accounts
-4. **Redis Cloud** (optional but recommended) - [Get free 25MB](https://redis.com/try-free/)
-5. **Sentry** (optional) - [Error tracking free tier](https://sentry.io/)
-6. **OpenAI** (optional) - [For AI features](https://platform.openai.com/api-keys)
+4. **Sentry** (optional) - [Error tracking free tier](https://sentry.io/)
+5. **OpenAI** (optional) - [For AI features](https://platform.openai.com/api-keys)
+
+**Note:** Redis is auto-configured in `render.yaml` - no separate account needed!
 
 ---
 

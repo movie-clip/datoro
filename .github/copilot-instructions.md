@@ -49,7 +49,10 @@
 ## Integration Points
 - **External APIs:** FMP (Financial Modeling Prep) API only - all financial data
 - **Charting:** ECharts (via `vue-echarts`), Chart.js
-- **Caching:** Redis Cloud for server-side cache (shared across workers)
+- **Caching:** 
+  - **Development:** Local Redis (Docker - port 6380)
+  - **Production:** Render Redis (auto-configured, 25MB free)
+  - Multi-layer: Client cache (5 min) + Redis (7 days) + ETag
 - **Process Management:** PM2 cluster mode (4 workers)
 - **No authentication/authorization** in current codebase.
 
