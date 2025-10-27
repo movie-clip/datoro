@@ -4,7 +4,9 @@
 module.exports = {
   apps: [{
     name: 'factorly-api',
-    script: './server/server.mjs',
+    script: './server/server.ts',
+    interpreter: 'node',
+    interpreter_args: '--import tsx',
     
     // Cluster mode: run multiple instances
     instances: 4, // or 'max' for all CPU cores
