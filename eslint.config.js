@@ -1,6 +1,8 @@
 import js from '@eslint/js';
 import pluginVue from 'eslint-plugin-vue';
 import globals from 'globals';
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
 
 export default [
   // Apply recommended configs
@@ -52,6 +54,54 @@ export default [
       'no-var': 'error',
       
       // Allow empty catch blocks (common in error handling)
+      'no-empty': ['error', { allowEmptyCatch: true }]
+    }
+  },
+
+  // TypeScript configuration
+  {
+    files: ['**/*.{ts,tsx,vue}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: ['./tsconfig.app.json', './tsconfig.server.json']
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint
+    },
+    rules: {
+      // Disable base rule for TypeScript
+      'no-unused-vars': 'off',
+      
+      // TypeScript-specific rules
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      
+      // Vue-specific rules
+      'vue/multi-word-component-names': 'off',
+      'vue/no-v-html': 'warn',
+      
+      // Console warnings
+      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      
+      // Modern practices
+      'prefer-const': 'error',
+      'no-var': 'error',
+      
+      // Allow empty catch blocks
       'no-empty': ['error', { allowEmptyCatch: true }]
     }
   }

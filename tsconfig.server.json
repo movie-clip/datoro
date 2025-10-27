@@ -1,0 +1,24 @@
+{
+  "extends": "@tsconfig/node18/tsconfig.json",
+  "include": ["server/**/*"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020"],
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@server/*": ["./server/*"]
+    },
+    "types": ["node"]
+  }
+}
