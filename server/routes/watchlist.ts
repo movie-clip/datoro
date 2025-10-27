@@ -3,7 +3,19 @@
  * Endpoints for managing user watchlists (add/remove/fetch tickers)
  */
 
-import express, { Request, Response } from 'express'
+import express from 'express'
+import type { Response } from 'express'
+import type {
+  AuthenticatedWatchlistRequest,
+  WatchlistResponse,
+  AuthenticatedAddWatchlistRequest,
+  AddWatchlistResponse,
+  AuthenticatedDeleteWatchlistRequest,
+  DeleteWatchlistResponse,
+  AuthenticatedReorderWatchlistRequest,
+  ReorderWatchlistResponse,
+  ErrorResponse
+} from '../types/api.types.js'
 import { randomUUID } from 'crypto'
 import { authenticate } from '../middleware/auth.js'
 import { getPrismaClient } from '../services/databaseService.js'
@@ -16,13 +28,9 @@ const prisma = getPrismaClient()
  * GET /api/watchlist
  * Fetch user's watchlist with ticker details
  */
-router.get('/watchlist', generalLimiter, authenticate(), async (req: Request, res: Response) => {
+router.get('/watchlist', generalLimiter, authenticate(), async (req: AuthenticatedWatchlistRequest, res: Response<WatchlistResponse | ErrorResponse>) => {
   try {
-    const userId = req.user?.id
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
+    const userId = req.user.id!
 
     // Fetch watchlist items sorted by displayOrder, then by addedAt as fallback
     const watchlistItems = await prisma.watchlistItem.findMany({
@@ -50,14 +58,10 @@ router.get('/watchlist', generalLimiter, authenticate(), async (req: Request, re
  * Reorder watchlist items (update displayOrder)
  * NOTE: Must come BEFORE parameterized routes to avoid route conflicts
  */
-router.put('/watchlist/reorder', generalLimiter, authenticate(), async (req: Request, res: Response) => {
+router.put('/watchlist/reorder', generalLimiter, authenticate(), async (req: AuthenticatedReorderWatchlistRequest, res: Response<ReorderWatchlistResponse | ErrorResponse>) => {
   try {
-    const userId = req.user?.id
+    const userId = req.user.id!
     const { tickers } = req.body // Array of tickers in new order
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
 
     if (!Array.isArray(tickers) || tickers.length === 0) {
       return res.status(400).json({ error: 'Invalid request: tickers must be a non-empty array' })
@@ -99,14 +103,10 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), async (req: Req
  * POST /api/watchlist/:ticker
  * Add a ticker to user's watchlist
  */
-router.post('/watchlist/:ticker', generalLimiter, authenticate(), async (req: Request, res: Response) => {
+router.post('/watchlist/:ticker', generalLimiter, authenticate(), async (req: AuthenticatedAddWatchlistRequest, res: Response<AddWatchlistResponse | ErrorResponse>) => {
   try {
-    const userId = req.user?.id
+    const userId = req.user.id!
     const ticker = req.params.ticker.toUpperCase().trim()
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
 
     // Validate ticker format (basic validation)
     if (!ticker || ticker.length > 10 || !/^[A-Z]+$/.test(ticker)) {
@@ -142,14 +142,10 @@ router.post('/watchlist/:ticker', generalLimiter, authenticate(), async (req: Re
  * DELETE /api/watchlist/:ticker
  * Remove a ticker from user's watchlist
  */
-router.delete('/watchlist/:ticker', generalLimiter, authenticate(), async (req: Request, res: Response) => {
+router.delete('/watchlist/:ticker', generalLimiter, authenticate(), async (req: AuthenticatedDeleteWatchlistRequest, res: Response<DeleteWatchlistResponse | ErrorResponse>) => {
   try {
-    const userId = req.user?.id
+    const userId = req.user.id!
     const ticker = req.params.ticker.toUpperCase().trim()
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
 
     // Delete the watchlist item
     await prisma.watchlistItem.deleteMany({

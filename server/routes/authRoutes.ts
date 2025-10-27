@@ -1,7 +1,15 @@
 // server/routes/authRoutes.ts
 // Authentication API routes
 
-import express, { type Request, type Response } from 'express'
+import express from 'express'
+import type { Response } from 'express'
+import type {
+  RegisterRequest,
+  LoginRequest,
+  GoogleLoginRequest,
+  AuthResponse,
+  LogoutResponse
+} from '../types/api.types.js'
 import { body, validationResult } from 'express-validator'
 import {
   registerUser,
@@ -76,7 +84,7 @@ router.post(
     body('email').isEmail().normalizeEmail(),
     body('password').notEmpty()
   ],
-  async (req: Request, res: Response) => {
+  async (req: LoginRequest, res: Response<AuthResponse>) => {
     try {
       // Validate input
       const errors = validationResult(req)
@@ -129,7 +137,7 @@ router.post(
   [
     body('token').notEmpty().withMessage('Google token required')
   ],
-  async (req: Request, res: Response) => {
+  async (req: GoogleLoginRequest, res: Response<AuthResponse>) => {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {

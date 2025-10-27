@@ -1,7 +1,9 @@
 // server/routes/tickerRoutes.ts
 // Ticker data endpoints - batch data fetching from FMP
 
-import express, { type Request, type Response } from 'express'
+import express from 'express'
+import type { Response } from 'express'
+import type { TickerDataRequest, TickerDataResponse, ErrorResponse } from '../types/api.types.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { fmpLimiter, globalFmpLimiter, decrementGlobalFmpCounter } from '../middleware/rateLimiter.js'
 import { getCacheService, CacheTTL } from '../services/cacheService.js'
@@ -49,10 +51,10 @@ export function initTickerRoutes(deps: { apiVersion: string; fmpApiKey: string; 
  * @param {string} ticker - Stock ticker symbol (1-10 chars, A-Z, 0-9, dots)
  * @param {string} mode - 'full' or 'priority' (default: 'full')
  */
-router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: TickerDataRequest, res: Response<TickerDataResponse | ErrorResponse>) => {
   const startTime = Date.now()
   const { ticker } = req.params
-  const mode = req.query.mode as string || 'full' // 'full' or 'priority'
+  const mode = req.query.mode || 'full' // 'full' or 'priority'
   
   const t = ticker.toUpperCase().trim()
   

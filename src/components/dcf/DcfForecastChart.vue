@@ -87,12 +87,21 @@ const chartOptions = computed((): EChartsOption | null => {
   const averagePrices = props.scenarios.average.projectedPrices.map(p => p.price)
   const worstPrices = props.scenarios.worst.projectedPrices.map(p => p.price)
   
-  // Calculate Y-axis max from all scenario prices
+  // Calculate Y-axis max from all scenario prices and current price
   const allPrices = [...bestPrices, ...averagePrices, ...worstPrices]
+  const hasValidPrice = props.currentPrice != null && !isNaN(props.currentPrice)
+  if (hasValidPrice) {
+    allPrices.push(props.currentPrice!)
+  }
   const maxPrice = Math.max(...allPrices)
   
   // Add 5% padding on top for better visualization
   const yAxisMax = Math.ceil(maxPrice + maxPrice * 0.05)
+
+  // Create current price line data (horizontal line across all years)
+  const currentPriceLine = hasValidPrice 
+    ? years.map(() => props.currentPrice)
+    : []
 
   return {
     backgroundColor: 'transparent',
@@ -270,7 +279,26 @@ const chartOptions = computed((): EChartsOption | null => {
           }
         },
         z: 2
-      }
+      },
+      // Current price reference line
+      ...(hasValidPrice ? [{
+        name: 'Current Price',
+        type: 'line',
+        data: currentPriceLine,
+        lineStyle: {
+          color: '#74b9ff',
+          width: 2,
+          type: 'dashed'
+        },
+        itemStyle: {
+          color: '#74b9ff'
+        },
+        symbol: 'none',
+        z: 4,
+        tooltip: {
+          formatter: `Current Price: $${props.currentPrice!.toFixed(2)}`
+        }
+      }] : [])
     ],
     legend: {
       show: true,
