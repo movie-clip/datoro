@@ -186,6 +186,7 @@
 
 <script setup lang="ts">
 import type { CompanyDataForDcf } from '../../services/dcf/dcfDataService'
+import { DCF_BOUNDS } from '../../config/constants'
 
 interface ScenarioValues {
   best: number
@@ -258,18 +259,18 @@ const defaults: DcfInputs = {
   projectionYears: 10
 }
 
-// Validation constraints
+// Validation constraints - use centralized bounds
 interface Constraint {
   min: number
   max: number
 }
 
 const constraints: Record<keyof DcfInputs, Constraint | undefined> = {
-  peRatio: { min: 0, max: 100 },
-  fcfGrowthRate: { min: -50, max: 100 },
-  terminalGrowthRate: { min: 0, max: 10 },
-  discountRate: { min: 0, max: 30 },
-  projectionYears: { min: 3, max: 10 }
+  peRatio: DCF_BOUNDS.PE_RATIO,
+  fcfGrowthRate: DCF_BOUNDS.FCF_GROWTH_RATE,
+  terminalGrowthRate: DCF_BOUNDS.TERMINAL_GROWTH_RATE,
+  discountRate: DCF_BOUNDS.DISCOUNT_RATE,
+  projectionYears: DCF_BOUNDS.PROJECTION_YEARS
 }
 
 // Update nested field and emit entire object (triggers parent reactivity)

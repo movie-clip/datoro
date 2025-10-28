@@ -64,6 +64,7 @@ import type { EChartsOption } from 'echarts'
 import { fetchDeepFinderData, getDistanceColor, type DeepFinderStock } from '../../services/deepFinder/deepFinderService'
 import { DEEP_FINDER_CONFIG } from '../../config/deepFinderStocks'
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
+import { DEBOUNCE } from '../../config/constants'
 
 // Helper to get full icon URL (ECharts needs absolute URLs in production)
 const getIconUrl = (ticker: string): string => {
@@ -265,10 +266,10 @@ watch(() => props.tickers, (newTickers, oldTickers) => {
     clearTimeout(debounceTimer)
   }
   
-  // Debounce for 150ms to avoid rapid API calls while staying responsive
+  // Debounce to avoid rapid API calls while staying responsive
   debounceTimer = setTimeout(() => {
     loadData()
-  }, 150)
+  }, DEBOUNCE.DEEP_FINDER_CHART)
 })
 
 // Watch for chart resize

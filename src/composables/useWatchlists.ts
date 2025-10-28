@@ -17,6 +17,7 @@
 
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
+import { CACHE_TTL as CLIENT_CACHE_TTL, VALIDATION } from '../config/constants'
 
 export interface Watchlist {
   id: string
@@ -73,8 +74,8 @@ const loading = ref(false)
 const initialized = ref(false)
 const lastFetchTime = ref(0)
 
-// Cache TTL: 5 minutes
-const CACHE_TTL = 5 * 60 * 1000
+// Cache TTL from constants
+const CACHE_TTL = CLIENT_CACHE_TTL.WATCHLIST
 
 // LocalStorage key for active watchlist
 const ACTIVE_WATCHLIST_KEY = 'factorly-active-watchlist'

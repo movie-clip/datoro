@@ -7,6 +7,7 @@ import crypto from 'crypto'
 import { OAuth2Client } from 'google-auth-library'
 import { getPrismaClient } from './databaseService.js'
 import type { User } from '@prisma/client'
+import { CACHE_TTL } from '../config/constants.js'
 
 const prisma = getPrismaClient()
 
@@ -372,7 +373,6 @@ async function createSession(userId: string, token: string, ipAddress: string | 
 
 // In-memory session cache (60 second TTL to reduce DB load)
 const sessionCache = new Map<string, { user: Partial<User> | null; expiresAt: number }>()
-const SESSION_CACHE_TTL = 60 * 1000 // 1 minute
 
 /**
  * Verify session token
@@ -420,10 +420,10 @@ export async function verifySession(token: string): Promise<Partial<User> | null
   // Return user without password
   const { password: _, ...userWithoutPassword } = session.user
   
-  // Cache valid session for 1 minute
+  // Cache valid session
   sessionCache.set(hashedToken, {
     user: userWithoutPassword,
-    expiresAt: Date.now() + SESSION_CACHE_TTL
+    expiresAt: Date.now() + CACHE_TTL.SESSION
   })
   
   return userWithoutPassword

@@ -19,6 +19,7 @@ import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAut
 import { generalLimiter } from '../middleware/rateLimiter.js'
 import { watchlistService } from '../services/watchlistService.js'
 import logger from '../services/logger.js'
+import { VALIDATION } from '../config/constants.js'
 
 const router = Router()
 
@@ -77,8 +78,8 @@ router.post(
       .trim()
       .notEmpty()
       .withMessage('Watchlist name is required')
-      .isLength({ min: 1, max: 50 })
-      .withMessage('Watchlist name must be 1-50 characters')
+      .isLength({ min: VALIDATION.WATCHLIST_NAME_MIN, max: VALIDATION.WATCHLIST_NAME_MAX })
+      .withMessage(`Watchlist name must be ${VALIDATION.WATCHLIST_NAME_MIN}-${VALIDATION.WATCHLIST_NAME_MAX} characters`)
   ],
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -154,8 +155,8 @@ router.put(
       .trim()
       .notEmpty()
       .withMessage('Watchlist name is required')
-      .isLength({ min: 1, max: 50 })
-      .withMessage('Watchlist name must be 1-50 characters')
+      .isLength({ min: VALIDATION.WATCHLIST_NAME_MIN, max: VALIDATION.WATCHLIST_NAME_MAX })
+      .withMessage(`Watchlist name must be ${VALIDATION.WATCHLIST_NAME_MIN}-${VALIDATION.WATCHLIST_NAME_MAX} characters`)
   ],
   async (req: AuthenticatedRequest, res: Response) => {
     try {

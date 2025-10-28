@@ -1,6 +1,7 @@
 import Redis from 'ioredis'
 import { LRUCache } from 'lru-cache'
 import crypto from 'crypto'
+import { MEMORY_LIMITS, CACHE_TTL, REDIS_TTL } from '../config/constants'
 
 interface CacheServiceOptions {
   redisUrl?: string | null
@@ -60,11 +61,11 @@ class CacheService {
     // Layer 1: In-memory LRU cache (fast, volatile)
     this.memoryCache = new LRUCache({
       max: options.maxMemoryItems || 500,
-      maxSize: options.maxMemorySize || 100 * 1024 * 1024, // 100MB
+      maxSize: options.maxMemorySize || MEMORY_LIMITS.CACHE_SIZE,
       sizeCalculation: (value: any) => {
         return JSON.stringify(value).length
       },
-      ttl: options.memoryTtl || 5 * 60 * 1000, // 5 minutes (aligned with client cache)
+      ttl: options.memoryTtl || CACHE_TTL.MEMORY,
       updateAgeOnGet: true,
       updateAgeOnHas: false,
     })
@@ -187,7 +188,7 @@ class CacheService {
   /**
    * Set in cache (stores in both L1 and L2)
    */
-  async set<T = any>(key: string, value: T, ttlSeconds = 3600): Promise<void> {
+  async set<T = any>(key: string, value: T, ttlSeconds = REDIS_TTL.DEFAULT): Promise<void> {
     this.stats.sets++
 
     // Layer 1: Memory cache (store raw data)
@@ -222,7 +223,7 @@ class CacheService {
   /**
    * Get or fetch (auto-fetch on cache miss)
    */
-  async getOrFetch<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds = 3600): Promise<T> {
+  async getOrFetch<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds = REDIS_TTL.DEFAULT): Promise<T> {
     const cached = await this.get<T>(key)
     
     if (cached.data !== null) {
@@ -361,22 +362,8 @@ class CacheService {
   }
 }
 
-// TTL constants (in seconds) - Optimized for paid FMP plan
-export const CacheTTL = {
-  PRICE: 15 * 60,                      // 15 minutes (increased from 5min for better caching)
-  PRICE_HISTORY: 8 * 60 * 60,          // 8 hours (historical data doesn't change often)
-  INCOME_STATEMENT: 7 * 24 * 60 * 60,  // 7 days (quarterly reports)
-  BALANCE_SHEET: 7 * 24 * 60 * 60,     // 7 days (quarterly reports)
-  CASH_FLOW: 7 * 24 * 60 * 60,         // 7 days (quarterly reports)
-  RATIOS: 7 * 24 * 60 * 60,            // 7 days (NEW - quarterly reports)
-  REVENUE_SEGMENTS: 7 * 24 * 60 * 60,  // 7 days (quarterly reports)
-  COMPANY_PROFILE: 7 * 24 * 60 * 60,   // 7 days (rarely changes)
-  FINANCIAL_SCORES: 7 * 24 * 60 * 60,  // 7 days (NEW - Altman Z-Score)
-  KEY_METRICS: 7 * 24 * 60 * 60,       // 7 days (NEW - quarterly reports)
-  ANALYST_ESTIMATES: 7 * 24 * 60 * 60, // 7 days (NEW - rarely changes)
-  QUOTE: 5 * 60,                       // 5 minutes (real-time price)
-  AI_ANALYSIS: 30 * 24 * 60 * 60,      // 30 days (expensive to regenerate)
-}
+// Re-export Redis TTL constants from centralized config
+export { REDIS_TTL as CacheTTL } from '../config/constants'
 
 // Singleton instance
 let cacheInstance: CacheService | null = null

@@ -1,6 +1,7 @@
 import rateLimit from 'express-rate-limit'
 import slowDown from 'express-slow-down'
 import type { Request, Response, NextFunction } from 'express'
+import { RATE_LIMIT, SPEED_LIMIT } from '../config/constants'
 
 declare global {
   namespace Express {
@@ -25,8 +26,8 @@ declare global {
 
 // General API rate limiter (100 req/min)
 export const generalLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100,
+  windowMs: RATE_LIMIT.WINDOW_MS,
+  max: RATE_LIMIT.GENERAL_MAX,
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '60 seconds'
@@ -38,7 +39,7 @@ export const generalLimiter = rateLimit({
       error: 'Too many requests',
       message: 'You have exceeded the rate limit. Please try again later.',
       retryAfter: res.getHeader('Retry-After'),
-      limit: 100,
+      limit: RATE_LIMIT.GENERAL_MAX,
       window: '1 minute'
     });
   }
@@ -48,8 +49,8 @@ export const generalLimiter = rateLimit({
 // FMP paid plan: 300 req/min total, but limit each IP to 30 req/min
 // This prevents a single abusive user from exhausting the entire quota
 export const fmpLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute window
-  max: 30, // 30 requests per IP per minute (10% of total quota)
+  windowMs: RATE_LIMIT.WINDOW_MS,
+  max: RATE_LIMIT.FMP_PER_IP_MAX,
   message: {
     error: 'Too many API requests, please slow down.',
     retryAfter: '60 seconds'
@@ -58,12 +59,12 @@ export const fmpLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false, // Count all requests
   handler: (req: Request, res: Response) => {
-    console.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (30 req/min)`);
+    console.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (${RATE_LIMIT.FMP_PER_IP_MAX} req/min)`);
     res.status(429).json({
       error: 'Rate limit exceeded',
       message: 'You are making too many requests to the financial data API. Please slow down.',
       retryAfter: res.getHeader('Retry-After'),
-      limit: 30,
+      limit: RATE_LIMIT.FMP_PER_IP_MAX,
       window: '1 minute',
       tip: 'Data is cached for 7 days. Wait a moment and try again to get cached results.'
     });
@@ -74,28 +75,26 @@ export const fmpLimiter = rateLimit({
 // Prevents exhausting the 300 req/min FMP quota even with many users
 let globalFmpCounter = 0;
 let globalFmpWindowStart = Date.now();
-const GLOBAL_FMP_LIMIT = 250; // Conservative limit (83% of 300 quota)
-const GLOBAL_FMP_WINDOW = 60 * 1000; // 1 minute
 
 export function globalFmpLimiter(req: Request, res: Response, next: NextFunction) {
   const now = Date.now();
   
   // Reset counter if window expired
-  if (now - globalFmpWindowStart >= GLOBAL_FMP_WINDOW) {
+  if (now - globalFmpWindowStart >= RATE_LIMIT.WINDOW_MS) {
     globalFmpCounter = 0;
     globalFmpWindowStart = now;
   }
   
   // Check global limit
-  if (globalFmpCounter >= GLOBAL_FMP_LIMIT) {
-    const timeUntilReset = Math.ceil((GLOBAL_FMP_WINDOW - (now - globalFmpWindowStart)) / 1000);
-    console.warn(`[RateLimit] Global FMP limit reached (${GLOBAL_FMP_LIMIT}/min). Blocking request from ${req.ip}`);
+  if (globalFmpCounter >= RATE_LIMIT.FMP_GLOBAL_MAX) {
+    const timeUntilReset = Math.ceil((RATE_LIMIT.WINDOW_MS - (now - globalFmpWindowStart)) / 1000);
+    console.warn(`[RateLimit] Global FMP limit reached (${RATE_LIMIT.FMP_GLOBAL_MAX}/min). Blocking request from ${req.ip}`);
     
     return res.status(503).json({
       error: 'Service temporarily unavailable',
       message: 'The API quota is currently exhausted. Please try again in a moment.',
       retryAfter: `${timeUntilReset} seconds`,
-      globalLimit: GLOBAL_FMP_LIMIT,
+      globalLimit: RATE_LIMIT.FMP_GLOBAL_MAX,
       window: '1 minute'
     });
   }
@@ -117,8 +116,8 @@ export function decrementGlobalFmpCounter() {
 
 // Very strict limiter for admin/cache endpoints (10 req/min)
 export const adminLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10,
+  windowMs: RATE_LIMIT.WINDOW_MS,
+  max: RATE_LIMIT.ADMIN_MAX,
   message: 'Too many requests to admin endpoint',
   standardHeaders: true,
   legacyHeaders: false,
@@ -129,7 +128,7 @@ export const adminLimiter = rateLimit({
       error: 'Rate limit exceeded',
       message: 'Too many requests to this endpoint.',
       retryAfter: res.getHeader('Retry-After'),
-      limit: 10,
+      limit: RATE_LIMIT.ADMIN_MAX,
       window: '1 minute'
     });
   }
@@ -138,18 +137,18 @@ export const adminLimiter = rateLimit({
 // Speed limiter - slows down responses before blocking
 // Starts adding delay after 30 requests, increases by 500ms per request
 export const speedLimiter = slowDown({
-  windowMs: 60 * 1000, // 1 minute
-  delayAfter: 30, // Allow 30 requests per minute at full speed
-  delayMs: (hits: number) => hits * 500, // Add 500ms delay per request over limit
-  maxDelayMs: 5000, // Max delay of 5 seconds
+  windowMs: SPEED_LIMIT.WINDOW_MS,
+  delayAfter: SPEED_LIMIT.DELAY_AFTER,
+  delayMs: (hits: number) => hits * SPEED_LIMIT.DELAY_PER_REQUEST_MS,
+  maxDelayMs: SPEED_LIMIT.MAX_DELAY_MS,
   skipFailedRequests: false,
   skipSuccessfulRequests: false,
 });
 
 // AI endpoint limiter (5 req/min - expensive operations)
 export const aiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5,
+  windowMs: RATE_LIMIT.WINDOW_MS,
+  max: RATE_LIMIT.AI_MAX,
   message: 'Too many AI requests',
   standardHeaders: true,
   legacyHeaders: false,
@@ -159,7 +158,7 @@ export const aiLimiter = rateLimit({
       error: 'Rate limit exceeded',
       message: 'AI analysis is resource-intensive. Please wait before making another request.',
       retryAfter: res.getHeader('Retry-After'),
-      limit: 5,
+      limit: RATE_LIMIT.AI_MAX,
       window: '1 minute'
     });
   }
@@ -178,7 +177,7 @@ export function createRedisStore(redisClient: any) {
     async increment(key: string) {
       const hits = await redisClient.incr(key);
       if (hits === 1) {
-        await redisClient.expire(key, 60); // 1 minute TTL
+        await redisClient.expire(key, RATE_LIMIT.WINDOW_MS / 1000); // Convert to seconds
       }
       return { totalHits: hits };
     },
