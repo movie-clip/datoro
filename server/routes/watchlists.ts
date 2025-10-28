@@ -259,36 +259,25 @@ router.delete(
       }
       
       // Delete watchlist
-      try {
-        const deleted = await watchlistService.deleteWatchlist(id)
-        
-        if (!deleted) {
-          res.status(404).json({
-            success: false,
-            error: 'Watchlist not found'
-          })
-          return
-        }
-        
-        logger.info(`[Watchlists] Deleted watchlist ${id}`)
-        
-        res.json({
-          success: true,
-          data: {
-            message: 'Watchlist deleted successfully',
-            watchlistId: id
-          }
+      const deleted = await watchlistService.deleteWatchlist(id)
+      
+      if (!deleted) {
+        res.status(404).json({
+          success: false,
+          error: 'Watchlist not found'
         })
-      } catch (error: any) {
-        if (error.message === 'Cannot delete default watchlist') {
-          res.status(400).json({
-            success: false,
-            error: 'Cannot delete default watchlist'
-          })
-          return
-        }
-        throw error
+        return
       }
+      
+      logger.info(`[Watchlists] Deleted watchlist ${id}`)
+      
+      res.json({
+        success: true,
+        data: {
+          message: 'Watchlist deleted successfully',
+          watchlistId: id
+        }
+      })
     } catch (error: any) {
       logger.error('[Watchlists] Error deleting watchlist:', error)
       res.status(500).json({

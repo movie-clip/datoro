@@ -109,16 +109,12 @@ class WatchlistService {
    */
   async deleteWatchlist(id: string): Promise<boolean> {
     try {
-      // Check if it's a default watchlist
+      // Check if watchlist exists
       const watchlist = await prisma.watchlist.findUnique({
         where: { id }
       })
       
       if (!watchlist) return false
-      
-      if (watchlist.isDefault) {
-        throw new Error('Cannot delete default watchlist')
-      }
       
       // Prisma will cascade delete all items due to onDelete: Cascade
       await prisma.watchlist.delete({
@@ -127,9 +123,7 @@ class WatchlistService {
       
       return true
     } catch (error) {
-      if (error instanceof Error && error.message === 'Cannot delete default watchlist') {
-        throw error
-      }
+      console.error('Error deleting watchlist:', error)
       return false
     }
   }

@@ -23,8 +23,8 @@ import logger from '../services/logger.js'
 
 const router = Router()
 
-// Ticker validation regex (1-10 uppercase letters)
-const TICKER_REGEX = /^[A-Z]{1,10}$/
+// Ticker validation regex (1-10 uppercase letters, optional dot and suffix for international tickers)
+const TICKER_REGEX = /^[A-Z0-9]{1,10}(\.[A-Z]{1,5})?$/
 
 /**
  * GET /api/watchlists/:id/items
