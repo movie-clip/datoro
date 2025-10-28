@@ -27,9 +27,8 @@ ALTER TABLE "watchlist_items" DROP COLUMN IF EXISTS "watchlist_id";
 -- Only needed if Step 11 from forward migration was executed
 -- CREATE UNIQUE INDEX IF NOT EXISTS "watchlist_items_user_id_ticker_key" ON "watchlist_items"("user_id", "ticker");
 
--- Step 7: Make user_id NOT NULL again (if it was made nullable)
--- Only needed if Step 12 from forward migration was executed
--- ALTER TABLE "watchlist_items" ALTER COLUMN "user_id" SET NOT NULL;
+-- Step 7: Make user_id NOT NULL again (it was made nullable in Step 12)
+ALTER TABLE "watchlist_items" ALTER COLUMN "user_id" SET NOT NULL;
 
 -- Step 8: Drop Watchlist foreign key constraint
 ALTER TABLE "watchlists" DROP CONSTRAINT IF EXISTS "watchlists_user_id_fkey";

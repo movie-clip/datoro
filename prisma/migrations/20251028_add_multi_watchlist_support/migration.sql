@@ -65,15 +65,13 @@ CREATE UNIQUE INDEX "watchlist_items_watchlist_id_ticker_key" ON "watchlist_item
 -- Uncomment after verifying migration works correctly
 -- DROP INDEX "watchlist_items_user_id_ticker_key";
 
--- Step 12: Make user_id nullable (for future cleanup after migration verification)
--- This is commented out to maintain backward compatibility during transition
--- Uncomment after verifying migration works correctly and updating all code
--- ALTER TABLE "watchlist_items" ALTER COLUMN "user_id" DROP NOT NULL;
+-- Step 12: Make user_id nullable (required for new watchlist items)
+-- This allows creating items without user_id since we now use watchlist_id
+ALTER TABLE "watchlist_items" ALTER COLUMN "user_id" DROP NOT NULL;
 
 -- Migration complete!
 -- Next steps (after verification):
--- 1. Verify all watchlists and items migrated correctly
--- 2. Test create/read/update/delete operations with new schema
--- 3. Update all application code to use watchlist_id instead of user_id
--- 4. Uncomment Step 11 and 12 to complete cleanup
--- 5. Remove user_id column entirely in future migration (optional)
+-- 1. Verify all watchlists and items migrated correctly ✅
+-- 2. Test create/read/update/delete operations with new schema ✅
+-- 3. Update all application code to use watchlist_id instead of user_id ✅
+-- 4. Remove user_id column entirely in future migration (optional)
