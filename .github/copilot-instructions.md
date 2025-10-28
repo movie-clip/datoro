@@ -261,6 +261,75 @@ interface BatchData {
 }
 ```
 
+## Troubleshooting FMP API Data Issues
+
+**When data is missing/null for a ticker, follow this workflow:**
+
+### 1. Start Server in Separate Terminal
+```powershell
+# Stop any running servers
+Get-Process -Name node | Stop-Process -Force
+
+# Start server in new window (won't be interrupted by other commands)
+Start-Process powershell -ArgumentList "-NoExit", "-Command", 
+  "cd D:\projects\Vue\factorly; npm run server" -WindowStyle Normal
+
+# Wait for server to start
+Start-Sleep -Seconds 8
+```
+
+### 2. Test FMP API Directly
+```powershell
+# Get API key from .env file
+$apiKey = (Get-Content ".env.development.local" | 
+  Select-String "FMP_API_KEY").ToString().Split('=')[1].Trim()
+
+# Test FMP endpoint directly
+$ticker = "AUTO.L"  # Replace with your ticker
+$url = "https://financialmodelingprep.com/api/v4/score?symbol=$ticker&apikey=$apiKey"
+$fmpResponse = Invoke-RestMethod -Uri $url
+$fmpResponse | ConvertTo-Json
+```
+
+### 3. Test Your Server API
+```powershell
+# Fetch from your server
+$serverResponse = Invoke-RestMethod -Uri "http://localhost:7071/api/ticker-data/$ticker?mode=full"
+
+# Compare the data
+Write-Host "`nFMP Response:" -ForegroundColor Yellow
+$fmpResponse | ConvertTo-Json
+
+Write-Host "`nServer Response (financialScores):" -ForegroundColor Cyan
+$serverResponse.data.financialScores | ConvertTo-Json
+```
+
+### 4. Common Issues to Check
+
+**Issue: FMP returns object, server expects array**
+- FMP: `{symbol: "AUTO.L", altmanZScore: 65.31}`
+- Frontend needs: `[{symbol: "AUTO.L", altmanZScore: 65.31}]`
+- **Fix:** Add array wrapping in `server/services/batchDataService.ts`:
+  ```typescript
+  if (dataKey === 'financialScores' && data && !Array.isArray(data)) {
+    result.data[dataKey] = [data];
+  }
+  ```
+
+**Issue: Wrong FMP endpoint**
+- Check `batchDataService.ts` line ~85 for endpoint URL
+- Verify endpoint version: `/api/v3/*`, `/api/v4/*` (NOT `/stable/*`)
+
+**Issue: Cached old data**
+```powershell
+# Clear Redis cache
+docker exec factorly-redis-dev redis-cli FLUSHDB
+
+# Restart server (clears memory cache)
+Get-Process -Name node | Stop-Process -Force
+# Then start server again
+```
+
 ## Critical Notes
 - **TypeScript is mandatory:** All new code must be TypeScript (.ts/.vue with `<script setup lang="ts">`).
 - **Type safety:** Use types from `src/types/` - never use `any` without justification.
