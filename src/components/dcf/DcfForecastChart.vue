@@ -1,6 +1,9 @@
 <template>
   <div class="dcf-chart">
-    <h3 class="chart-title">Price Forecast</h3>
+    <h3 class="chart-title">
+      Price Forecast
+      <span v-if="pegError && chartOptions" class="chart-subtitle">Based on Advanced DCF (FCF)</span>
+    </h3>
     <div class="chart-container">
       <v-chart 
         v-if="chartOptions" 
@@ -9,7 +12,13 @@
         class="chart"
       />
       <div v-else class="chart-placeholder">
-        <p>Enter assumptions to see price forecast</p>
+        <svg v-if="pegError" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <p v-if="pegError" class="error-message">{{ pegError }}</p>
+        <p v-else>Enter assumptions to see price forecast</p>
       </div>
     </div>
   </div>
@@ -60,6 +69,7 @@ interface Props {
   scenarios?: Scenarios
   currentPrice?: number | null
   intrinsicValue?: number | null
+  pegError?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -69,7 +79,8 @@ const props = withDefaults(defineProps<Props>(), {
     worst: { projectedPrices: [] }
   }),
   currentPrice: null,
-  intrinsicValue: null
+  intrinsicValue: null,
+  pegError: null
 })
 
 const chartOptions = computed((): EChartsOption | null => {
@@ -331,6 +342,16 @@ const chartOptions = computed((): EChartsOption | null => {
   font-weight: 600;
   color: #fff;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chart-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
 }
 
 .chart-container {
@@ -347,11 +368,27 @@ const chartOptions = computed((): EChartsOption | null => {
 
 .chart-placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
   color: rgba(255, 255, 255, 0.4);
   font-size: 15px;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.chart-placeholder svg {
+  color: #f39c12;
+  stroke: #f39c12;
+}
+
+.chart-placeholder .error-message {
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 400px;
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* Mobile responsive */

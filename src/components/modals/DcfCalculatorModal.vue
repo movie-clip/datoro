@@ -82,6 +82,7 @@
                   :fmp-dcf-value="typedFmpDcfValue"
                   :fmp-dcf-loading="fmpDcfLoading"
                   :fmp-dcf-error="fmpDcfError ?? undefined"
+                  :peg-error="pegError ?? undefined"
                   class="compact-results"
                 />
                 
@@ -89,6 +90,7 @@
                   :scenarios="typedScenarios"
                   :current-price="typedCompanyData?.currentPrice || 0"
                   :intrinsic-value="intrinsicValue ?? undefined"
+                  :peg-error="pegError ?? undefined"
                 />
               </div>
             </div>
@@ -133,6 +135,7 @@ const {
   fmpDcfValue,
   fmpDcfLoading,
   fmpDcfError,
+  pegError,
   companyData,
   dataValidation,
   loading,

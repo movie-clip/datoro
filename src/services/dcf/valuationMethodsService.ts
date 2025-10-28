@@ -106,7 +106,7 @@ export function calculateAdvancedDcfValue(
   if (!advancedDcf || !Array.isArray(advancedDcf) || advancedDcf.length === 0) {
     return {
       intrinsicValue: null,
-      error: 'Advanced DCF data not available'
+      error: 'DCF valuation not available for this ticker. This typically occurs for companies with negative or unstable cash flows.'
     }
   }
 
@@ -126,7 +126,7 @@ export function calculateAdvancedDcfValue(
   if (!intrinsicValue || intrinsicValue <= 0) {
     return {
       intrinsicValue: null,
-      error: 'Invalid Advanced DCF calculation'
+      error: 'DCF model resulted in negative valuation. Consider using alternative valuation methods (P/S ratio, EV/Revenue) for growth companies.'
     }
   }
 
@@ -299,6 +299,94 @@ export async function fetchFmpLeveredDcf(ticker: string): Promise<ApiResponse<Fm
     const err = error as Error
     console.error('[FMP Levered DCF] Error fetching:', err)
     return { data: null, error: err.message }
+  }
+}
+
+/**
+ * Generate chart scenarios from Advanced DCF intrinsic value (FCF-based fallback)
+ * Used as fallback when PEG model fails (e.g., negative earnings)
+ * 
+ * Creates linear price projections from current price to intrinsic value
+ * This provides visual representation when earnings-based projection is unavailable
+ * 
+ * @param advancedDcfResult - Advanced DCF calculation result  
+ * @param currentPrice - Current stock price
+ * @param years - Number of years to project (default: 5)
+ * @returns Chart scenarios with projected prices converging to intrinsic value
+ */
+export function generateScenariosFromAdvancedDcf(
+  advancedDcfResult: AdvancedDcfResult | FmpDcfValueExtended,
+  currentPrice: number,
+  years: number = 5
+): { best: any; average: any; worst: any } | null {
+  // Check if it's a valid result with intrinsic value
+  if (!advancedDcfResult || 'error' in advancedDcfResult || !advancedDcfResult.intrinsicValue) {
+    return null
+  }
+
+  const intrinsicValue = advancedDcfResult.intrinsicValue
+  
+  // Can't generate scenarios if intrinsic value is invalid
+  if (intrinsicValue <= 0) {
+    return null
+  }
+
+  const currentYear = new Date().getFullYear()
+  
+  // Create three scenarios converging to intrinsic value over time
+  // Average: Linear path to intrinsic value
+  // Best: Linear path to intrinsic value + 20% buffer
+  // Worst: Linear path to intrinsic value - 20% buffer
+  
+  const targetAverage = intrinsicValue
+  const targetBest = intrinsicValue * 1.2
+  const targetWorst = intrinsicValue * 0.8
+  
+  const averagePrices = Array.from({ length: years }, (_, i) => {
+    const progress = (i + 1) / years
+    const price = currentPrice + (targetAverage - currentPrice) * progress
+    return {
+      year: currentYear + i + 1,
+      price: Math.round(price * 100) / 100
+    }
+  })
+
+  const bestPrices = Array.from({ length: years }, (_, i) => {
+    const progress = (i + 1) / years
+    const price = currentPrice + (targetBest - currentPrice) * progress
+    return {
+      year: currentYear + i + 1,
+      price: Math.round(price * 100) / 100
+    }
+  })
+
+  const worstPrices = Array.from({ length: years }, (_, i) => {
+    const progress = (i + 1) / years
+    const price = currentPrice + (targetWorst - currentPrice) * progress
+    return {
+      year: currentYear + i + 1,
+      price: Math.round(price * 100) / 100
+    }
+  })
+
+  const upside = ((intrinsicValue - currentPrice) / currentPrice) * 100
+
+  return {
+    best: {
+      projectedPrices: bestPrices,
+      intrinsicValue: targetBest,
+      upside: ((targetBest - currentPrice) / currentPrice) * 100
+    },
+    average: {
+      projectedPrices: averagePrices,
+      intrinsicValue: intrinsicValue,
+      upside: upside
+    },
+    worst: {
+      projectedPrices: worstPrices,
+      intrinsicValue: targetWorst,
+      upside: ((targetWorst - currentPrice) / currentPrice) * 100
+    }
   }
 }
 

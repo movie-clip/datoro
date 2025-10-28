@@ -38,6 +38,7 @@ interface IntrinsicValueResult {
   annualizedReturn: number | null
   futureValue: number | null
   futureEPS?: number
+  error?: string | null
 }
 
 interface Recommendation {
@@ -81,7 +82,10 @@ export function calculateIntrinsicValue(inputs: DcfInputs, companyData: CompanyD
       projectedPrices: [],
       upside: null,
       annualizedReturn: null,
-      futureValue: null
+      futureValue: null,
+      error: eps < 0 
+        ? 'PEG model requires positive earnings. This company is currently unprofitable. Consider using FCF-based valuation or revenue multiples.'
+        : 'Earnings data not available for this ticker.'
     }
   }
 

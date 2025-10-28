@@ -12,6 +12,14 @@
             ({{ upside > 0 ? '+' : '' }}{{ upside.toFixed(1) }}%)
           </span>
         </div>
+        <div v-else-if="pegError" class="card-value text-warning" title="Click for details">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          N/A
+        </div>
         <div v-else class="card-value text-muted">N/A</div>
         <div class="card-hint">Custom cash flow model</div>
       </div>
@@ -24,6 +32,14 @@
           <span v-if="advancedDcfValue?.upside" class="upside-inline" :class="getUpsideClass(advancedDcfValue.upside)">
             ({{ advancedDcfValue.upside > 0 ? '+' : '' }}{{ advancedDcfValue.upside.toFixed(1) }}%)
           </span>
+        </div>
+        <div v-else-if="advancedDcfValue?.error" class="card-value text-warning" title="Click for details">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          N/A
         </div>
         <div v-else class="card-value text-muted">—</div>
         <div class="card-hint">FMP 10-year model</div>
@@ -67,6 +83,7 @@ interface AdvancedDcfValue {
   upside?: number | null
   wacc?: number | null
   terminalGrowthRate?: number | null
+  error?: string | null
 }
 
 interface FmpDcfValue {
@@ -82,6 +99,7 @@ interface Props {
   fmpDcfValue?: FmpDcfValue | null
   fmpDcfLoading?: boolean
   fmpDcfError?: string | null
+  pegError?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -131,12 +149,20 @@ const getDcfValueClass = (value: number | null | undefined): string => {
 
 // Tooltip generators
 const getDcfTooltip = (): string => {
+  // Show error message if available
+  if (props.pegError) {
+    return props.pegError
+  }
   return `PEG Ratio-Based Valuation:
 Future EPS = Current EPS × (1 + Growth Rate)^Years
 Target Price = Future EPS × Target P/E`
 }
 
 const getAdvancedDcfTooltip = (): string => {
+  // Show error message if available
+  if (props.advancedDcfValue?.error) {
+    return props.advancedDcfValue.error
+  }
   if (!props.advancedDcfValue?.intrinsicValue) return 'No data available'
   const wacc = props.advancedDcfValue?.wacc || 'N/A'
   const terminalGrowth = props.advancedDcfValue?.terminalGrowthRate || 'N/A'
@@ -309,6 +335,12 @@ const getCurrentPriceTooltip = (): string => {
 .card-value.text-muted {
   color: rgba(255, 255, 255, 0.3);
   font-size: 20px;
+}
+
+.card-value.text-warning {
+  color: #f39c12;
+  font-size: 18px;
+  cursor: help;
 }
 
 .card-value.text-error {
