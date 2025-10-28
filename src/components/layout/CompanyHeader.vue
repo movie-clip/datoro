@@ -66,7 +66,7 @@
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore, type FMPProfile } from '../../stores/tickerStore'
-import { useWatchlist } from '../../composables/useWatchlist'
+import { useWatchlists } from '../../composables/useWatchlists'
 import StarIcon from '../common/StarIcon.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 
@@ -83,8 +83,8 @@ interface Emits {
 
 const emit = defineEmits<Emits>()
 
-// Watchlist composable
-const { isWatchlisted, toggleWatchlist } = useWatchlist()
+// Watchlist composable (multi-watchlist support)
+const { isWatchlisted, toggleWatchlist } = useWatchlists()
 
 const imageError = ref(false)
 

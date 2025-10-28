@@ -14,6 +14,8 @@ import { getMonitoringService } from './services/monitoringService.js'
 import * as sentryService from './services/sentryService.js'
 import authRoutes from './routes/authRoutes.js'
 import watchlistRoutes from './routes/watchlist.js'
+import watchlistsRoutes from './routes/watchlists.js'
+import watchlistItemsRoutes from './routes/watchlistItems.js'
 import tickerRoutes, { initTickerRoutes } from './routes/tickerRoutes.js'
 import searchRoutes, { initSearchRoutes } from './routes/searchRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
@@ -195,7 +197,9 @@ app.use('/api/auth', authRoutes)
 // ============================================
 // Watchlist Routes
 // ============================================
-app.use('/api', watchlistRoutes)
+app.use('/api', watchlistRoutes)         // Legacy: /api/watchlist
+app.use('/api', watchlistsRoutes)        // New: /api/watchlists (CRUD)
+app.use('/api', watchlistItemsRoutes)    // New: /api/watchlists/:id/items
 
 // ============================================
 // Initialize and Mount Route Modules

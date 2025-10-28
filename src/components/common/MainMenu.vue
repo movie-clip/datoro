@@ -24,12 +24,7 @@
           >
           <span class="menu-title">{{ currentView === 'menu' ? 'Menu' : 'Watchlist' }}</span>
         </div>
-        <button class="close-button" @click="emit('close')" title="Close">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+        <!-- Close button removed - watchlist dropdown will replace header controls -->
       </div>
 
       <!-- Menu Content Container with animation -->
@@ -107,8 +102,13 @@
         <!-- Watchlist Content View -->
         <Transition name="slide-right">
           <div v-if="currentView === 'watchlist'" key="watchlist" class="menu-content watchlist-content">
-        <!-- Loading state -->
-        <div v-if="loading" class="loading-state">
+            <!-- Watchlist Dropdown Selector -->
+            <div v-if="isAuthenticated" class="watchlist-dropdown-container">
+              <WatchlistDropdown />
+            </div>
+
+            <!-- Loading state -->
+            <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
           <p>Loading watchlist...</p>
         </div>
@@ -187,8 +187,9 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useWatchlist } from '../../composables/useWatchlist'
+import { ref, watch, computed } from 'vue'
+import { useWatchlists } from '../../composables/useWatchlists'
+import WatchlistDropdown from './WatchlistDropdown.vue'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 
@@ -213,13 +214,17 @@ const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker', 'show-de
 const currentView = ref('menu') // 'menu' or 'watchlist'
 const isDcfModalOpen = ref(false)
 
-// Use shared watchlist composable - now with full cached items
+// Use shared watchlists composable with multi-watchlist support
 const { 
-  watchlistItems,
+  items,
   loading, 
-  initializeWatchlist,
+  initializeWatchlists,
+  toggleWatchlist,
   reorderWatchlist
-} = useWatchlist()
+} = useWatchlists()
+
+// Alias items to watchlistItems for template compatibility
+const watchlistItems = items
 
 // Drag and drop state
 const draggedIndex = ref(null)
@@ -234,7 +239,7 @@ watch(currentView, async (view) => {
   if (view === 'watchlist') {
     error.value = null
     try {
-      await initializeWatchlist()
+      await initializeWatchlists()
     } catch (err) {
       console.error('Error loading watchlist:', err)
       error.value = 'Failed to load watchlist'
@@ -257,9 +262,11 @@ function showDeepFinder() {
 }
 
 const handleRemove = async (ticker) => {
-  // Emit to parent to handle actual removal via composable
-  emit('toggle-watchlist', ticker)
-  // Optimistic update handled in useWatchlist composable
+  try {
+    await toggleWatchlist(ticker)
+  } catch (err) {
+    console.error('Error removing ticker:', err)
+  }
 }
 
 const goToTicker = (ticker) => {
@@ -436,24 +443,7 @@ const handleDrop = async (event, dropIndex) => {
   letter-spacing: -0.02em;
 }
 
-.close-button {
-  padding: 0.5rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: #9E9E9E;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-button:hover {
-  background: rgba(255, 59, 48, 0.1);
-  border-color: rgba(255, 59, 48, 0.3);
-  color: #FF3B30;
-}
+/* Close button removed - replaced with watchlist dropdown */
 
 /* Menu Content Container */
 .menu-content-container {
@@ -553,6 +543,11 @@ const handleDrop = async (event, dropIndex) => {
 /* Watchlist Content Styles */
 .watchlist-content {
   padding: 0;
+}
+
+.watchlist-dropdown-container {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .loading-state,

@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted, nextTick, defineAsyncComponent } from 'vue'
 import { useTickerStore } from './stores/tickerStore'
 import { useAuthStore } from './stores/authStore'
-import { useWatchlist } from './composables/useWatchlist'
+import { useWatchlists } from './composables/useWatchlists'
 
 // Temporary type for auth user until authStore is fully typed
 interface AuthUser {
@@ -88,8 +88,8 @@ const showMainMenu = ref(false)
 // Deep Finder
 const showDeepFinder = ref(false)
 
-// Watchlist
-const { initializeWatchlist, toggleWatchlist, clearWatchlist } = useWatchlist()
+// Watchlist (multi-watchlist support)
+const { initializeWatchlists, toggleWatchlist, clearAll } = useWatchlists()
 const showWatchlistPanel = ref(false)
 
 // Initialize auth store on mount
@@ -100,7 +100,7 @@ onMounted(async () => {
     
     // Only initialize watchlist if user is authenticated
     if (authStore.isAuthenticated) {
-      await initializeWatchlist()
+      await initializeWatchlists()
     }
   } catch (err) {
     console.error('[App] Auth init failed:', err)
@@ -116,7 +116,7 @@ onMounted(async () => {
 watch(() => authStore.isAuthenticated, (isAuth) => {
   if (isAuth) {
     // User just logged in - force reinitialize watchlist
-    initializeWatchlist(true).catch(err => {
+    initializeWatchlists(true).catch((err: Error) => {
       console.error('[App] Watchlist reinit failed:', err)
     })
   }
@@ -190,7 +190,7 @@ const handleAuthSuccess = (): void => {
 
 const handleLogout = (): void => {
   if (confirm('Are you sure you want to sign out?')) {
-    clearWatchlist()
+    clearAll()
     authStore.logout()
   }
 }

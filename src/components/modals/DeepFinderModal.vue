@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import DeepFinderChart from '../charts/DeepFinderChart.vue'
-import { useWatchlist } from '../../composables/useWatchlist'
+import { useWatchlists } from '../../composables/useWatchlists'
 
 interface Props {
   modelValue: boolean
@@ -78,8 +78,8 @@ const emit = defineEmits<Emits>()
 const overlayRef = ref<HTMLDivElement | null>(null)
 const mouseDownOnOverlay = ref(false)
 
-// Get watchlist tickers
-const { watchlist } = useWatchlist()
+// Get watchlist tickers (from active watchlist)
+const { tickers: watchlist } = useWatchlists()
 
 const handleClose = (): void => {
   emit('update:modelValue', false)
