@@ -12,7 +12,7 @@ interface SeriesItem {
 }
 
 export interface UseFcfSeriesReturn {
-  period: Ref<Period>
+  period: ComputedRef<Period>
   viewMode: Ref<ViewMode>
   series: ComputedRef<[number, number][] | SeriesItem[]>
   compactSeries: ComputedRef<SeriesItem[]>
@@ -26,14 +26,16 @@ export interface UseFcfSeriesReturn {
 }
 
 export function useFcfSeries(): UseFcfSeriesReturn {
-  const period = ref<Period>('annual')
   const viewMode = ref<ViewMode>('fcfAndSbc') // Default to showing both FCF & SBC
   const title = ref('Free Cash Flow — Empty')
   const message = ref('')
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  
+  // Map timeframe from store to period
+  const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data extraction - single source of truth
   const rawData = computed(() => 

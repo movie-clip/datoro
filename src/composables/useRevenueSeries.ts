@@ -17,7 +17,7 @@ interface SeriesDataPoint {
 }
 
 export interface UseRevenueSeriesReturn {
-  period: Ref<Period>
+  period: ComputedRef<Period>
   selectedSegments: Ref<string[]>
   viewModeOptions: ComputedRef<ViewModeOption[]>
   series: ComputedRef<[number, number][] | SeriesDataPoint[]>
@@ -32,14 +32,16 @@ export interface UseRevenueSeriesReturn {
 }
 
 export function useRevenueSeries(): UseRevenueSeriesReturn {
-  const period = ref<Period>('annual')
   const selectedSegments = ref<string[]>(['total'])
   const title = ref('Revenue')
   const message = ref('')
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  
+  // Map timeframe from store ('annual' | 'quarterly') to period
+  const period = computed<Period>(() => timeframe.value)
 
   // Memoized data extraction from batch
   // Note: These intermediate computed are acceptable because they're accessed with .value

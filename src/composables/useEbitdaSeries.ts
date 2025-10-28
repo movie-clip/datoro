@@ -35,7 +35,7 @@ export interface UseEbitdaSeriesReturn {
   loading: Ref<boolean>
   error: ComputedRef<string | null>
   refresh: () => void
-  period: Ref<Period>
+  period: ComputedRef<Period>
   chartView: Ref<ChartView>
   selectedSegments: Ref<string[]>
   viewModeOptions: ComputedRef<ViewModeOption[]>
@@ -45,7 +45,6 @@ export interface UseEbitdaSeriesReturn {
 export function useEbitdaSeries(): UseEbitdaSeriesReturn {
   const title = ref('EBITDA — Empty')
   const message = ref('')
-  const period = ref<Period>('annual')
   const chartView = ref<ChartView>('margin') // 'bridge' | 'margin' - default to margin view
   
   // Selected segments (components) to display (only for bridge view)
@@ -59,7 +58,10 @@ export function useEbitdaSeries(): UseEbitdaSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  
+  // Map timeframe from store to period
+  const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data extraction - single source of truth
   const rawData = computed(() => getEbitdaSeriesFromBatch(batchData.value, period.value))

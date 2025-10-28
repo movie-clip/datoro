@@ -20,6 +20,7 @@ import AuthModal from './components/auth/AuthModal.vue'
 import WatchlistPanel from './components/common/WatchlistPanel.vue'
 import MainMenu from './components/common/MainMenu.vue'
 import DeepFinderModal from './components/modals/DeepFinderModal.vue'
+import TimeframeToggle from './components/common/TimeframeToggle.vue'
 
 // Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
 const AIAnalysisPanel = defineAsyncComponent(() =>
@@ -324,12 +325,16 @@ const handleSelectTicker = (ticker: string): void => {
       <HeroSection />
     </section>
 
-    <!-- Tab Navigation -->
-    <TabNavigation 
-      v-model="activeTab"
-      :tabs="tabs"
-      class="tab-navigation"
-    />
+    <!-- Tab Navigation + Timeframe Toggle Row -->
+    <div class="nav-row">
+      <TabNavigation 
+        :model-value="activeTab"
+        @update:model-value="(value: string) => activeTab = value"
+        :tabs="tabs"
+        class="tab-navigation"
+      />
+      <TimeframeToggle />
+    </div>
 
     <!-- Tab Content -->
     <div class="tab-content">
@@ -820,10 +825,23 @@ const handleSelectTicker = (ticker: string): void => {
 }
 
 /* Tab Navigation */
+/* Nav Row - Tab Navigation + Timeframe Toggle */
+.nav-row {
+  max-width: calc(1400px - 24px); /* Subtract horizontal padding to match other sections */
+  margin: 0 auto 0;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #151518 0%, #1A1A1D 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
 .tab-navigation {
-  max-width: 1400px;
-  margin: 0px auto 0;
-  padding: 0 12px;
+  flex: 0 1 auto; /* Allow tabs to take only needed space */
 }
 
 /* Tab Content */

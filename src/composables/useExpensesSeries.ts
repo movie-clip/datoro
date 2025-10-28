@@ -27,7 +27,7 @@ const segmentLabels: Record<SegmentKey | 'total', string> = {
 }
 
 export interface UseExpensesSeriesReturn {
-  period: Ref<Period>
+  period: ComputedRef<Period>
   selectedSegments: Ref<string[]>
   series: ComputedRef<SeriesItem[]>
   compactSeries: ComputedRef<SeriesItem[]>
@@ -41,14 +41,16 @@ export interface UseExpensesSeriesReturn {
 }
 
 export function useExpensesSeries(): UseExpensesSeriesReturn {
-  const period = ref<Period>('annual')
   const selectedSegments = ref<string[]>(['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']) // Show all by default
   const title = ref('Operating Expenses — Empty')
   const message = ref('')
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  
+  // Map timeframe from store to period
+  const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data - single source of truth
   const rawData = computed(() => getExpensesSeriesFromBatch(batchData.value, period.value))

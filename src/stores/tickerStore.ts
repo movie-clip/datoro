@@ -177,6 +177,7 @@ export interface TickerStoreState {
   loading: Ref<boolean>
   error: Ref<string | null>
   fetchTime: Ref<number>
+  timeframe: Ref<'annual' | 'quarterly'>
   
   // Computed
   profile: ComputedRef<FMPProfile | null>
@@ -199,6 +200,7 @@ export interface TickerStoreState {
   refresh: () => Promise<void>
   clearCache: () => void
   getCacheStats: () => CacheStats
+  setTimeframe: (timeframe: 'annual' | 'quarterly') => void
 }
 
 export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
@@ -208,6 +210,7 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const fetchTime = ref(0)
+  const timeframe = ref<'annual' | 'quarterly'>('annual')
   
   // Cache (5 min TTL, max 50 items)
   const cache = new LRUCache(50)
@@ -364,6 +367,11 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     cache.clear()
   }
 
+  // Set timeframe (annual or quarterly)
+  function setTimeframe(newTimeframe: 'annual' | 'quarterly'): void {
+    timeframe.value = newTimeframe
+  }
+
   return {
     // State
     currentTicker,
@@ -371,6 +379,7 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     loading,
     error,
     fetchTime,
+    timeframe,
     
     // Computed
     profile,
@@ -392,6 +401,7 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     fetchTickerData,
     refresh,
     clearCache,
+    setTimeframe,
     
     // Cache monitoring
     getCacheStats: () => cache.getStats()

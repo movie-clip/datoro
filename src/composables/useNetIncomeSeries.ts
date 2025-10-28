@@ -23,19 +23,21 @@ export interface UseNetIncomeSeriesReturn {
   message: Ref<string | null>
   loading: Ref<boolean>
   error: ComputedRef<string | null>
-  period: Ref<Period>
+  period: ComputedRef<Period>
   viewModeOptions: ComputedRef<ViewModeOption[]>
   ticker: Ref<string>
   dataType: string
 }
 
 export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
-  const period = ref<Period>('annual')
   const message = ref<string | null>(null)
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  
+  // Map timeframe from store to period
+  const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data extraction - single source of truth
   const rawData = computed<[number, number][]>(() =>

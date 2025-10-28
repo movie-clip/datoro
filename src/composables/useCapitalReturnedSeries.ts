@@ -28,10 +28,10 @@ export function useCapitalReturnedSeries(): UseCapitalReturnedSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
 
   // Memoized raw data - single source of truth
-  const rawData = computed(() => getCapitalReturnedSeriesFromBatch(batchData.value, 'annual'))
+  const rawData = computed(() => getCapitalReturnedSeriesFromBatch(batchData.value, timeframe.value))
 
   // Check if data is legitimately empty (company doesn't return capital)
   const hasNoCapitalReturns = computed(() => {

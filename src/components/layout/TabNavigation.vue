@@ -64,15 +64,15 @@ defineEmits<Emits>()
 .tab-list {
   display: flex;
   gap: 8px;
-  padding: 6px;
-  background: linear-gradient(135deg, #151518 0%, #1A1A1D 100%);
-  border: 1px solid #2A2A2E;
-  border-radius: 12px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: #2A2A2E #151518;
+  scrollbar-color: #2A2A2E transparent;
 }
 
 .tab-list::-webkit-scrollbar {

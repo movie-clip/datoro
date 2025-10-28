@@ -18,11 +18,12 @@ export function useSharesSeries(periodRef?: Ref<'annual' | 'quarterly'>): UseSha
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
 
   // Memoized data extraction - single source of truth
   const series = computed<[number, number][]>(() => {
-    const period = periodRef?.value || 'annual'
+    // Use provided period ref or fallback to store's timeframe
+    const period = periodRef?.value || timeframe.value
     return getSharesSeriesFromBatch(batchData.value, period)
   })
 
@@ -36,7 +37,7 @@ export function useSharesSeries(periodRef?: Ref<'annual' | 'quarterly'>): UseSha
   })
 
   // Update title based on ticker
-  watch(() => [currentTicker.value, periodRef?.value], ([ticker]) => {
+  watch(() => [currentTicker.value, periodRef?.value, timeframe.value], ([ticker]) => {
     if (!ticker) {
       title.value = 'Shares Outstanding — Empty'
       message.value = 'Enter a ticker'
