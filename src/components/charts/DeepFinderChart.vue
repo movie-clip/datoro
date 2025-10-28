@@ -265,10 +265,10 @@ watch(() => props.tickers, (newTickers, oldTickers) => {
     clearTimeout(debounceTimer)
   }
   
-  // Debounce for 500ms to avoid rapid API calls
+  // Debounce for 150ms to avoid rapid API calls while staying responsive
   debounceTimer = setTimeout(() => {
     loadData()
-  }, 500)
+  }, 150)
 })
 
 // Watch for chart resize

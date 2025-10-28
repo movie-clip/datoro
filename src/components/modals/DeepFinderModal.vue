@@ -41,16 +41,58 @@
           </div>
 
           <div class="modal-body">
-            <!-- Description -->
-            <div class="description">
-              <p>
-                <strong class="oversold">Red bars</strong> indicate stocks trading below MA200 (potentially oversold), 
-                while <strong class="overbought">green bars</strong> show stocks above MA200 (potentially overbought).
-              </p>
+            <!-- Description and Watchlist Selector Row -->
+            <div class="controls-row">
+              <!-- Description -->
+              <div class="description">
+                <p>
+                  <strong class="oversold">Red bars</strong> indicate stocks below MA200 (oversold), 
+                  <strong class="overbought">green bars</strong> show stocks above MA200 (overbought).
+                </p>
+              </div>
+
+              <!-- Watchlist Selector Dropdown -->
+              <button 
+                class="watchlist-trigger"
+                @click="toggleDropdown"
+              >
+                <svg class="watchlist-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span class="watchlist-name">{{ selectedWatchlistName }}</span>
+                <svg 
+                  class="chevron-icon" 
+                  :class="{ 'is-open': dropdownOpen }"
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <Transition name="dropdown">
+                <div v-if="dropdownOpen" class="watchlist-dropdown-menu" @click.stop>
+                  <div class="watchlist-list">
+                    <button
+                      v-for="watchlist in watchlists"
+                      :key="watchlist.id"
+                      class="watchlist-option"
+                      :class="{ 'is-active': watchlist.id === selectedWatchlistId }"
+                      @click="selectWatchlistFromDropdown(watchlist.id)"
+                    >
+                      {{ watchlist.name }}
+                    </button>
+                  </div>
+                </div>
+              </Transition>
             </div>
 
             <!-- Chart Component -->
-            <DeepFinderChart :tickers="watchlist" />
+            <DeepFinderChart :tickers="currentWatchlistTickers" />
           </div>
         </div>
       </div>
@@ -59,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import DeepFinderChart from '../charts/DeepFinderChart.vue'
 import { useWatchlists } from '../../composables/useWatchlists'
 
@@ -77,12 +119,52 @@ const emit = defineEmits<Emits>()
 
 const overlayRef = ref<HTMLDivElement | null>(null)
 const mouseDownOnOverlay = ref(false)
+const dropdownOpen = ref(false)
 
-// Get watchlist tickers (from active watchlist)
-const { tickers: watchlist } = useWatchlists()
+// Get all watchlists and items
+const { 
+  watchlists, 
+  activeWatchlistId,
+  items,
+  selectWatchlist
+} = useWatchlists()
+
+// Track selected watchlist (default to active)
+const selectedWatchlistId = ref<string>(activeWatchlistId.value || '')
+
+// Get selected watchlist name
+const selectedWatchlistName = computed(() => {
+  const watchlist = watchlists.value.find(w => w.id === selectedWatchlistId.value)
+  return watchlist?.name || 'Select Watchlist'
+})
+
+// Get tickers for current (active) watchlist
+const currentWatchlistTickers = computed(() => {
+  return items.value.map(item => item.ticker)
+})
+
+// Toggle dropdown
+const toggleDropdown = () => {
+  dropdownOpen.value = !dropdownOpen.value
+}
+
+// Select watchlist from dropdown
+const selectWatchlistFromDropdown = async (id: string) => {
+  selectedWatchlistId.value = id
+  await selectWatchlist(id)
+  dropdownOpen.value = false
+}
+
+// Watch for active watchlist changes and update selected
+watch(activeWatchlistId, (newId) => {
+  if (newId) {
+    selectedWatchlistId.value = newId
+  }
+})
 
 const handleClose = (): void => {
   emit('update:modelValue', false)
+  dropdownOpen.value = false
 }
 
 // Track if mousedown started on overlay (not on modal content)
@@ -99,6 +181,11 @@ const handleOverlayClick = (event: MouseEvent): void => {
 
 // Focus overlay on mount for keyboard navigation
 onMounted(() => {
+  // Set selected watchlist to active on mount
+  if (activeWatchlistId.value) {
+    selectedWatchlistId.value = activeWatchlistId.value
+  }
+  
   if (overlayRef.value) {
     overlayRef.value.focus()
   }
@@ -239,23 +326,169 @@ onUnmounted(() => {
 }
 
 /* ============================================ */
-/* DESCRIPTION SECTION */
+/* CONTROLS ROW (Description + Watchlist Selector) */
+/* ============================================ */
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+/* ============================================ */
+/* DESCRIPTION */
 /* ============================================ */
 .description {
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background: rgba(0, 89, 76, 0.1);
+  flex: 1;
+  padding: 12px 16px;
+  background: rgba(0, 89, 76, 0.08);
   border-radius: 8px;
-  border: 1px solid rgba(0, 192, 135, 0.2);
+  border: 1px solid rgba(0, 192, 135, 0.15);
 }
 
 .description p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 14px;
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
+/* ============================================ */
+/* WATCHLIST DROPDOWN TRIGGER (Matches WatchlistDropdown style) */
+/* ============================================ */
+.watchlist-trigger {
+  flex-shrink: 0;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #E5E5E5;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.watchlist-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.watchlist-icon {
+  width: 16px;
+  height: 16px;
+  color: #00C087;
+  flex-shrink: 0;
+}
+
+.watchlist-name {
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.chevron-icon.is-open {
+  transform: rotate(180deg);
+}
+
+/* ============================================ */
+/* WATCHLIST DROPDOWN MENU */
+/* ============================================ */
+.watchlist-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: #1E1E1E;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.watchlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.watchlist-option {
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #E5E5E5;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.watchlist-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.watchlist-option.is-active {
+  background: rgba(0, 122, 255, 0.15);
+  color: #007AFF;
+}
+
+/* Scrollbar */
+.watchlist-dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.watchlist-dropdown-menu::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.watchlist-dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.watchlist-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Dropdown transition */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ============================================ */
+/* DESCRIPTION TEXT STYLING */
+/* ============================================ */
 .description strong.oversold {
   color: #EF4444;
   font-weight: 600;
