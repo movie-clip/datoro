@@ -2,7 +2,7 @@
  * Watchlist Items Routes (Multi-Watchlist Support)
  * 
  * Updated endpoints to support multiple watchlists per user.
- * Uses MockWatchlistService for development (no DB changes yet).
+ * Uses watchlistService for development (no DB changes yet).
  * 
  * Endpoints:
  * - GET    /api/watchlists/:id/items         - Get all items in a watchlist
@@ -10,14 +10,14 @@
  * - DELETE /api/watchlists/:id/items/:ticker - Remove ticker from watchlist
  * - PUT    /api/watchlists/:id/reorder       - Reorder tickers in watchlist
  * 
- * TODO: Replace with Prisma after migration (Task #14)
+ * 
  */
 
 import { Router, type Response } from 'express'
 import { body, param, validationResult } from 'express-validator'
 import { authenticate } from '../middleware/auth.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
-import { mockWatchlistService } from '../services/mockWatchlistService.js'
+import { watchlistService } from '../services/watchlistService.js'
 import logger from '../services/logger.js'
 
 const router = Router()
@@ -56,7 +56,7 @@ router.get(
       const { id } = req.params
       
       // Verify ownership
-      const isOwner = await mockWatchlistService.verifyWatchlistOwnership(id, userId)
+      const isOwner = await watchlistService.verifyWatchlistOwnership(id, userId)
       if (!isOwner) {
         res.status(404).json({
           success: false,
@@ -67,7 +67,7 @@ router.get(
       }
       
       // Get items
-      const items = await mockWatchlistService.getWatchlistItems(id)
+      const items = await watchlistService.getWatchlistItems(id)
       
       res.json({
         success: true,
@@ -76,7 +76,7 @@ router.get(
           items: items.map(item => ({
             ticker: item.ticker,
             addedAt: item.addedAt,
-            position: item.position
+            displayOrder: item.displayOrder
           }))
         }
       })
@@ -129,7 +129,7 @@ router.post(
       const { id, ticker } = req.params
       
       // Verify ownership
-      const isOwner = await mockWatchlistService.verifyWatchlistOwnership(id, userId)
+      const isOwner = await watchlistService.verifyWatchlistOwnership(id, userId)
       if (!isOwner) {
         res.status(404).json({
           success: false,
@@ -141,7 +141,7 @@ router.post(
       
       // Add item
       try {
-        const item = await mockWatchlistService.addWatchlistItem({
+        const item = await watchlistService.addWatchlistItem({
           watchlistId: id,
           ticker: ticker.toUpperCase()
         })
@@ -153,7 +153,7 @@ router.post(
           data: {
             ticker: item.ticker,
             addedAt: item.addedAt,
-            position: item.position
+            displayOrder: item.displayOrder
           }
         })
       } catch (error: any) {
@@ -214,7 +214,7 @@ router.delete(
       const { id, ticker } = req.params
       
       // Verify ownership
-      const isOwner = await mockWatchlistService.verifyWatchlistOwnership(id, userId)
+      const isOwner = await watchlistService.verifyWatchlistOwnership(id, userId)
       if (!isOwner) {
         res.status(404).json({
           success: false,
@@ -225,7 +225,7 @@ router.delete(
       }
       
       // Remove item
-      await mockWatchlistService.removeWatchlistItem(id, ticker.toUpperCase())
+      await watchlistService.removeWatchlistItem(id, ticker.toUpperCase())
       
       logger.info(`[Watchlist Items] Removed ${ticker} from watchlist ${id}`)
       
@@ -284,7 +284,7 @@ router.put(
       const { tickers } = req.body
       
       // Verify ownership
-      const isOwner = await mockWatchlistService.verifyWatchlistOwnership(id, userId)
+      const isOwner = await watchlistService.verifyWatchlistOwnership(id, userId)
       if (!isOwner) {
         res.status(404).json({
           success: false,
@@ -305,7 +305,7 @@ router.put(
       }
       
       // Reorder items
-      await mockWatchlistService.reorderWatchlistItems(id, tickers)
+      await watchlistService.reorderWatchlistItems(id, tickers)
       
       logger.info(`[Watchlist Items] Reordered watchlist ${id}`)
       
@@ -328,3 +328,4 @@ router.put(
 )
 
 export default router
+

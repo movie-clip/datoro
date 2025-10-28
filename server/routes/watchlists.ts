@@ -2,15 +2,13 @@
  * Watchlist Management Routes
  * 
  * Endpoints for managing multiple watchlists per user.
- * Uses MockWatchlistService for development (no DB changes yet).
+ * Uses Prisma-based WatchlistService with database persistence.
  * 
  * Endpoints:
  * - GET    /api/watchlists          - List all user's watchlists
  * - POST   /api/watchlists          - Create new watchlist
  * - PUT    /api/watchlists/:id      - Rename watchlist
  * - DELETE /api/watchlists/:id      - Delete watchlist
- * 
- * TODO: Replace with Prisma after migration (Task #14)
  */
 
 import { Router, type Response } from 'express'
@@ -18,7 +16,7 @@ import type { Request } from 'express'
 import { body, param, validationResult } from 'express-validator'
 import { authenticate } from '../middleware/auth.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
-import { mockWatchlistService } from '../services/mockWatchlistService.js'
+import { watchlistService } from '../services/watchlistService.js'
 import logger from '../services/logger.js'
 
 const router = Router()
@@ -36,10 +34,10 @@ router.get(
       const userId = req.user.id
       
       // Ensure user has at least a default watchlist
-      await mockWatchlistService.ensureDefaultWatchlist(userId)
+      await watchlistService.ensureDefaultWatchlist(userId)
       
       // Get all user's watchlists
-      const watchlists = await mockWatchlistService.getWatchlistsByUserId(userId)
+      const watchlists = await watchlistService.getWatchlistsByUserId(userId)
       
       res.json({
         success: true,
@@ -97,7 +95,7 @@ router.post(
       const { name } = req.body
       
       // Check watchlist limit (max 5 per user)
-      const existingWatchlists = await mockWatchlistService.getWatchlistsByUserId(userId)
+      const existingWatchlists = await watchlistService.getWatchlistsByUserId(userId)
       if (existingWatchlists.length >= 5) {
         res.status(400).json({
           success: false,
@@ -108,7 +106,7 @@ router.post(
       }
       
       // Create watchlist
-      const watchlist = await mockWatchlistService.createWatchlist({
+      const watchlist = await watchlistService.createWatchlist({
         userId,
         name,
         isDefault: false
@@ -177,7 +175,7 @@ router.put(
       const { name } = req.body
       
       // Verify ownership
-      const isOwner = await mockWatchlistService.verifyWatchlistOwnership(id, userId)
+      const isOwner = await watchlistService.verifyWatchlistOwnership(id, userId)
       if (!isOwner) {
         res.status(404).json({
           success: false,
@@ -188,7 +186,7 @@ router.put(
       }
       
       // Update watchlist
-      const watchlist = await mockWatchlistService.updateWatchlist(id, { name })
+      const watchlist = await watchlistService.updateWatchlist(id, { name })
       
       if (!watchlist) {
         res.status(404).json({
@@ -255,7 +253,7 @@ router.delete(
       const { id } = req.params
       
       // Verify ownership
-      const isOwner = await mockWatchlistService.verifyWatchlistOwnership(id, userId)
+      const isOwner = await watchlistService.verifyWatchlistOwnership(id, userId)
       if (!isOwner) {
         res.status(404).json({
           success: false,
@@ -267,7 +265,7 @@ router.delete(
       
       // Delete watchlist
       try {
-        const deleted = await mockWatchlistService.deleteWatchlist(id)
+        const deleted = await watchlistService.deleteWatchlist(id)
         
         if (!deleted) {
           res.status(404).json({
@@ -310,3 +308,4 @@ router.delete(
 )
 
 export default router
+
