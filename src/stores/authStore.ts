@@ -61,8 +61,9 @@ export const useAuthStore = defineStore('auth', () => {
     
     try {
       // Add timeout to prevent auth from blocking too long
+      // Increased to 10s to handle cold database connections after server restart
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
       
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         credentials: 'include', // Send HttpOnly cookie
@@ -86,14 +87,35 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = null
       }
     } catch (err) {
-      // Network errors or timeout - these are real errors worth logging
+      // Network errors or timeout
       if ((err as Error).name === 'AbortError') {
-        console.warn('[Auth] ⏱️ Init timeout (auth check took >3s)')
+        console.warn('[Auth] ⏱️ Auth check timeout (>10s) - server may be starting up. Retrying...')
+        // Set user to null but don't show error - they can retry login
+        user.value = null
+        token.value = null
+        
+        // Retry once after a short delay (server might be warming up)
+        setTimeout(async () => {
+          try {
+            const retryResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
+              credentials: 'include'
+            })
+            if (retryResponse.ok) {
+              const data: AuthResponse = await retryResponse.json()
+              user.value = data.data?.user || null
+              token.value = 'cookie'
+              console.log('[Auth] ✅ Retry successful - user authenticated')
+            }
+          } catch (retryErr) {
+            // Silent fail on retry - user can manually login
+            console.warn('[Auth] Retry failed, user needs to login manually')
+          }
+        }, 2000) // Wait 2s for server to warm up
       } else {
         console.error('[Auth] ❌ Init network error:', (err as Error).message)
+        user.value = null
+        token.value = null
       }
-      user.value = null
-      token.value = null
     }
   }
   

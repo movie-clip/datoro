@@ -745,6 +745,19 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   // Connect to Redis
   await cache.connect()
   
+  // Warm up database connection pool to prevent cold start delays
+  // This prevents the first auth request from timing out after server restart
+  console.log('[Database] Warming up connection pool...')
+  try {
+    const prisma = getPrismaClient()
+    // Simple query to establish connection
+    await prisma.$queryRaw`SELECT 1`
+    console.log('[Database] ✓ Connection pool warmed up')
+  } catch (error: any) {
+    console.warn('[Database] ✗ Failed to warm up connection:', error.message)
+    console.warn('[Database] First requests may be slower than usual')
+  }
+  
   // Schedule daily session cleanup (only on worker 0 or if not using PM2)
   if (!process.env.pm_id || process.env.pm_id === '0') {
     console.log('[Auth] Scheduling daily session cleanup...')

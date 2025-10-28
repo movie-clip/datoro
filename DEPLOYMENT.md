@@ -1,21 +1,23 @@
 
-to start service:
+start service:
 npm run start:dev
 
+start development server
+npm run start:dev
 
-Before pushing into prod:
+before pushing into prod:
 node scripts/pre-deploy-check.mjs
 
-to run tests:
+run tests:
 npm test
 
-to clear redis cache:
+clear redis cache:
 node scripts/clear-cache-key.mjs AMZN
 
-to stop node:
+stop node:
 Stop-Process -Name node -Force
 
-to start docker:
+start docker:
 npm run docker:dev:up
 
 generate speech:
