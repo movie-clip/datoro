@@ -8,21 +8,60 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://factorly.com/</loc>
-    <lastmod>2025-10-21</lastmod>
+    <loc>https://factorly.onrender.com/</loc>
+    <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   
-  <!-- Add more pages as you create them -->
-  <!-- Example: Privacy Policy, Terms, etc. -->
-  <!--
+  <!-- Popular stock pages (examples - add more as needed) -->
   <url>
-    <loc>https://factorly.com/privacy</loc>
-    <lastmod>2025-10-21</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
+    <loc>https://factorly.onrender.com/?ticker=AAPL</loc>
+    <lastmod>2025-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
   </url>
-  -->
+  
+  <url>
+    <loc>https://factorly.onrender.com/?ticker=MSFT</loc>
+    <lastmod>2025-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://factorly.onrender.com/?ticker=GOOGL</loc>
+    <lastmod>2025-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://factorly.onrender.com/?ticker=TSLA</loc>
+    <lastmod>2025-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://factorly.onrender.com/?ticker=NVDA</loc>
+    <lastmod>2025-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://factorly.onrender.com/?ticker=META</loc>
+    <lastmod>2025-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://factorly.onrender.com/?ticker=AMZN</loc>
+    <lastmod>2025-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
   
 </urlset>

@@ -12,7 +12,7 @@ Allow: /*.css
 Allow: /*.js
 
 # Sitemap location
-Sitemap: https://factorly.com/sitemap.xml
+Sitemap: https://factorly.onrender.com/sitemap.xml
 
 # Crawl-delay (be nice to servers)
 Crawl-delay: 1
