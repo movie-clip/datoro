@@ -82,7 +82,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     dividendHistory: `/api/v3/historical-price-full/stock_dividend/${t}?apikey=${fmpApiKey}`,
     stockSplit: `/api/v3/historical-price-full/stock_split/${t}?apikey=${fmpApiKey}`,
     earningsCalendar: `/api/v3/historical/earning_calendar/${t}?apikey=${fmpApiKey}`,
-    financialScores: `/stable/financial-scores?symbol=${t}&apikey=${fmpApiKey}`,
+    financialScores: `/api/v4/score?symbol=${t}&apikey=${fmpApiKey}`,
     
     // Analyst data (Priority 2)
     priceTargetSummary: `/api/v4/price-target-summary?symbol=${t}&apikey=${fmpApiKey}`,
@@ -140,7 +140,14 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
       const key = Object.keys(endpoints)[index];
       if (response.status === 'fulfilled') {
         const [dataKey, data] = response.value;
-        result.data[dataKey] = data;
+        
+        // Special handling: /api/v4/score returns object, but we need array for consistency
+        if (dataKey === 'financialScores' && data && !Array.isArray(data)) {
+          result.data[dataKey] = [data]; // Wrap in array
+        } else {
+          result.data[dataKey] = data;
+        }
+        
         if (!data) {
           result.failures!.push(key);
         }

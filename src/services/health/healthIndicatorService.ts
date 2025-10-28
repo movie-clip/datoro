@@ -205,7 +205,14 @@ export function calculateBalanceHealth(balance: BalanceMetrics): HealthIndicator
   const { altmanZScore } = balance
   const altmanZ = parseFloat(altmanZScore)
 
-  if (isNaN(altmanZ)) return null
+  // If Altman Z-Score is unavailable, show neutral status
+  if (isNaN(altmanZ)) {
+    return {
+      label: 'Balance',
+      status: 'neutral',
+      tooltip: 'Altman Z-Score: Data unavailable for this ticker'
+    }
+  }
 
   // Altman Z-Score ranges: > 2.99 = Safe, 1.81-2.99 = Grey zone, < 1.81 = Distress
   if (altmanZ > 2.99) {
