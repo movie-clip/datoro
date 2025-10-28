@@ -8,6 +8,9 @@ npm run start:dev
 before pushing into prod:
 node scripts/pre-deploy-check.mjs
 
+migration validation:
+node scripts/verify-migration.mjs
+
 run tests:
 npm test
 

@@ -17,6 +17,7 @@ import { Router, type Response } from 'express'
 import { body, param, validationResult } from 'express-validator'
 import { authenticate } from '../middleware/auth.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
+import { generalLimiter } from '../middleware/rateLimiter.js'
 import { watchlistService } from '../services/watchlistService.js'
 import logger from '../services/logger.js'
 
@@ -31,6 +32,7 @@ const TICKER_REGEX = /^[A-Z]{1,10}$/
  */
 router.get(
   '/watchlists/:id/items',
+  generalLimiter,
   authenticate(),
   requireAuth,
   [
@@ -46,8 +48,7 @@ router.get(
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          errors: errors.array(),
-          code: 'VALIDATION_ERROR'
+          errors: errors.array()
         })
         return
       }
@@ -60,8 +61,7 @@ router.get(
       if (!isOwner) {
         res.status(404).json({
           success: false,
-          error: 'Watchlist not found',
-          code: 'WATCHLIST_NOT_FOUND'
+          error: 'Watchlist not found'
         })
         return
       }
@@ -84,8 +84,7 @@ router.get(
       logger.error('[Watchlist Items] Error fetching items:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to fetch watchlist items',
-        code: 'ITEMS_FETCH_ERROR'
+        error: 'Failed to fetch watchlist items'
       })
     }
   }
@@ -97,6 +96,7 @@ router.get(
  */
 router.post(
   '/watchlists/:id/items/:ticker',
+  generalLimiter,
   authenticate(),
   requireAuth,
   [
@@ -119,8 +119,7 @@ router.post(
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          errors: errors.array(),
-          code: 'VALIDATION_ERROR'
+          errors: errors.array()
         })
         return
       }
@@ -133,8 +132,7 @@ router.post(
       if (!isOwner) {
         res.status(404).json({
           success: false,
-          error: 'Watchlist not found',
-          code: 'WATCHLIST_NOT_FOUND'
+          error: 'Watchlist not found'
         })
         return
       }
@@ -160,8 +158,7 @@ router.post(
         if (error.message === 'Ticker already in watchlist') {
           res.status(409).json({
             success: false,
-            error: 'Ticker already in watchlist',
-            code: 'DUPLICATE_TICKER'
+            error: 'Ticker already in watchlist'
           })
           return
         }
@@ -171,8 +168,7 @@ router.post(
       logger.error('[Watchlist Items] Error adding item:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to add ticker to watchlist',
-        code: 'ITEM_ADD_ERROR'
+        error: 'Failed to add ticker to watchlist'
       })
     }
   }
@@ -184,6 +180,7 @@ router.post(
  */
 router.delete(
   '/watchlists/:id/items/:ticker',
+  generalLimiter,
   authenticate(),
   requireAuth,
   [
@@ -204,8 +201,7 @@ router.delete(
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          errors: errors.array(),
-          code: 'VALIDATION_ERROR'
+          errors: errors.array()
         })
         return
       }
@@ -218,8 +214,7 @@ router.delete(
       if (!isOwner) {
         res.status(404).json({
           success: false,
-          error: 'Watchlist not found',
-          code: 'WATCHLIST_NOT_FOUND'
+          error: 'Watchlist not found'
         })
         return
       }
@@ -240,8 +235,7 @@ router.delete(
       logger.error('[Watchlist Items] Error removing item:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to remove ticker from watchlist',
-        code: 'ITEM_REMOVE_ERROR'
+        error: 'Failed to remove ticker from watchlist'
       })
     }
   }
@@ -253,6 +247,7 @@ router.delete(
  */
 router.put(
   '/watchlists/:id/reorder',
+  generalLimiter,
   authenticate(),
   requireAuth,
   [
@@ -273,8 +268,7 @@ router.put(
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          errors: errors.array(),
-          code: 'VALIDATION_ERROR'
+          errors: errors.array()
         })
         return
       }
@@ -288,8 +282,7 @@ router.put(
       if (!isOwner) {
         res.status(404).json({
           success: false,
-          error: 'Watchlist not found',
-          code: 'WATCHLIST_NOT_FOUND'
+          error: 'Watchlist not found'
         })
         return
       }
@@ -298,8 +291,7 @@ router.put(
       if (!Array.isArray(tickers) || !tickers.every(t => typeof t === 'string')) {
         res.status(400).json({
           success: false,
-          error: 'Invalid tickers format',
-          code: 'VALIDATION_ERROR'
+          error: 'Invalid tickers format'
         })
         return
       }
@@ -320,8 +312,7 @@ router.put(
       logger.error('[Watchlist Items] Error reordering items:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to reorder watchlist items',
-        code: 'ITEM_REORDER_ERROR'
+        error: 'Failed to reorder watchlist items'
       })
     }
   }

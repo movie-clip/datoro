@@ -13,9 +13,10 @@
 
 import { Router, type Response } from 'express'
 import type { Request } from 'express'
-import { body, param, validationResult } from 'express-validator'
+import { param, body, validationResult } from 'express-validator'
 import { authenticate } from '../middleware/auth.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
+import { generalLimiter } from '../middleware/rateLimiter.js'
 import { watchlistService } from '../services/watchlistService.js'
 import logger from '../services/logger.js'
 
@@ -27,6 +28,7 @@ const router = Router()
  */
 router.get(
   '/watchlists',
+  generalLimiter,
   authenticate(),
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -55,8 +57,7 @@ router.get(
       logger.error('[Watchlists] Error fetching watchlists:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to fetch watchlists',
-        code: 'WATCHLIST_FETCH_ERROR'
+        error: 'Failed to fetch watchlists'
       })
     }
   }
@@ -68,6 +69,7 @@ router.get(
  */
 router.post(
   '/watchlists',
+  generalLimiter,
   authenticate(),
   requireAuth,
   [
@@ -85,8 +87,7 @@ router.post(
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          errors: errors.array(),
-          code: 'VALIDATION_ERROR'
+          errors: errors.array()
         })
         return
       }
@@ -99,8 +100,7 @@ router.post(
       if (existingWatchlists.length >= 5) {
         res.status(400).json({
           success: false,
-          error: 'Maximum of 5 watchlists allowed per user',
-          code: 'WATCHLIST_LIMIT_EXCEEDED'
+          error: 'Maximum of 5 watchlists allowed per user'
         })
         return
       }
@@ -130,8 +130,7 @@ router.post(
       logger.error('[Watchlists] Error creating watchlist:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to create watchlist',
-        code: 'WATCHLIST_CREATE_ERROR'
+        error: 'Failed to create watchlist'
       })
     }
   }
@@ -143,6 +142,7 @@ router.post(
  */
 router.put(
   '/watchlists/:id',
+  generalLimiter,
   authenticate(),
   requireAuth,
   [
@@ -164,8 +164,7 @@ router.put(
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          errors: errors.array(),
-          code: 'VALIDATION_ERROR'
+          errors: errors.array()
         })
         return
       }
@@ -179,8 +178,7 @@ router.put(
       if (!isOwner) {
         res.status(404).json({
           success: false,
-          error: 'Watchlist not found',
-          code: 'WATCHLIST_NOT_FOUND'
+          error: 'Watchlist not found'
         })
         return
       }
@@ -191,8 +189,7 @@ router.put(
       if (!watchlist) {
         res.status(404).json({
           success: false,
-          error: 'Watchlist not found',
-          code: 'WATCHLIST_NOT_FOUND'
+          error: 'Watchlist not found'
         })
         return
       }
@@ -215,8 +212,7 @@ router.put(
       logger.error('[Watchlists] Error updating watchlist:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to update watchlist',
-        code: 'WATCHLIST_UPDATE_ERROR'
+        error: 'Failed to update watchlist'
       })
     }
   }
@@ -228,6 +224,7 @@ router.put(
  */
 router.delete(
   '/watchlists/:id',
+  generalLimiter,
   authenticate(),
   requireAuth,
   [
@@ -243,8 +240,7 @@ router.delete(
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          errors: errors.array(),
-          code: 'VALIDATION_ERROR'
+          errors: errors.array()
         })
         return
       }
@@ -257,8 +253,7 @@ router.delete(
       if (!isOwner) {
         res.status(404).json({
           success: false,
-          error: 'Watchlist not found',
-          code: 'WATCHLIST_NOT_FOUND'
+          error: 'Watchlist not found'
         })
         return
       }
@@ -270,8 +265,7 @@ router.delete(
         if (!deleted) {
           res.status(404).json({
             success: false,
-            error: 'Watchlist not found',
-            code: 'WATCHLIST_NOT_FOUND'
+            error: 'Watchlist not found'
           })
           return
         }
@@ -289,8 +283,7 @@ router.delete(
         if (error.message === 'Cannot delete default watchlist') {
           res.status(400).json({
             success: false,
-            error: 'Cannot delete default watchlist',
-            code: 'CANNOT_DELETE_DEFAULT'
+            error: 'Cannot delete default watchlist'
           })
           return
         }
@@ -300,8 +293,7 @@ router.delete(
       logger.error('[Watchlists] Error deleting watchlist:', error)
       res.status(500).json({
         success: false,
-        error: 'Failed to delete watchlist',
-        code: 'WATCHLIST_DELETE_ERROR'
+        error: 'Failed to delete watchlist'
       })
     }
   }

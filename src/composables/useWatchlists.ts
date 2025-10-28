@@ -29,7 +29,7 @@ export interface Watchlist {
 export interface WatchlistItem {
   ticker: string
   addedAt: string
-  position: number
+  displayOrder: number
 }
 
 interface ApiResponse {
@@ -309,7 +309,7 @@ export function useWatchlists(): UseWatchlistsReturn {
     const newItem: WatchlistItem = {
       ticker: upperTicker,
       addedAt: new Date().toISOString(),
-      position: originalItems.length
+      displayOrder: originalItems.length
     }
     itemsCache.value.set(watchlistId, [newItem, ...originalItems])
     
@@ -403,7 +403,7 @@ export function useWatchlists(): UseWatchlistsReturn {
     // Optimistic update
     const reorderedItems: WatchlistItem[] = tickers.map((ticker, index) => {
       const item = originalItems.find(i => i.ticker === ticker)
-      return item ? { ...item, position: index } : { ticker, addedAt: new Date().toISOString(), position: index }
+      return item ? { ...item, displayOrder: index } : { ticker, addedAt: new Date().toISOString(), displayOrder: index }
     })
     itemsCache.value.set(watchlistId, reorderedItems)
     
