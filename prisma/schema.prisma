@@ -48,7 +48,8 @@ model User {
   searches    Search[]
   apiRequests ApiRequest[]
   sessions    Session[]
-  watchlistItems WatchlistItem[]
+  watchlists  Watchlist[]
+  watchlistItems WatchlistItem[] // Temporary during migration, will be removed
 
   @@index([email])
   @@index([googleId])
@@ -104,22 +105,53 @@ model Search {
 }
 
 // ============================================
-// Watchlist
+// Watchlist Management (Multi-Watchlist Support)
 // ============================================
 
+// Watchlist - Container for multiple ticker lists per user
+model Watchlist {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String   // User-defined name (e.g., "Tech Stocks", "Dividend Growth")
+  isDefault Boolean  @default(false) @map("is_default") // One default watchlist per user
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items WatchlistItem[]
+  
+  // Indexes for performance
+  @@index([userId])
+  @@index([userId, isDefault]) // Fast lookup for default watchlist
+  @@index([userId, createdAt(sort: Desc)]) // User watchlists ordered by creation
+  @@map("watchlists")
+}
+
+// WatchlistItem - Individual tickers within a watchlist
 model WatchlistItem {
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
+  id           String    @id @default(uuid())
+  watchlistId  String    @map("watchlist_id")
+  userId       String?   @map("user_id") // Temporary during migration, will be removed
   ticker       String
-  addedAt      DateTime @default(now()) @map("added_at")
-  displayOrder Int      @default(0) @map("display_order")
+  addedAt      DateTime  @default(now()) @map("added_at")
+  displayOrder Int       @default(0) @map("display_order")
   
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watchlist Watchlist  @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade) // Temporary during migration
   
-  @@unique([userId, ticker])
+  // Unique constraint: one ticker per watchlist
+  @@unique([watchlistId, ticker])
+  
+  // Indexes for performance
+  @@index([watchlistId])
+  @@index([watchlistId, displayOrder]) // Fast ordered retrieval
+  @@index([watchlistId, addedAt(sort: Desc)]) // Recently added items
+  @@index([ticker]) // Lookup by ticker across all watchlists
+  
+  // Legacy indexes (will be removed after migration)
   @@index([userId, displayOrder])
   @@index([userId, addedAt(sort: Desc)])
-  @@index([ticker])
+  
   @@map("watchlist_items")
 }
 
