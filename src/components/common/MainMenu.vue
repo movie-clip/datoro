@@ -85,17 +85,10 @@
                 <rect x="14" y="14" width="7" height="7"></rect>
                 <rect x="3" y="14" width="7" height="7"></rect>
               </svg>
-              <span>Dashboard</span>
+              <span>Macro</span>
               <span class="coming-soon-badge">Soon</span>
             </div>
             
-            <div class="menu-item disabled">
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-              </svg>
-              <span>Analytics</span>
-              <span class="coming-soon-badge">Soon</span>
-            </div>
           </div>
         </Transition>
 

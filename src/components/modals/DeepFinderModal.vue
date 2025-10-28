@@ -380,7 +380,7 @@ onUnmounted(() => {
 .watchlist-icon {
   width: 16px;
   height: 16px;
-  color: #00C087;
+  color: #FFD700;
   flex-shrink: 0;
 }
 

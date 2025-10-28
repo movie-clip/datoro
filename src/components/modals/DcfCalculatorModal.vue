@@ -30,7 +30,6 @@
                     {{ typedCompanyData.ticker?.substring(0, 1).toUpperCase() }}
                   </div>
                   <span class="company-name">{{ typedCompanyData.companyName }}</span>
-                  <span v-if="typedCompanyData.currentPrice" class="company-price">${{ formatPrice(typedCompanyData.currentPrice) }}</span>
                 </span>
               </h2>
             </div>
