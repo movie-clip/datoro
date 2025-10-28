@@ -333,18 +333,16 @@ export function generateScenariosFromAdvancedDcf(
 
   const currentYear = new Date().getFullYear()
   
-  // Create three scenarios converging to intrinsic value over time
-  // Average: Linear path to intrinsic value
-  // Best: Linear path to intrinsic value + 20% buffer
-  // Worst: Linear path to intrinsic value - 20% buffer
+  // Calculate annual growth rate needed to reach intrinsic value
+  // Formula: FinalValue = InitialValue × (1 + r)^years
+  // Solving for r: r = (FinalValue / InitialValue)^(1/years) - 1
+  const averageGrowthRate = Math.pow(intrinsicValue / currentPrice, 1 / years) - 1
+  const bestGrowthRate = averageGrowthRate * 1.2  // 20% more optimistic
+  const worstGrowthRate = averageGrowthRate * 0.8  // 20% more conservative
   
-  const targetAverage = intrinsicValue
-  const targetBest = intrinsicValue * 1.2
-  const targetWorst = intrinsicValue * 0.8
-  
+  // Generate price projections using compound growth
   const averagePrices = Array.from({ length: years }, (_, i) => {
-    const progress = (i + 1) / years
-    const price = currentPrice + (targetAverage - currentPrice) * progress
+    const price = currentPrice * Math.pow(1 + averageGrowthRate, i + 1)
     return {
       year: currentYear + i + 1,
       price: Math.round(price * 100) / 100
@@ -352,8 +350,7 @@ export function generateScenariosFromAdvancedDcf(
   })
 
   const bestPrices = Array.from({ length: years }, (_, i) => {
-    const progress = (i + 1) / years
-    const price = currentPrice + (targetBest - currentPrice) * progress
+    const price = currentPrice * Math.pow(1 + bestGrowthRate, i + 1)
     return {
       year: currentYear + i + 1,
       price: Math.round(price * 100) / 100
@@ -361,8 +358,7 @@ export function generateScenariosFromAdvancedDcf(
   })
 
   const worstPrices = Array.from({ length: years }, (_, i) => {
-    const progress = (i + 1) / years
-    const price = currentPrice + (targetWorst - currentPrice) * progress
+    const price = currentPrice * Math.pow(1 + worstGrowthRate, i + 1)
     return {
       year: currentYear + i + 1,
       price: Math.round(price * 100) / 100
@@ -370,6 +366,8 @@ export function generateScenariosFromAdvancedDcf(
   })
 
   const upside = ((intrinsicValue - currentPrice) / currentPrice) * 100
+  const targetBest = intrinsicValue * 1.2
+  const targetWorst = intrinsicValue * 0.8
 
   return {
     best: {

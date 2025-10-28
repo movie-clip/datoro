@@ -2,11 +2,14 @@
   <div class="dcf-chart">
     <h3 class="chart-title">
       Price Forecast
-      <span v-if="pegError && chartOptions" class="chart-subtitle">Based on Advanced DCF (FCF)</span>
+      <span v-if="selectedModel" class="chart-subtitle">
+        {{ selectedModel === 'peg' ? '(PEG Model)' : '(Advanced DCF)' }}
+      </span>
     </h3>
     <div class="chart-container">
       <v-chart 
         v-if="chartOptions" 
+        :key="`${selectedModel}-${props.scenarios.average.projectedPrices.length}`"
         :option="chartOptions" 
         :autoresize="true"
         class="chart"
@@ -48,6 +51,8 @@ use([
   LegendComponent
 ])
 
+type ValuationModel = 'peg' | 'advancedDcf'
+
 interface ProjectedPrice {
   year: number
   price: number
@@ -70,6 +75,7 @@ interface Props {
   currentPrice?: number | null
   intrinsicValue?: number | null
   pegError?: string | null
+  selectedModel?: ValuationModel
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -80,7 +86,8 @@ const props = withDefaults(defineProps<Props>(), {
   }),
   currentPrice: null,
   intrinsicValue: null,
-  pegError: null
+  pegError: null,
+  selectedModel: 'peg'
 })
 
 const chartOptions = computed((): EChartsOption | null => {

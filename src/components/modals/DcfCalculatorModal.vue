@@ -79,10 +79,9 @@
                   :current-price="typedCompanyData?.currentPrice || 0"
                   :upside="upside ?? undefined"
                   :advanced-dcf-value="typedAdvancedDcfValue ?? undefined"
-                  :fmp-dcf-value="typedFmpDcfValue"
-                  :fmp-dcf-loading="fmpDcfLoading"
-                  :fmp-dcf-error="fmpDcfError ?? undefined"
                   :peg-error="pegError ?? undefined"
+                  :selected-model="selectedModel"
+                  @select-model="selectModel"
                   class="compact-results"
                 />
                 
@@ -91,6 +90,7 @@
                   :current-price="typedCompanyData?.currentPrice || 0"
                   :intrinsic-value="intrinsicValue ?? undefined"
                   :peg-error="pegError ?? undefined"
+                  :selected-model="selectedModel"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import { useDcfCalculator } from '../../composables/useDcfCalculator'
 import DcfInputs from '../dcf/DcfInputs.vue'
 import DcfResults from '../dcf/DcfResults.vue'
@@ -132,10 +132,9 @@ const {
   upside, 
   scenarios,
   advancedDcfValue,
-  fmpDcfValue,
-  fmpDcfLoading,
-  fmpDcfError,
   pegError,
+  selectedModel,
+  selectModel,
   companyData,
   dataValidation,
   loading,
@@ -146,8 +145,7 @@ const {
 // Type assertions for composable returns (composable is JS, we know the actual types)
 const typedCompanyData = companyData as Ref<CompanyDataForDcf | null>
 const typedAdvancedDcfValue = advancedDcfValue as Ref<AdvancedDcfResult | FmpDcfValueExtended | null>
-const typedFmpDcfValue = fmpDcfValue as Ref<any> // Computed, actual type varies
-const typedScenarios = scenarios as Ref<any> // scenarios from JS composable
+const typedScenarios = scenarios as ComputedRef<any> // scenarios is a computed ref
 
 const handleClose = (): void => {
   emit('update:modelValue', false)

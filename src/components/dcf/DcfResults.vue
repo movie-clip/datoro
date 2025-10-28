@@ -2,9 +2,14 @@
   <div class="dcf-results">
     <h3 class="section-title">Valuation Results</h3>
     
-    <div v-if="intrinsicValue !== null || advancedDcfValue?.intrinsicValue || fmpDcfValue?.intrinsicValue" class="results-grid">
+    <div v-if="intrinsicValue !== null || advancedDcfValue?.intrinsicValue" class="results-grid">
       <!-- Custom DCF Intrinsic Value Card -->
-      <div class="result-card" :data-tooltip="getDcfTooltip()">
+      <div 
+        class="result-card" 
+        :class="{ 'active': selectedModel === 'peg', 'clickable': !pegError }"
+        :data-tooltip="getDcfTooltip()"
+        @click="handleModelClick('peg')"
+      >
         <div class="card-label">PEG Model</div>
         <div v-if="intrinsicValue !== null" class="card-value" :class="getDcfValueClass(intrinsicValue)">
           ${{ formatNumber(intrinsicValue) }}
@@ -24,8 +29,11 @@
         <div class="card-hint">Custom cash flow model</div>
       </div>
 
-      <!-- Advanced DCF Card -->
-      <div class="result-card" :data-tooltip="getAdvancedDcfTooltip()">
+      <!-- Advanced DCF Card (not clickable) -->
+      <div 
+        class="result-card" 
+        :data-tooltip="getAdvancedDcfTooltip()"
+      >
         <div class="card-label">Advanced DCF</div>
         <div v-if="advancedDcfValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(advancedDcfValue.intrinsicValue)">
           ${{ formatNumber(advancedDcfValue.intrinsicValue) }}
@@ -44,24 +52,6 @@
         <div v-else class="card-value text-muted">—</div>
         <div class="card-hint">FMP 10-year model</div>
       </div>
-
-      <!-- FMP DCF Card -->
-      <div class="result-card" :data-tooltip="getFmpTooltip()">
-        <div class="card-label">
-          DCF Model
-          <span v-if="fmpDcfLoading" class="loading-indicator">⋯</span>
-        </div>
-        <div v-if="fmpDcfValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(fmpDcfValue.intrinsicValue)">
-          ${{ formatNumber(fmpDcfValue.intrinsicValue) }}
-          <span v-if="fmpDcfValue?.upside" class="upside-inline" :class="getUpsideClass(fmpDcfValue.upside)">
-            ({{ fmpDcfValue.upside > 0 ? '+' : '' }}{{ fmpDcfValue.upside.toFixed(1) }}%)
-          </span>
-        </div>
-        <div v-else-if="fmpDcfLoading" class="card-value text-muted">Loading...</div>
-        <div v-else-if="fmpDcfError" class="card-value text-error">Error</div>
-        <div v-else class="card-value text-muted">N/A</div>
-        <div class="card-hint">FMP proprietary DCF</div>
-      </div>
     </div>
 
     <div v-else class="results-placeholder">
@@ -78,6 +68,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+type ValuationModel = 'peg' | 'advancedDcf'
+
 interface AdvancedDcfValue {
   intrinsicValue?: number | null
   upside?: number | null
@@ -86,20 +78,13 @@ interface AdvancedDcfValue {
   error?: string | null
 }
 
-interface FmpDcfValue {
-  intrinsicValue?: number | null
-  upside?: number | null
-}
-
 interface Props {
   intrinsicValue?: number | null
   currentPrice?: number | null
   upside?: number | null
   advancedDcfValue?: AdvancedDcfValue | null
-  fmpDcfValue?: FmpDcfValue | null
-  fmpDcfLoading?: boolean
-  fmpDcfError?: string | null
   pegError?: string | null
+  selectedModel?: ValuationModel
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -107,10 +92,22 @@ const props = withDefaults(defineProps<Props>(), {
   currentPrice: null,
   upside: null,
   advancedDcfValue: null,
-  fmpDcfValue: null,
-  fmpDcfLoading: false,
-  fmpDcfError: null
+  pegError: null,
+  selectedModel: 'peg'
 })
+
+const emit = defineEmits<{
+  selectModel: [model: ValuationModel]
+}>()
+
+const handleModelClick = (model: ValuationModel): void => {
+  // Only emit if model has data
+  if (model === 'peg' && !props.pegError) {
+    emit('selectModel', model)
+  } else if (model === 'advancedDcf' && props.advancedDcfValue?.intrinsicValue) {
+    emit('selectModel', model)
+  }
+}
 
 const formatNumber = (num: number | null | undefined): string => {
   if (num === null || num === undefined) return 'N/A'
@@ -172,16 +169,6 @@ WACC: ${wacc}%
 Terminal Growth: ${terminalGrowth}%`
 }
 
-const getFmpTooltip = (): string => {
-  if (props.fmpDcfLoading) return 'Loading FMP DCF valuation...'
-  if (props.fmpDcfError) return `Error: ${props.fmpDcfError}`
-  if (!props.fmpDcfValue?.intrinsicValue) return 'No FMP DCF data available'
-  
-  return `FMP Discounted Cash Flow Model:
-Traditional DCF with free cash flow projections
-Discounted to present value using WACC`
-}
-
 const getCurrentPriceTooltip = (): string => {
   return `Market Price: $${formatNumber(props.currentPrice)} • Latest stock price from the market`
 }
@@ -237,11 +224,25 @@ const getCurrentPriceTooltip = (): string => {
   overflow: visible;
 }
 
-.result-card:hover {
+.result-card.clickable {
+  cursor: pointer;
+}
+
+.result-card.clickable:hover {
   background: rgba(0, 0, 0, 0.4);
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: visible;
+}
+
+.result-card.active {
+  background: rgba(0, 89, 76, 0.15);
+  border-color: rgba(0, 181, 154, 0.5);
+  box-shadow: 0 0 20px rgba(0, 181, 154, 0.2);
+}
+
+.result-card:hover {
   overflow: visible;
 }
 
