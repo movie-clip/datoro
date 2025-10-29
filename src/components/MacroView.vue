@@ -3,28 +3,21 @@
     <div class="macro-header">
       <div class="header-content">
         <h2>Macro Economic Dashboard</h2>
-      </div>
-      
-      <div class="index-cards">
-        <div v-if="indexData.length === 0" class="index-card">
-          <div class="index-name">Loading...</div>
-          <div class="index-change">--</div>
-        </div>
-        <div v-for="(index, i) in indexData" :key="i" class="index-card">
-          <div class="index-name">{{ index.name }}</div>
-          <div class="index-change" :class="{ positive: index.change >= 0, negative: index.change < 0 }">
-            {{ index.change >= 0 ? '+' : '' }}{{ index.change.toFixed(2) }}%
+        
+        <div class="index-cards">
+          <div v-if="indexData.length === 0" class="index-card">
+            <div class="index-name">Loading...</div>
+            <div class="index-change">--</div>
+          </div>
+          <div v-for="(index, i) in indexData" :key="i" class="index-card">
+            <div class="index-name">{{ index.name }}</div>
+            <div class="index-change" :class="{ positive: index.change >= 0, negative: index.change < 0 }">
+              {{ index.change >= 0 ? '+' : '' }}{{ index.change.toFixed(2) }}%
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div v-if="error" class="error-state">
-      <p>{{ error }}</p>
-      <button @click="retry" class="retry-btn">Retry</button>
-    </div>
-
-    <div class="sync-controls">
+      
       <button 
         class="sync-toggle-btn"
         :class="{ active: syncCharts }"
@@ -33,6 +26,11 @@
       >
         {{ syncCharts ? 'Synced' : 'Sync' }}
       </button>
+    </div>
+
+    <div v-if="error" class="error-state">
+      <p>{{ error }}</p>
+      <button @click="retry" class="retry-btn">Retry</button>
     </div>
 
     <div class="macro-grid">
@@ -58,13 +56,13 @@
         </div>
       </div>
 
-      <!-- Retail Sales -->
+      <!-- Federal Funds Rate -->
       <div class="macro-card">
-        <h2>Retail Sales</h2>
+        <h2>Federal Funds Rate</h2>
         <button
-          v-if="retailSalesZoomed"
+          v-if="fedFundsZoomed"
           class="reset-zoom-btn"
-          @click="resetRetailSalesZoom"
+          @click="resetFedFundsZoom"
           title="Reset zoom"
         >
           ↺
@@ -73,8 +71,8 @@
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
           <v-chart 
             v-else
-            ref="retailSalesChartRef"
-            :option="retailSalesChartOption" 
+            ref="fedFundsChartRef"
+            :option="fedFundsChartOption" 
             autoresize
           />
         </div>
@@ -124,13 +122,13 @@
         </div>
       </div>
 
-      <!-- Federal Funds Rate -->
+      <!-- Retail Sales -->
       <div class="macro-card">
-        <h2>Federal Funds Rate</h2>
+        <h2>Retail Sales</h2>
         <button
-          v-if="fedFundsZoomed"
+          v-if="retailSalesZoomed"
           class="reset-zoom-btn"
-          @click="resetFedFundsZoom"
+          @click="resetRetailSalesZoom"
           title="Reset zoom"
         >
           ↺
@@ -139,8 +137,8 @@
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
           <v-chart 
             v-else
-            ref="fedFundsChartRef"
-            :option="fedFundsChartOption" 
+            ref="retailSalesChartRef"
+            :option="retailSalesChartOption" 
             autoresize
           />
         </div>
@@ -887,16 +885,25 @@ const riskPremiumChartOption = computed(() => {
   max-width: 1400px;
   margin: 0 auto;
   background: #0F0F10;
-  min-height: 600px;
+  min-height: 900px;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 .macro-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 12px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 32px;
+  margin-bottom: 16px;
+  gap: 24px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
 }
 
 .header-content h2 {
@@ -904,21 +911,7 @@ const riskPremiumChartOption = computed(() => {
   font-size: 18px;
   font-weight: 600;
   color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-icon {
-  color: #00C087;
-  width: 20px;
-  height: 20px;
-}
-
-.sync-controls {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 2px 10px 0px;
+  white-space: nowrap;
 }
 
 .sync-toggle-btn {
@@ -934,6 +927,8 @@ const riskPremiumChartOption = computed(() => {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+  margin-right: 60px;
 }
 
 .sync-toggle-btn:hover {
@@ -957,7 +952,7 @@ const riskPremiumChartOption = computed(() => {
   display: flex;
   gap: 12px;
   flex-shrink: 0;
-  margin-right: 50px; /* Leave space for close button */
+  flex-wrap: nowrap;
 }
 
 .index-card {
@@ -1076,6 +1071,8 @@ const riskPremiumChartOption = computed(() => {
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   min-height: 500px;
+  width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -1092,6 +1089,8 @@ const riskPremiumChartOption = computed(() => {
   min-height: 300px;
   transition: all 0.3s ease;
   position: relative;
+  min-width: 0; /* Prevent grid overflow */
+  overflow: hidden; /* Contain content */
 }
 
 .macro-card:hover {
@@ -1134,7 +1133,7 @@ const riskPremiumChartOption = computed(() => {
 .reset-zoom-btn {
   position: absolute;
   top: 12px;
-  right: 12px;
+  right: 15px;
   width: 32px;
   height: 32px;
   background: rgba(120, 120, 120, 0.15);
