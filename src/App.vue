@@ -915,7 +915,8 @@ const handleSelectTicker = (ticker: string): void => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -924,15 +925,34 @@ const handleSelectTicker = (ticker: string): void => {
 }
 
 .modal-container.macro-modal {
-  background: linear-gradient(180deg, #0A0E13 0%, #0D1117 100%);
-  border-radius: 16px;
-  border: 1px solid rgba(0, 89, 76, 0.3);
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #2A2A2E;
   max-width: 1400px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Custom scrollbar for macro modal */
+.modal-container.macro-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-container.macro-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.modal-container.macro-modal::-webkit-scrollbar-thumb {
+  background: rgba(0, 89, 76, 0.3);
+  border-radius: 4px;
+}
+
+.modal-container.macro-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 89, 76, 0.5);
 }
 
 .modal-close {

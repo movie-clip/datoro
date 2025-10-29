@@ -71,7 +71,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart } from 'echarts/charts'
+import { LineChart, BarChart } from 'echarts/charts'
 import {
   TitleComponent,
   TooltipComponent,
@@ -84,6 +84,7 @@ import { fetchAllMacroData, type MacroData } from '../services/macro/macroDataSe
 use([
   CanvasRenderer,
   LineChart,
+  BarChart,
   TitleComponent,
   TooltipComponent,
   GridComponent,
@@ -132,8 +133,7 @@ const unemploymentChartOption = computed(() => {
       textStyle: { color: '#E5E5E5' },
       formatter: (params: any) => {
         const point = params[0]
-        return `<b>${point.axisValue}</b><br/>
-                Unemployment: <b>${point.value[1].toFixed(1)}%</b>`
+        return `Unemployment: <b>${point.value[1].toFixed(1)}%</b>`
       }
     },
     grid: {
@@ -192,8 +192,7 @@ const consumerSentimentChartOption = computed(() => {
       textStyle: { color: '#E5E5E5' },
       formatter: (params: any) => {
         const point = params[0]
-        return `<b>${point.axisValue}</b><br/>
-                Consumer Sentiment: <b>${point.value[1].toFixed(1)}</b>`
+        return `Consumer Sentiment: <b>${point.value[1].toFixed(1)}</b>`
       }
     },
     grid: {
@@ -242,8 +241,7 @@ const retailSalesChartOption = computed(() => {
       textStyle: { color: '#E5E5E5' },
       formatter: (params: any) => {
         const point = params[0]
-        return `<b>${point.axisValue}</b><br/>
-                Retail Sales: <b>${point.value[1].toFixed(2)}</b>`
+        return `Retail Sales: <b>${point.value[1].toFixed(2)}</b>`
       }
     },
     grid: {
@@ -292,8 +290,7 @@ const inflationChartOption = computed(() => {
       textStyle: { color: '#E5E5E5' },
       formatter: (params: any) => {
         const point = params[0]
-        return `<b>${point.axisValue}</b><br/>
-                Inflation: <b>${point.value[1].toFixed(2)}%</b>`
+        return `Inflation: <b>${point.value[1].toFixed(2)}%</b>`
       }
     },
     grid: {
@@ -315,22 +312,13 @@ const inflationChartOption = computed(() => {
     },
     series: [{
       name: 'Inflation',
-      type: 'line',
+      type: 'bar',
       data: inflationData,
-      smooth: true,
-      showSymbol: false,
-      lineStyle: { width: 3, color: '#FFD93D' },
-      itemStyle: { color: '#FFD93D' },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(255, 217, 61, 0.3)' },
-            { offset: 1, color: 'rgba(255, 217, 61, 0.05)' }
-          ]
-        }
-      }
+      itemStyle: { 
+        color: '#FFD93D',
+        borderRadius: [4, 4, 0, 0]
+      },
+      barWidth: '60%'
     }]
   }
 })
@@ -352,8 +340,7 @@ const fedFundsChartOption = computed(() => {
       textStyle: { color: '#E5E5E5' },
       formatter: (params: any) => {
         const point = params[0]
-        return `<b>${point.axisValue}</b><br/>
-                Fed Funds Rate: <b>${point.value[1].toFixed(2)}%</b>`
+        return `Fed Funds Rate: <b>${point.value[1].toFixed(2)}%</b>`
       }
     },
     grid: {
@@ -375,22 +362,13 @@ const fedFundsChartOption = computed(() => {
     },
     series: [{
       name: 'Federal Funds Rate',
-      type: 'line',
+      type: 'bar',
       data: data,
-      smooth: true,
-      showSymbol: false,
-      lineStyle: { width: 3, color: '#00B59A' },
-      itemStyle: { color: '#00B59A' },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(0, 181, 154, 0.3)' },
-            { offset: 1, color: 'rgba(0, 181, 154, 0.05)' }
-          ]
-        }
-      }
+      itemStyle: { 
+        color: '#00B59A',
+        borderRadius: [4, 4, 0, 0]
+      },
+      barWidth: '60%'
     }]
   }
 })
@@ -430,8 +408,7 @@ const spxChartOption = computed(() => {
         const point = params[0]
         const returnPct = point.value[1]
         const color = returnPct >= 0 ? '#00B59A' : '#FF6B6B'
-        return `<b>${point.axisValue}</b><br/>
-                Annualized Return Yield: <b style="color: ${color}">${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%</b>`
+        return `Annualized Return Yield: <b style="color: ${color}">${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%</b>`
       }
     },
     grid: {
@@ -482,6 +459,8 @@ const spxChartOption = computed(() => {
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+  background: #0F0F10;
+  min-height: 100%;
 }
 
 .macro-header {
@@ -554,11 +533,18 @@ const spxChartOption = computed(() => {
 }
 
 .macro-card {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
   border-radius: 12px;
   padding: 24px;
   min-height: 300px;
+  transition: all 0.3s ease;
+}
+
+.macro-card:hover {
+  border-color: #00594C;
+  box-shadow: 0 4px 20px rgba(0, 89, 76, 0.3);
+  transform: translateY(-2px);
 }
 
 .macro-card.full-width {
