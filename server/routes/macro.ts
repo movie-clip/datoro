@@ -430,10 +430,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       retailSalesRes,
       inflationRes,
       unemploymentRes,
-      spxRes,
       indexQuotesRes,
-      sectorsRes,
-      riskPremiumRes
+      housingStartsRes
     ] = await Promise.allSettled([
       // Treasury rates
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/treasury?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000),
@@ -443,14 +441,10 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=retailSales&apikey=${FMP_API_KEY}`, {}, 10000),
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=inflation&apikey=${FMP_API_KEY}`, {}, 10000),
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=unemploymentRate&apikey=${FMP_API_KEY}`, {}, 10000),
-      // SPX historical
-      fetchWithTimeout(`${FMP_BASE_URL}/api/v3/historical-price-full/%5EGSPC?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000),
       // Index quotes - batch call for all 5 indices (optimized: 5 calls → 1 call)
       fetchWithTimeout(`${FMP_BASE_URL}/api/v3/quote/${symbols.join(',')}?apikey=${FMP_API_KEY}`, {}, 10000),
-      // Sectors
-      fetchWithTimeout(`${FMP_BASE_URL}/api/v3/sector-performance?apikey=${FMP_API_KEY}`, {}, 10000),
-      // Risk premium
-      fetchWithTimeout(`${FMP_BASE_URL}/stable/market-risk-premium?apikey=${FMP_API_KEY}`, {}, 10000)
+      // Housing starts - fetch full historical data from 1959 (earliest available) to match other economic indicators
+      fetchWithTimeout(`${FMP_BASE_URL}/stable/economic-indicators?name=newPrivatelyOwnedHousingUnitsStartedTotalUnits&from=1959-01-01&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000)
     ])
     
     // Process results
@@ -461,10 +455,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       retailSales: [],
       inflation: [],
       unemploymentRate: [],
-      spx: [],
       indexStats: [],
-      sectors: [],
-      riskPremium: [],
+      housingStarts: [],
       timestamp: new Date().toISOString()
     }
     
@@ -488,12 +480,6 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
     }
     if (unemploymentRes.status === 'fulfilled' && unemploymentRes.value.ok) {
       batchData.unemploymentRate = await unemploymentRes.value.json()
-    }
-    
-    // SPX historical
-    if (spxRes.status === 'fulfilled' && spxRes.value.ok) {
-      const spxData = await spxRes.value.json()
-      batchData.spx = (spxData as any).historical || []
     }
     
     // Index stats (transform batch quotes to IndexStats format)
@@ -524,22 +510,27 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       batchData.indexStats = indexStats
     }
     
-    // Sectors
-    if (sectorsRes.status === 'fulfilled' && sectorsRes.value.ok) {
-      batchData.sectors = await sectorsRes.value.json()
-    }
-    
-    // Risk premium
-    if (riskPremiumRes.status === 'fulfilled' && riskPremiumRes.value.ok) {
-      const riskData = await riskPremiumRes.value.json()
-      batchData.riskPremium = Array.isArray(riskData) ? riskData : []
+    // Housing Starts
+    if (housingStartsRes.status === 'fulfilled' && housingStartsRes.value.ok) {
+      const housingData = await housingStartsRes.value.json()
+      console.log('[Macro] Housing Starts response type:', typeof housingData, 'IsArray:', Array.isArray(housingData), 'Count:', Array.isArray(housingData) ? housingData.length : 0)
+      // Stable endpoint returns array with 'name' field: [{name, date, value}, ...]
+      // Transform to match EconomicIndicator interface: [{date, value}, ...]
+      batchData.housingStarts = Array.isArray(housingData) 
+        ? housingData.map((item: any) => ({ date: item.date, value: item.value }))
+        : []
+    } else {
+      console.log('[Macro] Housing Starts fetch failed. Status:', housingStartsRes.status, 
+        housingStartsRes.status === 'rejected' ? housingStartsRes.reason : 
+        (housingStartsRes.status === 'fulfilled' ? 'Response not OK' : 'Unknown'))
     }
     
     return batchData
   })
   
   const duration = Date.now() - startTime
-  console.log(`[Macro] Batch → Fetched all data in ${duration}ms (10 FMP API calls - optimized quotes to 1 batch)`)
+  console.log(`[Macro] Batch → Fetched all data in ${duration}ms (8 FMP API calls - removed SPX, sectors, risk premium)`)
+  console.log(`[Macro] Batch → housingStarts array length: ${data.housingStarts?.length || 0}`)
   
   // Cache for 15 minutes (balanced between freshness and performance)
   await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)

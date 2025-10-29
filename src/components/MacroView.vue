@@ -20,19 +20,6 @@
         :chart-option="getChartOption(config).value"
         :loading="loading"
       />
-
-      <!-- Market Risk Premium (no sync) -->
-      <div class="macro-card">
-        <h2>{{ riskPremiumConfig.title }}</h2>
-        <div class="chart-container">
-          <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <v-chart 
-            v-else
-            :option="riskPremiumChartOption" 
-            autoresize
-          />
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -56,7 +43,7 @@ import { fetchAllMacroData, type MacroData, type EconomicIndicator } from '../se
 import { useMacroChart } from '../composables/useMacroChart'
 import { useChartSync } from '../composables/useChartSync'
 import { createChartOptions, DEFAULT_SLIDER_CONFIG } from '../utils/chartConfigFactory'
-import { MACRO_CHART_CONFIGS, RISK_PREMIUM_CONFIG } from '../config/macroChartConfigs'
+import { MACRO_CHART_CONFIGS } from '../config/macroChartConfigs'
 import { CACHE_TTL } from '../config/constants'
 import type { ChartConfig } from '../types/macro.types'
 import MacroChart from './macro/MacroChart.vue'
@@ -79,7 +66,6 @@ use([
 
 // Chart configurations
 const chartConfigs = MACRO_CHART_CONFIGS
-const riskPremiumConfig = RISK_PREMIUM_CONFIG
 
 // Frontend cache for macro data
 interface CachedMacroData {
@@ -165,30 +151,6 @@ function getChartOption(config: ChartConfig) {
     })
   })
 }
-
-/**
- * Market Risk Premium chart option
- */
-const riskPremiumChartOption = computed(() => {
-  const riskData = macroData.value?.riskPremium
-    ?.filter(item => item.country === 'United States')
-    .map(item => ({
-      date: new Date().toISOString(), // FMP doesn't provide date for risk premium
-      value: item.totalEquityRiskPremium
-    }))
-
-  const chartData = convertToChartData(riskData)
-
-  return createChartOptions({
-    data: chartData.length > 0 ? chartData : null,
-    title: riskPremiumConfig.title,
-    color: riskPremiumConfig.color,
-    yAxisLabel: riskPremiumConfig.yAxisLabel,
-    sliderConfig: DEFAULT_SLIDER_CONFIG,
-    valueFormatter: riskPremiumConfig.valueFormatter,
-    tooltipFormatter: riskPremiumConfig.tooltipFormatter
-  })
-})
 
 /**
  * Index Cards Data (S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX)

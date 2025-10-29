@@ -66,10 +66,8 @@ export interface MacroData {
   retailSales: EconomicIndicator[]
   inflation: EconomicIndicator[]
   unemploymentRate: EconomicIndicator[]
-  spx: MarketIndexPoint[]
   indexStats: IndexStats[]
-  sectors: SectorPerformance[]
-  riskPremium: RiskPremium[]
+  housingStarts: EconomicIndicator[]
   timestamp: string
 }
 
@@ -239,10 +237,8 @@ async function fetchAllMacroDataLegacy(): Promise<MacroData> {
     retailSales: (retailSalesResult.status === 'fulfilled' ? retailSalesResult.value : []).slice(0, 50),
     inflation: (inflationResult.status === 'fulfilled' ? inflationResult.value : []).slice(0, 50),
     unemploymentRate: (unemploymentRateResult.status === 'fulfilled' ? unemploymentRateResult.value : []).slice(0, 50),
-    spx: spxResult.status === 'fulfilled' ? spxResult.value : [],
     indexStats: indexStatsResult.status === 'fulfilled' ? indexStatsResult.value : [],
-    sectors: sectorsResult.status === 'fulfilled' ? sectorsResult.value : [],
-    riskPremium: riskPremiumResult.status === 'fulfilled' ? riskPremiumResult.value : [],
+    housingStarts: [], // Not available in legacy fallback
     timestamp: new Date().toISOString()
   }
 }

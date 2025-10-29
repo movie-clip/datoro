@@ -50,17 +50,13 @@ export const MACRO_CHART_CONFIGS: ChartConfig[] = [
     color: COLORS.chart.blueLight,
     valueFormatter: largeNumberFormatter,
     tooltipFormatter: (val) => `$${largeNumberFormatter(val)}`
+  },
+  {
+    id: 'housingStarts',
+    title: 'Housing Starts',
+    dataKey: 'housingStarts',
+    color: '#9C27B0',
+    valueFormatter: largeNumberFormatter,
+    tooltipFormatter: (val) => `${largeNumberFormatter(val)} units`
   }
 ]
-
-/**
- * Risk Premium chart configuration (separate as it's not synced)
- */
-export const RISK_PREMIUM_CONFIG: ChartConfig = {
-  id: 'riskPremium',
-  title: 'Market Risk Premium',
-  dataKey: 'riskPremium',
-  color: '#9C27B0',
-  valueFormatter: percentFormatter,
-  tooltipFormatter: percentFormatter
-}
