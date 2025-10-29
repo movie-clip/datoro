@@ -22,6 +22,7 @@ import analyticsRoutes from './routes/analyticsRoutes.js'
 import healthRoutes, { initHealthRoutes } from './routes/healthRoutes.js'
 import adminRoutes, { initAdminRoutes } from './routes/adminRoutes.js'
 import macroRoutes, { initMacroRoutes } from './routes/macro.js'
+import feedbackRoutes, { initFeedbackRoutes } from './routes/feedback.js'
 import { 
   validate,
   validateProfile,
@@ -218,6 +219,7 @@ initSearchRoutes(routeDeps)
 initHealthRoutes(routeDeps)
 initAdminRoutes(routeDeps)
 initMacroRoutes(routeDeps)
+initFeedbackRoutes({ feedbackEmail: 'datoro@gmail.com' })
 
 // Mount routes
 app.use('/api/ticker-data', tickerRoutes)
@@ -226,6 +228,7 @@ app.use('/api/analytics', analyticsRoutes)
 app.use('/api/health', healthRoutes)
 app.use('/api', adminRoutes)
 app.use('/api/macro', macroRoutes)
+app.use('/api/feedback', feedbackRoutes)
 
 // ============================================
 // API Version Endpoint

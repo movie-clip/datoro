@@ -111,17 +111,7 @@ export default defineConfig(({ mode }) => {
       include: [
         'vue',
         'pinia',
-        'echarts/core',
-        'echarts/charts/LineChart',
-        'echarts/charts/BarChart',
-        'echarts/charts/CandlestickChart',
-        'echarts/renderers/CanvasRenderer',
-        'echarts/components/GridComponent',
-        'echarts/components/TooltipComponent',
-        'echarts/components/TitleComponent',
-        'echarts/components/LegendComponent',
-        'echarts/components/DataZoomComponent',
-        'echarts/components/MarkLineComponent',
+        'echarts',
         'vue-echarts'
       ],
       exclude: [],

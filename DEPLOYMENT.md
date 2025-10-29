@@ -1,14 +1,25 @@
 
+## Development
+
 start service:
 npm run start:dev
 
-start development server
+start development server (both backend + frontend):
 npm run start:dev
+
+## Implementing New Features
+
+See comprehensive guide:
+docs/FEATURE_IMPLEMENTATION_GUIDE.md
+
+## Pre-Deployment Checks
 
 before pushing into prod:
 node scripts/pre-deploy-check.mjs
 npm run security:audit
 npm run lint:check
+npm run type-check
+npm run type-check:server
 
 migration validation:
 node scripts/verify-migration.mjs

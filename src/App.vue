@@ -29,6 +29,11 @@ const MacroView = defineAsyncComponent(() =>
   import('./components/MacroView.vue')
 )
 
+// Lazy load FeedbackForm
+const FeedbackForm = defineAsyncComponent(() =>
+  import('./components/FeedbackForm.vue')
+)
+
 // Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
 const AIAnalysisPanel = defineAsyncComponent(() =>
   import('./components/layout/AIAnalysisPanel.vue')
@@ -96,6 +101,7 @@ const showMainMenu = ref(false)
 // Deep Finder
 const showDeepFinder = ref(false)
 const showMacro = ref(false)
+const showFeedback = ref(false)
 
 // Watchlist (multi-watchlist support)
 const { initializeWatchlists, toggleWatchlist, clearAll } = useWatchlists()
@@ -214,6 +220,10 @@ const toggleDeepFinder = (): void => {
 
 const toggleMacro = (): void => {
   showMacro.value = !showMacro.value
+}
+
+const toggleFeedback = (): void => {
+  showFeedback.value = !showFeedback.value
 }
 
 const toggleWatchlistPanel = (): void => {
@@ -458,6 +468,7 @@ const handleSelectTicker = (ticker: string): void => {
       @select-ticker="handleSelectTicker"
       @show-deep-finder="toggleDeepFinder"
       @show-macro="toggleMacro"
+      @show-feedback="toggleFeedback"
     />
     
     <!-- Deep Finder Modal -->
@@ -474,6 +485,21 @@ const handleSelectTicker = (ticker: string): void => {
             </svg>
           </button>
           <MacroView />
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Feedback Modal -->
+    <Teleport to="body">
+      <div v-if="showFeedback" class="modal-overlay" @click.self="showFeedback = false">
+        <div class="modal-container feedback-modal">
+          <button class="modal-close" @click="showFeedback = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <FeedbackForm />
         </div>
       </div>
     </Teleport>
@@ -916,7 +942,7 @@ const handleSelectTicker = (ticker: string): void => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -955,10 +981,22 @@ const handleSelectTicker = (ticker: string): void => {
   background: rgba(0, 89, 76, 0.5);
 }
 
+.modal-container.feedback-modal {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid #2A2A2E;
+  max-width: 450px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
 .modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 5px;
+  right: 5px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;

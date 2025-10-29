@@ -87,6 +87,17 @@
               <span>Macro Dashboard</span>
             </button>
 
+            <!-- Feedback Button -->
+            <button 
+              class="menu-item" 
+              @click="showFeedback"
+            >
+              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Send Feedback</span>
+            </button>
+
             <!-- Placeholder for future menu items -->
             <div class="menu-section-divider"></div>
             
@@ -216,7 +227,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker', 'show-deep-finder', 'show-macro'])
+const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker', 'show-deep-finder', 'show-macro', 'show-feedback'])
 
 const currentView = ref('menu') // 'menu' or 'watchlist'
 const isDcfModalOpen = ref(false)
@@ -270,6 +281,11 @@ function showDeepFinder() {
 
 function showMacro() {
   emit('show-macro')
+  emit('close') // Close the main menu
+}
+
+function showFeedback() {
+  emit('show-feedback')
   emit('close') // Close the main menu
 }
 
