@@ -30,7 +30,22 @@
         <h2>Unemployment Rate</h2>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <v-chart v-else :option="unemploymentChartOption" autoresize />
+          <template v-else>
+            <v-chart 
+              ref="unemploymentChartRef"
+              :option="unemploymentChartOption" 
+              autoresize
+              @datazoom="handleDataZoom(unemploymentZoomed)"
+            />
+            <button
+              v-if="unemploymentZoomed"
+              class="reset-zoom-btn"
+              @click="resetUnemploymentZoom"
+              title="Reset zoom"
+            >
+              ↺
+            </button>
+          </template>
         </div>
       </div>
 
@@ -39,7 +54,22 @@
         <h2>Retail Sales</h2>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <v-chart v-else :option="retailSalesChartOption" autoresize />
+          <template v-else>
+            <v-chart 
+              ref="retailSalesChartRef"
+              :option="retailSalesChartOption" 
+              autoresize
+              @datazoom="handleDataZoom(retailSalesZoomed)"
+            />
+            <button
+              v-if="retailSalesZoomed"
+              class="reset-zoom-btn"
+              @click="resetRetailSalesZoom"
+              title="Reset zoom"
+            >
+              ↺
+            </button>
+          </template>
         </div>
       </div>
 
@@ -48,7 +78,22 @@
         <h2>Consumer Sentiment</h2>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <v-chart v-else :option="consumerSentimentChartOption" autoresize />
+          <template v-else>
+            <v-chart 
+              ref="consumerSentimentChartRef"
+              :option="consumerSentimentChartOption" 
+              autoresize
+              @datazoom="handleDataZoom(consumerSentimentZoomed)"
+            />
+            <button
+              v-if="consumerSentimentZoomed"
+              class="reset-zoom-btn"
+              @click="resetConsumerSentimentZoom"
+              title="Reset zoom"
+            >
+              ↺
+            </button>
+          </template>
         </div>
       </div>
 
@@ -57,7 +102,22 @@
         <h2>Inflation</h2>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <v-chart v-else :option="inflationChartOption" autoresize />
+          <template v-else>
+            <v-chart 
+              ref="inflationChartRef"
+              :option="inflationChartOption" 
+              autoresize
+              @datazoom="handleDataZoom(inflationZoomed)"
+            />
+            <button
+              v-if="inflationZoomed"
+              class="reset-zoom-btn"
+              @click="resetInflationZoom"
+              title="Reset zoom"
+            >
+              ↺
+            </button>
+          </template>
         </div>
       </div>
 
@@ -66,7 +126,22 @@
         <h2>Federal Funds Rate</h2>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <v-chart v-else :option="fedFundsChartOption" autoresize />
+          <template v-else>
+            <v-chart 
+              ref="fedFundsChartRef"
+              :option="fedFundsChartOption" 
+              autoresize
+              @datazoom="handleDataZoom(fedFundsZoomed)"
+            />
+            <button
+              v-if="fedFundsZoomed"
+              class="reset-zoom-btn"
+              @click="resetFedFundsZoom"
+              title="Reset zoom"
+            >
+              ↺
+            </button>
+          </template>
         </div>
       </div>
 
@@ -91,7 +166,8 @@ import {
   TitleComponent,
   TooltipComponent,
   GridComponent,
-  LegendComponent
+  LegendComponent,
+  DataZoomComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { fetchAllMacroData, type MacroData } from '../services/macro/macroDataService'
@@ -105,12 +181,27 @@ use([
   TitleComponent,
   TooltipComponent,
   GridComponent,
-  LegendComponent
+  LegendComponent,
+  DataZoomComponent
 ])
 
 const loading = ref(true)
 const error = ref<string | null>(null)
 const macroData = ref<MacroData | null>(null)
+
+// Zoom state tracking for each chart
+const unemploymentZoomed = ref(false)
+const retailSalesZoomed = ref(false)
+const consumerSentimentZoomed = ref(false)
+const inflationZoomed = ref(false)
+const fedFundsZoomed = ref(false)
+
+// Chart instances refs for programmatic reset
+const unemploymentChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const retailSalesChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const consumerSentimentChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const inflationChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const fedFundsChartRef = ref<InstanceType<typeof VChart> | null>(null)
 
 const loadData = async () => {
   try {
@@ -127,6 +218,57 @@ const loadData = async () => {
 
 const retry = () => {
   loadData()
+}
+
+// Reset zoom functions
+const resetUnemploymentZoom = () => {
+  if (unemploymentChartRef.value) {
+    const chart = unemploymentChartRef.value
+    chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
+    unemploymentZoomed.value = false
+  }
+}
+
+const resetRetailSalesZoom = () => {
+  if (retailSalesChartRef.value) {
+    const chart = retailSalesChartRef.value
+    chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
+    retailSalesZoomed.value = false
+  }
+}
+
+const resetConsumerSentimentZoom = () => {
+  if (consumerSentimentChartRef.value) {
+    const chart = consumerSentimentChartRef.value
+    chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
+    consumerSentimentZoomed.value = false
+  }
+}
+
+const resetInflationZoom = () => {
+  if (inflationChartRef.value) {
+    const chart = inflationChartRef.value
+    chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
+    inflationZoomed.value = false
+  }
+}
+
+const resetFedFundsZoom = () => {
+  if (fedFundsChartRef.value) {
+    const chart = fedFundsChartRef.value
+    chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
+    fedFundsZoomed.value = false
+  }
+}
+
+// Handle dataZoom events to track zoom state
+const handleDataZoom = (zoomRef: any) => {
+  return (params: any) => {
+    if (params.batch && params.batch[0]) {
+      const { start, end } = params.batch[0]
+      zoomRef.value = start !== 0 || end !== 100
+    }
+  }
 }
 
 onMounted(() => {
@@ -178,8 +320,46 @@ const unemploymentChartOption = computed(() => {
       left: '60px',
       right: '20px',
       top: '20px',
-      bottom: '40px'
+      bottom: '60px'
     },
+    dataZoom: [
+      {
+        type: 'slider',
+        start: 0,
+        end: 100,
+        height: 20,
+        bottom: 10,
+        borderColor: '#2A2A2E',
+        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        handleStyle: {
+          color: '#00B59A',
+          borderColor: '#00B59A'
+        },
+        dataBackground: {
+          lineStyle: { color: '#444' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
+        },
+        selectedDataBackground: {
+          lineStyle: { color: '#00B59A' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
+        },
+        textStyle: { color: '#999' },
+        brushSelect: true,
+        brushStyle: {
+          color: 'rgba(0, 181, 154, 0.2)',
+          borderColor: 'rgba(0, 181, 154, 0.6)',
+          borderWidth: 1
+        }
+      },
+      {
+        type: 'inside',
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: false,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }
+    ],
     xAxis: {
       type: 'time',
       axisLine: { lineStyle: { color: '#444' } },
@@ -237,8 +417,46 @@ const consumerSentimentChartOption = computed(() => {
       left: '60px',
       right: '20px',
       top: '20px',
-      bottom: '40px'
+      bottom: '60px'
     },
+    dataZoom: [
+      {
+        type: 'slider',
+        start: 0,
+        end: 100,
+        height: 20,
+        bottom: 10,
+        borderColor: '#2A2A2E',
+        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        handleStyle: {
+          color: '#00B59A',
+          borderColor: '#00B59A'
+        },
+        dataBackground: {
+          lineStyle: { color: '#444' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
+        },
+        selectedDataBackground: {
+          lineStyle: { color: '#00B59A' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
+        },
+        textStyle: { color: '#999' },
+        brushSelect: true,
+        brushStyle: {
+          color: 'rgba(0, 181, 154, 0.2)',
+          borderColor: 'rgba(0, 181, 154, 0.6)',
+          borderWidth: 1
+        }
+      },
+      {
+        type: 'inside',
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: false,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }
+    ],
     xAxis: {
       type: 'time',
       axisLine: { lineStyle: { color: '#444' } },
@@ -286,8 +504,46 @@ const retailSalesChartOption = computed(() => {
       left: '60px',
       right: '20px',
       top: '20px',
-      bottom: '40px'
+      bottom: '60px'
     },
+    dataZoom: [
+      {
+        type: 'slider',
+        start: 0,
+        end: 100,
+        height: 20,
+        bottom: 10,
+        borderColor: '#2A2A2E',
+        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        handleStyle: {
+          color: '#00B59A',
+          borderColor: '#00B59A'
+        },
+        dataBackground: {
+          lineStyle: { color: '#444' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
+        },
+        selectedDataBackground: {
+          lineStyle: { color: '#00B59A' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
+        },
+        textStyle: { color: '#999' },
+        brushSelect: true,
+        brushStyle: {
+          color: 'rgba(0, 181, 154, 0.2)',
+          borderColor: 'rgba(0, 181, 154, 0.6)',
+          borderWidth: 1
+        }
+      },
+      {
+        type: 'inside',
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: false,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }
+    ],
     xAxis: {
       type: 'time',
       axisLine: { lineStyle: { color: '#444' } },
@@ -335,8 +591,46 @@ const inflationChartOption = computed(() => {
       left: '60px',
       right: '20px',
       top: '20px',
-      bottom: '40px'
+      bottom: '60px'
     },
+    dataZoom: [
+      {
+        type: 'slider',
+        start: 0,
+        end: 100,
+        height: 20,
+        bottom: 10,
+        borderColor: '#2A2A2E',
+        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        handleStyle: {
+          color: '#00B59A',
+          borderColor: '#00B59A'
+        },
+        dataBackground: {
+          lineStyle: { color: '#444' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
+        },
+        selectedDataBackground: {
+          lineStyle: { color: '#00B59A' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
+        },
+        textStyle: { color: '#999' },
+        brushSelect: true,
+        brushStyle: {
+          color: 'rgba(0, 181, 154, 0.2)',
+          borderColor: 'rgba(0, 181, 154, 0.6)',
+          borderWidth: 1
+        }
+      },
+      {
+        type: 'inside',
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: false,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }
+    ],
     xAxis: {
       type: 'time',
       axisLine: { lineStyle: { color: '#444' } },
@@ -385,8 +679,46 @@ const fedFundsChartOption = computed(() => {
       left: '60px',
       right: '20px',
       top: '20px',
-      bottom: '40px'
+      bottom: '60px'
     },
+    dataZoom: [
+      {
+        type: 'slider',
+        start: 0,
+        end: 100,
+        height: 20,
+        bottom: 10,
+        borderColor: '#2A2A2E',
+        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        handleStyle: {
+          color: '#00B59A',
+          borderColor: '#00B59A'
+        },
+        dataBackground: {
+          lineStyle: { color: '#444' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
+        },
+        selectedDataBackground: {
+          lineStyle: { color: '#00B59A' },
+          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
+        },
+        textStyle: { color: '#999' },
+        brushSelect: true,
+        brushStyle: {
+          color: 'rgba(0, 181, 154, 0.2)',
+          borderColor: 'rgba(0, 181, 154, 0.6)',
+          borderWidth: 1
+        }
+      },
+      {
+        type: 'inside',
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: false,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }
+    ],
     xAxis: {
       type: 'time',
       axisLine: { lineStyle: { color: '#444' } },
@@ -747,6 +1079,49 @@ const riskPremiumChartOption = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+/* Prevent charts from blocking page scroll */
+.chart-container :deep(canvas) {
+  pointer-events: auto;
+}
+
+.chart-container :deep(.echarts-container) {
+  pointer-events: auto;
+}
+
+.reset-zoom-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 181, 154, 0.15);
+  border: 1px solid rgba(0, 181, 154, 0.4);
+  border-radius: 6px;
+  color: #00B59A;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  padding: 0;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+.reset-zoom-btn:hover {
+  background: rgba(0, 181, 154, 0.25);
+  border-color: rgba(0, 181, 154, 0.6);
+  transform: scale(1.05);
+}
+
+.reset-zoom-btn:active {
+  transform: scale(0.95);
 }
 
 .coming-soon {
