@@ -2,7 +2,19 @@
   <div class="macro-dashboard">
     <div class="macro-header">
       <h1>Macro Economic Dashboard</h1>
-      <p class="subtitle">Key economic indicators and market trends</p>
+      
+      <div class="index-cards">
+        <div v-if="indexData.length === 0" class="index-card">
+          <div class="index-name">Loading...</div>
+          <div class="index-change">--</div>
+        </div>
+        <div v-for="(index, i) in indexData" :key="i" class="index-card">
+          <div class="index-name">{{ index.name }}</div>
+          <div class="index-change" :class="{ positive: index.change >= 0, negative: index.change < 0 }">
+            {{ index.change >= 0 ? '+' : '' }}{{ index.change.toFixed(2) }}%
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -56,11 +68,11 @@
         </div>
       </div>
 
-      <!-- S&P 500 -->
+      <!-- Market Risk Premium (Global) -->
       <div class="macro-card">
-        <h2>S&P 500 Return Yield</h2>
+        <h2>Market Risk Premium (Global)</h2>
         <div class="chart-container">
-          <v-chart :option="spxChartOption" autoresize />
+          <v-chart :option="riskPremiumChartOption" autoresize />
         </div>
       </div>
     </div>
@@ -114,6 +126,27 @@ const retry = () => {
 
 onMounted(() => {
   loadData()
+})
+
+// Index Cards Data (S&P 500, Dow Jones, Russell 2000)
+const indexData = computed(() => {
+  if (!macroData.value?.indexStats || macroData.value.indexStats.length === 0) {
+    return []
+  }
+  
+  const indexNames: Record<string, string> = {
+    '^GSPC': 'S&P 500',
+    '^DJI': 'Dow Jones',
+    '^RUT': 'Russell 2000'
+  }
+  
+  // Filter out invalid data and map to display format
+  return macroData.value.indexStats
+    .filter(stat => stat && stat.symbol && typeof stat['1D'] === 'number')
+    .map(stat => ({
+      name: indexNames[stat.symbol] || stat.symbol,
+      change: stat['1D'] || 0
+    }))
 })
 
 // Unemployment Rate Chart
@@ -373,29 +406,31 @@ const fedFundsChartOption = computed(() => {
   }
 })
 
-// S&P 500 Chart - Annualized Return Yield
-const spxChartOption = computed(() => {
-  if (!macroData.value?.spx || macroData.value.spx.length === 0) return {}
+// Market Risk Premium Chart (Global comparison)
+const riskPremiumChartOption = computed(() => {
+  if (!macroData.value?.riskPremium || macroData.value.riskPremium.length === 0) return {}
   
-  // Calculate annualized return yield
-  const sortedData = macroData.value.spx.slice().reverse() // Oldest to newest
-  const firstPoint = sortedData[0]
-  if (!firstPoint) return {}
+  // Select key countries: USA, China, and top 10 European countries by risk
+  // Optimized to reduce re-computation
+  const usa = macroData.value.riskPremium.find(c => c.country === 'United States')
+  const china = macroData.value.riskPremium.find(c => c.country === 'China')
   
-  const basePrice = firstPoint.close
-  const baseDate = new Date(firstPoint.date).getTime()
+  // Pre-filter and sort EU countries efficiently
+  const topEU = macroData.value.riskPremium
+    .filter(c => c.continent === 'Europe')
+    .sort((a, b) => b.totalEquityRiskPremium - a.totalEquityRiskPremium)
+    .slice(0, 10)
   
-  const returnData = sortedData.map(item => {
-    const currentDate = new Date(item.date).getTime()
-    const yearsDiff = (currentDate - baseDate) / (1000 * 60 * 60 * 24 * 365.25)
-    
-    // Annualized return: ((Final/Initial)^(1/years) - 1) * 100
-    const annualizedReturn = yearsDiff > 0 
-      ? (Math.pow(item.close / basePrice, 1 / yearsDiff) - 1) * 100
-      : 0
-    
-    return [item.date, annualizedReturn]
-  })
+  // Combine and filter out null/undefined values
+  const countries = [usa, china, ...topEU].filter((c): c is NonNullable<typeof usa> => c != null)
+  
+  // Early return if no valid data
+  if (countries.length === 0) return {}
+  
+  // Extract data arrays in single pass
+  const countryNames = countries.map(c => c.country)
+  const countryRisks = countries.map(c => c.countryRiskPremium)
+  const totalRisks = countries.map(c => c.totalEquityRiskPremium)
   
   return {
     backgroundColor: 'transparent',
@@ -404,52 +439,85 @@ const spxChartOption = computed(() => {
       backgroundColor: 'rgba(30, 30, 34, 0.95)',
       borderColor: 'rgba(0, 181, 154, 0.5)',
       textStyle: { color: '#E5E5E5' },
+      axisPointer: {
+        type: 'shadow'
+      },
       formatter: (params: any) => {
-        const point = params[0]
-        const returnPct = point.value[1]
-        const color = returnPct >= 0 ? '#00B59A' : '#FF6B6B'
-        return `Annualized Return Yield: <b style="color: ${color}">${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%</b>`
+        if (!params || params.length === 0) return ''
+        const country = params[0].name
+        const countryRisk = params[0].value
+        const totalRisk = params[1]?.value || 0
+        return `<b>${country}</b><br/>Country Risk: <b>${countryRisk.toFixed(2)}%</b><br/>Total Equity Risk: <b>${totalRisk.toFixed(2)}%</b>`
       }
     },
+    legend: {
+      data: ['Country Risk Premium', 'Total Equity Risk Premium'],
+      textStyle: { color: '#999' },
+      top: 0
+    },
     grid: {
-      left: '60px',
-      right: '20px',
-      top: '20px',
-      bottom: '40px'
+      left: '20px',
+      right: '40px',
+      top: '40px',
+      bottom: '20px',
+      containLabel: true
     },
     xAxis: {
-      type: 'time',
-      axisLine: { lineStyle: { color: '#444' } },
-      axisLabel: { color: '#999' }
-    },
-    yAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: '#444' } },
       axisLabel: { 
         color: '#999',
-        formatter: (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(0)}%`
+        formatter: (value: number) => `${value.toFixed(0)}%`
       },
       splitLine: { lineStyle: { color: '#333', type: 'dashed' } }
     },
-    series: [{
-      name: 'S&P 500 Return Yield',
-      type: 'line',
-      data: returnData,
-      smooth: false,
-      showSymbol: false,
-      lineStyle: { width: 2, color: '#6C5CE7' },
-      itemStyle: { color: '#6C5CE7' },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(108, 92, 231, 0.3)' },
-            { offset: 1, color: 'rgba(108, 92, 231, 0.05)' }
-          ]
+    yAxis: {
+      type: 'category',
+      data: countryNames,
+      axisLine: { lineStyle: { color: '#444' } },
+      axisLabel: { 
+        color: '#999',
+        fontSize: 11
+      },
+      splitLine: { show: false }
+    },
+    series: [
+      {
+        name: 'Country Risk Premium',
+        type: 'bar',
+        stack: 'total',
+        data: countryRisks.map(value => ({
+          value,
+          itemStyle: {
+            color: '#6C5CE7', // Purple for country risk
+            borderRadius: [4, 0, 0, 4]
+          }
+        })),
+        barWidth: '60%',
+        label: {
+          show: false
+        }
+      },
+      {
+        name: 'Total Equity Risk Premium',
+        type: 'bar',
+        data: totalRisks.map(value => ({
+          value,
+          itemStyle: {
+            color: '#00B59A', // Green for total risk
+            borderRadius: [0, 4, 4, 0]
+          }
+        })),
+        barWidth: '60%',
+        label: {
+          show: true,
+          position: 'right',
+          formatter: (params: any) => `${params.value.toFixed(1)}%`,
+          color: '#999',
+          fontSize: 10
         }
       }
-    }]
+    ]
   }
 })
 </script>
@@ -465,14 +533,91 @@ const spxChartOption = computed(() => {
 
 .macro-header {
   margin-bottom: 32px;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-right: 60px; /* Leave space for close button */
 }
 
 .macro-header h1 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #F9FAFB;
-  margin: 0 0 8px 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.index-cards {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.index-card {
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-width: 110px;
+  transition: all 0.3s ease;
+}
+
+.index-card:hover {
+  border-color: #00594C;
+  box-shadow: 0 4px 16px rgba(0, 89, 76, 0.25);
+  transform: translateY(-1px);
+}
+
+.index-name {
+  font-size: 10px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.index-change {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.index-change.positive {
+  color: #00B59A;
+}
+
+.index-change.negative {
+  color: #FF6B6B;
+}
+
+.index-period {
+  font-size: 9px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1200px) {
+  .macro-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .index-cards {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .index-cards {
+    flex-direction: column;
+  }
+  
+  .index-card {
+    width: 100%;
+  }
 }
 
 .subtitle {

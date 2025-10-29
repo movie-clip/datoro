@@ -32,6 +32,33 @@ export interface MarketIndexPoint {
   changePercent: number
 }
 
+export interface IndexStats {
+  symbol: string
+  '1D': number
+  '5D': number
+  '1M': number
+  '3M': number
+  '6M': number
+  ytd: number
+  '1Y': number
+  '3Y': number
+  '5Y': number
+  '10Y': number
+  max: number
+}
+
+export interface SectorPerformance {
+  sector: string
+  changesPercentage: string
+}
+
+export interface RiskPremium {
+  country: string
+  continent: string
+  countryRiskPremium: number
+  totalEquityRiskPremium: number
+}
+
 export interface MacroData {
   treasuryRates: TreasuryRate[]
   federalFunds: EconomicIndicator[]
@@ -40,6 +67,9 @@ export interface MacroData {
   inflation: EconomicIndicator[]
   unemploymentRate: EconomicIndicator[]
   spx: MarketIndexPoint[]
+  indexStats: IndexStats[]
+  sectors: SectorPerformance[]
+  riskPremium: RiskPremium[]
   timestamp: string
 }
 
@@ -88,30 +118,102 @@ export async function fetchSPXData(from?: string, to?: string): Promise<MarketIn
 }
 
 /**
+ * Fetch market index statistics (S&P 500, Dow Jones, Russell 2000)
+ */
+export async function fetchIndexStats(): Promise<IndexStats[]> {
+  const response = await fetch(`${API_BASE_URL}/api/macro/index-stats`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch index stats: ${response.statusText}`)
+  }
+  
+  return response.json()
+}
+
+/**
+ * Fetch sector performance data
+ */
+export async function fetchSectorPerformance(): Promise<SectorPerformance[]> {
+  const response = await fetch(`${API_BASE_URL}/api/macro/sectors`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch sector performance: ${response.statusText}`)
+  }
+  
+  return response.json()
+}
+
+/**
+ * Fetch market risk premium data
+ */
+export async function fetchRiskPremium(): Promise<RiskPremium[]> {
+  const response = await fetch(`${API_BASE_URL}/api/macro/risk-premium`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch risk premium: ${response.statusText}`)
+  }
+  
+  return response.json()
+}
+
+/**
  * Fetch all macro data in one call
+ * Uses Promise.allSettled for resilience - partial failures won't break the entire dashboard
  */
 export async function fetchAllMacroData(): Promise<MacroData> {
   const from = getDateMonthsAgo(24) // 2 years of data
   const to = getTodayDate()
   
-  const [treasuryRates, federalFunds, consumerSentiment, retailSales, inflation, unemploymentRate, spx] = await Promise.all([
+  console.log('[Macro] Fetching all macro data...')
+  const startTime = performance.now()
+  
+  // Use Promise.allSettled to handle partial failures gracefully
+  const results = await Promise.allSettled([
     fetchTreasuryRates(from, to),
     fetchEconomicIndicator('federalFunds'),
     fetchEconomicIndicator('consumerSentiment'),
     fetchEconomicIndicator('retailSales'),
     fetchEconomicIndicator('inflation'),
     fetchEconomicIndicator('unemploymentRate'),
-    fetchSPXData(from, to)
+    fetchSPXData(from, to),
+    fetchIndexStats(),
+    fetchSectorPerformance(),
+    fetchRiskPremium()
   ])
   
+  const duration = performance.now() - startTime
+  console.log(`[Macro] Fetched all data in ${duration.toFixed(0)}ms`)
+  
+  // Extract data or use empty arrays for failed requests
+  const [
+    treasuryRatesResult,
+    federalFundsResult,
+    consumerSentimentResult,
+    retailSalesResult,
+    inflationResult,
+    unemploymentRateResult,
+    spxResult,
+    indexStatsResult,
+    sectorsResult,
+    riskPremiumResult
+  ] = results
+  
+  // Log any failures
+  results.forEach((result, index) => {
+    const names = ['treasury', 'federalFunds', 'consumerSentiment', 'retailSales', 'inflation', 'unemploymentRate', 'spx', 'indexStats', 'sectors', 'riskPremium']
+    if (result.status === 'rejected') {
+      console.error(`[Macro] Failed to fetch ${names[index]}:`, result.reason)
+    }
+  })
+  
   return {
-    treasuryRates,
-    federalFunds: federalFunds.slice(0, 50), // Last 50 data points
-    consumerSentiment: consumerSentiment.slice(0, 50),
-    retailSales: retailSales.slice(0, 50),
-    inflation: inflation.slice(0, 50),
-    unemploymentRate: unemploymentRate.slice(0, 50),
-    spx,
+    treasuryRates: treasuryRatesResult.status === 'fulfilled' ? treasuryRatesResult.value : [],
+    federalFunds: (federalFundsResult.status === 'fulfilled' ? federalFundsResult.value : []).slice(0, 50),
+    consumerSentiment: (consumerSentimentResult.status === 'fulfilled' ? consumerSentimentResult.value : []).slice(0, 50),
+    retailSales: (retailSalesResult.status === 'fulfilled' ? retailSalesResult.value : []).slice(0, 50),
+    inflation: (inflationResult.status === 'fulfilled' ? inflationResult.value : []).slice(0, 50),
+    unemploymentRate: (unemploymentRateResult.status === 'fulfilled' ? unemploymentRateResult.value : []).slice(0, 50),
+    spx: spxResult.status === 'fulfilled' ? spxResult.value : [],
+    indexStats: indexStatsResult.status === 'fulfilled' ? indexStatsResult.value : [],
+    sectors: sectorsResult.status === 'fulfilled' ? sectorsResult.value : [],
+    riskPremium: riskPremiumResult.status === 'fulfilled' ? riskPremiumResult.value : [],
     timestamp: new Date().toISOString()
   }
 }
