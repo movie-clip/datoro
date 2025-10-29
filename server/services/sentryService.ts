@@ -64,13 +64,13 @@ export function initSentry(): void {
       // Filter out sensitive data
       beforeSend(_event, hint) {
         // Remove API keys from URLs and headers
-        if (event.request) {
-          if (event.request.url) {
-            event.request.url = event.request.url.replace(/apikey=[^&]+/, 'apikey=***')
+        if (_event.request) {
+          if (_event.request.url) {
+            _event.request.url = _event.request.url.replace(/apikey=[^&]+/, 'apikey=***')
           }
-          if (event.request.headers) {
-            delete event.request.headers['authorization']
-            delete event.request.headers['cookie']
+          if (_event.request.headers) {
+            delete _event.request.headers['authorization']
+            delete _event.request.headers['cookie']
           }
         }
         
@@ -82,7 +82,7 @@ export function initSentry(): void {
           }
         }
         
-        return event
+        return _event
       },
       
       // Ignore certain errors
@@ -105,7 +105,7 @@ export function initSentry(): void {
     console.log(`[Sentry] Tracing: ${tracesSampleRate * 100}%`)
     
   } catch (_error) {
-    console.error('[Sentry] Failed to initialize:', (error as Error).message)
+    console.error('[Sentry] Failed to initialize:', (_error as Error).message)
     initialized = false
   }
 }

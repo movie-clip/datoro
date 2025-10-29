@@ -88,7 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (_err) {
       // Network errors or timeout
-      if ((err as Error).name === 'AbortError') {
+      if ((_err as Error).name === 'AbortError') {
         console.warn('[Auth] ⏱️ Auth check timeout (>10s) - server may be starting up. Retrying...')
         // Set user to null but don't show error - they can retry login
         user.value = null
@@ -112,7 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
           }
         }, 2000) // Wait 2s for server to warm up
       } else {
-        console.error('[Auth] ❌ Init network error:', (err as Error).message)
+        console.error('[Auth] ❌ Init network error:', (_err as Error).message)
         user.value = null
         token.value = null
       }
@@ -163,7 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true }
       
     } catch (_err) {
-      const errMessage = (err as Error).message
+      const errMessage = (_err as Error).message
       error.value = errMessage
       console.error('[Auth] Registration error:', errMessage)
       return { success: false, error: errMessage }
@@ -235,7 +235,7 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true }
       
     } catch (_err) {
-      const errMessage = (err as Error).message
+      const errMessage = (_err as Error).message
       error.value = errMessage
       console.error('[Auth] Login error:', errMessage)
       return { success: false, error: errMessage }
@@ -278,7 +278,7 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true }
       
     } catch (_err) {
-      const errMessage = (err as Error).message
+      const errMessage = (_err as Error).message
       error.value = errMessage
       return { success: false, error: errMessage }
     } finally {
@@ -300,7 +300,7 @@ export const useAuthStore = defineStore('auth', () => {
         credentials: 'include' // Send HttpOnly cookie
       })
     } catch (_err) {
-      console.error('[Auth] Logout error:', err)
+      console.error('[Auth] Logout error:', _err)
     } finally {
       // Clear local state regardless of API call success
       user.value = null

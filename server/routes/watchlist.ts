@@ -74,7 +74,7 @@ router.get('/watchlist', generalLimiter, authenticate(), requireAuth, async (req
 
     res.json({ tickers: watchlistItems })
   } catch (_error) {
-    console.error('Error fetching watchlist:', error)
+    console.error('Error fetching watchlist:', _error)
     res.status(500).json({ error: 'Failed to fetch watchlist' })
   }
 })
@@ -106,7 +106,7 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, as
     // Build CASE statement for single bulk UPDATE (safe: validated alphanumeric only)
     // Example: WHEN 'AAPL' THEN 0 WHEN 'GOOGL' THEN 1 ...
     const caseStatements = sanitizedTickers
-      .map((_ticker, _index) => `WHEN '${ticker}' THEN ${index}`)
+      .map((_ticker, _index) => `WHEN '${_ticker}' THEN ${_index}`)
       .join(' ')
     
     // Execute single bulk UPDATE using parameterized raw SQL (1 query vs N queries)
@@ -115,13 +115,13 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, as
       UPDATE watchlist_items 
       SET display_order = CASE ticker ${caseStatements} END
       WHERE user_id = $1 
-        AND ticker IN (${sanitizedTickers.map((__, _i) => `$${i + 2}`).join(', ')})
+        AND ticker IN (${sanitizedTickers.map((__, _i) => `$${_i + 2}`).join(', ')})
     `, userId, ...sanitizedTickers)
 
     res.json({ success: true })
   } catch (_error: any) {
-    console.error('Error reordering watchlist:', error)
-    res.status(500).json({ error: error.message || 'Failed to reorder watchlist' })
+    console.error('Error reordering watchlist:', _error)
+    res.status(500).json({ error: _error.message || 'Failed to reorder watchlist' })
   }
 })
 
@@ -155,11 +155,11 @@ router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, a
     })
   } catch (_error: any) {
     // Check for unique constraint violation (duplicate entry)
-    if (error.code === 'P2002') {
+    if (_error.code === 'P2002') {
       return res.status(409).json({ error: 'Ticker already in watchlist' })
     }
 
-    console.error('Error adding to watchlist:', error)
+    console.error('Error adding to watchlist:', _error)
     res.status(500).json({ error: 'Failed to add ticker to watchlist' })
   }
 })
@@ -183,7 +183,7 @@ router.delete('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth,
 
     res.json({ success: true, ticker })
   } catch (_error) {
-    console.error('Error removing from watchlist:', error)
+    console.error('Error removing from watchlist:', _error)
     res.status(500).json({ error: 'Failed to remove ticker from watchlist' })
   }
 })

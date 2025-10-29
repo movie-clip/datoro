@@ -123,7 +123,7 @@ class CacheService {
       // Connect
       await this.redis.connect()
     } catch (_error) {
-      console.error('[CacheService] Failed to connect to Redis:', (error as Error).message)
+      console.error('[CacheService] Failed to connect to Redis:', (_error as Error).message)
       console.log('[CacheService] Falling back to memory-only mode')
       this.redisEnabled = false
       this.redis = null
@@ -175,7 +175,7 @@ class CacheService {
           return { data: parsed, source: 'redis' }
         }
       } catch (_error) {
-        console.error('[CacheService] Redis GET error:', (error as Error).message)
+        console.error('[CacheService] Redis GET error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -204,7 +204,7 @@ class CacheService {
           await this.redis.set(key, serialized)
         }
       } catch (_error) {
-        console.error('[CacheService] Redis SET error:', (error as Error).message)
+        console.error('[CacheService] Redis SET error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -250,7 +250,7 @@ class CacheService {
       try {
         await this.redis.del(key)
       } catch (_error) {
-        console.error('[CacheService] Redis DEL error:', (error as Error).message)
+        console.error('[CacheService] Redis DEL error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -274,7 +274,7 @@ class CacheService {
       }
       return 0
     } catch (_error) {
-      console.error('[CacheService] Redis pattern delete error:', (error as Error).message)
+      console.error('[CacheService] Redis pattern delete error:', (_error as Error).message)
       this.stats.errors++
       return 0
     }
@@ -291,7 +291,7 @@ class CacheService {
         await this.redis.flushdb()
         console.log('[CacheService] Cleared Redis cache')
       } catch (_error) {
-        console.error('[CacheService] Redis FLUSHDB error:', (error as Error).message)
+        console.error('[CacheService] Redis FLUSHDB error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -349,7 +349,7 @@ class CacheService {
       const result = await this.redis.ping()
       return result === 'PONG'
     } catch (_error) {
-      console.error('[CacheService] Ping failed:', (error as Error).message)
+      console.error('[CacheService] Ping failed:', (_error as Error).message)
       return false
     }
   }

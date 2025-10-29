@@ -489,15 +489,15 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       
     } catch (_validationError: any) {
       // Joi validation error
-      if (validationError.isJoi) {
-        console.error('[FMP] Validation error:', validationError.details)
+      if (_validationError.isJoi) {
+        console.error('[FMP] Validation error:', _validationError.details)
         return res.status(400).json({
           error: {
             message: 'Validation failed',
             code: 'E001',
             timestamp: new Date().toISOString(),
             path: req.path,
-            details: validationError.details.map((detail: any) => ({
+            details: _validationError.details.map((detail: any) => ({
               field: detail.path.join('.'),
               message: detail.message,
               value: detail.context?.value
@@ -622,11 +622,11 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     try {
       data = JSON.parse(bufferString)
     } catch (_parseError: any) {
-      console.error(`[FMP] JSON parse error for ${path}:`, parseError.message)
+      console.error(`[FMP] JSON parse error for ${path}:`, _parseError.message)
       console.error(`[FMP] Response (first 200 chars): ${bufferString.substring(0, 200)}`)
       return res.status(500).json({ 
         error: 'Failed to parse FMP API response',
-        details: parseError.message 
+        details: _parseError.message 
       })
     }
     
@@ -669,7 +669,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     
     res.send(data)
   } catch (_e: any) {
-    console.error('[FMP] Error:', e)
+    console.error('[FMP] Error:', _e)
     
     // Track failed API request in database (in background) - skip if database offline
     if (isDatabaseAvailable) {
@@ -687,7 +687,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       })
     }
     
-    res.status(500).json({ error: String(e.message || e) })
+    res.status(500).json({ error: String(_e.message || _e) })
   }
 })
 
@@ -759,7 +759,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     await prisma.$queryRaw`SELECT 1`
     console.log('[Database] ✓ Connection pool warmed up')
   } catch (_error: any) {
-    console.warn('[Database] ✗ Failed to warm up connection:', error.message)
+    console.warn('[Database] ✗ Failed to warm up connection:', _error.message)
     console.warn('[Database] First requests may be slower than usual')
   }
   
@@ -788,7 +788,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
           const count = await cleanupExpiredSessions()
           console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
         } catch (_error: any) {
-          console.error('[Auth] ✗ Cleanup failed:', error.message)
+          console.error('[Auth] ✗ Cleanup failed:', _error.message)
         }
         
         // Schedule next run (24 hours)
@@ -798,7 +798,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
             const count = await cleanupExpiredSessions()
             console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
           } catch (_error: any) {
-            console.error('[Auth] ✗ Cleanup failed:', error.message)
+            console.error('[Auth] ✗ Cleanup failed:', _error.message)
           }
         }, 24 * 60 * 60 * 1000) // 24 hours
       }, msUntilNextRun)
@@ -846,7 +846,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
     }, 10000)
     
   } catch (_error: any) {
-    console.error('[SERVER] Error during shutdown:', error)
+    console.error('[SERVER] Error during shutdown:', _error)
     process.exit(1)
   }
 }

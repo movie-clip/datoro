@@ -64,10 +64,10 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Register error:', error)
+      console.error('[Auth API] Register error:', _error)
       res.status(400).json({
         success: false,
-        error: error.message
+        error: _error.message
       })
     }
   }
@@ -118,10 +118,10 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Login error:', error)
+      console.error('[Auth API] Login error:', _error)
       res.status(401).json({
         success: false,
-        error: error.message
+        error: _error.message
       })
     }
   }
@@ -165,10 +165,10 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Google login error:', error)
+      console.error('[Auth API] Google login error:', _error)
       res.status(401).json({
         success: false,
-        error: error.message
+        error: _error.message
       })
     }
   }
@@ -220,7 +220,7 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Logout error:', error)
+      console.error('[Auth API] Logout error:', _error)
       res.status(500).json({
         success: false,
         error: 'Logout failed'
@@ -249,7 +249,7 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Logout all error:', error)
+      console.error('[Auth API] Logout all error:', _error)
       res.status(500).json({
         success: false,
         error: 'Logout failed'

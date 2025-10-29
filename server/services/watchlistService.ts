@@ -123,7 +123,7 @@ class WatchlistService {
       
       return true
     } catch (_error) {
-      console.error('Error deleting watchlist:', error)
+      console.error('Error deleting watchlist:', _error)
       return false
     }
   }
@@ -221,10 +221,10 @@ class WatchlistService {
         prisma.watchlistItem.updateMany({
           where: {
             watchlistId,
-            ticker
+            ticker: _ticker
           },
           data: {
-            displayOrder: index
+            displayOrder: _index
           }
         })
       )

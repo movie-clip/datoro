@@ -287,21 +287,21 @@ const handleImageError = (_event) => {
 
 // Drag and drop handlers
 const handleDragStart = (__event, _index) => {
-  draggedIndex.value = index
-  event.dataTransfer.effectAllowed = 'move'
-  event.target.style.opacity = '0.5'
+  draggedIndex.value = _index
+  __event.dataTransfer.effectAllowed = 'move'
+  __event.target.style.opacity = '0.5'
 }
 
 const handleDragEnd = (_event) => {
-  event.target.style.opacity = '1'
+  _event.target.style.opacity = '1'
   draggedIndex.value = null
   dragOverIndex.value = null
 }
 
 const handleDragOver = (__event, _index) => {
-  event.preventDefault()
-  event.dataTransfer.dropEffect = 'move'
-  dragOverIndex.value = index
+  __event.preventDefault()
+  __event.dataTransfer.dropEffect = 'move'
+  dragOverIndex.value = _index
 }
 
 const handleDragLeave = () => {
@@ -309,10 +309,10 @@ const handleDragLeave = () => {
 }
 
 const handleDrop = async (__event, _dropIndex) => {
-  event.preventDefault()
+  __event.preventDefault()
   
   // Prevent duplicate drops or invalid drops
-  if (draggedIndex.value === null || draggedIndex.value === dropIndex || isReordering.value) {
+  if (draggedIndex.value === null || draggedIndex.value === _dropIndex || isReordering.value) {
     draggedIndex.value = null
     dragOverIndex.value = null
     return
@@ -325,7 +325,7 @@ const handleDrop = async (__event, _dropIndex) => {
     // Reorder the array
     const items = [...watchlistItems.value]
     const [draggedItem] = items.splice(draggedIndex.value, 1)
-    items.splice(dropIndex, 0, draggedItem)
+    items.splice(_dropIndex, 0, draggedItem)
     
     // Extract tickers in new order
     const newOrder = items.map(item => item.ticker)
@@ -334,7 +334,7 @@ const handleDrop = async (__event, _dropIndex) => {
     await reorderWatchlist(newOrder)
     
   } catch (_err) {
-    console.error('Error during drag and drop:', err)
+    console.error('Error during drag and drop:', _err)
     error.value = 'Failed to reorder watchlist. Changes reverted.'
     
     // Error is already handled in composable (rollback)
