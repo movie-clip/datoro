@@ -195,10 +195,11 @@ const SLIDER_STYLES = {
   bottom: 10,
   borderColor: 'rgba(255, 255, 255, 0.03)',
   fillerColor: 'rgba(255, 255, 255, 0.03)',
-  handleColor: 'rgba(255, 255, 255, 0.03)',
+  handleColor: 'rgba(255, 255, 255, 0.1)',
   textColor: '#999',
   dataBackgroundLine: '#444',
-  dataBackgroundArea: 'rgba(0, 181, 154, 0.1)'
+  dataBackgroundArea: 'rgba(0, 181, 154, 0.1)',
+  moveHandleSize: 5  // Hides the move icon on the draggable area
 }
 
 const loading = ref(true)
@@ -348,6 +349,7 @@ const unemploymentChartOption = computed(() => {
         bottom: SLIDER_STYLES.bottom,
         borderColor: SLIDER_STYLES.borderColor,
         fillerColor: SLIDER_STYLES.fillerColor,
+        moveHandleSize: SLIDER_STYLES.moveHandleSize,
         handleStyle: {
           color: SLIDER_STYLES.handleColor,
           borderColor: SLIDER_STYLES.handleColor
@@ -430,6 +432,7 @@ const consumerSentimentChartOption = computed(() => {
         bottom: SLIDER_STYLES.bottom,
         borderColor: SLIDER_STYLES.borderColor,
         fillerColor: SLIDER_STYLES.fillerColor,
+        moveHandleSize: SLIDER_STYLES.moveHandleSize,
         handleStyle: {
           color: SLIDER_STYLES.handleColor,
           borderColor: SLIDER_STYLES.handleColor
@@ -502,6 +505,7 @@ const retailSalesChartOption = computed(() => {
         bottom: SLIDER_STYLES.bottom,
         borderColor: SLIDER_STYLES.borderColor,
         fillerColor: SLIDER_STYLES.fillerColor,
+        moveHandleSize: SLIDER_STYLES.moveHandleSize,
         handleStyle: {
           color: SLIDER_STYLES.handleColor,
           borderColor: SLIDER_STYLES.handleColor
@@ -574,6 +578,7 @@ const inflationChartOption = computed(() => {
         bottom: SLIDER_STYLES.bottom,
         borderColor: SLIDER_STYLES.borderColor,
         fillerColor: SLIDER_STYLES.fillerColor,
+        moveHandleSize: SLIDER_STYLES.moveHandleSize,
         handleStyle: {
           color: SLIDER_STYLES.handleColor,
           borderColor: SLIDER_STYLES.handleColor
@@ -647,6 +652,7 @@ const fedFundsChartOption = computed(() => {
         bottom: SLIDER_STYLES.bottom,
         borderColor: SLIDER_STYLES.borderColor,
         fillerColor: SLIDER_STYLES.fillerColor,
+        moveHandleSize: SLIDER_STYLES.moveHandleSize,
         handleStyle: {
           color: SLIDER_STYLES.handleColor,
           borderColor: SLIDER_STYLES.handleColor
