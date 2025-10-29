@@ -24,124 +24,125 @@
       <button @click="retry" class="retry-btn">Retry</button>
     </div>
 
+    <div class="sync-controls">
+      <button 
+        class="sync-toggle-btn"
+        :class="{ active: syncCharts }"
+        @click="syncCharts = !syncCharts"
+        :title="syncCharts ? 'Click to unsync chart time windows' : 'Click to sync chart time windows'"
+      >
+        {{ syncCharts ? 'Synced' : 'Sync' }}
+      </button>
+    </div>
+
     <div class="macro-grid">
       <!-- Unemployment Rate -->
       <div class="macro-card">
         <h2>Unemployment Rate</h2>
+        <button
+          v-if="unemploymentZoomed"
+          class="reset-zoom-btn"
+          @click="resetUnemploymentZoom"
+          title="Reset zoom"
+        >
+          ↺
+        </button>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <template v-else>
-            <v-chart 
-              ref="unemploymentChartRef"
-              :option="unemploymentChartOption" 
-              autoresize
-              @datazoom="handleDataZoom(unemploymentZoomed)"
-            />
-            <button
-              v-if="unemploymentZoomed"
-              class="reset-zoom-btn"
-              @click="resetUnemploymentZoom"
-              title="Reset zoom"
-            >
-              ↺
-            </button>
-          </template>
+          <v-chart 
+            v-else
+            ref="unemploymentChartRef"
+            :option="unemploymentChartOption" 
+            autoresize
+          />
         </div>
       </div>
 
       <!-- Retail Sales -->
       <div class="macro-card">
         <h2>Retail Sales</h2>
+        <button
+          v-if="retailSalesZoomed"
+          class="reset-zoom-btn"
+          @click="resetRetailSalesZoom"
+          title="Reset zoom"
+        >
+          ↺
+        </button>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <template v-else>
-            <v-chart 
-              ref="retailSalesChartRef"
-              :option="retailSalesChartOption" 
-              autoresize
-              @datazoom="handleDataZoom(retailSalesZoomed)"
-            />
-            <button
-              v-if="retailSalesZoomed"
-              class="reset-zoom-btn"
-              @click="resetRetailSalesZoom"
-              title="Reset zoom"
-            >
-              ↺
-            </button>
-          </template>
+          <v-chart 
+            v-else
+            ref="retailSalesChartRef"
+            :option="retailSalesChartOption" 
+            autoresize
+          />
         </div>
       </div>
 
       <!-- Consumer Sentiment -->
       <div class="macro-card">
         <h2>Consumer Sentiment</h2>
+        <button
+          v-if="consumerSentimentZoomed"
+          class="reset-zoom-btn"
+          @click="resetConsumerSentimentZoom"
+          title="Reset zoom"
+        >
+          ↺
+        </button>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <template v-else>
-            <v-chart 
-              ref="consumerSentimentChartRef"
-              :option="consumerSentimentChartOption" 
-              autoresize
-              @datazoom="handleDataZoom(consumerSentimentZoomed)"
-            />
-            <button
-              v-if="consumerSentimentZoomed"
-              class="reset-zoom-btn"
-              @click="resetConsumerSentimentZoom"
-              title="Reset zoom"
-            >
-              ↺
-            </button>
-          </template>
+          <v-chart 
+            v-else
+            ref="consumerSentimentChartRef"
+            :option="consumerSentimentChartOption" 
+            autoresize
+          />
         </div>
       </div>
 
       <!-- Inflation -->
       <div class="macro-card">
         <h2>Inflation</h2>
+        <button
+          v-if="inflationZoomed"
+          class="reset-zoom-btn"
+          @click="resetInflationZoom"
+          title="Reset zoom"
+        >
+          ↺
+        </button>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <template v-else>
-            <v-chart 
-              ref="inflationChartRef"
-              :option="inflationChartOption" 
-              autoresize
-              @datazoom="handleDataZoom(inflationZoomed)"
-            />
-            <button
-              v-if="inflationZoomed"
-              class="reset-zoom-btn"
-              @click="resetInflationZoom"
-              title="Reset zoom"
-            >
-              ↺
-            </button>
-          </template>
+          <v-chart 
+            v-else
+            ref="inflationChartRef"
+            :option="inflationChartOption" 
+            autoresize
+          />
         </div>
       </div>
 
       <!-- Federal Funds Rate -->
       <div class="macro-card">
         <h2>Federal Funds Rate</h2>
+        <button
+          v-if="fedFundsZoomed"
+          class="reset-zoom-btn"
+          @click="resetFedFundsZoom"
+          title="Reset zoom"
+        >
+          ↺
+        </button>
         <div class="chart-container">
           <SkeletonLoader v-if="loading" variant="chart" height="250px" />
-          <template v-else>
-            <v-chart 
-              ref="fedFundsChartRef"
-              :option="fedFundsChartOption" 
-              autoresize
-              @datazoom="handleDataZoom(fedFundsZoomed)"
-            />
-            <button
-              v-if="fedFundsZoomed"
-              class="reset-zoom-btn"
-              @click="resetFedFundsZoom"
-              title="Reset zoom"
-            >
-              ↺
-            </button>
-          </template>
+          <v-chart 
+            v-else
+            ref="fedFundsChartRef"
+            :option="fedFundsChartOption" 
+            autoresize
+          />
         </div>
       </div>
 
@@ -158,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'
@@ -205,6 +206,11 @@ const SLIDER_STYLES = {
 const loading = ref(true)
 const error = ref<string | null>(null)
 const macroData = ref<MacroData | null>(null)
+
+// Sync state
+const syncCharts = ref(false)
+const syncedTimeRange = ref({ start: 0, end: 100 })
+const isSyncing = ref(false) // Flag to prevent infinite sync loops
 
 // Zoom state tracking for each chart
 const unemploymentZoomed = ref(false)
@@ -278,18 +284,66 @@ const resetFedFundsZoom = () => {
   }
 }
 
-// Handle dataZoom events to track zoom state
-const handleDataZoom = (zoomRef: any) => {
-  return (params: any) => {
-    if (params.batch && params.batch[0]) {
-      const { start, end } = params.batch[0]
-      zoomRef.value = start !== 0 || end !== 100
-    }
-  }
-}
-
 onMounted(async () => {
   await loadData()
+  
+  // Wait for next tick to ensure charts are rendered
+  await nextTick()
+  
+  // Set up dataZoom event listeners for all charts
+  const chartRefs = [
+    { ref: unemploymentChartRef, zoomRef: unemploymentZoomed },
+    { ref: retailSalesChartRef, zoomRef: retailSalesZoomed },
+    { ref: consumerSentimentChartRef, zoomRef: consumerSentimentZoomed },
+    { ref: inflationChartRef, zoomRef: inflationZoomed },
+    { ref: fedFundsChartRef, zoomRef: fedFundsZoomed }
+  ]
+  
+  chartRefs.forEach(({ ref: chartRef, zoomRef }, idx) => {
+    if (chartRef.value) {
+      const chartInstance = (chartRef.value as any).chart
+      if (chartInstance) {
+        chartInstance.on('dataZoom', (params: any) => {
+          // Skip if we're currently syncing (prevent infinite loop)
+          if (isSyncing.value) return
+          
+          // Update zoom state
+          const option = chartInstance.getOption()
+          if (option.dataZoom && option.dataZoom[0]) {
+            const { start, end } = option.dataZoom[0]
+            zoomRef.value = start !== 0 || end !== 100
+            
+            // If sync is enabled, update all other charts
+            if (syncCharts.value) {
+              isSyncing.value = true
+              syncedTimeRange.value = { start, end }
+              
+              chartRefs.forEach(({ ref: otherRef, zoomRef: otherZoomRef }, otherIdx) => {
+                if (otherIdx !== idx && otherRef.value) {
+                  const otherInstance = (otherRef.value as any).chart
+                  if (otherInstance) {
+                    otherInstance.dispatchAction({
+                      type: 'dataZoom',
+                      dataZoomIndex: 0,
+                      start,
+                      end
+                    })
+                    // Update other chart's zoom state too
+                    otherZoomRef.value = start !== 0 || end !== 100
+                  }
+                }
+              })
+              
+              // Reset sync flag after a short delay
+              setTimeout(() => {
+                isSyncing.value = false
+              }, 50)
+            }
+          }
+        })
+      }
+    }
+  })
 })
 
 // Index Cards Data (S&P 500, Dow Jones, Russell 2000)
@@ -861,6 +915,44 @@ const riskPremiumChartOption = computed(() => {
   height: 20px;
 }
 
+.sync-controls {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 2px 10px 0px;
+}
+
+.sync-toggle-btn {
+  background: rgba(0, 181, 154, 0.15);
+  border: 1px solid rgba(0, 181, 154, 0.4);
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: #00B59A;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sync-toggle-btn:hover {
+  background: rgba(0, 181, 154, 0.25);
+  border-color: rgba(0, 181, 154, 0.6);
+  transform: translateY(-1px);
+}
+
+.sync-toggle-btn.active {
+  background: rgba(0, 181, 154, 0.3);
+  border-color: #00B59A;
+  color: #00E0B8;
+  box-shadow: 0 0 12px rgba(0, 181, 154, 0.4);
+}
+
+.sync-toggle-btn:active {
+  transform: scale(0.98);
+}
+
 .index-cards {
   display: flex;
   gap: 12px;
@@ -999,6 +1091,7 @@ const riskPremiumChartOption = computed(() => {
   padding: 24px;
   min-height: 300px;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .macro-card:hover {
@@ -1040,14 +1133,14 @@ const riskPremiumChartOption = computed(() => {
 
 .reset-zoom-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   width: 32px;
   height: 32px;
-  background: rgba(0, 181, 154, 0.15);
-  border: 1px solid rgba(0, 181, 154, 0.4);
+  background: rgba(120, 120, 120, 0.15);
+  border: 1px solid rgba(150, 150, 150, 0.3);
   border-radius: 6px;
-  color: #00B59A;
+  color: #999;
   font-size: 18px;
   font-weight: bold;
   cursor: pointer;
@@ -1062,8 +1155,9 @@ const riskPremiumChartOption = computed(() => {
 }
 
 .reset-zoom-btn:hover {
-  background: rgba(0, 181, 154, 0.25);
-  border-color: rgba(0, 181, 154, 0.6);
+  background: rgba(120, 120, 120, 0.25);
+  border-color: rgba(150, 150, 150, 0.5);
+  color: #CCC;
   transform: scale(1.05);
 }
 
