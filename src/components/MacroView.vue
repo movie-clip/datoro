@@ -94,6 +94,7 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { fetchAllMacroData, type MacroData } from '../services/macro/macroDataService'
+import { COLORS } from '../config/colors'
 
 use([
   CanvasRenderer,
@@ -428,6 +429,19 @@ const riskPremiumChartOption = computed(() => {
   const countryRisks = countries.map(c => c.countryRiskPremium)
   const totalRisks = countries.map(c => c.totalEquityRiskPremium)
   
+  // Helper function to get color based on risk value
+  const getRiskColor = (riskValue: number): string => {
+    if (riskValue >= 20) return COLORS.chart.red // Crisis (20%+)
+    if (riskValue >= 12) return COLORS.chart.orange // Poor (12-20%)
+    if (riskValue >= 8) return '#F59E0B' // Moderate (8-12%)
+    if (riskValue >= 6) return '#FBBF24' // Good (6-8%)
+    return COLORS.chart.green // Excellent (4-6%)
+  }
+  
+  // Calculate average total risk to determine legend color
+  const avgTotalRisk = totalRisks.reduce((sum, val) => sum + val, 0) / totalRisks.length
+  const legendColor = getRiskColor(avgTotalRisk)
+  
   return {
     backgroundColor: 'transparent',
     tooltip: {
@@ -447,7 +461,16 @@ const riskPremiumChartOption = computed(() => {
       }
     },
     legend: {
-      data: ['Country Risk Premium', 'Total Equity Risk Premium'],
+      data: [
+        {
+          name: 'Country Risk Premium',
+          itemStyle: { color: legendColor }
+        },
+        {
+          name: 'Total Equity Risk Premium',
+          itemStyle: { color: COLORS.chart.blue }
+        }
+      ],
       textStyle: { color: '#999' },
       top: 0
     },
@@ -482,13 +505,16 @@ const riskPremiumChartOption = computed(() => {
         name: 'Country Risk Premium',
         type: 'bar',
         stack: 'total',
-        data: countryRisks.map(value => ({
-          value,
-          itemStyle: {
-            color: '#6C5CE7', // Purple for country risk
-            borderRadius: [4, 0, 0, 4]
+        data: countryRisks.map((value, index) => {
+          const totalRisk = totalRisks[index] || 0
+          return {
+            value,
+            itemStyle: {
+              color: getRiskColor(totalRisk),
+              borderRadius: [4, 0, 0, 4]
+            }
           }
-        })),
+        }),
         barWidth: '60%',
         label: {
           show: false
@@ -497,13 +523,15 @@ const riskPremiumChartOption = computed(() => {
       {
         name: 'Total Equity Risk Premium',
         type: 'bar',
-        data: totalRisks.map(value => ({
-          value,
-          itemStyle: {
-            color: '#00B59A', // Green for total risk
-            borderRadius: [0, 4, 4, 0]
+        data: totalRisks.map(value => {
+          return {
+            value,
+            itemStyle: {
+              color: COLORS.chart.blue,
+              borderRadius: [0, 4, 4, 0]
+            }
           }
-        })),
+        }),
         barWidth: '60%',
         label: {
           show: true,
