@@ -680,8 +680,8 @@ describe('Cache Service', () => {
       const key = 'edge:large';
       const largeObject = {
         data: new Array(1000).fill(null).map((__, _i) => ({
-          id: i,
-          value: `Value ${i}`,
+          id: _i,
+          value: `Value ${_i}`,
           nested: { a: 1, b: 2, c: 3 },
         })),
       };

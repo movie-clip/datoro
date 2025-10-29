@@ -74,7 +74,7 @@ export function useWatchlist(): UseWatchlistReturn {
         lastFetchTime.value = now
       }
     } catch (_error) {
-      console.error('Error initializing watchlist:', error)
+      console.error('Error initializing watchlist:', _error)
       // Don't clear cache on network error - use stale data
     } finally {
       loading.value = false
@@ -139,8 +139,8 @@ export function useWatchlist(): UseWatchlistReturn {
       // Revert optimistic update on network error
       watchlistSet.value.delete(upperTicker)
       watchlistItemsCache.value = watchlistItemsCache.value.filter(item => item.ticker !== upperTicker)
-      console.error('Error adding to watchlist:', error)
-      throw error
+      console.error('Error adding to watchlist:', _error)
+      throw _error
     }
   }
 
@@ -194,8 +194,8 @@ export function useWatchlist(): UseWatchlistReturn {
         addedAt: new Date().toISOString()
       }
       watchlistItemsCache.value = [...watchlistItemsCache.value, restoredItem]
-      console.error('Error removing from watchlist:', error)
-      throw error
+      console.error('Error removing from watchlist:', _error)
+      throw _error
     }
   }
 
@@ -265,14 +265,14 @@ export function useWatchlist(): UseWatchlistReturn {
       lastFetchTime.value = 0
       
     } catch (_error) {
-      console.error('Error reordering watchlist:', error)
+      console.error('Error reordering watchlist:', _error)
       
       // Rollback on error
       watchlistItemsCache.value = originalItems
       watchlistSet.value = new Set(originalItems.map(item => item.ticker))
       
       // Show error to user
-      throw error
+      throw _error
     }
   }
 

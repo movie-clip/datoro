@@ -1,5 +1,5 @@
-/* eslint-disable no-console */
 #!/usr/bin/env node
+/* eslint-disable no-console */
 /**
  * Pre-Deployment Validation Script
  * Run this before deploying to Render.com
@@ -120,7 +120,29 @@ try {
   warn('TypeScript Backend', 'Type errors found in backend. Verify tests pass to confirm runtime safety.');
 }
 
-// Check 6.6: Run tests
+// Check 6.6: Security audit
+console.log('\n🔒 Running Security Audit...');
+try {
+  execSync('npm run security:audit', { cwd: rootDir, stdio: 'pipe' });
+  checks.passed.push('Security Audit');
+  console.log('✅ Security audit passed - no hardcoded secrets detected');
+} catch (error) {
+  checks.failed.push({ name: 'Security Audit', error: 'Security vulnerabilities found' });
+  console.log('❌ Security audit failed - hardcoded secrets detected');
+}
+
+// Check 6.7: ESLint validation
+console.log('\n🔧 Running ESLint Validation...');
+try {
+  execSync('npm run lint:check', { cwd: rootDir, stdio: 'pipe' });
+  checks.passed.push('ESLint Validation');
+  console.log('✅ ESLint validation passed - code quality standards met');
+} catch (error) {
+  // ESLint errors are warnings since they don't prevent deployment
+  warn('ESLint Validation', 'Code quality issues found. Run: npm run lint:fix');
+}
+
+// Check 6.8: Run tests
 console.log('\n🧪 Running Tests...');
 try {
   execSync('npm test', { cwd: rootDir, stdio: 'pipe' });

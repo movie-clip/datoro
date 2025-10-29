@@ -111,7 +111,7 @@ export function getPrismaClient(): PrismaClient {
         await prisma!.$disconnect();
         console.log('[Database] Disconnected successfully');
       } catch (_err) {
-        console.error('[Database] Error during disconnect:', err);
+        console.error('[Database] Error during disconnect:', _err);
       }
     };
 
@@ -156,11 +156,11 @@ async function _executeWithTimeout(queryFn: (db: PrismaClient) => Promise<unknow
     await db.$executeRaw`SET LOCAL statement_timeout = ${timeoutMs}`;
     return await queryFn(db);
   } catch (_error: any) {
-    if (error.message?.includes('statement timeout')) {
-      console.error(`[Database] Query timeout after ${timeoutMs}ms:`, error.message);
+    if (_error.message?.includes('statement timeout')) {
+      console.error(`[Database] Query timeout after ${timeoutMs}ms:`, _error.message);
       throw new Error(`Database query exceeded ${timeoutMs}ms timeout. Try optimizing the query or adding indexes.`);
     }
-    throw error;
+    throw _error;
   }
 }
 
@@ -239,14 +239,14 @@ export async function findOrCreateUser(ipAddress: string, userAgent: string | nu
         }
         
         // If still not found, rethrow the error
-        throw createError;
+        throw _createError;
       }
     });
     
     return user;
   } catch (_error: any) {
-    console.error('[Database] Error finding/creating user:', error.message);
-    throw error;
+    console.error('[Database] Error finding/creating user:', _error.message);
+    throw _error;
   }
 }
 
@@ -314,7 +314,7 @@ export async function trackSearch(
     
     console.log(`[Database] Tracked search: ${normalizedTicker} from ${authenticatedUserId ? 'authenticated user' : ipAddress}`);
   } catch (_error: any) {
-    console.error('[Database] Error tracking search:', error.message);
+    console.error('[Database] Error tracking search:', _error.message);
     // Don't throw - tracking failures shouldn't break app
   }
 }
@@ -353,7 +353,7 @@ export async function getUserSearchHistory(ipAddress: string, limit = 10): Promi
     
     return user?.searches || [];
   } catch (_error: any) {
-    console.error('[Database] Error fetching search history:', error.message);
+    console.error('[Database] Error fetching search history:', _error.message);
     return [];
   }
 }
@@ -392,7 +392,7 @@ export async function getPopularTickers(limit = 10, daysAgo = 30): Promise<unkno
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error fetching popular tickers:', error.message);
+    console.error('[Database] Error fetching popular tickers:', _error.message);
     return [];
   }
 }
@@ -418,7 +418,7 @@ export async function updateTickerCompanyName(ticker: string, companyName: strin
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error updating company name:', error.message);
+    console.error('[Database] Error updating company name:', _error.message);
   }
 }
 
@@ -473,7 +473,7 @@ export async function trackApiRequest(data: ApiRequestData): Promise<void> {
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error tracking API request:', error.message);
+    console.error('[Database] Error tracking API request:', _error.message);
     // Don't throw - tracking failures shouldn't break app
   }
 }
@@ -510,7 +510,7 @@ export async function getApiRequestStats(hours = 24): Promise<unknown> {
     
     const responseTimes = requests.map(r => r.responseTime);
     const avgResponseTime = responseTimes.length > 0
-      ? Math.round(responseTimes.reduce((_a, _b) => a + b, 0) / responseTimes.length)
+      ? Math.round(responseTimes.reduce((_a, _b) => _a + _b, 0) / responseTimes.length)
       : 0;
     
     return {
@@ -524,7 +524,7 @@ export async function getApiRequestStats(hours = 24): Promise<unknown> {
       avgResponseTime: avgResponseTime + 'ms'
     };
   } catch (_error: any) {
-    console.error('[Database] Error fetching API stats:', error.message);
+    console.error('[Database] Error fetching API stats:', _error.message);
     return null;
   }
 }
@@ -575,7 +575,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
     const errors = requests.filter(r => r.statusCode >= 400).length;
     const errorRate = totalRequests > 0 ? (errors / totalRequests) : 0;
     const avgResponseTime = totalRequests > 0
-      ? Math.round(requests.reduce((_sum, _r) => sum + r.responseTime, 0) / totalRequests)
+      ? Math.round(requests.reduce((_sum, _r) => _sum + _r.responseTime, 0) / totalRequests)
       : 0;
     
     // Find top endpoint
@@ -584,7 +584,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
       endpointCounts[r.endpoint] = (endpointCounts[r.endpoint] || 0) + 1;
     });
     const topEndpoint = (Object.entries(endpointCounts)
-      .sort((a: any, b: any) => b[1] - a[1])[0]?.[0] as string) || null;
+      .sort((_a: any, _b: any) => _b[1] - _a[1])[0]?.[0] as string) || null;
     
     // Find top ticker
     const searches = await db.search.findMany({
@@ -602,7 +602,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
       tickerCounts[s.ticker] = (tickerCounts[s.ticker] || 0) + 1;
     });
     const topTicker = (Object.entries(tickerCounts)
-      .sort((a: any, b: any) => b[1] - a[1])[0]?.[0] as string) || null;
+      .sort((_a: any, _b: any) => _b[1] - _a[1])[0]?.[0] as string) || null;
     
     // Upsert daily analytics
     await db.dailyAnalytics.upsert({
@@ -631,7 +631,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
     
     console.log(`[Database] Updated daily analytics for ${startOfDay.toDateString()}`);
   } catch (_error: any) {
-    console.error('[Database] Error updating daily analytics:', error.message);
+    console.error('[Database] Error updating daily analytics:', _error.message);
   }
 }
 
@@ -656,7 +656,7 @@ export async function getDailyAnalytics(days = 30): Promise<any[]> {
       orderBy: { date: 'desc' }
     });
   } catch (_error: any) {
-    console.error('[Database] Error fetching daily analytics:', error.message);
+    console.error('[Database] Error fetching daily analytics:', _error.message);
     return [];
   }
 }
@@ -717,7 +717,7 @@ export async function logError(data: ErrorLogData): Promise<void> {
       });
     }
   } catch (_error: any) {
-    console.error('[Database] Error logging error:', error.message);
+    console.error('[Database] Error logging error:', _error.message);
     // Don't throw - error logging failures shouldn't break app
   }
 }
@@ -748,7 +748,7 @@ export async function getRecentErrors(limit = 20, unresolvedOnly = true): Promis
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error fetching recent errors:', error.message);
+    console.error('[Database] Error fetching recent errors:', _error.message);
     return [];
   }
 }
@@ -780,7 +780,7 @@ export async function resolveError(errorCode: string, endpoint: string | null = 
     
     console.log(`[Database] Resolved error: ${errorCode}`);
   } catch (_error: any) {
-    console.error('[Database] Error tracking search:', error.message);
+    console.error('[Database] Error tracking search:', _error.message);
   }
 }
 
@@ -802,8 +802,8 @@ export async function checkDatabaseHealth(): Promise<unknown> {
     const latency = Date.now() - start
     return { status: 'healthy', latency };
   } catch (_error: any) {
-    console.error('[Database] Health check failed:', error.message);
-    return { status: 'unhealthy', latency: 0, error: error.message };
+    console.error('[Database] Health check failed:', _error.message);
+    return { status: 'unhealthy', latency: 0, error: _error.message };
   }
 }
 
@@ -862,7 +862,7 @@ export async function cleanupOldData(daysToKeep = 90): Promise<unknown> {
       errors: deletedErrors.count
     };
   } catch (_error: any) {
-    console.error('[Database] Error during cleanup:', error.message);
+    console.error('[Database] Error during cleanup:', _error.message);
     return { searchHistory: 0, apiRequests: 0, errors: 0 };
   }
 }

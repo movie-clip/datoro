@@ -30,10 +30,10 @@ async function fetchWithTimeout(url: string, options: FetchOptions = {}, timeout
     return response;
   } catch (_error: any) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
+    if (_error.name === 'AbortError') {
       throw new Error(`Request timeout after ${timeout}ms`);
     }
-    throw error;
+    throw _error;
   }
 }
 
@@ -121,7 +121,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           }
           return [key, data];
         } catch (_error: any) {
-          console.warn(`[BatchData] ${key} error:`, error.message);
+          console.warn(`[BatchData] ${key} error:`, _error.message);
           return [key, null];
         }
       })
@@ -137,22 +137,22 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     };
 
     responses.forEach((__response, _index) => {
-      const key = Object.keys(endpoints)[index];
-      if (response.status === 'fulfilled') {
-        const [dataKey, data] = response.value;
+      const key = Object.keys(endpoints)[_index];
+      if (__response.status === 'fulfilled') {
+        const [dataKey, data] = __response.value;
         
         // Special handling: /api/v4/score returns object, but we need array for consistency
-        if (dataKey === 'financialScores' && data && !Array.isArray(_data)) {
+        if (dataKey === 'financialScores' && data && !Array.isArray(data)) {
           result.data[dataKey] = [data]; // Wrap in array
         } else {
           result.data[dataKey] = data;
         }
         
-        if (!_data) {
+        if (!data) {
           result.failures!.push(key);
         }
       } else {
-        console.error(`[BatchData] ${key} error:`, response.reason);
+        console.error(`[BatchData] ${key} error:`, __response.reason);
         result.data[key] = null;
         result.failures!.push(key);
       }
@@ -160,8 +160,8 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
 
     return result;
   } catch (_error) {
-    console.error('[BatchData] Fatal error:', error);
-    throw error;
+    console.error('[BatchData] Fatal error:', _error);
+    throw _error;
   }
 }
 
@@ -196,7 +196,7 @@ export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Pr
         const data = await res.json();
         return [key, data];
       } catch (_error: any) {
-        console.warn(`[BatchData Priority] ${key} error:`, error.message);
+        console.warn(`[BatchData Priority] ${key} error:`, _error.message);
         return [key, null];
       }
     })
@@ -210,9 +210,9 @@ export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Pr
   };
 
   responses.forEach((__response, _index) => {
-    const key = Object.keys(endpoints)[index];
-    if (response.status === 'fulfilled') {
-      const [dataKey, data] = response.value;
+    const key = Object.keys(endpoints)[_index];
+    if (__response.status === 'fulfilled') {
+      const [dataKey, data] = __response.value;
       result.data[dataKey] = data;
     } else {
       result.data[key] = null;

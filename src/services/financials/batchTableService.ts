@@ -58,7 +58,7 @@ export function getValuationFromBatch(batchData: BatchData | null): ValuationMet
   if (!batchData?.data) return out
   
   try {
-    const { profile, quote, ratiosAnnual, keyMetrics } = batchData._data
+    const { profile, quote, ratiosAnnual, keyMetrics } = batchData.data
     
     // Market Cap from profile
     if (profile && Array.isArray(profile) && profile[0]?.mktCap) {
@@ -119,7 +119,7 @@ export function getValuationFromBatch(batchData: BatchData | null): ValuationMet
     }
     
   } catch (_error) {
-    console.error('[BatchTableService] getValuationFromBatch error:', error)
+    console.error('[BatchTableService] getValuationFromBatch error:', _error)
   }
   
   return out
@@ -135,7 +135,7 @@ export function getCashFlowFactsFromBatch(batchData: BatchData | null): CashFlow
   if (!batchData?.data) return out
   
   try {
-    const { cashflowQuarter, profile, keyMetrics } = batchData._data
+    const { cashflowQuarter, profile, keyMetrics } = batchData.data
     
     if (!cashflowQuarter || !Array.isArray(cashflowQuarter) || cashflowQuarter.length < 4) {
       return out
@@ -181,7 +181,7 @@ export function getCashFlowFactsFromBatch(batchData: BatchData | null): CashFlow
     }
     
   } catch (_error) {
-    console.error('[BatchTableService] getCashFlowFactsFromBatch error:', error)
+    console.error('[BatchTableService] getCashFlowFactsFromBatch error:', _error)
   }
   
   return out
@@ -197,7 +197,7 @@ export function getMarginsGrowthFromBatch(batchData: BatchData | null): MarginsG
   if (!batchData?.data) return out
   
   try {
-    const { ratiosAnnual, incomeQuarter } = batchData._data
+    const { ratiosAnnual, incomeQuarter } = batchData.data
     
     // Get margins from most recent quarter ratios
     // Note: Batch fetches annual ratios, but we need quarterly for latest margins
@@ -239,7 +239,7 @@ export function getMarginsGrowthFromBatch(batchData: BatchData | null): MarginsG
     }
     
   } catch (_error) {
-    console.error('[BatchTableService] getMarginsGrowthFromBatch error:', error)
+    console.error('[BatchTableService] getMarginsGrowthFromBatch error:', _error)
   }
   
   return out
@@ -255,7 +255,7 @@ export function getBalanceFromBatch(batchData: BatchData | null): BalanceMetrics
   if (!batchData?.data) return out
   
   try {
-    const { balanceAnnual, financialScores } = batchData._data
+    const { balanceAnnual, financialScores } = batchData.data
     
     if (!balanceAnnual || !Array.isArray(balanceAnnual) || balanceAnnual.length === 0) {
       return out
@@ -299,7 +299,7 @@ export function getBalanceFromBatch(batchData: BatchData | null): BalanceMetrics
     }
     
   } catch (_error) {
-    console.error('[BatchTableService] getBalanceFromBatch error:', error)
+    console.error('[BatchTableService] getBalanceFromBatch error:', _error)
   }
   
   return out
