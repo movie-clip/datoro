@@ -126,7 +126,13 @@ const mockBatchData = {
         { date: '2024-01-12', close: 185.92, adjClose: 185.92 },
         { date: '2024-01-11', close: 185.59, adjClose: 185.59 },
         { date: '2024-01-10', close: 181.18, adjClose: 181.18 },
-        { date: '2023-12-29', close: 192.53, adjClose: 192.53 }
+        { date: '2023-12-29', close: 192.53, adjClose: 192.53 },
+        { date: '2023-11-10', close: 180.00, adjClose: 180.00 },  // Matches dividend date
+        { date: '2023-08-11', close: 175.00, adjClose: 175.00 },  // Matches dividend date
+        { date: '2023-05-12', close: 170.00, adjClose: 170.00 },  // Matches dividend date
+        { date: '2023-02-10', close: 165.00, adjClose: 165.00 },  // Matches dividend date
+        { date: '2022-11-04', close: 160.00, adjClose: 160.00 },  // Matches dividend date
+        { date: '2022-08-05', close: 155.00, adjClose: 155.00 }   // Matches dividend date
       ]
     }
   }
@@ -526,18 +532,21 @@ describe('Batch Chart Service', () => {
       expect(result[0][1]).toBeLessThan(100); // Reasonable yield percentage
     });
 
-    it('should calculate yield based on current price', () => {
+    it('should calculate yield based on historical prices at dividend dates', () => {
       const result = getDividendYieldSeriesFromBatch(mockBatchData, 'annual');
       
-      // Total 2023 dividends: 0.24 * 3 + 0.23 = 0.95
-      // Yield = (0.95 / 150.00) * 100 = 0.633%
+      // 2023 dividends: 0.24 (Nov @ $180) + 0.24 (Aug @ $175) + 0.24 (May @ $170) + 0.23 (Feb @ $165) = 0.95
+      // Avg price: (180 + 175 + 170 + 165) / 4 = 172.5
+      // Yield = (0.95 / 172.5) * 100 = 0.551%
       const yield2023 = result.find(item => {
         const year = new Date(item[0]).getFullYear();
         return year === 2023;
       });
       
       expect(yield2023).toBeDefined();
-      expect(yield2023[1]).toBeCloseTo(0.633, 2);
+      if (yield2023) {
+        expect(yield2023[1]).toBeCloseTo(0.551, 2);
+      }
     });
 
     it('should group dividends by quarter', () => {
@@ -559,16 +568,17 @@ describe('Batch Chart Service', () => {
       expect(result).toEqual([]);
     });
 
-    it('should handle missing profile price', () => {
+    it('should require priceHistory to calculate yield', () => {
       const noPrice = {
         data: {
           dividendHistory: mockBatchData.data.dividendHistory
+          // No priceHistory
         }
       };
       const result = getDividendYieldSeriesFromBatch(noPrice, 'annual');
       
-      // Should default to price = 1, so yield = dividend amount
-      expect(result.length).toBeGreaterThan(0);
+      // Without price history, should return empty array
+      expect(result).toEqual([]);
     });
   });
 
@@ -602,11 +612,15 @@ describe('Batch Chart Service', () => {
       expect(novBuys).toBeDefined();
       expect(novSells).toBeDefined();
       
-      // Buy: 5000 * 182.00 = 910,000
-      expect(novBuys[1]).toBe(5000 * 182.00);
+      if (novBuys) {
+        // Buy: 5000 * 182.00 = 910,000
+        expect(novBuys[1]).toBe(5000 * 182.00);
+      }
       
-      // Sells: (10000 * 180.50) = 1,805,000
-      expect(novSells[1]).toBe(10000 * 180.50);
+      if (novSells) {
+        // Sells: (10000 * 180.50) = 1,805,000
+        expect(novSells[1]).toBe(10000 * 180.50);
+      }
     });
 
     it('should calculate net shares correctly', () => {
@@ -617,8 +631,11 @@ describe('Batch Chart Service', () => {
         return date.getMonth() === 10 && date.getFullYear() === 2023;
       });
       
-      // Net = +5000 (buy) - 10000 (sell) = -5000
-      expect(novNet[1]).toBe(-5000);
+      expect(novNet).toBeDefined();
+      if (novNet) {
+        // Net = +5000 (buy) - 10000 (sell) = -5000
+        expect(novNet[1]).toBe(-5000);
+      }
     });
 
     it('should return empty arrays if no insider data', () => {
@@ -656,9 +673,9 @@ describe('Batch Chart Service', () => {
     it('should use adjClose if available, else close', () => {
       const result = getPriceSeriesFromBatch(mockBatchData);
       
-      // Sorted ascending, so oldest is first (2023-12-29)
+      // Sorted ascending, so oldest is first (2022-08-05)
       const oldest = result[0];
-      expect(oldest[1]).toBe(192.53);
+      expect(oldest[1]).toBe(155.00);  // From 2022-08-05
       
       // Most recent is last (2024-01-15)
       const newest = result[result.length - 1];
