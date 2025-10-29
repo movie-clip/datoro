@@ -239,7 +239,7 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
   console.log(`[Macro] Index Stats → Fetching from FMP API`)
   
   const validData = await fetchWithDeduplication(cacheKey, async () => {
-    const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT'] // S&P 500, Dow Jones, Russell 2000 (URL encoded ^)
+    const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT', '%5EHSI', '%5EGDAXI'] // S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX (URL encoded ^)
     
     // Use quote endpoint instead of stock-price-change for better reliability
     const requests = symbols.map(symbol => 
@@ -425,7 +425,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   
   // Fetch all data in parallel
   const data = await fetchWithDeduplication(cacheKey, async () => {
-    const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT'] // Index symbols
+    const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT', '%5EHSI', '%5EGDAXI'] // Index symbols: S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX
     
     const [
       treasuryRes,

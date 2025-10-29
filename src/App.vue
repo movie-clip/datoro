@@ -486,12 +486,6 @@ const handleSelectTicker = (ticker: string): void => {
     <Teleport to="body">
       <div v-if="showMacro" class="modal-overlay" @click.self="showMacro = false">
         <div class="modal-container macro-modal">
-          <button class="modal-close" @click="showMacro = false">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
           <MacroView />
         </div>
       </div>
@@ -523,7 +517,9 @@ const handleSelectTicker = (ticker: string): void => {
 </template>
 
 <style>
-/* Header */
+/* ============================================
+   APP HEADER
+   ============================================ */
 .app-header {
   position: sticky;
   top: 0;
@@ -562,7 +558,36 @@ const handleSelectTicker = (ticker: string): void => {
   gap: 8px;
 }
 
-/* Hamburger Menu Button */
+/* ============================================
+   BRANDING (Aston Martin British Racing Green)
+   ============================================ */
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 89, 76, 0.4));
+  transition: transform 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+}
+
+.brand-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #00594C;
+  letter-spacing: -0.02em;
+  transition: color 0.3s ease;
+}
+
+.brand-text:hover {
+  color: #00755F;
+}
+
+/* ============================================
+   HAMBURGER MENU BUTTON
+   ============================================ */
 .hamburger-menu-button {
   display: flex;
   align-items: center;
@@ -592,31 +617,9 @@ const handleSelectTicker = (ticker: string): void => {
   height: 24px;
 }
 
-.brand-logo {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0, 89, 76, 0.4));
-  transition: transform 0.3s ease;
-}
-
-.brand-logo:hover {
-  transform: scale(1.05);
-}
-
-/* Branding - Aston Martin British Racing Green */
-.brand-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #00594C;
-  letter-spacing: -0.02em;
-  transition: color 0.3s ease;
-}
-
-.brand-text:hover {
-  color: #00755F;
-}
-
+/* ============================================
+   ICON BUTTON
+   ============================================ */
 .icon-button {
   display: flex;
   align-items: center;
@@ -647,7 +650,9 @@ const handleSelectTicker = (ticker: string): void => {
   flex-shrink: 0;
 }
 
-/* Auth Buttons */
+/* ============================================
+   AUTH BUTTONS
+   ============================================ */
 .auth-button {
   padding: 0.5rem 1.25rem;
   border-radius: 8px;
@@ -683,12 +688,9 @@ const handleSelectTicker = (ticker: string): void => {
   box-shadow: 0 4px 16px rgba(0, 89, 76, 0.4);
 }
 
-.auth-button.sign-up:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-/* User Menu */
+/* ============================================
+   USER MENU
+   ============================================ */
 .user-menu {
   display: flex;
   align-items: center;
@@ -781,83 +783,29 @@ const handleSelectTicker = (ticker: string): void => {
   transform: translateY(-1px);
 }
 
-/* Ticker Bar Section - spacing after header */
+/* ============================================
+   MAIN SECTIONS
+   ============================================ */
 .ticker-bar-section {
   max-width: 1400px;
   margin: 1.5rem auto 0;
   padding: 0 12px;
 }
 
-/* Header responsive */
-@media (max-width: 768px) {
-  .app-header {
-    padding: 0.75rem 0;
-  }
-
-  .brand-logo {
-    width: 32px;
-    height: 32px;
-  }
-
-  .brand-text {
-    font-size: 1.25rem;
-  }
-
-  .icon-button {
-    width: 32px;
-    height: 32px;
-  }
-
-  .icon-button svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .ticker-bar-section {
-    margin-top: 1.25rem;
-  }
-
-  .auth-button {
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
-  }
-
-  .user-name {
-    display: none; /* Hide name on tablet */
-  }
+.hero-section {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 0 12px;
 }
 
-@media (max-width: 480px) {
-  .app-header {
-    padding: 0.625rem 0;
-  }
+.price-target-section {
+  max-width: 1400px;
+  margin: 12px auto 16px;
+  padding: 0 12px;
+}
 
-  .brand-logo {
-    width: 28px;
-    height: 28px;
-  }
-
-  .brand-text {
-    font-size: 1.125rem;
-  }
-
-  .header-right {
-    gap: 6px;
-  }
-
-  .icon-button {
-    width: 30px;
-    height: 30px;
-  }
-
-  .icon-button svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .ticker-bar-section {
-    margin-top: 1rem;
-  }
+.price-target-section > .panel {
+  width: 100%;
 }
 
 .ai-analysis-grid {
@@ -869,27 +817,11 @@ const handleSelectTicker = (ticker: string): void => {
   padding: 0 12px;
 }
 
-.price-target-section {
-  max-width: 1400px;
-  margin: 12px auto 16px; /* Reduced top margin from 0 to 12px for consistency */
-  padding: 0 12px;
-}
-
-.price-target-section > .panel {
-  width: 100%;
-}
-
-/* Hero Section */
-.hero-section {
-  max-width: 1400px;
-  margin: 24px auto;
-  padding: 0 12px;
-}
-
-/* Tab Navigation */
-/* Nav Row - Tab Navigation + Timeframe Toggle */
+/* ============================================
+   TAB NAVIGATION & CONTENT
+   ============================================ */
 .nav-row {
-  max-width: calc(1400px - 24px); /* Subtract horizontal padding to match other sections */
+  max-width: calc(1400px - 24px);
   margin: 0 auto 0;
   padding: 6px 12px;
   display: flex;
@@ -903,20 +835,21 @@ const handleSelectTicker = (ticker: string): void => {
 }
 
 .tab-navigation {
-  flex: 0 1 auto; /* Allow tabs to take only needed space */
+  flex: 0 1 auto;
 }
 
-/* Tab Content */
 .tab-content {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 0;
   width: 100%;
   position: relative;
-  min-height: 430px; /* Prevent layout shift when switching tabs/tickers */
+  min-height: 430px;
 }
 
-/* Mobile-specific sections */
+/* ============================================
+   MOBILE / DESKTOP VISIBILITY
+   ============================================ */
 .mobile-only {
   display: none;
 }
@@ -925,24 +858,14 @@ const handleSelectTicker = (ticker: string): void => {
   display: block;
 }
 
-/* Special display for grid-based desktop-only sections */
 .charts.desktop-only,
 .ai-analysis-grid.desktop-only {
   display: grid;
 }
 
-/* Mobile responsive: show mobile-only, hide desktop-only */
-@media (max-width: 768px) {
-  .mobile-only {
-    display: block;
-  }
-  
-  .desktop-only {
-    display: none !important;
-  }
-}
-
-/* Macro Modal Styles */
+/* ============================================
+   MODAL OVERLAY & CONTAINERS
+   ============================================ */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -962,16 +885,17 @@ const handleSelectTicker = (ticker: string): void => {
   background: #1a1a1a;
   border-radius: 12px;
   border: 1px solid #2A2A2E;
-  max-width: 1400px;
-  width: 100%;
+  max-width: 1200px;
+  width: 95%;
   min-height: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  padding: 20px;
 }
 
-/* Custom scrollbar for macro modal */
 .modal-container.macro-modal::-webkit-scrollbar {
   width: 8px;
 }
@@ -1028,4 +952,88 @@ const handleSelectTicker = (ticker: string): void => {
   color: #fff;
 }
 
+/* ============================================
+   RESPONSIVE - HEADER (TABLET & MOBILE)
+   ============================================ */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.75rem 0;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-text {
+    font-size: 1.25rem;
+  }
+
+  .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .ticker-bar-section {
+    margin-top: 1.25rem;
+  }
+
+  .auth-button {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .user-name {
+    display: none;
+  }
+  
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE SMALL
+   ============================================ */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0.625rem 0;
+  }
+
+  .brand-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brand-text {
+    font-size: 1.125rem;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .icon-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .ticker-bar-section {
+    margin-top: 1rem;
+  }
+}
 </style>
