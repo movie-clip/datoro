@@ -83,9 +83,9 @@ async function loadBundle(): Promise<InsightsBundle> {
       insightsBundle = await response.json()
       return insightsBundle!
     } catch (_error) {
-      console.error('Error loading insights bundle:', error)
+      console.error('Error loading insights bundle:', _error)
       bundleLoadPromise = null
-      throw error
+      throw _error
     }
   })()
 
@@ -123,10 +123,10 @@ export async function getInsights(ticker: string): Promise<InsightsResponse> {
     }
   } catch (_error) {
     // Don't log "NOT_AVAILABLE" errors - they're expected
-    if ((error as Error).message !== 'NOT_AVAILABLE') {
-      console.error(`Error loading insights for ${t}:`, error)
+    if ((_error as Error).message !== 'NOT_AVAILABLE') {
+      console.error(`Error loading insights for ${t}:`, _error)
     }
-    throw error
+    throw _error
   }
 }
 
@@ -161,7 +161,7 @@ export async function getCompetitiveAdvantages(
   } catch (_error) {
     // Check if it's a "not available" error
     const isNotAvailable =
-      (error as Error).message === 'NOT_AVAILABLE' || (error as Error).message.includes('Unexpected token')
+      (_error as Error).message === 'NOT_AVAILABLE' || (_error as Error).message.includes('Unexpected token')
 
     // For "not available", show a friendly message instead of an error
     if (isNotAvailable) {
@@ -185,7 +185,7 @@ export async function getCompetitiveAdvantages(
     // For other errors, return error message
     return {
       data: null,
-      error: (error as Error).message || 'Failed to load AI insights',
+      error: (_error as Error).message || 'Failed to load AI insights',
       cached: false,
       provider: 'static'
     }
@@ -223,7 +223,7 @@ export async function getInvestmentRisks(
   } catch (_error) {
     // Check if it's a "not available" error
     const isNotAvailable =
-      (error as Error).message === 'NOT_AVAILABLE' || (error as Error).message.includes('Unexpected token')
+      (_error as Error).message === 'NOT_AVAILABLE' || (_error as Error).message.includes('Unexpected token')
 
     // For "not available", show a friendly message instead of an error
     if (isNotAvailable) {
@@ -247,7 +247,7 @@ export async function getInvestmentRisks(
     // For other errors, return error message
     return {
       data: null,
-      error: (error as Error).message || 'Failed to load AI insights',
+      error: (_error as Error).message || 'Failed to load AI insights',
       cached: false,
       provider: 'static'
     }

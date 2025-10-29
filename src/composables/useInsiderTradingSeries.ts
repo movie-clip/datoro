@@ -22,6 +22,7 @@ export interface UseInsiderTradingSeriesReturn {
   message: Ref<string>
   loading: Ref<boolean>
   error: Ref<string | null>
+  emptyDataMessage: ComputedRef<string | null>
 }
 
 export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
@@ -87,8 +88,8 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
       message.value = 'Failed to load data'
       error.value = batchError.value
     } else if (!priceData.value.length && !insiderData.value.net?.length && !loading.value) {
-      title.value = 'Price & Insider Trading — No data'
-      message.value = `No data for '${t}'`
+      title.value = `Price & Insider Trading — ${t}`
+      message.value = '' // Use emptyDataMessage instead
       error.value = null
     } else {
       title.value = 'Price & Insider Trading'
@@ -97,5 +98,18 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
     }
   }, { immediate: true })
 
-  return { series, title, message, loading, error }
+  // Check if data is legitimately empty (no insider trading activity)
+  const hasNoInsiderData = computed(() => {
+    if (!currentTicker.value || loading.value || batchError.value) return false
+    return !priceData.value.length && !insiderData.value.net?.length
+  })
+
+  // Friendly message when there's no insider trading data
+  const emptyDataMessage = computed<string | null>(() => {
+    if (!hasNoInsiderData.value) return null
+    const ticker = currentTicker.value?.toUpperCase() || 'this company'
+    return `${ticker} does not have recent insider trading activity`
+  })
+
+  return { series, title, message, loading, error, emptyDataMessage }
 }

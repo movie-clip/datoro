@@ -30,7 +30,7 @@ export interface Recommendation {
 export interface AdvancedDcfResult {
   intrinsicValue: number
   currentPrice: number
-  marginOfSafety: number
+  marginOfSafety: number | null
   upside: number
   
   // Model assumptions
@@ -53,6 +53,7 @@ export interface AdvancedDcfResult {
   note: string
   symbol: string
   calculatedBy: string
+  warning?: string
 }
 
 /**
@@ -123,16 +124,24 @@ export function calculateAdvancedDcfValue(
   const intrinsicValue = latestProjection.equityValuePerShare
   const currentPrice = quote.price
   
-  if (!intrinsicValue || intrinsicValue <= 0) {
+  // Check if intrinsicValue is missing or invalid (but allow negative values)
+  if (intrinsicValue === null || intrinsicValue === undefined || isNaN(intrinsicValue)) {
     return {
       intrinsicValue: null,
-      error: 'DCF model resulted in negative valuation. Consider using alternative valuation methods (P/S ratio, EV/Revenue) for growth companies.'
+      error: 'DCF valuation data is incomplete or invalid for this ticker.'
     }
   }
 
-  // Calculate margin of safety and upside
-  const marginOfSafety = ((intrinsicValue - currentPrice) / intrinsicValue) * 100
+  // Calculate margin of safety and upside (works with negative values too)
+  const marginOfSafety = intrinsicValue !== 0 
+    ? ((intrinsicValue - currentPrice) / Math.abs(intrinsicValue)) * 100
+    : null
   const upside = ((intrinsicValue - currentPrice) / currentPrice) * 100
+  
+  // Add warning for negative valuations
+  const warning = intrinsicValue <= 0 
+    ? 'Negative DCF valuation indicates the company burns more cash than it generates. This suggests fundamental challenges with the business model.'
+    : null
 
   // Get key model assumptions from the projection
   const wacc = latestProjection.wacc || null
@@ -152,7 +161,7 @@ export function calculateAdvancedDcfValue(
   return {
     intrinsicValue: Math.round(intrinsicValue * 100) / 100,
     currentPrice: currentPrice,
-    marginOfSafety: Math.round(marginOfSafety * 10) / 10,
+    marginOfSafety: marginOfSafety !== null ? Math.round(marginOfSafety * 10) / 10 : null,
     upside: Math.round(upside * 10) / 10,
     
     // Model assumptions
@@ -174,7 +183,8 @@ export function calculateAdvancedDcfValue(
     methodology: 'Advanced DCF (FMP)',
     note: 'Professional 10-year DCF model from Financial Modeling Prep',
     symbol: latestProjection.symbol,
-    calculatedBy: 'FMP'
+    calculatedBy: 'FMP',
+    warning: warning || undefined
   }
 }
 

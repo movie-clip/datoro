@@ -33,11 +33,19 @@
       <div 
         class="result-card" 
         :data-tooltip="getAdvancedDcfTooltip()"
+        :class="{ 'has-warning': advancedDcfValue?.warning }"
       >
-        <div class="card-label">Advanced DCF</div>
-        <div v-if="advancedDcfValue?.intrinsicValue" class="card-value" :class="getDcfValueClass(advancedDcfValue.intrinsicValue)">
+        <div class="card-label">
+          Advanced DCF
+          <svg v-if="advancedDcfValue?.warning" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-left: 4px; color: #ff9800;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div v-if="advancedDcfValue?.intrinsicValue !== null && advancedDcfValue?.intrinsicValue !== undefined" class="card-value" :class="getDcfValueClass(advancedDcfValue.intrinsicValue)">
           ${{ formatNumber(advancedDcfValue.intrinsicValue) }}
-          <span v-if="advancedDcfValue?.upside" class="upside-inline" :class="getUpsideClass(advancedDcfValue.upside)">
+          <span v-if="advancedDcfValue?.upside !== null && advancedDcfValue?.upside !== undefined" class="upside-inline" :class="getUpsideClass(advancedDcfValue.upside)">
             ({{ advancedDcfValue.upside > 0 ? '+' : '' }}{{ advancedDcfValue.upside.toFixed(1) }}%)
           </span>
         </div>
@@ -76,6 +84,7 @@ interface AdvancedDcfValue {
   wacc?: number | null
   terminalGrowthRate?: number | null
   error?: string | null
+  warning?: string | null
 }
 
 interface Props {
@@ -157,10 +166,14 @@ Target Price = Future EPS × Target P/E`
 
 const getAdvancedDcfTooltip = (): string => {
   // Show error message if available
-  if (props.advancedDcfValue?._error) {
+  if (props.advancedDcfValue?.error) {
     return props.advancedDcfValue.error
   }
-  if (!props.advancedDcfValue?.intrinsicValue) return 'No data available'
+  // Show warning if negative valuation
+  if (props.advancedDcfValue?.warning) {
+    return props.advancedDcfValue.warning
+  }
+  if (!props.advancedDcfValue?.intrinsicValue && props.advancedDcfValue?.intrinsicValue !== 0) return 'No data available'
   const wacc = props.advancedDcfValue?.wacc || 'N/A'
   const terminalGrowth = props.advancedDcfValue?.terminalGrowthRate || 'N/A'
   return `Advanced DCF Model (FMP):
@@ -240,6 +253,10 @@ const getCurrentPriceTooltip = (): string => {
   background: rgba(0, 89, 76, 0.15);
   border-color: rgba(0, 181, 154, 0.5);
   box-shadow: 0 0 20px rgba(0, 181, 154, 0.2);
+}
+
+.result-card.has-warning {
+  border-color: rgba(255, 152, 0, 0.3);
 }
 
 .result-card:hover {

@@ -5,6 +5,7 @@
     :loading="loading"
     :error="error ?? undefined"
     :message="message ?? undefined"
+    :empty-data-message="emptyDataMessage ?? undefined"
     kind="mixed"
     :dual-axis="true"
     :bar-max-width="40"
@@ -25,5 +26,5 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // No ticker prop - using Pinia store
-const { series, title, loading, error, message } = useInsiderTradingSeries()
+const { series, title, loading, error, message, emptyDataMessage } = useInsiderTradingSeries()
 </script>

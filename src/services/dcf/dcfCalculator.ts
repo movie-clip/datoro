@@ -76,7 +76,10 @@ export function calculateIntrinsicValue(inputs: DcfInputs, companyData: CompanyD
 
   // Validate inputs
   if (eps <= 0) {
-    console.warn('[PEG Valuation] Invalid EPS:', { eps })
+    // Only log in development - this is expected for unprofitable companies
+    if (import.meta.env.DEV) {
+      console.info('[PEG Valuation] Skipping - EPS not positive:', eps, '(Company may be unprofitable)')
+    }
     return {
       intrinsicValue: null,
       projectedPrices: [],

@@ -149,18 +149,19 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     const ratiosTTM = (data as any).ratiosTTM?.[0] || null
     
     // EPS from quote (already TTM)
-    const eps = quote?.eps || 0
+    // Ensure we extract a number value, not an object
+    const eps = Number(quote?.eps) || 0
     
     // P/E Ratio - prefer TTM, fallback to annual
     let currentPE = 0
     if (ratiosTTM?.peRatioTTM) {
-      currentPE = ratiosTTM.peRatioTTM
+      currentPE = Number(ratiosTTM.peRatioTTM) || 0
     } else if (ratiosTTM?.priceEarningsRatioTTM) {
-      currentPE = ratiosTTM.priceEarningsRatioTTM
+      currentPE = Number(ratiosTTM.priceEarningsRatioTTM) || 0
     } else {
       // Fallback to annual data if TTM not available
       const ratiosAnnual = data.ratiosAnnual?.[0] as any
-      currentPE = ratiosAnnual?.priceEarningsRatio || 0
+      currentPE = Number(ratiosAnnual?.priceEarningsRatio) || 0
     }
     
     // EPS Growth - calculate from quarterly data for TTM comparison
@@ -169,16 +170,16 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     
     if (incomeQuarter.length >= 8) {
       // Compare TTM (last 4 quarters) vs previous TTM (quarters 5-8)
-      const ttmEps = incomeQuarter.slice(0, 4).reduce((sum, q) => sum + (q.eps || 0), 0)
-      const prevTtmEps = incomeQuarter.slice(4, 8).reduce((sum, q) => sum + (q.eps || 0), 0)
+      const ttmEps = incomeQuarter.slice(0, 4).reduce((sum, q) => sum + (Number(q.eps) || 0), 0)
+      const prevTtmEps = incomeQuarter.slice(4, 8).reduce((sum, q) => sum + (Number(q.eps) || 0), 0)
       
       if (ttmEps !== 0 && prevTtmEps !== 0) {
         epsGrowth = ((ttmEps - prevTtmEps) / Math.abs(prevTtmEps)) * 100
       }
     } else if (incomeQuarter.length >= 4) {
       // If we don't have 8 quarters, compare latest quarter to year-ago quarter
-      const latestEps = incomeQuarter[0]?.eps || 0
-      const yearAgoEps = incomeQuarter[3]?.eps || 0
+      const latestEps = Number(incomeQuarter[0]?.eps) || 0
+      const yearAgoEps = Number(incomeQuarter[3]?.eps) || 0
       
       if (latestEps !== 0 && yearAgoEps !== 0) {
         epsGrowth = ((latestEps - yearAgoEps) / Math.abs(yearAgoEps)) * 100
@@ -187,8 +188,8 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
       // Final fallback to annual data
       const incomeAnnual = data.incomeAnnual || []
       if (incomeAnnual.length >= 2) {
-        const latestEps = incomeAnnual[0]?.eps || 0
-        const previousEps = incomeAnnual[1]?.eps || 0
+        const latestEps = Number(incomeAnnual[0]?.eps) || 0
+        const previousEps = Number(incomeAnnual[1]?.eps) || 0
         if (latestEps > 0 && previousEps > 0) {
           epsGrowth = ((latestEps - previousEps) / Math.abs(previousEps)) * 100
         }

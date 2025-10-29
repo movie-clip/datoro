@@ -106,7 +106,7 @@ onMounted(async () => {
       await initializeWatchlists()
     }
   } catch (_err) {
-    console.error('[App] Auth init failed:', err)
+    console.error('[App] Auth init failed:', _err)
   }
   
   const savedTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB)
@@ -214,8 +214,8 @@ const handleToggleWatchlist = async (ticker: string): Promise<void> => {
   try {
     await toggleWatchlist(ticker)
   } catch (_error) {
-    console.error('Error toggling watchlist:', error)
-    const message = error instanceof Error ? error.message : 'Failed to update watchlist'
+    console.error('Error toggling watchlist:', _error)
+    const message = _error instanceof Error ? _error.message : 'Failed to update watchlist'
     alert(message)
   }
 }
@@ -811,7 +811,7 @@ const handleSelectTicker = (ticker: string): void => {
 
 .price-target-section {
   max-width: 1400px;
-  margin: 0px auto 16px; /* Negative top margin to pull it closer, reduced bottom margin */
+  margin: 12px auto 16px; /* Reduced top margin from 0 to 12px for consistency */
   padding: 0 12px;
 }
 
