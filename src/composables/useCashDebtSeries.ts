@@ -24,7 +24,7 @@ export function useCashDebtSeries(): UseCashDebtSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { _batchData, _loading, _currentTicker, _error: batchError, _timeframe } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
 
   // Memoized raw data - single source of truth
   const rawData = computed(() => getCashDebtSeriesFromBatch(batchData.value, timeframe.value))

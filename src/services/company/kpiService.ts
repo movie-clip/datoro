@@ -215,7 +215,7 @@ export async function fetchMarginsGrowth(ticker: string): Promise<MarginsGrowthK
   // Quarterly YoY growth for earnings (net income) and revenue
   try {
     const icQ = await getFinancials(t, 'ic', 'quarterly')
-    const rowsQ = (Array.isArray(icQ?._data) ? icQ.data : []).slice().sort((a: any, b: any) => {
+    const rowsQ = (Array.isArray(icQ?.data) ? icQ.data : []).slice().sort((a: any, b: any) => {
       const da = Date.parse(a?.period || a?.reportDate || a?.date || '')
       const db = Date.parse(b?.period || b?.reportDate || b?.date || '')
       return db - da

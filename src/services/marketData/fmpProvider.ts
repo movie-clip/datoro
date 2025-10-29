@@ -56,10 +56,10 @@ export async function fetchFmpSeries(
     }
 
     // FMP returns most-recent first; sort ascending by timestamp
-    out.sort((_a, _b) => a[0] - b[0])
+    out.sort((a, b) => a[0] - b[0])
 
     return { data: out, error: null }
-  } catch (_error) {
+  } catch (error) {
     return handleServiceError(error, 'fetchFmpSeries', [])
   }
 }

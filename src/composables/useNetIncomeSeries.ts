@@ -34,7 +34,7 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { _batchData, _loading, _currentTicker, _error: batchError, _timeframe } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
   
   // Map timeframe from store to period
   const period = computed<Period>(() => timeframe.value)

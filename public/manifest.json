@@ -1,50 +1,29 @@
-{{
-
-  "name": "Datoro - Free Stock Analysis with AI Insights",  "name": "Datoro - Free Stock Analysis with AI Insights",
-
-  "short_name": "Datoro",  "short_name": "Datoro",
-
-  "description": "Professional stock analysis dashboard with real-time financial data, AI insights, and interactive charts. 10,000+ stocks. Completely free.",  "description": "Professional stock analysis dashboard with real-time financial data, AI insights, and interactive charts. 10,000+ stocks. Completely free.",
-
-  "start_url": "/",  "start_url": "/",
-
-  "display": "standalone",  "display": "standalone",
-
-  "background_color": "#0a0a0a",  "background_color": "#0a0a0a",
-
-  "theme_color": "#7c3aed",  "theme_color": "#7c3aed",
-
-  "orientation": "any",  "orientation": "any",
-
-  "icons": [  "icons": [
-
-    {    {
-
-      "src": "/vite.svg",      "src": "/vite.svg",
-
-      "sizes": "any",      "sizes": "any",
-
-      "type": "image/svg+xml",      "type": "image/svg+xml",
-
-      "purpose": "maskable any"      "purpose": "maskable any"
-
-    }    }
-
-  ],  ]
-
-  "categories": ["finance", "business", "productivity"],      "purpose": "maskable any"
-
-  "lang": "en",    },
-
-  "prefer_related_applications": false    {
-
-}      "src": "/icons/icon-512x512.png",
+{
+  "name": "Datoro - Free Stock Analysis with AI Insights",
+  "short_name": "Datoro",
+  "description": "Professional stock analysis dashboard with real-time financial data, AI insights, and interactive charts. 10,000+ stocks. Completely free.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#7c3aed",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
     }
   ],
   "categories": ["finance", "business", "productivity"],
+  "lang": "en",
+  "prefer_related_applications": false,
   "screenshots": [
     {
       "src": "/logo.png",

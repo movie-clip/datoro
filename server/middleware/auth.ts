@@ -81,7 +81,7 @@ export function authenticate(requireAuth = true) {
       next()
       
     } catch (_error: any) {
-      console.error('[Auth Middleware] Error:', error)
+      console.error('[Auth Middleware] Error:', _error)
       
       if (requireAuth) {
         return res.status(500).json({

@@ -75,7 +75,7 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Ti
   // Check cache first (7-day TTL for batch data)
   console.log(`[Batch] ${t} (${mode}) → Checking cache (key: ${cacheKey})`)
   const cached = await cache.get(cacheKey)
-  if (cached._data) {
+  if (cached.data) {
     console.log(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
     
     // Decrement global FMP counter for cache hits (not actual API calls)
@@ -90,7 +90,7 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Ti
     let dataHash = ''
     
     // New format: { data: {...}, etag: '...', cachedAt: ... }
-    if (cached.data.etag && cached.data._data) {
+    if (cached.data.etag && cached.data.data) {
       dataHash = cached.data.etag
       responseData = cached.data.data
     } else {

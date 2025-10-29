@@ -25,5 +25,5 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // No ticker prop - using Pinia store
-const { _series, _title, _loading, _error, _message } = useInsiderTradingSeries()
+const { series, title, loading, error, message } = useInsiderTradingSeries()
 </script>

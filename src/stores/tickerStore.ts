@@ -70,7 +70,7 @@ async function checkApiVersion(cache: LRUCache): Promise<boolean> {
     }
     return false
   } catch (_err) {
-    const error = err as Error
+    const error = _err as Error
     console.warn('[TickerStore] Version check failed:', error.message)
     return false
   }
@@ -343,7 +343,7 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
       })
       
     } catch (_err) {
-      const errorObj = err as Error
+      const errorObj = _err as Error
       console.error(`[TickerStore] Error fetching ${t}:`, errorObj)
       error.value = errorObj.message
       batchData.value = null

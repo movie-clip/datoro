@@ -67,7 +67,7 @@ export interface UseDcfCalculatorReturn {
 export function useDcfCalculator(): UseDcfCalculatorReturn {
   // Use Pinia store with storeToRefs to maintain reactivity (project pattern)
   const tickerStore = useTickerStore()
-  const { _batchData, _loading, _currentTicker, _error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
   
   // Extract DCF data from batch (like other composables extract chart data)
   const companyData = computed<unknown>(() => {
@@ -206,8 +206,8 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
         const results = calculateIntrinsicValue(scenarioInputs, companyData.value as any)
         
         // Capture error from average scenario
-        if (scenario === 'average' && results._error) {
-          capturedError = results.error
+        if (scenario === 'average' && results.error) {
+          capturedError = results.error || null
         }
         
         // Use the last projected price as intrinsicValue (what chart shows)

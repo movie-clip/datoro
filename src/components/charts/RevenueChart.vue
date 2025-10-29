@@ -13,7 +13,7 @@
     aria-label="Revenue chart"
     :selected-segments="selectedSegments"
     :view-mode-options="viewModeOptions"
-    :stacked="selectedSegments.length > 1 && !selectedSegments.includes('total')"
+    :stacked="selectedSegments?.length > 1 && !selectedSegments.includes('total')"
     :show-growth-labels="true"
     :ticker="ticker"
     :data-type="dataType"
@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
-const { _selectedSegments, _viewModeOptions, _series, _compactSeries, _title, _message, _loading, _error, _ticker, _dataType } = useRevenueSeries()
+const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error, ticker, dataType } = useRevenueSeries()
 
 const resetSelection = (): void => {
   selectedSegments.value = ['total']

@@ -198,7 +198,7 @@ export function getRevenueSegmentsFromBatch(batchData: BatchData | null): Revenu
     Object.keys(segmentSeries).forEach(key => {
       const series = segmentSeries[key]
       if (series) {
-        series.sort((_a, _b) => _a[0] - _b[0])
+        series.sort((a, b) => a[0] - b[0])
       }
     })
 
@@ -573,7 +573,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
         return [item.date, yieldValue] as SeriesPoint
       })
       .filter((point): point is SeriesPoint => point !== null)
-      .sort((_a, _b) => _a[0] - _b[0])
+      .sort((a, b) => a[0] - b[0])
 
     // For quarterly, limit to last 20 quarters to match other charts
     // For annual, return all available data (FMP typically returns ~20 years)
@@ -631,7 +631,7 @@ export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFrom
     })
 
     // Convert to arrays sorted by date
-    const sorted = Object.values(grouped).sort((_a, _b) => _a.date - _b.date)
+    const sorted = Object.values(grouped).sort((a, b) => a.date - b.date)
 
     return {
       buys: sorted.map(item => [item.date, item.buyValue] as SeriesPoint),

@@ -283,7 +283,7 @@ app.get('/api/company-icon/:ticker', async (req: Request, res: Response) => {
     res.send(buffer)
     
   } catch (_error: any) {
-    console.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, error.message)
+    console.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, _error.message)
     res.status(500).json({ error: 'Failed to fetch company icon' })
   }
 })
@@ -505,7 +505,8 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
           }
         })
       }
-      throw validationError // Re-throw if not a Joi error
+      
+      throw _validationError // Re-throw if not a Joi error
     }
     // ========== End Validation ==========
     
@@ -529,7 +530,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     // Check cache first (only for GET requests)
     if (req.method === 'GET') {
       const cached = await cache.get(cacheKey)
-      if (cached._data) {
+      if (cached.data) {
         console.log(`[FMP] ${subpath} → CACHE HIT (${cached.source})`)
         res.setHeader('X-Cache', cached.source || 'unknown')
         
@@ -541,7 +542,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
           })
           
           // Update company name if this is a profile request
-          if (path.includes('/profile') && Array.isArray(cached._data) && cached.data[0]?.companyName) {
+          if (path.includes('/profile') && Array.isArray(cached.data) && cached.data[0]?.companyName) {
             updateTickerCompanyName(ticker, cached.data[0].companyName).catch((err: any) => {
               console.error('[Database] Company name update error:', err.message)
               isDatabaseAvailable = false // Disable if database is down

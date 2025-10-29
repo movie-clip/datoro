@@ -25,7 +25,7 @@
     class="company-header"
   >
     <img 
-      v-if="profile.image" 
+      v-if="profile?.image" 
       :src="profile.image" 
       :alt="profile.companyName"
       class="company-logo"
@@ -40,7 +40,7 @@
     
     <div class="company-info">
       <div class="company-identity">
-        <span class="company-name">{{ profile.companyName || ticker }}</span>
+        <span class="company-name">{{ profile?.companyName || ticker }}</span>
         <span class="company-ticker">({{ ticker }})</span>
         <StarIcon 
           :ticker="ticker"
@@ -49,13 +49,13 @@
         />
       </div>
       <div class="price-info">
-        <span class="current-price">${{ formatPrice(quote.price) }}</span>
+        <span class="current-price">${{ formatPrice(quote?.price || 0) }}</span>
         <span 
           class="price-change" 
-          :class="{ positive: quote.change >= 0, negative: quote.change < 0 }"
+          :class="{ positive: (quote?.change || 0) >= 0, negative: (quote?.change || 0) < 0 }"
         >
-          {{ quote.change >= 0 ? '+' : '' }}${{ formatPrice(Math.abs(quote.change)) }} 
-          ({{ quote.change >= 0 ? '+' : '' }}{{ quote.changesPercentage?.toFixed(2) }}%)
+          {{ (quote?.change || 0) >= 0 ? '+' : '' }}${{ formatPrice(Math.abs(quote?.change || 0)) }} 
+          ({{ (quote?.change || 0) >= 0 ? '+' : '' }}{{ quote?.changesPercentage?.toFixed(2) || '0.00' }}%)
         </span>
       </div>
     </div>
@@ -101,8 +101,8 @@ const earningsDate = computed(() => {
   // Find next earnings date (future date)
   const now = new Date()
   const upcoming = earningsData
-    .filter(e => e.date && new Date(e.date) >= now)
-    .sort((_a, _b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .filter((e: any) => e.date && new Date(e.date) >= now)
+    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
   return upcoming.length > 0 ? upcoming[0].date : null
 })
 
@@ -123,8 +123,8 @@ const handleToggleWatchlist = async (ticker: string): Promise<void> => {
   try {
     await toggleWatchlist(ticker)
   } catch (_error) {
-    console.error('Error toggling watchlist:', error)
-    alert((error as Error).message || 'Failed to update watchlist')
+    console.error('Error toggling watchlist:', _error)
+    alert((_error as Error).message || 'Failed to update watchlist')
   }
 }
 

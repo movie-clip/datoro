@@ -34,7 +34,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
-const { _series, _title, _message, _loading, _error, _period, _viewModeOptions, _ticker, _dataType } = useNetIncomeSeries()
+const { series, title, message, loading, error, period, viewModeOptions, ticker, dataType } = useNetIncomeSeries()
 </script>
 
 <style scoped>

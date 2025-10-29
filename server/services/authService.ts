@@ -104,7 +104,7 @@ export function verifyToken(token: string): any | null {
       audience: 'datoro-users'
     })
   } catch (_error: any) {
-    console.error('[Auth] Token verification failed:', error.message)
+    console.error('[Auth] Token verification failed:', _error.message)
     return null
   }
 }
@@ -121,7 +121,7 @@ export function verifyToken(token: string): any | null {
  * @returns {Promise<object>} - { user, token }
  */
 export async function registerUser(data: RegisterData, ipAddress: string | null = null, userAgent: string | null = null): Promise<AuthResult> {
-  const { email, password, name } = _data
+  const { email, password, name } = data
   
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -200,7 +200,7 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
  * @returns {Promise<object>} - { user, token }
  */
 export async function loginUser(data: LoginData, ipAddress: string | null = null, userAgent: string | null = null): Promise<AuthResult> {
-  const { email, password } = _data
+  const { email, password } = data
   
   // Find user by email
   const user = await prisma.user.findUnique({
@@ -335,7 +335,7 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
     return { user: userWithoutPassword, token }
     
   } catch (_error: any) {
-    console.error('[Auth] Google OAuth error:', error.message);
+    console.error('[Auth] Google OAuth error:', _error.message);
     throw new Error('Google authentication failed');
   }
 }

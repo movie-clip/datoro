@@ -51,10 +51,10 @@ export async function getExpensesSeries(
                (Number(row.researchAndDevelopmentExpenses) || 0) + 
                (Number(row.sellingGeneralAndAdministrativeExpenses) || 0)
       }))
-      .sort((_a, _b) => a.date - b.date)
+      .sort((a, b) => a.date - b.date)
     
     return { data, error: null }
-  } catch (_error) {
+  } catch (error) {
     return handleServiceError(error, 'getExpensesSeries', [])
   }
 }

@@ -69,7 +69,7 @@ function calculateCAGR(startValue: number, endValue: number, years: number): num
  * @returns DCF-ready company data or null if insufficient data
  */
 export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataForDcf | null {
-  if (!batchData || !batchData._data) {
+  if (!batchData || !batchData.data) {
     console.warn('[DCF Data] No batch data available')
     return null
   }
@@ -169,8 +169,8 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     
     if (incomeQuarter.length >= 8) {
       // Compare TTM (last 4 quarters) vs previous TTM (quarters 5-8)
-      const ttmEps = incomeQuarter.slice(0, 4).reduce((_sum, _q) => sum + (q.eps || 0), 0)
-      const prevTtmEps = incomeQuarter.slice(4, 8).reduce((_sum, _q) => sum + (q.eps || 0), 0)
+      const ttmEps = incomeQuarter.slice(0, 4).reduce((sum, q) => sum + (q.eps || 0), 0)
+      const prevTtmEps = incomeQuarter.slice(4, 8).reduce((sum, q) => sum + (q.eps || 0), 0)
       
       if (ttmEps !== 0 && prevTtmEps !== 0) {
         epsGrowth = ((ttmEps - prevTtmEps) / Math.abs(prevTtmEps)) * 100
@@ -217,7 +217,7 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
       }))
     }
   } catch (_error) {
-    console.error('[DCF Data] Error extracting data from batch:', error)
+    console.error('[DCF Data] Error extracting data from batch:', _error)
     return null
   }
 }
@@ -232,7 +232,7 @@ export function validateDcfData(batchData: BatchData | null): ValidationResult {
   const missingFields: string[] = []
   const details: Record<string, string> = {}
   
-  if (!batchData || !batchData._data) {
+  if (!batchData || !batchData.data) {
     return { 
       valid: false, 
       missingFields: ['Batch data'], 

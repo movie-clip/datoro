@@ -346,7 +346,7 @@ const growthData = computed((): GrowthRates | null => {
             })
           }
         })
-        dataToAnalyze = Array.from(dateMap.entries()).sort((_a, _b) => a[0] - b[0])
+        dataToAnalyze = Array.from(dateMap.entries()).sort((a, b) => a[0] - b[0])
       } else {
         // Use first series
         dataToAnalyze = (props.series[0] as any).data || []
@@ -401,7 +401,7 @@ const createOption = (isLarge = false): EChartsOption => {
       if (allDataPoints.length > 0) {
         if (props.timeframe === 'quarterly') {
           // For quarterly: deduplicate by quarter label, keeping the latest timestamp per quarter
-          const uniqueTimestamps = [...new Set(allDataPoints.map(point => point[0]))].sort((_a, _b) => a - b)
+          const uniqueTimestamps = [...new Set(allDataPoints.map(point => point[0]))].sort((a, b) => a - b)
           
           // Group timestamps by quarter label and keep only the latest one
           const quarterMap = new Map<string, number>()
@@ -421,7 +421,7 @@ const createOption = (isLarge = false): EChartsOption => {
           
           // Convert map back to sorted arrays
           const uniqueQuarters = Array.from(quarterMap.entries())
-            .sort((_a, _b) => a[1] - b[1]) // Sort by timestamp
+            .sort((a, b) => a[1] - b[1]) // Sort by timestamp
           
           timestamps = uniqueQuarters.map(([_, ts]) => ts)
           categoryData = uniqueQuarters.map(([label, _]) => label)

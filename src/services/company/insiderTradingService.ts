@@ -67,10 +67,10 @@ export async function getInsiderTradingAggregated(ticker: string): Promise<Servi
         sells: data.sells,
         net: data.buys - data.sells
       }))
-      .sort((_a, _b) => a.date - b.date)
+      .sort((a, b) => a.date - b.date)
     
     return { data: aggregated, error: null }
-  } catch (_error) {
+  } catch (error) {
     return handleServiceError(error, 'getInsiderTradingAggregated', [])
   }
 }

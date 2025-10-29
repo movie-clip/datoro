@@ -67,7 +67,7 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   // Check multi-layer cache (memory + Redis)
   const cached = await cache.get(cacheKey)
   
-  if (cached && cached._data) {
+  if (cached && cached.data) {
     const duration = Date.now() - startTime
     console.log(`[Search] Cache hit (${cached.source}) for "${searchQuery}" in ${duration}ms`)
     
@@ -132,8 +132,8 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   
   // Combine results in priority order
   results.push(...exactMatch)
-  results.push(...startsWithMatch.sort((_a, _b) => a.symbol.localeCompare(b.symbol)))
-  results.push(...otherMatches.sort((_a, _b) => a.symbol.localeCompare(b.symbol)))
+  results.push(...startsWithMatch.sort((a: any, b: any) => a.symbol.localeCompare(b.symbol)))
+  results.push(...otherMatches.sort((a: any, b: any) => a.symbol.localeCompare(b.symbol)))
   
   // Limit to 5 results
   const finalResults = results.slice(0, 5)
@@ -200,7 +200,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
   // Check cache first (5-minute TTL for Deep Finder)
   console.log(`[DeepFinder] Checking cache for ${stockList.length} tickers (key: ${cacheKey})`)
   const cached = await cache.get(cacheKey)
-  if (cached._data) {
+  if (cached.data) {
     console.log(`[DeepFinder] CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'unknown')
     res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
@@ -233,7 +233,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
       console.log(`[DeepFinder] Fetched ${quotesMap.size} quotes in batch`)
     }
   } catch (_error: any) {
-    console.warn(`[DeepFinder] Batch quotes failed:`, error.message)
+    console.warn(`[DeepFinder] Batch quotes failed:`, _error.message)
   }
   
   // Fetch historical data for each stock (can't be batched)
@@ -281,7 +281,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
           change: quote.changesPercentage || 0
         }
       } catch (_error: any) {
-        console.warn(`[DeepFinder] Error processing ${ticker}:`, error.message)
+        console.warn(`[DeepFinder] Error processing ${ticker}:`, _error.message)
         return null
       }
     })

@@ -35,7 +35,7 @@ const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
 
 // No ticker prop - using Pinia store
-const { _series, _title, _message, _loading, _error } = useEpsSeries()
+const { series, title, message, loading, error } = useEpsSeries()
 </script>
 
 <style scoped>

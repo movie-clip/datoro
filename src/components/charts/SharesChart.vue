@@ -36,7 +36,7 @@ const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
 
 // No ticker prop - using Pinia store - composable will use timeframe from store
-const { _series, _title, _message, _loading, _error } = useSharesSeries()
+const { series, title, message, loading, error } = useSharesSeries()
 </script>
 
 <style scoped>

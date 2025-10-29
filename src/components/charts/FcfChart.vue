@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
-const { _viewMode, _series, _compactSeries, _title, _message, _loading, _error, _ticker, _dataType } = useFcfSeries()
+const { viewMode, series, compactSeries, title, message, loading, error, ticker, dataType } = useFcfSeries()
 
 const viewModeOptions = [
   { label: 'FCF', value: 'fcf' },
