@@ -241,33 +241,32 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
   const validData = await fetchWithDeduplication(cacheKey, async () => {
     const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT', '%5EHSI', '%5EGDAXI'] // S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX (URL encoded ^)
     
-    // Use quote endpoint instead of stock-price-change for better reliability
-    const requests = symbols.map(symbol => 
-      fetchWithTimeout(
-        `${FMP_BASE_URL}/api/v3/quote/${symbol}?apikey=${FMP_API_KEY}`,
-        {},
-        10000
-      )
+    // Use batch quote endpoint - FMP supports comma-separated symbols (5 calls → 1 call)
+    const symbolsParam = symbols.join(',')
+    const response = await fetchWithTimeout(
+      `${FMP_BASE_URL}/api/v3/quote/${symbolsParam}?apikey=${FMP_API_KEY}`,
+      {},
+      10000
     )
     
-    const responses = await Promise.all(requests)
-    const data = await Promise.all(responses.map(async (r) => {
-      if (!r.ok) {
-        console.error(`[Macro] Index stats API error: ${r.statusText}`)
-        return null
-      }
-      const json = await r.json()
-      
-      // Quote endpoint returns an array
-      const quote = Array.isArray(json) ? json[0] : json
-      
-      // Check for FMP API error messages
-      if (quote && typeof quote === 'object' && 'Error Message' in quote) {
-        console.error('[Macro] FMP API Error:', quote['Error Message'])
-        return null
-      }
-      
-      // Transform quote data to match IndexStats interface
+    if (!response.ok) {
+      console.error(`[Macro] Index stats API error: ${response.statusText}`)
+      throw new Error(`FMP API error: ${response.statusText}`)
+    }
+    
+    const json = await response.json()
+    
+    // Check for FMP API error messages
+    if (json && typeof json === 'object' && 'Error Message' in json) {
+      console.error('[Macro] FMP API Error:', json['Error Message'])
+      throw new Error(json['Error Message'] as string)
+    }
+    
+    // Quote endpoint with multiple symbols returns an array of quotes
+    const quotes = Array.isArray(json) ? json : [json]
+    
+    // Transform quote data to match IndexStats interface
+    const data = quotes.map((quote: any) => {
       if (quote && typeof quote === 'object' && 'symbol' in quote && 'changesPercentage' in quote) {
         return {
           symbol: quote.symbol,
@@ -286,18 +285,15 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
       }
       console.warn('[Macro] Invalid index stats response:', quote)
       return null
-    }))
+    }).filter((d: any) => d !== null)
     
-    // Filter out failed requests
-    const validDataResults = data.filter(d => d !== null)
-    
-    if (validDataResults.length === 0) {
+    if (data.length === 0) {
       console.error('[Macro] No valid index stats data received')
       return []
     }
     
-    console.log(`[Macro] Index Stats → Successfully fetched ${validDataResults.length} indices`)
-    return validDataResults
+    console.log(`[Macro] Index Stats → Successfully fetched ${data.length} indices in single batch call`)
+    return data
   })
   
   // Cache for 15 minutes (reasonable delay for macro dashboard)
@@ -449,10 +445,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=unemploymentRate&apikey=${FMP_API_KEY}`, {}, 10000),
       // SPX historical
       fetchWithTimeout(`${FMP_BASE_URL}/api/v3/historical-price-full/%5EGSPC?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000),
-      // Index quotes (all 3 in parallel)
-      Promise.all(symbols.map(symbol => 
-        fetchWithTimeout(`${FMP_BASE_URL}/api/v3/quote/${symbol}?apikey=${FMP_API_KEY}`, {}, 10000)
-      )),
+      // Index quotes - batch call for all 5 indices (optimized: 5 calls → 1 call)
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v3/quote/${symbols.join(',')}?apikey=${FMP_API_KEY}`, {}, 10000),
       // Sectors
       fetchWithTimeout(`${FMP_BASE_URL}/api/v3/sector-performance?apikey=${FMP_API_KEY}`, {}, 10000),
       // Risk premium
@@ -502,34 +496,32 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       batchData.spx = (spxData as any).historical || []
     }
     
-    // Index stats (transform quotes to IndexStats format)
-    if (indexQuotesRes.status === 'fulfilled') {
-      const quotes = await Promise.all(
-        indexQuotesRes.value.map(async (r: globalThis.Response) => {
-          if (!r.ok) return null
-          const json = await r.json()
-          const quote = Array.isArray(json) ? json[0] : json
-          
-          if (quote && typeof quote === 'object' && 'symbol' in quote && 'changesPercentage' in quote) {
-            return {
-              symbol: quote.symbol,
-              '1D': quote.changesPercentage || 0,
-              '5D': 0,
-              '1M': 0,
-              '3M': 0,
-              '6M': 0,
-              ytd: 0,
-              '1Y': 0,
-              '3Y': 0,
-              '5Y': 0,
-              '10Y': 0,
-              max: 0
-            }
+    // Index stats (transform batch quotes to IndexStats format)
+    if (indexQuotesRes.status === 'fulfilled' && indexQuotesRes.value.ok) {
+      const json = await indexQuotesRes.value.json()
+      const quotes = Array.isArray(json) ? json : [json]
+      
+      const indexStats = quotes.map((quote: any) => {
+        if (quote && typeof quote === 'object' && 'symbol' in quote && 'changesPercentage' in quote) {
+          return {
+            symbol: quote.symbol,
+            '1D': quote.changesPercentage || 0,
+            '5D': 0,
+            '1M': 0,
+            '3M': 0,
+            '6M': 0,
+            ytd: 0,
+            '1Y': 0,
+            '3Y': 0,
+            '5Y': 0,
+            '10Y': 0,
+            max: 0
           }
-          return null
-        })
-      )
-      batchData.indexStats = quotes.filter(q => q !== null)
+        }
+        return null
+      }).filter((q: any) => q !== null)
+      
+      batchData.indexStats = indexStats
     }
     
     // Sectors

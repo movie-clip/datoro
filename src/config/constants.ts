@@ -27,6 +27,9 @@ export const CACHE_TTL = {
   
   /** Deep Finder data: 5 minutes */
   DEEP_FINDER: 5 * 60 * 1000,
+  
+  /** Macro economic data: 5 minutes */
+  MACRO_DATA: 5 * 60 * 1000,
 } as const
 
 // ============================================

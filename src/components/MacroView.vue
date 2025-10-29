@@ -57,6 +57,7 @@ import { useMacroChart } from '../composables/useMacroChart'
 import { useChartSync } from '../composables/useChartSync'
 import { createChartOptions, DEFAULT_SLIDER_CONFIG } from '../utils/chartConfigFactory'
 import { MACRO_CHART_CONFIGS, RISK_PREMIUM_CONFIG } from '../config/macroChartConfigs'
+import { CACHE_TTL } from '../config/constants'
 import type { ChartConfig } from '../types/macro.types'
 import MacroChart from './macro/MacroChart.vue'
 import MacroHeader from './macro/MacroHeader.vue'
@@ -79,6 +80,46 @@ use([
 // Chart configurations
 const chartConfigs = MACRO_CHART_CONFIGS
 const riskPremiumConfig = RISK_PREMIUM_CONFIG
+
+// Frontend cache for macro data
+interface CachedMacroData {
+  data: MacroData
+  timestamp: number
+}
+
+let macroDataCache: CachedMacroData | null = null
+
+/**
+ * Check if cache is valid (not expired)
+ */
+function isCacheValid(): boolean {
+  if (!macroDataCache) return false
+  const now = Date.now()
+  const age = now - macroDataCache.timestamp
+  return age < CACHE_TTL.MACRO_DATA
+}
+
+/**
+ * Get cached data if valid
+ */
+function getCachedData(): MacroData | null {
+  if (isCacheValid()) {
+    console.log('[Macro] Using cached data (age:', Math.floor((Date.now() - macroDataCache!.timestamp) / 1000), 's)')
+    return macroDataCache!.data
+  }
+  return null
+}
+
+/**
+ * Store data in cache
+ */
+function setCachedData(data: MacroData): void {
+  macroDataCache = {
+    data,
+    timestamp: Date.now()
+  }
+  console.log('[Macro] Data cached for', CACHE_TTL.MACRO_DATA / 1000, 'seconds')
+}
 
 // Data state
 const loading = ref(true)
@@ -174,13 +215,27 @@ const indexData = computed(() => {
 })
 
 /**
- * Load macro economic data
+ * Load macro economic data with caching
  */
 const loadData = async () => {
   try {
     loading.value = true
     error.value = null
-    macroData.value = await fetchAllMacroData()
+    
+    // Check cache first
+    const cached = getCachedData()
+    if (cached) {
+      macroData.value = cached
+      loading.value = false
+      return
+    }
+    
+    // Fetch fresh data
+    const freshData = await fetchAllMacroData()
+    macroData.value = freshData
+    
+    // Store in cache
+    setCachedData(freshData)
   } catch (err: any) {
     console.error('[Macro] Failed to load data:', err)
     error.value = err.message || 'Failed to load macro data'

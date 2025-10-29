@@ -486,6 +486,12 @@ const handleSelectTicker = (ticker: string): void => {
     <Teleport to="body">
       <div v-if="showMacro" class="modal-overlay" @click.self="showMacro = false">
         <div class="modal-container macro-modal">
+          <button class="modal-close macro-close" @click="showMacro = false" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
           <MacroView />
         </div>
       </div>
@@ -881,6 +887,7 @@ const handleSelectTicker = (ticker: string): void => {
   padding: 20px;
 }
 
+/* size of Macro window */
 .modal-container.macro-modal {
   background: #1a1a1a;
   border-radius: 12px;
@@ -888,7 +895,7 @@ const handleSelectTicker = (ticker: string): void => {
   max-width: 1200px;
   width: 95%;
   min-height: 600px;
-  max-height: 90vh;
+  max-height: 93vh;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
@@ -950,6 +957,26 @@ const handleSelectTicker = (ticker: string): void => {
 
 .modal-close svg {
   color: #fff;
+}
+
+/* Smaller close button for Macro modal */
+.modal-close.macro-close {
+  width: 32px;
+  height: 32px;
+  top: 2px;
+  right: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.modal-close.macro-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.modal-close.macro-close svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ============================================
