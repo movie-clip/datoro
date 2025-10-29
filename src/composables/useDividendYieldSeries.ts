@@ -6,7 +6,7 @@ import { getDividendYieldSeriesFromBatch } from '../services/financials/batchCha
 type Period = 'annual' | 'quarterly'
 
 export interface UseDividendYieldSeriesReturn {
-  period: Ref<Period>
+  period: ComputedRef<Period>
   series: ComputedRef<[number, number][]>
   title: Ref<string>
   message: Ref<string>
@@ -17,13 +17,15 @@ export interface UseDividendYieldSeriesReturn {
 }
 
 export function useDividendYieldSeries(): UseDividendYieldSeriesReturn {
-  const period = ref<Period>('annual')
   const title = ref('Dividend Yield — Empty')
   const message = ref('')
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  
+  // Use timeframe from store instead of local ref
+  const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data - single source of truth
   const rawData = computed(() => getDividendYieldSeriesFromBatch(batchData.value, period.value))

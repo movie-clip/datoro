@@ -1,5 +1,6 @@
 <template>
   <BaseChart
+    :key="`expenses-${timeframe}`"
     :title="title"
     :series="series"
     :compact-series="compactSeries"
@@ -15,12 +16,14 @@
     :show-growth-labels="true"
     :invert-growth="true"
     :force-expanded="forceExpanded"
+    :timeframe="timeframe"
     @update:selected-segments="selectedSegments = $event"
     @modal-closed="resetSelection"
   />
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import BaseChart from '../common/BaseChart.vue'
 import { useExpensesSeries } from '../../composables/useExpensesSeries'
 import { useTickerStore } from '../../stores/tickerStore'
@@ -35,6 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
+const { timeframe } = storeToRefs(tickerStore)
 const { 
   selectedSegments, 
   series, 

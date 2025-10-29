@@ -1,6 +1,7 @@
 
 <template>
   <BaseChart
+    :key="`capital-${timeframe}`"
     v-model:selected-segments="selectedSegments"
     :title="title"
     :series="series"
@@ -15,11 +16,14 @@
     :show-growth-labels="true"
     aria-label="Capital returned to shareholders chart"
     :force-expanded="forceExpanded"
+    :timeframe="timeframe"
   />
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useCapitalReturnedSeries } from '../../composables/useCapitalReturnedSeries'
+import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
 interface Props {
@@ -29,6 +33,10 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
+
+// Get timeframe from store for chart key
+const tickerStore = useTickerStore()
+const { timeframe } = storeToRefs(tickerStore)
 
 // No ticker prop - using Pinia store
 const { series, title, message, loading, error, emptyDataMessage, selectedSegments } = useCapitalReturnedSeries()

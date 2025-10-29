@@ -1,6 +1,7 @@
 
 <template>
   <BaseChart
+    :key="`fcf-${ticker}-${timeframe}`"
     v-model:view-mode="viewMode"
     :title="title"
     :series="series"
@@ -16,11 +17,13 @@
     :ticker="ticker"
     :data-type="dataType"
     :force-expanded="forceExpanded"
+    :timeframe="timeframe"
     @modal-closed="resetViewMode"
   />
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useFcfSeries } from '../../composables/useFcfSeries'
 import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
@@ -35,6 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
+const { timeframe } = storeToRefs(tickerStore)
 const { viewMode, series, compactSeries, title, message, loading, error, ticker, dataType } = useFcfSeries()
 
 const viewModeOptions = [

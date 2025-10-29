@@ -35,28 +35,41 @@ export function extractYearsFromSeries(dataPoints: TimeSeriesPoint[]): number[] 
 
 /**
  * Convert time-series data to category-aligned values for bar charts
- * Maps timestamp-based data points to specific years, filling missing years with 0
+ * Maps timestamp-based data points to specific years/timestamps, filling missing entries with 0
  * @param timeSeriesData - Array of [timestamp, value] pairs
- * @param categoryYears - Array of years to map values to
+ * @param categoryYears - Array of years OR timestamps to map values to
  * @returns Array of values aligned to categoryYears
  * @example convertToCategoryData([[ts1, 100], [ts2, 200]], [2020, 2021]) => [100, 200]
+ * @example convertToCategoryData([[ts1, 100], [ts2, 200]], [ts1, ts2, ts3]) => [100, 200, 0]
  */
 export function convertToCategoryData(timeSeriesData: TimeSeriesPoint[], categoryYears: number[]): number[] {
   if (!timeSeriesData || !Array.isArray(timeSeriesData) || timeSeriesData.length === 0) {
     return []
   }
 
-  // Create a map: year -> value
-  const yearValueMap = new Map<number, number>()
-  timeSeriesData.forEach(point => {
-    if (Array.isArray(point) && point.length >= 2) {
-      const year = new Date(point[0]).getFullYear()
-      yearValueMap.set(year, point[1])
-    }
-  })
+  // Check if categoryYears contains timestamps (large numbers > year 9999)
+  const isTimestampMode = categoryYears.length > 0 && categoryYears[0] > 10000
 
-  // Return values in the same order as categoryYears
-  return categoryYears.map(year => yearValueMap.get(year) || 0)
+  if (isTimestampMode) {
+    // Timestamp mode: direct timestamp matching for quarterly data
+    const timestampValueMap = new Map<number, number>()
+    timeSeriesData.forEach(point => {
+      if (Array.isArray(point) && point.length >= 2) {
+        timestampValueMap.set(point[0], point[1])
+      }
+    })
+    return categoryYears.map(ts => timestampValueMap.get(ts) || 0)
+  } else {
+    // Year mode: map timestamps to years for annual data
+    const yearValueMap = new Map<number, number>()
+    timeSeriesData.forEach(point => {
+      if (Array.isArray(point) && point.length >= 2) {
+        const year = new Date(point[0]).getFullYear()
+        yearValueMap.set(year, point[1])
+      }
+    })
+    return categoryYears.map(year => yearValueMap.get(year) || 0)
+  }
 }
 
 /**

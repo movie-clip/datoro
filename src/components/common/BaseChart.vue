@@ -225,6 +225,7 @@ interface Props {
   error?: string | null
   message?: string | null
   emptyDataMessage?: string | null
+  timeframe?: 'annual' | 'quarterly'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -253,7 +254,8 @@ const props = withDefaults(defineProps<Props>(), {
   customGrowthData: null,
   error: null,
   message: null,
-  emptyDataMessage: null
+  emptyDataMessage: null,
+  timeframe: 'annual'
 })
 
 const showModal = ref(false)
@@ -380,11 +382,12 @@ const hasSeriesData = (opt: EChartsOption): boolean => {
 }
 
 const createOption = (isLarge = false): EChartsOption => {
-  // For bar charts, extract years and create category axis
+  // For bar charts, extract years/quarters and create category axis
   // For line charts, use time axis
   let uniqueYears: number | null = null
   let yearsList: number[] = []
   let categoryData: string[] = []
+  let timestamps: number[] = [] // Store original timestamps for quarterly data
   
   // Use compactSeries for compact view if provided, otherwise use series
   const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
@@ -394,13 +397,41 @@ const createOption = (isLarge = false): EChartsOption => {
     if (Array.isArray(dataSource)) {
       const allDataPoints = getAllDataPoints(dataSource as any)
       
-      // Extract unique years and sort using utility function
+      // Handle quarterly vs annual data differently
       if (allDataPoints.length > 0) {
-        yearsList = extractYearsFromSeries(allDataPoints)
-        uniqueYears = yearsList.length
-        
-        // For bar charts, create category data (year strings)
-        categoryData = yearsList.map(y => String(y))
+        if (props.timeframe === 'quarterly') {
+          // For quarterly: deduplicate by quarter label, keeping the latest timestamp per quarter
+          const uniqueTimestamps = [...new Set(allDataPoints.map(point => point[0]))].sort((a, b) => a - b)
+          
+          // Group timestamps by quarter label and keep only the latest one
+          const quarterMap = new Map<string, number>()
+          uniqueTimestamps.forEach(ts => {
+            const date = new Date(ts)
+            const year = date.getFullYear()
+            const month = date.getMonth()
+            const quarter = Math.floor(month / 3) + 1
+            const label = `Q${quarter} ${year}`
+            
+            // Keep the latest timestamp for each quarter
+            const existingTs = quarterMap.get(label)
+            if (!existingTs || ts > existingTs) {
+              quarterMap.set(label, ts)
+            }
+          })
+          
+          // Convert map back to sorted arrays
+          const uniqueQuarters = Array.from(quarterMap.entries())
+            .sort((a, b) => a[1] - b[1]) // Sort by timestamp
+          
+          timestamps = uniqueQuarters.map(([_, ts]) => ts)
+          categoryData = uniqueQuarters.map(([label, _]) => label)
+          uniqueYears = timestamps.length
+        } else {
+          // For annual: extract unique years as before
+          yearsList = extractYearsFromSeries(allDataPoints)
+          uniqueYears = yearsList.length
+          categoryData = yearsList.map(y => String(y))
+        }
       }
     }
   }
@@ -488,7 +519,7 @@ const createOption = (isLarge = false): EChartsOption => {
   // Handle both single series array and multi-series array
   const series = createSeriesConfig(dataSource, props.kind, {
     title: props.title,
-    yearsList,
+    yearsList: props.timeframe === 'quarterly' ? timestamps : yearsList,
     barMaxWidth: props.barMaxWidth,
     smooth: props.smooth,
     isLarge

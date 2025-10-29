@@ -1,6 +1,7 @@
 
 <template>
   <BaseChart
+    :key="`eps-${timeframe}`"
     :title="title"
     :series="series"
     kind="bar"
@@ -11,11 +12,14 @@
     aria-label="EPS chart"
     :show-growth-labels="true"
     :force-expanded="forceExpanded"
+    :timeframe="timeframe"
   />
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useEpsSeries } from '../../composables/useEpsSeries'
+import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
 interface Props {
@@ -25,6 +29,10 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
+
+// Get timeframe from store for chart key
+const tickerStore = useTickerStore()
+const { timeframe } = storeToRefs(tickerStore)
 
 // No ticker prop - using Pinia store
 const { series, title, message, loading, error } = useEpsSeries()

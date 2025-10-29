@@ -1,6 +1,7 @@
 
 <template>
   <BaseChart
+    :key="`ebitda-${timeframe}`"
     :title="title"
     :series="chartView === 'margin' ? ebitdaWithMargin : series"
     :compact-series="ebitdaWithMargin"
@@ -17,6 +18,7 @@
     aria-label="EBITDA chart"
     :show-growth-labels="chartView !== 'bridge'"
     :force-expanded="forceExpanded"
+    :timeframe="timeframe"
     @update:selected-segments="selectedSegments = $event"
     @modal-closed="resetView"
   >
@@ -42,10 +44,11 @@
 </template>
 
 <script setup lang="ts">
-import { useEbitdaSeries } from '../../composables/useEbitdaSeries'
-import BaseChart from '../common/BaseChart.vue'
-
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useEbitdaSeries } from '../../composables/useEbitdaSeries'
+import { useTickerStore } from '../../stores/tickerStore'
+import BaseChart from '../common/BaseChart.vue'
 
 interface Props {
   forceExpanded?: boolean
@@ -54,6 +57,10 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
+
+// Get timeframe from store for chart key
+const tickerStore = useTickerStore()
+const { timeframe } = storeToRefs(tickerStore)
 
 // No ticker prop - using Pinia store
 const { 

@@ -1,5 +1,6 @@
 <template>
   <BaseChart
+    :key="`netincome-${ticker}-${period}`"
     v-model:period="period"
     :title="title"
     :series="series"
@@ -14,6 +15,7 @@
     :ticker="ticker"
     :data-type="dataType"
     :force-expanded="forceExpanded"
+    :timeframe="period"
   />
 </template>
 

@@ -463,17 +463,34 @@ export function getExpensesSeriesFromBatch(batchData: BatchData | null, period: 
 export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, period: Period = 'annual'): SeriesPoint[] {
   try {
     const dividendHistory = batchData?.data?.dividendHistory
-    const profile = batchData?.data?.profile?.[0]
+    const priceHistory = batchData?.data?.priceHistory
 
     if (!dividendHistory || !Array.isArray(dividendHistory.historical) || dividendHistory.historical.length === 0) {
       return []
     }
 
-    // Get current price for yield calculation
-    const currentPrice = Number(profile?.price) || 1
+    if (!priceHistory || !Array.isArray(priceHistory.historical) || priceHistory.historical.length === 0) {
+      return []
+    }
 
-    // Group dividends by year or quarter
-    const grouped: Record<string, { date: number; totalDividend: number; count: number }> = {}
+    // Create a map of dates to prices for quick lookup
+    const priceMap = new Map<string, number>()
+    let earliestPrice = Number.MAX_VALUE
+    let earliestPriceValue = 0
+    
+    priceHistory.historical.forEach(priceData => {
+      const priceDate = new Date(priceData.date).getTime()
+      priceMap.set(priceData.date, Number(priceData.close))
+      
+      // Track the earliest available price as fallback for old dividend data
+      if (priceDate < earliestPrice) {
+        earliestPrice = priceDate
+        earliestPriceValue = Number(priceData.close)
+      }
+    })
+
+    // Group dividends by year or quarter, tracking dates for price lookup
+    const grouped: Record<string, { date: number; totalDividend: number; dividendDates: string[]; count: number }> = {}
 
     if (dividendHistory.historical) {
       dividendHistory.historical.forEach(div => {
@@ -491,20 +508,79 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
               ? new Date(year, quarter * 3, 1).getTime()
               : new Date(year, 0, 1).getTime(),
             totalDividend: 0,
+            dividendDates: [],
             count: 0
           }
         }
 
         grouped[key].totalDividend += Number(div.dividend) || Number(div.adjDividend) || 0
+        grouped[key].dividendDates.push(div.date)
         grouped[key].count++
       })
     }
 
-    // Calculate yield for each period
-    return Object.values(grouped).map(item => {
-      const yieldValue = (item.totalDividend / currentPrice) * 100
-      return [item.date, yieldValue] as SeriesPoint
-    }).sort((a, b) => a[0] - b[0])
+    // Calculate yield for each period using the average price during that period
+    const allData = Object.values(grouped)
+      .map(item => {
+        // Find the average price during this period by looking up prices near dividend payment dates
+        let totalPrice = 0
+        let priceCount = 0
+        
+        item.dividendDates.forEach(divDate => {
+          // Try to find the exact date or nearby dates
+          const price = priceMap.get(divDate)
+          if (price) {
+            totalPrice += price
+            priceCount++
+          } else {
+            // If exact date not found, look for nearby trading days (within 5 days)
+            const divDateTime = new Date(divDate).getTime()
+            for (let offset = 0; offset <= 5; offset++) {
+              const checkDateStr = new Date(divDateTime - offset * 86400000).toISOString().split('T')[0]
+              if (checkDateStr) {
+                const nearbyPrice = priceMap.get(checkDateStr)
+                if (nearbyPrice) {
+                  totalPrice += nearbyPrice
+                  priceCount++
+                  break
+                }
+              }
+            }
+          }
+        })
+
+        if (priceCount === 0) {
+          // Fallback: use earliest available price for old dividend data (pre-2020)
+          // This happens when dividend history goes back further than price history
+          if (earliestPriceValue > 0) {
+            const annualizedDividend = period === 'quarterly' 
+              ? item.totalDividend * 4 
+              : item.totalDividend
+            const yieldValue = (annualizedDividend / earliestPriceValue) * 100
+            return [item.date, yieldValue] as SeriesPoint
+          }
+          return null // Skip if we have no price data at all
+        }
+
+        const avgPrice = totalPrice / priceCount
+
+        // For quarterly: annualize by multiplying by 4 (assumes quarterly dividends)
+        // For annual: use the sum as-is
+        const annualizedDividend = period === 'quarterly' 
+          ? item.totalDividend * 4 
+          : item.totalDividend
+        const yieldValue = (annualizedDividend / avgPrice) * 100
+        return [item.date, yieldValue] as SeriesPoint
+      })
+      .filter((point): point is SeriesPoint => point !== null)
+      .sort((a, b) => a[0] - b[0])
+
+    // For quarterly, limit to last 20 quarters to match other charts
+    // For annual, return all available data (FMP typically returns ~20 years)
+    if (period === 'quarterly') {
+      return allData.slice(-20)
+    }
+    return allData
 
   } catch (error) {
     console.error('[BatchChartService] getDividendYieldSeriesFromBatch error:', error)

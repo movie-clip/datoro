@@ -1,6 +1,7 @@
 
 <template>
   <BaseChart
+    :key="`shares-${timeframe}`"
     :title="title"
     :series="series"
     kind="bar"
@@ -12,12 +13,14 @@
     :invert-growth="true"
     aria-label="Shares Outstanding chart"
     :force-expanded="forceExpanded"
+    :timeframe="timeframe"
   />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useSharesSeries } from '../../composables/useSharesSeries'
+import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
 interface Props {
@@ -28,9 +31,12 @@ const props = withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
 
-// No ticker prop - using Pinia store
-const period = ref<'annual' | 'quarterly'>('annual')
-const { series, title, message, loading, error } = useSharesSeries(period)
+// Get timeframe from store for chart key
+const tickerStore = useTickerStore()
+const { timeframe } = storeToRefs(tickerStore)
+
+// No ticker prop - using Pinia store - composable will use timeframe from store
+const { series, title, message, loading, error } = useSharesSeries()
 </script>
 
 <style scoped>
