@@ -4,7 +4,7 @@
  * Handles P3009 errors from our migration renaming (20250113 -> 20251029)
  */
 
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 console.log('🔄 Smart Migration Deploy...\n');
 
