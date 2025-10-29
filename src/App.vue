@@ -1004,8 +1004,8 @@ const handleSelectTicker = (ticker: string): void => {
 
 .modal-close {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 20px;
+  right: 15px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;

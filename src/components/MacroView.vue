@@ -17,15 +17,6 @@
           </div>
         </div>
       </div>
-      
-      <button 
-        class="sync-toggle-btn"
-        :class="{ active: syncCharts }"
-        @click="syncCharts = !syncCharts"
-        :title="syncCharts ? 'Click to unsync chart time windows' : 'Click to sync chart time windows'"
-      >
-        {{ syncCharts ? 'Synced' : 'Sync' }}
-      </button>
     </div>
 
     <div v-if="error" class="error-state">
@@ -37,6 +28,14 @@
       <!-- Unemployment Rate -->
       <div class="macro-card">
         <h2>Unemployment Rate</h2>
+        <button
+          class="chart-sync-btn"
+          :class="{ active: unemploymentSynced }"
+          @click="unemploymentSynced = !unemploymentSynced"
+          :title="unemploymentSynced ? 'Synced with other charts' : 'Click to sync with other charts'"
+        >
+          🔗
+        </button>
         <button
           v-if="unemploymentZoomed"
           class="reset-zoom-btn"
@@ -60,6 +59,14 @@
       <div class="macro-card">
         <h2>Federal Funds Rate</h2>
         <button
+          class="chart-sync-btn"
+          :class="{ active: fedFundsSynced }"
+          @click="fedFundsSynced = !fedFundsSynced"
+          :title="fedFundsSynced ? 'Synced with other charts' : 'Click to sync with other charts'"
+        >
+          🔗
+        </button>
+        <button
           v-if="fedFundsZoomed"
           class="reset-zoom-btn"
           @click="resetFedFundsZoom"
@@ -81,6 +88,14 @@
       <!-- Consumer Sentiment -->
       <div class="macro-card">
         <h2>Consumer Sentiment</h2>
+        <button
+          class="chart-sync-btn"
+          :class="{ active: consumerSentimentSynced }"
+          @click="consumerSentimentSynced = !consumerSentimentSynced"
+          :title="consumerSentimentSynced ? 'Synced with other charts' : 'Click to sync with other charts'"
+        >
+          🔗
+        </button>
         <button
           v-if="consumerSentimentZoomed"
           class="reset-zoom-btn"
@@ -104,6 +119,14 @@
       <div class="macro-card">
         <h2>Inflation</h2>
         <button
+          class="chart-sync-btn"
+          :class="{ active: inflationSynced }"
+          @click="inflationSynced = !inflationSynced"
+          :title="inflationSynced ? 'Synced with other charts' : 'Click to sync with other charts'"
+        >
+          🔗
+        </button>
+        <button
           v-if="inflationZoomed"
           class="reset-zoom-btn"
           @click="resetInflationZoom"
@@ -125,6 +148,14 @@
       <!-- Retail Sales -->
       <div class="macro-card">
         <h2>Retail Sales</h2>
+        <button
+          class="chart-sync-btn"
+          :class="{ active: retailSalesSynced }"
+          @click="retailSalesSynced = !retailSalesSynced"
+          :title="retailSalesSynced ? 'Synced with other charts' : 'Click to sync with other charts'"
+        >
+          🔗
+        </button>
         <button
           v-if="retailSalesZoomed"
           class="reset-zoom-btn"
@@ -205,8 +236,13 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const macroData = ref<MacroData | null>(null)
 
-// Sync state
-const syncCharts = ref(false)
+// Individual sync state for each chart (enabled by default)
+const unemploymentSynced = ref(true)
+const fedFundsSynced = ref(true)
+const consumerSentimentSynced = ref(true)
+const inflationSynced = ref(true)
+const retailSalesSynced = ref(true)
+
 const syncedTimeRange = ref({ start: 0, end: 100 })
 const isSyncing = ref(false) // Flag to prevent infinite sync loops
 
@@ -290,14 +326,14 @@ onMounted(async () => {
   
   // Set up dataZoom event listeners for all charts
   const chartRefs = [
-    { ref: unemploymentChartRef, zoomRef: unemploymentZoomed },
-    { ref: retailSalesChartRef, zoomRef: retailSalesZoomed },
-    { ref: consumerSentimentChartRef, zoomRef: consumerSentimentZoomed },
-    { ref: inflationChartRef, zoomRef: inflationZoomed },
-    { ref: fedFundsChartRef, zoomRef: fedFundsZoomed }
+    { ref: unemploymentChartRef, zoomRef: unemploymentZoomed, syncRef: unemploymentSynced },
+    { ref: fedFundsChartRef, zoomRef: fedFundsZoomed, syncRef: fedFundsSynced },
+    { ref: consumerSentimentChartRef, zoomRef: consumerSentimentZoomed, syncRef: consumerSentimentSynced },
+    { ref: inflationChartRef, zoomRef: inflationZoomed, syncRef: inflationSynced },
+    { ref: retailSalesChartRef, zoomRef: retailSalesZoomed, syncRef: retailSalesSynced }
   ]
   
-  chartRefs.forEach(({ ref: chartRef, zoomRef }, idx) => {
+  chartRefs.forEach(({ ref: chartRef, zoomRef, syncRef }, idx) => {
     if (chartRef.value) {
       const chartInstance = (chartRef.value as any).chart
       if (chartInstance) {
@@ -311,13 +347,14 @@ onMounted(async () => {
             const { start, end } = option.dataZoom[0]
             zoomRef.value = start !== 0 || end !== 100
             
-            // If sync is enabled, update all other charts
-            if (syncCharts.value) {
+            // If this chart has sync enabled, update all other synced charts
+            if (syncRef.value) {
               isSyncing.value = true
               syncedTimeRange.value = { start, end }
               
-              chartRefs.forEach(({ ref: otherRef, zoomRef: otherZoomRef }, otherIdx) => {
-                if (otherIdx !== idx && otherRef.value) {
+              chartRefs.forEach(({ ref: otherRef, zoomRef: otherZoomRef, syncRef: otherSyncRef }, otherIdx) => {
+                // Only sync to other charts that have sync enabled
+                if (otherIdx !== idx && otherRef.value && otherSyncRef.value) {
                   const otherInstance = (otherRef.value as any).chart
                   if (otherInstance) {
                     otherInstance.dispatchAction({
@@ -914,40 +951,6 @@ const riskPremiumChartOption = computed(() => {
   white-space: nowrap;
 }
 
-.sync-toggle-btn {
-  background: rgba(0, 181, 154, 0.15);
-  border: 1px solid rgba(0, 181, 154, 0.4);
-  border-radius: 6px;
-  padding: 8px 16px;
-  color: #00B59A;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  margin-right: 60px;
-}
-
-.sync-toggle-btn:hover {
-  background: rgba(0, 181, 154, 0.25);
-  border-color: rgba(0, 181, 154, 0.6);
-  transform: translateY(-1px);
-}
-
-.sync-toggle-btn.active {
-  background: rgba(0, 181, 154, 0.3);
-  border-color: #00B59A;
-  color: #00E0B8;
-  box-shadow: 0 0 12px rgba(0, 181, 154, 0.4);
-}
-
-.sync-toggle-btn:active {
-  transform: scale(0.98);
-}
-
 .index-cards {
   display: flex;
   gap: 12px;
@@ -1161,6 +1164,50 @@ const riskPremiumChartOption = computed(() => {
 }
 
 .reset-zoom-btn:active {
+  transform: scale(0.95);
+}
+
+.chart-sync-btn {
+  position: absolute;
+  top: 12px;
+  right: 55px;
+  width: 32px;
+  height: 32px;
+  background: rgba(120, 120, 120, 0.15);
+  border: 1px solid rgba(150, 150, 150, 0.3);
+  border-radius: 6px;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  padding: 0;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+.chart-sync-btn:hover {
+  background: rgba(120, 120, 120, 0.25);
+  border-color: rgba(150, 150, 150, 0.5);
+  color: #CCC;
+  transform: scale(1.05);
+}
+
+.chart-sync-btn.active {
+  background: rgba(0, 181, 154, 0.15);
+  border-color: rgba(0, 181, 154, 0.4);
+  color: #027261;
+}
+
+.chart-sync-btn.active:hover {
+  background: rgba(0, 181, 154, 0.25);
+  border-color: rgba(0, 181, 154, 0.6);
+}
+
+.chart-sync-btn:active {
   transform: scale(0.95);
 }
 
