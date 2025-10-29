@@ -28,7 +28,7 @@ export function initAdminRoutes(deps: { isDatabaseAvailable: boolean }) {
  * Use this for Docker/k8s health checks with longer timeout
  */
 router.get('/readiness', asyncHandler(async (_req: Request, res: Response) => {
-  const checks: any = {
+  const checks: unknown = {
     server: 'ok',
     database: 'unknown',
     redis: 'unknown',
@@ -39,12 +39,12 @@ router.get('/readiness', asyncHandler(async (_req: Request, res: Response) => {
   if (isDatabaseAvailable) {
     try {
       const { testDatabaseConnection } = await import('../services/databaseService.js')
-      const dbTimeout = new Promise((_, reject) => 
+      const dbTimeout = new Promise((__, _reject) => 
         setTimeout(() => reject(new Error('Database timeout')), 2000)
       )
       await Promise.race([testDatabaseConnection(), dbTimeout])
       checks.database = 'connected'
-    } catch (dbError: any) {
+    } catch (_dbError: any) {
       checks.database = 'disconnected'
       console.warn('[Health] Database check failed:', dbError.message)
     }
@@ -56,7 +56,7 @@ router.get('/readiness', asyncHandler(async (_req: Request, res: Response) => {
   try {
     const isConnected = await cache.ping()
     checks.redis = isConnected ? 'connected' : 'disconnected'
-  } catch (redisError: any) {
+  } catch (_redisError: any) {
     checks.redis = cache.isMemoryOnly() ? 'memory-fallback' : 'disconnected'
     console.warn('[Health] Redis check failed:', redisError.message)
   }

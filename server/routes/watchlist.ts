@@ -73,7 +73,7 @@ router.get('/watchlist', generalLimiter, authenticate(), requireAuth, async (req
     })
 
     res.json({ tickers: watchlistItems })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching watchlist:', error)
     res.status(500).json({ error: 'Failed to fetch watchlist' })
   }
@@ -106,7 +106,7 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, as
     // Build CASE statement for single bulk UPDATE (safe: validated alphanumeric only)
     // Example: WHEN 'AAPL' THEN 0 WHEN 'GOOGL' THEN 1 ...
     const caseStatements = sanitizedTickers
-      .map((ticker, index) => `WHEN '${ticker}' THEN ${index}`)
+      .map((_ticker, _index) => `WHEN '${ticker}' THEN ${index}`)
       .join(' ')
     
     // Execute single bulk UPDATE using parameterized raw SQL (1 query vs N queries)
@@ -115,11 +115,11 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, as
       UPDATE watchlist_items 
       SET display_order = CASE ticker ${caseStatements} END
       WHERE user_id = $1 
-        AND ticker IN (${sanitizedTickers.map((_, i) => `$${i + 2}`).join(', ')})
+        AND ticker IN (${sanitizedTickers.map((__, _i) => `$${i + 2}`).join(', ')})
     `, userId, ...sanitizedTickers)
 
     res.json({ success: true })
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('Error reordering watchlist:', error)
     res.status(500).json({ error: error.message || 'Failed to reorder watchlist' })
   }
@@ -153,7 +153,7 @@ router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, a
       ticker: watchlistItem.ticker,
       addedAt: watchlistItem.addedAt
     })
-  } catch (error: any) {
+  } catch (_error: any) {
     // Check for unique constraint violation (duplicate entry)
     if (error.code === 'P2002') {
       return res.status(409).json({ error: 'Ticker already in watchlist' })
@@ -182,7 +182,7 @@ router.delete('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth,
     })
 
     res.json({ success: true, ticker })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error removing from watchlist:', error)
     res.status(500).json({ error: 'Failed to remove ticker from watchlist' })
   }

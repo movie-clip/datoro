@@ -18,7 +18,7 @@ export const logger = {
   /**
    * Log general information (development only)
    */
-  log(...args: any[]): void {
+  log(...args: unknown[]): void {
     if (isDev) {
       console.log(...args)
     }
@@ -27,14 +27,14 @@ export const logger = {
   /**
    * Log errors (always logged, even in production for error tracking)
    */
-  error(...args: any[]): void {
+  error(...args: unknown[]): void {
     console.error(...args)
   },
 
   /**
    * Log warnings (development only)
    */
-  warn(...args: any[]): void {
+  warn(...args: unknown[]): void {
     if (isDev) {
       console.warn(...args)
     }
@@ -43,7 +43,7 @@ export const logger = {
   /**
    * Log debug information (development only)
    */
-  debug(...args: any[]): void {
+  debug(...args: unknown[]): void {
     if (isDev) {
       console.debug(...args)
     }
@@ -52,7 +52,7 @@ export const logger = {
   /**
    * Log informational messages (development only)
    */
-  info(...args: any[]): void {
+  info(...args: unknown[]): void {
     if (isDev) {
       console.info(...args)
     }
@@ -127,7 +127,7 @@ export class PerformanceLogger {
 /**
  * Conditional logger - only log if condition is true
  */
-export function logIf(condition: boolean, ...args: any[]): void {
+export function logIf(condition: boolean, ...args: unknown[]): void {
   if (isDev && condition) {
     console.log(...args)
   }

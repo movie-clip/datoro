@@ -28,7 +28,7 @@ async function fetchWithTimeout(url: string, options: FetchOptions = {}, timeout
     });
     clearTimeout(timeoutId);
     return response;
-  } catch (error: any) {
+  } catch (_error: any) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
       throw new Error(`Request timeout after ${timeout}ms`);
@@ -120,7 +120,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
             console.log(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
           }
           return [key, data];
-        } catch (error: any) {
+        } catch (_error: any) {
           console.warn(`[BatchData] ${key} error:`, error.message);
           return [key, null];
         }
@@ -136,19 +136,19 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
       failures: [] // Track which endpoints failed
     };
 
-    responses.forEach((response, index) => {
+    responses.forEach((__response, _index) => {
       const key = Object.keys(endpoints)[index];
       if (response.status === 'fulfilled') {
         const [dataKey, data] = response.value;
         
         // Special handling: /api/v4/score returns object, but we need array for consistency
-        if (dataKey === 'financialScores' && data && !Array.isArray(data)) {
+        if (dataKey === 'financialScores' && data && !Array.isArray(_data)) {
           result.data[dataKey] = [data]; // Wrap in array
         } else {
           result.data[dataKey] = data;
         }
         
-        if (!data) {
+        if (!_data) {
           result.failures!.push(key);
         }
       } else {
@@ -159,7 +159,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     });
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchData] Fatal error:', error);
     throw error;
   }
@@ -195,7 +195,7 @@ export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Pr
         if (!res.ok) return [key, null];
         const data = await res.json();
         return [key, data];
-      } catch (error: any) {
+      } catch (_error: any) {
         console.warn(`[BatchData Priority] ${key} error:`, error.message);
         return [key, null];
       }
@@ -209,7 +209,7 @@ export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Pr
     data: {}
   };
 
-  responses.forEach((response, index) => {
+  responses.forEach((__response, _index) => {
     const key = Object.keys(endpoints)[index];
     if (response.status === 'fulfilled') {
       const [dataKey, data] = response.value;

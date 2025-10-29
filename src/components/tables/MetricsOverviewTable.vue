@@ -72,7 +72,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'revenue', 
     label: 'Revenue', 
     component: RevenueChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const income = data?.data?.incomeAnnual?.[0]
       return income?.revenue || null
     }
@@ -81,7 +81,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'netIncome', 
     label: 'Net Income', 
     component: NetIncomeChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const income = data?.data?.incomeAnnual?.[0]
       return income?.netIncome || null
     }
@@ -90,7 +90,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'eps', 
     label: 'EPS', 
     component: EpsChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const income = data?.data?.incomeAnnual?.[0]
       return income?.eps || null
     }
@@ -99,7 +99,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'fcf', 
     label: 'Free Cash Flow', 
     component: FcfChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const cashflow = data?.data?.cashflowAnnual?.[0]
       return cashflow?.freeCashFlow || null
     }
@@ -108,7 +108,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'ebitda', 
     label: 'EBITDA', 
     component: EbitdaChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const income = data?.data?.incomeAnnual?.[0]
       return income?.ebitda || null
     }
@@ -117,7 +117,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'expenses', 
     label: 'Operating Expenses', 
     component: ExpensesChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const income = data?.data?.incomeAnnual?.[0]
       return income?.operatingExpenses || null
     }
@@ -126,7 +126,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'shares', 
     label: 'Shares Outstanding', 
     component: SharesChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const income = data?.data?.incomeAnnual?.[0]
       return income?.weightedAverageShsOutDil || null
     }
@@ -135,7 +135,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'dividend', 
     label: 'Dividend Yield', 
     component: DividendYieldChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const ratios = data?.data?.ratiosAnnual?.[0]
       return ratios?.dividendYield ? (ratios.dividendYield * 100) : null
     }
@@ -144,7 +144,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'capitalReturned', 
     label: 'Capital Returned', 
     component: CapitalReturnedChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const cashflow = data?.data?.cashflowAnnual?.[0]
       const dividends = cashflow?.dividendsPaid || 0
       const buybacks = cashflow?.commonStockRepurchased || 0
@@ -155,7 +155,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'cash', 
     label: 'Cash & Debt', 
     component: CashDebtChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const balance = data?.data?.balanceAnnual?.[0]
       return balance?.cashAndCashEquivalents || null
     }
@@ -164,7 +164,7 @@ const metricsDefinitions: MetricDefinition[] = [
     key: 'price', 
     label: 'Stock Price', 
     component: PriceChart,
-    getValue: (data) => {
+    getValue: (_data) => {
       const quote = data?.data?.quote?.[0]
       return quote?.price || null
     }

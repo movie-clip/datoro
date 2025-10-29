@@ -11,17 +11,17 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express'
  * Usage:
  *   import { asyncHandler } from './utils/asyncHandler.js'
  * 
- *   app.get('/api/endpoint', asyncHandler(async (req, res) => {
+ *   app.get('/api/endpoint', asyncHandler(async (__req, __res) => {
  *     const data = await someAsyncOperation()
  *     res.json(data)
  *   }))
  * 
  * Without asyncHandler:
- *   app.get('/api/endpoint', async (req, res, next) => {
+ *   app.get('/api/endpoint', async (_req, _res, next) => {
  *     try {
  *       const data = await someAsyncOperation()
  *       res.json(data)
- *     } catch (error) {
+ *     } catch (_error) {
  *       next(error)  // Must manually pass to error handler
  *     }
  *   })
@@ -34,7 +34,7 @@ export type AsyncRouteHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => Promise<any>
+) => Promise<unknown>
 
 /**
  * Wraps async route handlers to catch errors and pass them to next()
@@ -61,7 +61,7 @@ export const asyncHandlerWithTimeout = (
   timeoutMs: number = 30000
 ): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const timeoutPromise = new Promise<never>((_, reject) => {
+    const timeoutPromise = new Promise<never>((__, _reject) => {
       setTimeout(() => {
         reject(new Error(`Request timeout after ${timeoutMs}ms`))
       }, timeoutMs)

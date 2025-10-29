@@ -80,7 +80,7 @@ export function authenticate(requireAuth = true) {
       
       next()
       
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error('[Auth Middleware] Error:', error)
       
       if (requireAuth) {

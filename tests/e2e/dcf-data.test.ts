@@ -78,7 +78,7 @@ describe('DCF Data Availability - E2E Tests', () => {
     it('should include Advanced DCF model data', () => {
       expect(batchData.data.advancedDcf).toBeDefined()
       
-      if (batchData.data.advancedDcf && !batchData.data.advancedDcf.error) {
+      if (batchData.data.advancedDcf && !batchData.data.advancedDcf._error) {
         const advDcf = batchData.data.advancedDcf
         
         // Validate Advanced DCF structure

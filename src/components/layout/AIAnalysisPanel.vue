@@ -82,7 +82,7 @@ const formattedData = computed(() => {
   
   // Handle JSON format: array of {title, description}
   // This includes both success=true (real insights) and success=false (friendly messages)
-  if (Array.isArray(data.value.data)) {
+  if (Array.isArray(data.value._data)) {
     return data.value.data
       .map(item => {
         const title = item.title ? `<strong>${item.title}:</strong>` : ''
@@ -109,12 +109,12 @@ async function fetchAnalysis(): Promise<void> {
     const fetchFn = props.type === 'advantages' ? getCompetitiveAdvantages : getInvestmentRisks
     const result = await fetchFn(t, props.companyName || t)
     
-    if (result.error) {
+    if (result._error) {
       error.value = result.error
     } else {
       data.value = result.data
     }
-  } catch (e) {
+  } catch (_e) {
     error.value = (e as Error).message || 'Failed to load analysis'
   } finally {
     loading.value = false

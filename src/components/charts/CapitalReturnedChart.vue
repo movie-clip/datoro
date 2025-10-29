@@ -39,7 +39,7 @@ const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
 
 // No ticker prop - using Pinia store
-const { series, title, message, loading, error, emptyDataMessage, selectedSegments } = useCapitalReturnedSeries()
+const { _series, _title, _message, _loading, _error, _emptyDataMessage, _selectedSegments } = useCapitalReturnedSeries()
 
 const segmentOptions = [
   { value: 'dividends', label: 'Dividends' },

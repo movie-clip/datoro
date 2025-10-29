@@ -54,7 +54,7 @@ function toUSD(x: any): number {
 /**
  * Fetch JSON from URL
  */
-async function jget(url: string): Promise<any> {
+async function jget(url: string): Promise<unknown> {
   const r = await fetch(url)
   if (!r.ok) throw new Error(`HTTP ${r.status} ${url}`)
   return r.json()
@@ -63,28 +63,28 @@ async function jget(url: string): Promise<any> {
 /**
  * Get quote data
  */
-async function getQuote(t: string): Promise<any> {
+async function getQuote(t: string): Promise<unknown> {
   return jget(`/api/finnhub/quote?symbol=${encodeURIComponent(t)}`)
 }
 
 /**
  * Get company profile
  */
-async function getProfile(t: string): Promise<any> {
+async function getProfile(t: string): Promise<unknown> {
   return jget(`/api/finnhub/stock/profile2?symbol=${encodeURIComponent(t)}`)
 }
 
 /**
  * Get all metrics
  */
-async function getMetricAll(t: string): Promise<any> {
+async function getMetricAll(t: string): Promise<unknown> {
   return jget(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&metric=all`)
 }
 
 /**
  * Get financial statements
  */
-async function getFinancials(t: string, statement: string, freq: string): Promise<any> {
+async function getFinancials(t: string, statement: string, freq: string): Promise<unknown> {
   return jget(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=${statement}&freq=${freq}`)
 }
 
@@ -215,7 +215,7 @@ export async function fetchMarginsGrowth(ticker: string): Promise<MarginsGrowthK
   // Quarterly YoY growth for earnings (net income) and revenue
   try {
     const icQ = await getFinancials(t, 'ic', 'quarterly')
-    const rowsQ = (Array.isArray(icQ?.data) ? icQ.data : []).slice().sort((a: any, b: any) => {
+    const rowsQ = (Array.isArray(icQ?._data) ? icQ.data : []).slice().sort((a: any, b: any) => {
       const da = Date.parse(a?.period || a?.reportDate || a?.date || '')
       const db = Date.parse(b?.period || b?.reportDate || b?.date || '')
       return db - da

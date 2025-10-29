@@ -23,7 +23,7 @@ function testCompression() {
     };
     
     let compressedSize = 0;
-    const req = http.request(options, (res) => {
+    const req = http.request(_options, (_res) => {
       res.on('data', (chunk) => {
         compressedSize += chunk.length;
       });

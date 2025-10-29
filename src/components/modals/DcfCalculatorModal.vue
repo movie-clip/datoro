@@ -145,7 +145,7 @@ const {
 // Type assertions for composable returns (composable is JS, we know the actual types)
 const typedCompanyData = companyData as Ref<CompanyDataForDcf | null>
 const typedAdvancedDcfValue = advancedDcfValue as Ref<AdvancedDcfResult | FmpDcfValueExtended | null>
-const typedScenarios = scenarios as ComputedRef<any> // scenarios is a computed ref
+const typedScenarios = scenarios as ComputedRef<unknown> // scenarios is a computed ref
 
 const handleClose = (): void => {
   emit('update:modelValue', false)

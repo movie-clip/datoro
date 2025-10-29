@@ -234,7 +234,7 @@ watch(currentView, async (view) => {
     error.value = null
     try {
       await initializeWatchlists()
-    } catch (err) {
+    } catch (_err) {
       console.error('Error loading watchlist:', err)
       error.value = 'Failed to load watchlist'
     }
@@ -258,7 +258,7 @@ function showDeepFinder() {
 const handleRemove = async (ticker) => {
   try {
     await toggleWatchlist(ticker)
-  } catch (err) {
+  } catch (_err) {
     console.error('Error removing ticker:', err)
   }
 }
@@ -281,24 +281,24 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString()
 }
 
-const handleImageError = (event) => {
+const handleImageError = (_event) => {
   event.target.style.display = 'none'
 }
 
 // Drag and drop handlers
-const handleDragStart = (event, index) => {
+const handleDragStart = (__event, _index) => {
   draggedIndex.value = index
   event.dataTransfer.effectAllowed = 'move'
   event.target.style.opacity = '0.5'
 }
 
-const handleDragEnd = (event) => {
+const handleDragEnd = (_event) => {
   event.target.style.opacity = '1'
   draggedIndex.value = null
   dragOverIndex.value = null
 }
 
-const handleDragOver = (event, index) => {
+const handleDragOver = (__event, _index) => {
   event.preventDefault()
   event.dataTransfer.dropEffect = 'move'
   dragOverIndex.value = index
@@ -308,7 +308,7 @@ const handleDragLeave = () => {
   dragOverIndex.value = null
 }
 
-const handleDrop = async (event, dropIndex) => {
+const handleDrop = async (__event, _dropIndex) => {
   event.preventDefault()
   
   // Prevent duplicate drops or invalid drops
@@ -333,7 +333,7 @@ const handleDrop = async (event, dropIndex) => {
     // Update server (will throw on error for rollback)
     await reorderWatchlist(newOrder)
     
-  } catch (err) {
+  } catch (_err) {
     console.error('Error during drag and drop:', err)
     error.value = 'Failed to reorder watchlist. Changes reverted.'
     

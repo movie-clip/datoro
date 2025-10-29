@@ -31,7 +31,7 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { _batchData, _loading, _currentTicker, _error: batchError } = storeToRefs(tickerStore)
 
   // Memoized data extraction - single source of truth
   const insiderData = computed(() => getInsiderTradingFromBatch(batchData.value))

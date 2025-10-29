@@ -30,7 +30,7 @@ async function testCompression() {
       console.log('   ⚠️  WARN: No compression detected (might be too small)\n');
       return false;
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('   ❌ FAIL:', error.message, '\n');
     return false;
   }
@@ -52,7 +52,7 @@ async function testCacheHeaders() {
       console.log('   ⚠️  INFO: No cache header (may not be implemented yet)\n');
       return false;
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('   ❌ FAIL:', error.message, '\n');
     return false;
   }
@@ -75,7 +75,7 @@ async function testResponseTime() {
       console.log('   ⚠️  WARN: Slow response (>3s)\n');
       return false;
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('   ❌ FAIL:', error.message, '\n');
     return false;
   }
@@ -99,7 +99,7 @@ async function testHealth() {
       console.log('   ❌ FAIL: Server error\n');
       return false;
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('   ❌ FAIL:', error.message, '\n');
     return false;
   }

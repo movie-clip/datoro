@@ -63,6 +63,6 @@ export default function () {
   sleep(0.5); // User think time
 }
 
-export function teardown(data) {
+export function teardown(_data) {
   console.log('Test completed!');
 }

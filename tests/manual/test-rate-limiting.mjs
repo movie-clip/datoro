@@ -42,7 +42,7 @@ async function testPerIpLimit() {
       
       // Small delay to avoid network congestion
       await sleep(50);
-    } catch (err) {
+    } catch (_err) {
       console.error(`  ❌ Request ${i}: Error - ${err.message}`);
     }
   }
@@ -127,7 +127,7 @@ async function main() {
     
     console.log('\n═══════════════════════════════════════════════');
     console.log('✅ Rate limiting tests complete!\n');
-  } catch (err) {
+  } catch (_err) {
     console.error('\n❌ Test failed:', err);
     process.exit(1);
   }

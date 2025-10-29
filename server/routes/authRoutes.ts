@@ -63,7 +63,7 @@ router.post(
         data: { user, token }
       })
       
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error('[Auth API] Register error:', error)
       res.status(400).json({
         success: false,
@@ -99,7 +99,7 @@ router.post(
       
       // Set HTTP-only cookie
       const isProduction = process.env.NODE_ENV === 'production'
-      const cookieOptions: any = {
+      const cookieOptions: unknown = {
         httpOnly: true,
         secure: isProduction,  // Must be true for SameSite=none
         sameSite: isProduction ? 'none' : 'lax',  // 'none' allows cross-domain cookies in production
@@ -117,7 +117,7 @@ router.post(
         data: { user, token }
       })
       
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error('[Auth API] Login error:', error)
       res.status(401).json({
         success: false,
@@ -164,7 +164,7 @@ router.post(
         data: { user, token }
       })
       
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error('[Auth API] Google login error:', error)
       res.status(401).json({
         success: false,
@@ -219,7 +219,7 @@ router.post(
         message: 'Logged out successfully'
       })
       
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error('[Auth API] Logout error:', error)
       res.status(500).json({
         success: false,
@@ -248,7 +248,7 @@ router.post(
         message: 'Logged out from all devices'
       })
       
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error('[Auth API] Logout all error:', error)
       res.status(500).json({
         success: false,

@@ -99,7 +99,7 @@ export function useTickerSearch(): UseTickerSearchReturn {
           }
         }
 
-      } catch (error) {
+      } catch (_error) {
         // Ignore abort errors
         if (error instanceof Error && error.name === 'AbortError') {
           return

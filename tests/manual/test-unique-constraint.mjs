@@ -25,7 +25,7 @@ try {
   
   console.log('✅ Query successful!')
   console.log('Result:', existing ? `Found: ${existing.ticker}` : 'Not found')
-} catch (error) {
+} catch (_error) {
   console.error('❌ Query failed:', error.message)
   console.error('Full error:', error)
 }

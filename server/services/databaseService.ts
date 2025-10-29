@@ -110,7 +110,7 @@ export function getPrismaClient(): PrismaClient {
       try {
         await prisma!.$disconnect();
         console.log('[Database] Disconnected successfully');
-      } catch (err) {
+      } catch (_err) {
         console.error('[Database] Error during disconnect:', err);
       }
     };
@@ -145,17 +145,17 @@ const QueryTimeout = {
  * 
  * @param {Function} queryFn - Async function that executes the query
  * @param {number} timeoutMs - Timeout in milliseconds
- * @returns {Promise<any>} Query result
+ * @returns {Promise<unknown>} Query result
  */
-// eslint-disable-next-line no-unused-vars
-async function _executeWithTimeout(queryFn: (db: PrismaClient) => Promise<any>, timeoutMs = QueryTimeout.STANDARD): Promise<any> {
+ 
+async function _executeWithTimeout(queryFn: (db: PrismaClient) => Promise<unknown>, timeoutMs = QueryTimeout.STANDARD): Promise<unknown> {
   const db = getPrismaClient();
   
   try {
     // Set transaction-level timeout
     await db.$executeRaw`SET LOCAL statement_timeout = ${timeoutMs}`;
     return await queryFn(db);
-  } catch (error: any) {
+  } catch (_error: any) {
     if (error.message?.includes('statement timeout')) {
       console.error(`[Database] Query timeout after ${timeoutMs}ms:`, error.message);
       throw new Error(`Database query exceeded ${timeoutMs}ms timeout. Try optimizing the query or adding indexes.`);
@@ -222,7 +222,7 @@ export async function findOrCreateUser(ipAddress: string, userAgent: string | nu
           }
         });
         return newUser;
-      } catch (createError: any) {
+      } catch (_createError: any) {
         // If creation fails (duplicate), try finding again
         // This handles edge case where another transaction created the user
         const retryUser = await tx.user.findFirst({
@@ -244,7 +244,7 @@ export async function findOrCreateUser(ipAddress: string, userAgent: string | nu
     });
     
     return user;
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error finding/creating user:', error.message);
     throw error;
   }
@@ -313,7 +313,7 @@ export async function trackSearch(
     });
     
     console.log(`[Database] Tracked search: ${normalizedTicker} from ${authenticatedUserId ? 'authenticated user' : ipAddress}`);
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error tracking search:', error.message);
     // Don't throw - tracking failures shouldn't break app
   }
@@ -352,7 +352,7 @@ export async function getUserSearchHistory(ipAddress: string, limit = 10): Promi
     });
     
     return user?.searches || [];
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error fetching search history:', error.message);
     return [];
   }
@@ -369,7 +369,7 @@ export async function getUserSearchHistory(ipAddress: string, limit = 10): Promi
  * @param {number} daysAgo - Consider searches from last N days (default 30)
  * @returns {Promise<Array>} Popular tickers with search counts
  */
-export async function getPopularTickers(limit = 10, daysAgo = 30): Promise<any> {
+export async function getPopularTickers(limit = 10, daysAgo = 30): Promise<unknown> {
   const db = getPrismaClient();
   
   try {
@@ -391,7 +391,7 @@ export async function getPopularTickers(limit = 10, daysAgo = 30): Promise<any> 
         lastSearched: true
       }
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error fetching popular tickers:', error.message);
     return [];
   }
@@ -417,7 +417,7 @@ export async function updateTickerCompanyName(ticker: string, companyName: strin
         searchCount: 0 // Will be incremented by trackSearch
       }
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error updating company name:', error.message);
   }
 }
@@ -472,7 +472,7 @@ export async function trackApiRequest(data: ApiRequestData): Promise<void> {
         errorCode: data.errorCode || null
       }
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error tracking API request:', error.message);
     // Don't throw - tracking failures shouldn't break app
   }
@@ -484,7 +484,7 @@ export async function trackApiRequest(data: ApiRequestData): Promise<void> {
  * @param {number} hours - Last N hours (default 24)
  * @returns {Promise<Object>} Statistics
  */
-export async function getApiRequestStats(hours = 24): Promise<any> {
+export async function getApiRequestStats(hours = 24): Promise<unknown> {
   const db = getPrismaClient();
   
   try {
@@ -510,7 +510,7 @@ export async function getApiRequestStats(hours = 24): Promise<any> {
     
     const responseTimes = requests.map(r => r.responseTime);
     const avgResponseTime = responseTimes.length > 0
-      ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+      ? Math.round(responseTimes.reduce((_a, _b) => a + b, 0) / responseTimes.length)
       : 0;
     
     return {
@@ -523,7 +523,7 @@ export async function getApiRequestStats(hours = 24): Promise<any> {
       errorRate: total > 0 ? ((errors / total) * 100).toFixed(2) + '%' : '0%',
       avgResponseTime: avgResponseTime + 'ms'
     };
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error fetching API stats:', error.message);
     return null;
   }
@@ -575,7 +575,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
     const errors = requests.filter(r => r.statusCode >= 400).length;
     const errorRate = totalRequests > 0 ? (errors / totalRequests) : 0;
     const avgResponseTime = totalRequests > 0
-      ? Math.round(requests.reduce((sum, r) => sum + r.responseTime, 0) / totalRequests)
+      ? Math.round(requests.reduce((_sum, _r) => sum + r.responseTime, 0) / totalRequests)
       : 0;
     
     // Find top endpoint
@@ -630,7 +630,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
     });
     
     console.log(`[Database] Updated daily analytics for ${startOfDay.toDateString()}`);
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error updating daily analytics:', error.message);
   }
 }
@@ -655,7 +655,7 @@ export async function getDailyAnalytics(days = 30): Promise<any[]> {
       },
       orderBy: { date: 'desc' }
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error fetching daily analytics:', error.message);
     return [];
   }
@@ -716,7 +716,7 @@ export async function logError(data: ErrorLogData): Promise<void> {
         }
       });
     }
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error logging error:', error.message);
     // Don't throw - error logging failures shouldn't break app
   }
@@ -747,7 +747,7 @@ export async function getRecentErrors(limit = 20, unresolvedOnly = true): Promis
         lastSeen: true
       }
     });
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error fetching recent errors:', error.message);
     return [];
   }
@@ -779,7 +779,7 @@ export async function resolveError(errorCode: string, endpoint: string | null = 
     });
     
     console.log(`[Database] Resolved error: ${errorCode}`);
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error tracking search:', error.message);
   }
 }
@@ -793,7 +793,7 @@ export async function resolveError(errorCode: string, endpoint: string | null = 
  * 
  * @returns {Promise<boolean>} True if connected
  */
-export async function checkDatabaseHealth(): Promise<any> {
+export async function checkDatabaseHealth(): Promise<unknown> {
   const db = getPrismaClient();
   
   try {
@@ -801,7 +801,7 @@ export async function checkDatabaseHealth(): Promise<any> {
     await db.$queryRaw`SELECT 1`;
     const latency = Date.now() - start
     return { status: 'healthy', latency };
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Health check failed:', error.message);
     return { status: 'unhealthy', latency: 0, error: error.message };
   }
@@ -820,7 +820,7 @@ export const testDatabaseConnection = checkDatabaseHealth;
  * @param {number} daysToKeep - Keep data for N days (default 90)
  * @returns {Promise<void>}
  */
-export async function cleanupOldData(daysToKeep = 90): Promise<any> {
+export async function cleanupOldData(daysToKeep = 90): Promise<unknown> {
   const db = getPrismaClient();
   
   try {
@@ -861,7 +861,7 @@ export async function cleanupOldData(daysToKeep = 90): Promise<any> {
       apiRequests: deletedRequests.count,
       errors: deletedErrors.count
     };
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Database] Error during cleanup:', error.message);
     return { searchHistory: 0, apiRequests: 0, errors: 0 };
   }

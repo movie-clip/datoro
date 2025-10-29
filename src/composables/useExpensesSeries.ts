@@ -47,7 +47,7 @@ export function useExpensesSeries(): UseExpensesSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  const { _batchData, _loading, _currentTicker, _error: batchError, _timeframe } = storeToRefs(tickerStore)
   
   // Map timeframe from store to period
   const period = computed<Period>(() => timeframe.value)
@@ -88,7 +88,7 @@ export function useExpensesSeries(): UseExpensesSeriesReturn {
     if (!segments.length) return []
     
     // Collect all dates
-    const allDates = [...new Set(rawData.value.map(d => d.date))].sort((a, b) => a - b)
+    const allDates = [...new Set(rawData.value.map(d => d.date))].sort((_a, _b) => a - b)
     
     // Create multi-series with stacking and colors
     const segmentColors: Record<SegmentKey, string> = {

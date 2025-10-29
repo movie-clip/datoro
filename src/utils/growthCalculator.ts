@@ -25,7 +25,7 @@ export function calculateGrowthRates(data: DataPoint[]): GrowthRates {
   }
 
   // Ensure data is sorted by date (ascending)
-  const sortedData = [...data].sort((a, b) => a[0] - b[0])
+  const sortedData = [...data].sort((_a, _b) => a[0] - b[0])
   
   const latest = sortedData[sortedData.length - 1]
   if (!latest) return { oneYear: null, twoYear: null, fiveYear: null }
@@ -83,7 +83,7 @@ export function calculateGrowthRates(data: DataPoint[]): GrowthRates {
 export function calculateCAGR(data: DataPoint[], years: number): number | null {
   if (!data || data.length < 2 || years <= 0) return null
   
-  const sortedData = [...data].sort((a, b) => a[0] - b[0])
+  const sortedData = [...data].sort((_a, _b) => a[0] - b[0])
   const latest = sortedData[sortedData.length - 1]
   if (!latest) return null
   

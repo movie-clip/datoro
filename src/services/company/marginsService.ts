@@ -20,7 +20,7 @@ function pct(v: number): string {
 /**
  * Fetch JSON from URL
  */
-async function j(url: string): Promise<any> {
+async function j(url: string): Promise<unknown> {
   const r = await fetch(url)
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   return r.json()
@@ -80,7 +80,7 @@ export async function fetchMarginsGrowth(ticker: string): Promise<ServiceRespons
     }
 
     return { data: out, error: null }
-  } catch (error) {
+  } catch (_error) {
     return handleServiceError(error, 'fetchMarginsGrowth', out)
   }
 }

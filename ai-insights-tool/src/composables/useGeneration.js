@@ -72,7 +72,7 @@ export function useGeneration(loadBundleStats) {
 
       // Reload bundle stats
       await loadBundleStats()
-    } catch (error) {
+    } catch (_error) {
       alert('Failed to generate insights: ' + error.message)
     } finally {
       isGenerating.value = false

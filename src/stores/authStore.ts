@@ -86,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = null
         token.value = null
       }
-    } catch (err) {
+    } catch (_err) {
       // Network errors or timeout
       if ((err as Error).name === 'AbortError') {
         console.warn('[Auth] ⏱️ Auth check timeout (>10s) - server may be starting up. Retrying...')
@@ -106,7 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
               token.value = 'cookie'
               console.log('[Auth] ✅ Retry successful - user authenticated')
             }
-          } catch (retryErr) {
+          } catch (_retryErr) {
             // Silent fail on retry - user can manually login
             console.warn('[Auth] Retry failed, user needs to login manually')
           }
@@ -162,7 +162,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('[Auth] ✓ Registration successful:', user.value?.email)
       return { success: true }
       
-    } catch (err) {
+    } catch (_err) {
       const errMessage = (err as Error).message
       error.value = errMessage
       console.error('[Auth] Registration error:', errMessage)
@@ -234,7 +234,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       return { success: true }
       
-    } catch (err) {
+    } catch (_err) {
       const errMessage = (err as Error).message
       error.value = errMessage
       console.error('[Auth] Login error:', errMessage)
@@ -277,7 +277,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       return { success: true }
       
-    } catch (err) {
+    } catch (_err) {
       const errMessage = (err as Error).message
       error.value = errMessage
       return { success: false, error: errMessage }
@@ -299,7 +299,7 @@ export const useAuthStore = defineStore('auth', () => {
         method: 'POST',
         credentials: 'include' // Send HttpOnly cookie
       })
-    } catch (err) {
+    } catch (_err) {
       console.error('[Auth] Logout error:', err)
     } finally {
       // Clear local state regardless of API call success

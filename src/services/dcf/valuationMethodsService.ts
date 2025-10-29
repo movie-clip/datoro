@@ -237,7 +237,7 @@ export async function fetchFmpDcf(ticker: string): Promise<ApiResponse<FmpDcfVal
     const data = await response.json()
     
     // FMP returns array with single object: [{ symbol, dcf, date }]
-    if (!Array.isArray(data) || data.length === 0) {
+    if (!Array.isArray(_data) || data.length === 0) {
       return { data: null, error: 'No DCF data available' }
     }
 
@@ -251,7 +251,7 @@ export async function fetchFmpDcf(ticker: string): Promise<ApiResponse<FmpDcfVal
       },
       error: null
     }
-  } catch (error) {
+  } catch (_error) {
     const err = error as Error
     console.error('[FMP DCF] Error fetching:', err)
     return { data: null, error: err.message }
@@ -281,7 +281,7 @@ export async function fetchFmpLeveredDcf(ticker: string): Promise<ApiResponse<Fm
 
     const data = await response.json()
     
-    if (!Array.isArray(data) || data.length === 0) {
+    if (!Array.isArray(_data) || data.length === 0) {
       return { data: null, error: 'No levered DCF data available' }
     }
 
@@ -295,7 +295,7 @@ export async function fetchFmpLeveredDcf(ticker: string): Promise<ApiResponse<Fm
       },
       error: null
     }
-  } catch (error) {
+  } catch (_error) {
     const err = error as Error
     console.error('[FMP Levered DCF] Error fetching:', err)
     return { data: null, error: err.message }
@@ -341,7 +341,7 @@ export function generateScenariosFromAdvancedDcf(
   const worstGrowthRate = averageGrowthRate * 0.8  // 20% more conservative
   
   // Generate price projections using compound growth
-  const averagePrices = Array.from({ length: years }, (_, i) => {
+  const averagePrices = Array.from({ length: years }, (__, _i) => {
     const price = currentPrice * Math.pow(1 + averageGrowthRate, i + 1)
     return {
       year: currentYear + i + 1,
@@ -349,7 +349,7 @@ export function generateScenariosFromAdvancedDcf(
     }
   })
 
-  const bestPrices = Array.from({ length: years }, (_, i) => {
+  const bestPrices = Array.from({ length: years }, (__, _i) => {
     const price = currentPrice * Math.pow(1 + bestGrowthRate, i + 1)
     return {
       year: currentYear + i + 1,
@@ -357,7 +357,7 @@ export function generateScenariosFromAdvancedDcf(
     }
   })
 
-  const worstPrices = Array.from({ length: years }, (_, i) => {
+  const worstPrices = Array.from({ length: years }, (__, _i) => {
     const price = currentPrice * Math.pow(1 + worstGrowthRate, i + 1)
     return {
       year: currentYear + i + 1,

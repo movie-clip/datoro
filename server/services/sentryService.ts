@@ -62,7 +62,7 @@ export function initSentry(): void {
       integrations: [],
       
       // Filter out sensitive data
-      beforeSend(event, hint) {
+      beforeSend(_event, hint) {
         // Remove API keys from URLs and headers
         if (event.request) {
           if (event.request.url) {
@@ -104,7 +104,7 @@ export function initSentry(): void {
     console.log(`[Sentry] Initialized for ${environment}`)
     console.log(`[Sentry] Tracing: ${tracesSampleRate * 100}%`)
     
-  } catch (error) {
+  } catch (_error) {
     console.error('[Sentry] Failed to initialize:', (error as Error).message)
     initialized = false
   }

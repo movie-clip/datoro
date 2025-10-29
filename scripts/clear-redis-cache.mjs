@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 #!/usr/bin/env node
 /**
  * Clear Redis Cache - Production Fix Script
@@ -91,7 +92,7 @@ async function clearRedisCache() {
     console.log('\n✅ Done! Redis cache has been cleared.')
     console.log('   New data will be fetched from FMP API on next request.')
     
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Error clearing cache:', error.message)
     console.error('   Stack:', error.stack)
     process.exit(1)
@@ -104,3 +105,4 @@ console.log('  Clear Redis Cache - Production Fix')
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
 clearRedisCache()
+

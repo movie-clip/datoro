@@ -30,7 +30,7 @@ export function isAuthenticated(req: Request): req is AuthenticatedRequest {
  * - Clearer intent: route REQUIRES auth vs optional auth
  * 
  * Usage:
- * router.get('/protected', requireAuth, (req: AuthenticatedRequest, res) => {
+ * router.get('/protected', requireAuth, (req: AuthenticatedRequest, _res) => {
  *   const userId = req.user.id // No ?, no !, TypeScript knows it exists
  * })
  */
@@ -55,7 +55,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
  * and handle everything in one place
  */
 export function enforceAuth(req: Request, res: Response, next: NextFunction): void {
-  if (!isAuthenticated(req)) {
+  if (!isAuthenticated(_req)) {
     res.status(401).json({
       success: false,
       error: 'Authentication required. Please log in.',

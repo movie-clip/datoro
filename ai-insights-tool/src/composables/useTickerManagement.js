@@ -48,7 +48,7 @@ export function useTickerManagement() {
       tickersToGenerate.value = new Set(data.validTickers.filter(ticker => 
         data.tickerInfo[ticker].status !== 'invalid'
       ))
-    } catch (error) {
+    } catch (_error) {
       alert('Failed to check tickers: ' + error.message)
     } finally {
       isChecking.value = false

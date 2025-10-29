@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
-const { selectedSegments, viewModeOptions, series, compactSeries, title, message, loading, error, ticker, dataType } = useRevenueSeries()
+const { _selectedSegments, _viewModeOptions, _series, _compactSeries, _title, _message, _loading, _error, _ticker, _dataType } = useRevenueSeries()
 
 const resetSelection = (): void => {
   selectedSegments.value = ['total']

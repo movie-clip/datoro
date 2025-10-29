@@ -60,7 +60,7 @@ async function testInsightFile(ticker) {
     }
     
     return true
-  } catch (error) {
+  } catch (_error) {
     console.log(`✗ ${ticker}: ${error.message}`)
     return false
   }

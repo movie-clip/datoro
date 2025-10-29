@@ -94,7 +94,7 @@ export async function fetchDeepFinderData(tickers: string[] = []): Promise<DeepF
     })
 
     return data
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching deep finder data:', error)
     throw error
   }

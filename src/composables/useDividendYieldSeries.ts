@@ -22,7 +22,7 @@ export function useDividendYieldSeries(): UseDividendYieldSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  const { _batchData, _loading, _currentTicker, _error: batchError, _timeframe } = storeToRefs(tickerStore)
   
   // Use timeframe from store instead of local ref
   const period = computed<Period>(() => timeframe.value)

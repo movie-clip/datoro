@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import dotenv from 'dotenv'
@@ -25,8 +26,9 @@ try {
   `
   console.log('\nVerification:', result)
   
-} catch (error) {
+} catch (_error) {
   console.error('❌ Error:', error.message)
 }
 
 await prisma.$disconnect()
+

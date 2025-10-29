@@ -18,7 +18,7 @@ export function useEpsSeries(): UseEpsSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  const { _batchData, _loading, _currentTicker, _error: batchError, _timeframe } = storeToRefs(tickerStore)
 
   // Memoized data extraction - single source of truth
   const series = computed<[number, number][]>(() => getEpsSeriesFromBatch(batchData.value, timeframe.value))

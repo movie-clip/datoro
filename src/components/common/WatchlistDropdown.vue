@@ -180,11 +180,11 @@ const modalMode = ref<'create' | 'rename'>('create')
 const modalInputValue = ref('')
 const modalError = ref('')
 const modalInput = ref<HTMLInputElement | null>(null)
-const watchlistToEdit = ref<any>(null)
+const watchlistToEdit = ref<unknown>(null)
 
 // Delete confirmation state
 const showDeleteConfirm = ref(false)
-const watchlistToDelete = ref<any>(null)
+const watchlistToDelete = ref<unknown>(null)
 const deleteError = ref('')
 
 // Computed
@@ -276,7 +276,7 @@ const confirmModal = async () => {
     showModal.value = false
     modalInputValue.value = ''
     watchlistToEdit.value = null
-  } catch (error: any) {
+  } catch (_error: any) {
     modalError.value = error.message || 'Operation failed'
   }
 }
@@ -304,7 +304,7 @@ const executeDelete = async () => {
     await deleteWatchlist(watchlistToDelete.value.id)
     showDeleteConfirm.value = false
     watchlistToDelete.value = null
-  } catch (error: any) {
+  } catch (_error: any) {
     deleteError.value = error.message || 'Failed to delete watchlist'
   }
 }

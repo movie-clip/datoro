@@ -111,7 +111,7 @@ app.use(requestLogger(monitoring))
 app.use(compression({
   level: 6, // Balance between speed and compression ratio
   threshold: 1024, // Only compress responses > 1KB
-  filter: (req, res) => {
+  filter: (__req, __res) => {
     // Don't compress if client doesn't accept encoding
     if (req.headers['x-no-compression']) {
       return false
@@ -126,7 +126,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : [DEV_ORIGIN];
 
 app.use(cors({ 
-  origin: (origin, callback) => {
+  origin: (_origin, _callback) => {
     // Allow requests with no origin (like mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
     
@@ -167,9 +167,9 @@ const UA =
 
 // Request deduplication: Track in-flight requests to FMP API
 // If multiple clients request the same data simultaneously, only make one API call
-const inFlightRequests = new Map<string, Promise<any>>()
+const inFlightRequests = new Map<string, Promise<unknown>>()
 
-async function fetchWithDeduplication(key: string, fetchFn: () => Promise<any>): Promise<any> {
+async function fetchWithDeduplication(key: string, fetchFn: () => Promise<unknown>): Promise<unknown> {
   // If request is already in-flight, wait for it
   if (inFlightRequests.has(key)) {
     console.log(`[Dedup] Waiting for in-flight request: ${key}`)
@@ -282,14 +282,14 @@ app.get('/api/company-icon/:ticker', async (req: Request, res: Response) => {
     })
     res.send(buffer)
     
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, error.message)
     res.status(500).json({ error: 'Failed to fetch company icon' })
   }
 })
 
 // Apply rate limiting to FMP endpoints
-app.use('/api/fmp', fmpLimiter, async (req, res) => {
+app.use('/api/fmp', fmpLimiter, async (__req, __res) => {
   const startTime = Date.now()
   let ticker = null
   
@@ -340,7 +340,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = incomeMatch[1]
         await validateIncomeStatement.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: any = {}
+          const query: unknown = {}
           if (params.has('period')) query.period = params.get('period')
           if (params.has('limit')) query.limit = params.get('limit')
           
@@ -371,7 +371,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = balanceMatch[1]
         await validateBalanceSheet.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: any = {}
+          const query: unknown = {}
           if (params.has('period')) query.period = params.get('period')
           if (params.has('limit')) query.limit = params.get('limit')
           
@@ -401,7 +401,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = cashflowMatch[1]
         await validateCashFlow.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: any = {}
+          const query: unknown = {}
           if (params.has('period')) query.period = params.get('period')
           if (params.has('limit')) query.limit = params.get('limit')
           
@@ -487,7 +487,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         if (validated.limit) params.set('limit', String(validated.limit))
       }
       
-    } catch (validationError: any) {
+    } catch (_validationError: any) {
       // Joi validation error
       if (validationError.isJoi) {
         console.error('[FMP] Validation error:', validationError.details)
@@ -529,7 +529,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     // Check cache first (only for GET requests)
     if (req.method === 'GET') {
       const cached = await cache.get(cacheKey)
-      if (cached.data) {
+      if (cached._data) {
         console.log(`[FMP] ${subpath} → CACHE HIT (${cached.source})`)
         res.setHeader('X-Cache', cached.source || 'unknown')
         
@@ -541,7 +541,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
           })
           
           // Update company name if this is a profile request
-          if (path.includes('/profile') && Array.isArray(cached.data) && cached.data[0]?.companyName) {
+          if (path.includes('/profile') && Array.isArray(cached._data) && cached.data[0]?.companyName) {
             updateTickerCompanyName(ticker, cached.data[0].companyName).catch((err: any) => {
               console.error('[Database] Company name update error:', err.message)
               isDatabaseAvailable = false // Disable if database is down
@@ -575,10 +575,10 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     console.log(`[FMP] ${req.method} ${subpath} → ${upstream}`)
     
     // Forward all headers except host
-    const headers: any = { ...req.headers, host: 'financialmodelingprep.com', 'user-agent': UA }
+    const headers: unknown = { ...req.headers, host: 'financialmodelingprep.com', 'user-agent': UA }
     delete headers.host
     const method = req.method || 'GET'
-    const options: any = { method, headers }
+    const options: unknown = { method, headers }
     if (method !== 'GET' && method !== 'HEAD') {
       options.body = req.body
     }
@@ -620,7 +620,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     let data
     try {
       data = JSON.parse(bufferString)
-    } catch (parseError: any) {
+    } catch (_parseError: any) {
       console.error(`[FMP] JSON parse error for ${path}:`, parseError.message)
       console.error(`[FMP] Response (first 200 chars): ${bufferString.substring(0, 200)}`)
       return res.status(500).json({ 
@@ -630,7 +630,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     }
     
     // Cache successful responses (only for GET)
-    if (req.method === 'GET' && fmpRes.status === 200 && data) {
+    if (req.method === 'GET' && fmpRes.status === 200 && _data) {
       await cache.set(cacheKey, data, ttl)
       res.setHeader('X-Cache', 'miss')
       
@@ -642,7 +642,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         })
         
         // Update company name if this is a profile request
-        if (path.includes('/profile') && Array.isArray(data) && data[0]?.companyName) {
+        if (path.includes('/profile') && Array.isArray(_data) && data[0]?.companyName) {
           updateTickerCompanyName(ticker, data[0].companyName).catch((err: any) => {
             console.error('[Database] Company name update error:', err.message)
             isDatabaseAvailable = false // Disable if database is down
@@ -667,7 +667,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     }
     
     res.send(data)
-  } catch (e: any) {
+  } catch (_e: any) {
     console.error('[FMP] Error:', e)
     
     // Track failed API request in database (in background) - skip if database offline
@@ -757,7 +757,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     // Simple query to establish connection
     await prisma.$queryRaw`SELECT 1`
     console.log('[Database] ✓ Connection pool warmed up')
-  } catch (error: any) {
+  } catch (_error: any) {
     console.warn('[Database] ✗ Failed to warm up connection:', error.message)
     console.warn('[Database] First requests may be slower than usual')
   }
@@ -786,7 +786,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         try {
           const count = await cleanupExpiredSessions()
           console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
-        } catch (error: any) {
+        } catch (_error: any) {
           console.error('[Auth] ✗ Cleanup failed:', error.message)
         }
         
@@ -796,7 +796,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
           try {
             const count = await cleanupExpiredSessions()
             console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
-          } catch (error: any) {
+          } catch (_error: any) {
             console.error('[Auth] ✗ Cleanup failed:', error.message)
           }
         }, 24 * 60 * 60 * 1000) // 24 hours
@@ -844,7 +844,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
       process.exit(1)
     }, 10000)
     
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[SERVER] Error during shutdown:', error)
     process.exit(1)
   }

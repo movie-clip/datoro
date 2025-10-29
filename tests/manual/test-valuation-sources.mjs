@@ -34,7 +34,7 @@ try {
       ebitdaFields.forEach(f => console.log(`  ${f}:`, growthData[0][f]));
     }
   }
-} catch (e) {
+} catch (_e) {
   console.log('Financial-growth not available:', e.message);
 }
 

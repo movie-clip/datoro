@@ -99,7 +99,7 @@ class WatchlistService {
       })
       
       return watchlist
-    } catch (error) {
+    } catch (_error) {
       return null
     }
   }
@@ -122,7 +122,7 @@ class WatchlistService {
       })
       
       return true
-    } catch (error) {
+    } catch (_error) {
       console.error('Error deleting watchlist:', error)
       return false
     }
@@ -206,7 +206,7 @@ class WatchlistService {
       })
       
       return true
-    } catch (error) {
+    } catch (_error) {
       return false
     }
   }
@@ -217,7 +217,7 @@ class WatchlistService {
   async reorderWatchlistItems(watchlistId: string, tickers: string[]): Promise<void> {
     // Use transaction to update all items atomically
     await prisma.$transaction(
-      tickers.map((ticker, index) =>
+      tickers.map((_ticker, _index) =>
         prisma.watchlistItem.updateMany({
           where: {
             watchlistId,

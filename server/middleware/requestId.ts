@@ -50,7 +50,7 @@ export function requestId() {
  *   import { logWithId } from './middleware/requestId.js'
  *   logWithId(req, 'Processing request...')
  */
-export function logWithId(req: Request, message: string, ...args: any[]): void {
+export function logWithId(req: Request, message: string, ...args: unknown[]): void {
   const prefix = req.id ? `[${req.id}]` : ''
   console.log(`${prefix} ${message}`, ...args)
 }

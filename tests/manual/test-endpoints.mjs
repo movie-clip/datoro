@@ -14,7 +14,7 @@ async function testEndpoint(name, url) {
     if (res.ok) {
       const data = await res.json();
       console.log(`✅ Success! Data length: ${Array.isArray(data) ? data.length : 'object'}`);
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(_data) && data.length > 0) {
         console.log('Sample:', JSON.stringify(data[0], null, 2).substring(0, 200) + '...');
       } else {
         console.log('Sample:', JSON.stringify(data, null, 2).substring(0, 200) + '...');
@@ -23,7 +23,7 @@ async function testEndpoint(name, url) {
       const text = await res.text();
       console.log(`❌ Error response: ${text.substring(0, 200)}`);
     }
-  } catch (error) {
+  } catch (_error) {
     console.log(`❌ Failed: ${error.message}`);
   }
 }

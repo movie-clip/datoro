@@ -126,7 +126,7 @@ import CompanyHeader from './CompanyHeader.vue'
 import { useTickerSearch } from '../../composables/useTickerSearch'
 import { useRecentSearch } from '../../composables/useRecentSearch'
 
-const companyProfile = ref<any>(null)
+const companyProfile = ref<unknown>(null)
 
 // Recent searches (client-side only, no API calls)
 const { recentSearches, addToRecent } = useRecentSearch()

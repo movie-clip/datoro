@@ -157,7 +157,7 @@ Target Price = Future EPS × Target P/E`
 
 const getAdvancedDcfTooltip = (): string => {
   // Show error message if available
-  if (props.advancedDcfValue?.error) {
+  if (props.advancedDcfValue?._error) {
     return props.advancedDcfValue.error
   }
   if (!props.advancedDcfValue?.intrinsicValue) return 'No data available'

@@ -30,7 +30,7 @@ export function extractYearsFromSeries(dataPoints: TimeSeriesPoint[]): number[] 
     }
   })
 
-  return Array.from(years).sort((a, b) => a - b)
+  return Array.from(years).sort((_a, _b) => a - b)
 }
 
 /**
@@ -85,9 +85,9 @@ export function getAllDataPoints(series: TimeSeriesPoint[] | SeriesObject[]): Ti
   const allPoints: TimeSeriesPoint[] = []
 
   // Handle multiple series format [{name, data}, ...]
-  if ((series as SeriesObject[])[0]?.data) {
+  if ((series as SeriesObject[])[0]?._data) {
     (series as SeriesObject[]).forEach(s => {
-      if (Array.isArray(s.data)) {
+      if (Array.isArray(s._data)) {
         allPoints.push(...s.data)
       }
     })

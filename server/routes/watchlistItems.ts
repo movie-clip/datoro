@@ -80,7 +80,7 @@ router.get(
           }))
         }
       })
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlist Items] Error fetching items:', error)
       res.status(500).json({
         success: false,
@@ -154,7 +154,7 @@ router.post(
             displayOrder: item.displayOrder
           }
         })
-      } catch (error: any) {
+      } catch (_error: any) {
         if (error.message === 'Ticker already in watchlist') {
           res.status(409).json({
             success: false,
@@ -164,7 +164,7 @@ router.post(
         }
         throw error
       }
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlist Items] Error adding item:', error)
       res.status(500).json({
         success: false,
@@ -231,7 +231,7 @@ router.delete(
           removed: true
         }
       })
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlist Items] Error removing item:', error)
       res.status(500).json({
         success: false,
@@ -308,7 +308,7 @@ router.put(
           reordered: true
         }
       })
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlist Items] Error reordering items:', error)
       res.status(500).json({
         success: false,

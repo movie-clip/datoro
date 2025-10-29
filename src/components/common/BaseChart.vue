@@ -333,20 +333,20 @@ const growthData = computed((): GrowthRates | null => {
     if (props.series.length > 0 && Array.isArray(props.series[0])) {
       // Simple array of [timestamp, value] pairs
       dataToAnalyze = props.series as Array<[number, number]>
-    } else if (props.series.length > 0 && (props.series[0] as any)?.data) {
+    } else if (props.series.length > 0 && (props.series[0] as any)?._data) {
       // Multi-series: use the first series or sum all series
       // For stacked charts, we should sum all series values at each timestamp
       if (props.stacked && props.series.length > 1) {
         // Sum all series values at each timestamp
         const dateMap = new Map<number, number>()
         props.series.forEach((s: any) => {
-          if (s.data && Array.isArray(s.data)) {
+          if (s.data && Array.isArray(s._data)) {
             s.data.forEach(([date, value]: [number, number]) => {
               dateMap.set(date, (dateMap.get(date) || 0) + value)
             })
           }
         })
-        dataToAnalyze = Array.from(dateMap.entries()).sort((a, b) => a[0] - b[0])
+        dataToAnalyze = Array.from(dateMap.entries()).sort((_a, _b) => a[0] - b[0])
       } else {
         // Use first series
         dataToAnalyze = (props.series[0] as any).data || []
@@ -401,7 +401,7 @@ const createOption = (isLarge = false): EChartsOption => {
       if (allDataPoints.length > 0) {
         if (props.timeframe === 'quarterly') {
           // For quarterly: deduplicate by quarter label, keeping the latest timestamp per quarter
-          const uniqueTimestamps = [...new Set(allDataPoints.map(point => point[0]))].sort((a, b) => a - b)
+          const uniqueTimestamps = [...new Set(allDataPoints.map(point => point[0]))].sort((_a, _b) => a - b)
           
           // Group timestamps by quarter label and keep only the latest one
           const quarterMap = new Map<string, number>()
@@ -421,7 +421,7 @@ const createOption = (isLarge = false): EChartsOption => {
           
           // Convert map back to sorted arrays
           const uniqueQuarters = Array.from(quarterMap.entries())
-            .sort((a, b) => a[1] - b[1]) // Sort by timestamp
+            .sort((_a, _b) => a[1] - b[1]) // Sort by timestamp
           
           timestamps = uniqueQuarters.map(([_, ts]) => ts)
           categoryData = uniqueQuarters.map(([label, _]) => label)
@@ -452,7 +452,7 @@ const createOption = (isLarge = false): EChartsOption => {
     })
   }
   
-  const base: any = {
+  const base: unknown = {
     backgroundColor: 'transparent',
     // Only show title in non-modal view (in modal, it's shown as HTML element)
     title: isLarge ? undefined : {

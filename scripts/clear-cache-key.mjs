@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Clear specific Redis cache keys
  * Usage: node scripts/clear-cache-key.mjs AAPL
@@ -74,8 +75,8 @@ try {
     console.log(`\n🎉 Cache cleared for ${ticker}! Next request will fetch fresh data from FMP.`)
   }
 
-} catch (error) {
-  console.error('❌ Error:', error.message)
+} catch (_error) {
+  console.error('❌ Error:', _error.message)
   process.exit(1)
 } finally {
   await client.quit()

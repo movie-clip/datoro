@@ -185,7 +185,7 @@ describe('useWatchlist Composable', () => {
 
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:7071/api/watchlist/AAPL',
-        expect.any(Object)
+        expect.any(Object) as unknown
       )
       expect(watchlist.isWatchlisted('AAPL')).toBe(true)
     })
@@ -201,7 +201,7 @@ describe('useWatchlist Composable', () => {
 
       try {
         await watchlist.addToWatchlist('AAPL')
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw
       }
 
@@ -255,7 +255,7 @@ describe('useWatchlist Composable', () => {
 
       try {
         await watchlist.addToWatchlist('AAPL')
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw
       }
       
@@ -315,7 +315,7 @@ describe('useWatchlist Composable', () => {
 
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:7071/api/watchlist/AAPL',
-        expect.any(Object)
+        expect.any(Object) as unknown
       )
     })
 
@@ -330,7 +330,7 @@ describe('useWatchlist Composable', () => {
 
       try {
         await watchlist.removeFromWatchlist('AAPL')
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw
       }
 
@@ -487,7 +487,7 @@ describe('useWatchlist Composable', () => {
 
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:7071/api/watchlist/',
-        expect.any(Object)
+        expect.any(Object) as unknown
       )
     })
 

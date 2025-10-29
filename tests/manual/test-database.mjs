@@ -66,7 +66,7 @@ async function testDatabase() {
     console.log('   2. Restart PM2: npm run pm2:reload');
     console.log('   3. Check logs: npm run pm2:logs');
 
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Database test failed:');
     console.error('   Error:', error.message);
     console.error('\n🔧 Troubleshooting:');

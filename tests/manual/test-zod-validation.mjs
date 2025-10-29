@@ -67,7 +67,7 @@ try {
   console.log(`  - Ticker: ${validated.ticker}`)
   console.log(`  - Profile entries: ${validated.data.profile.length}`)
   console.log(`  - Income entries: ${validated.data.incomeAnnual.length}`)
-} catch (error) {
+} catch (_error) {
   console.error('❌ Valid data failed:', error.message)
 }
 
@@ -118,7 +118,7 @@ try {
   console.log(`  - Quote price type: ${typeof validated.data.quote[0].price} (value: ${validated.data.quote[0].price})`)
   console.log(`  - Revenue type: ${typeof validated.data.incomeAnnual[0].revenue} (value: ${validated.data.incomeAnnual[0].revenue})`)
   console.log(`  - EPS type: ${typeof validated.data.incomeAnnual[0].eps} (value: ${validated.data.incomeAnnual[0].eps})`)
-} catch (error) {
+} catch (_error) {
   console.error('❌ String number conversion failed:', error.message)
 }
 
@@ -155,7 +155,7 @@ try {
   console.log('✅ Minimal data with missing optional fields validated')
   console.log(`  - Profile has required fields: ${validated.data.profile[0].symbol && validated.data.profile[0].companyName ? 'Yes' : 'No'}`)
   console.log(`  - Quote price: ${validated.data.quote[0].price}`)
-} catch (error) {
+} catch (_error) {
   console.error('❌ Minimal data failed:', error.message)
 }
 
@@ -242,13 +242,13 @@ const largeDataset = {
   data: {
     profile: [],
     quote: [],
-    incomeAnnual: Array(20).fill().map((_, i) => ({
+    incomeAnnual: Array(20).fill().map((__, _i) => ({
       date: `2023-${String(i + 1).padStart(2, '0')}-01`,
       revenue: 1000000 * (i + 1),
       netIncome: 500000 * (i + 1),
       eps: 5.0 + i
     })),
-    incomeQuarter: Array(80).fill().map((_, i) => ({
+    incomeQuarter: Array(80).fill().map((__, _i) => ({
       date: `2023-Q${(i % 4) + 1}`,
       revenue: 250000 * (i + 1),
       netIncome: 125000 * (i + 1)
@@ -261,7 +261,7 @@ const largeDataset = {
     keyMetrics: [],
     priceHistory: {
       symbol: 'SPY',
-      historical: Array(500).fill().map((_, i) => ({
+      historical: Array(500).fill().map((__, _i) => ({
         date: `2023-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
         open: 400 + Math.random() * 50,
         high: 420 + Math.random() * 50,
@@ -293,7 +293,7 @@ try {
   console.log(`  - Income quarter: ${validated.data.incomeQuarter.length} records`)
   console.log(`  - Price history: ${validated.data.priceHistory.historical.length} points`)
   console.log(`  - Performance: ${duration < 100 ? 'Excellent (< 100ms)' : duration < 500 ? 'Good (< 500ms)' : 'Needs optimization'}`)
-} catch (error) {
+} catch (_error) {
   console.error('❌ Large dataset failed:', error.message)
 }
 

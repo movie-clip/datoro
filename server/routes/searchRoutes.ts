@@ -67,7 +67,7 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   // Check multi-layer cache (memory + Redis)
   const cached = await cache.get(cacheKey)
   
-  if (cached && cached.data) {
+  if (cached && cached._data) {
     const duration = Date.now() - startTime
     console.log(`[Search] Cache hit (${cached.source}) for "${searchQuery}" in ${duration}ms`)
     
@@ -103,10 +103,10 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   const data = await response.json() as any[]
   
   // Optimize filtering and sorting with early termination
-  const results: any[] = []
-  const exactMatch: any[] = []
-  const startsWithMatch: any[] = []
-  const otherMatches: any[] = []
+  const results: unknown[] = []
+  const exactMatch: unknown[] = []
+  const startsWithMatch: unknown[] = []
+  const otherMatches: unknown[] = []
   
   // Single pass filtering and categorization
   for (const item of data || []) {
@@ -132,8 +132,8 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   
   // Combine results in priority order
   results.push(...exactMatch)
-  results.push(...startsWithMatch.sort((a, b) => a.symbol.localeCompare(b.symbol)))
-  results.push(...otherMatches.sort((a, b) => a.symbol.localeCompare(b.symbol)))
+  results.push(...startsWithMatch.sort((_a, _b) => a.symbol.localeCompare(b.symbol)))
+  results.push(...otherMatches.sort((_a, _b) => a.symbol.localeCompare(b.symbol)))
   
   // Limit to 5 results
   const finalResults = results.slice(0, 5)
@@ -200,7 +200,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
   // Check cache first (5-minute TTL for Deep Finder)
   console.log(`[DeepFinder] Checking cache for ${stockList.length} tickers (key: ${cacheKey})`)
   const cached = await cache.get(cacheKey)
-  if (cached.data) {
+  if (cached._data) {
     console.log(`[DeepFinder] CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'unknown')
     res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
@@ -219,7 +219,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
   
   // OPTIMIZATION: Batch fetch all quotes in a single API call
   const quotesUrl = `${baseUrl}/api/v3/quote/${stockList.join(',')}?apikey=${FMP_API_KEY}`
-  let quotesMap = new Map<string, any>()
+  const quotesMap = new Map<string, any>()
   
   try {
     const quotesRes = await fetch(quotesUrl)
@@ -232,7 +232,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
       })
       console.log(`[DeepFinder] Fetched ${quotesMap.size} quotes in batch`)
     }
-  } catch (error: any) {
+  } catch (_error: any) {
     console.warn(`[DeepFinder] Batch quotes failed:`, error.message)
   }
   
@@ -280,7 +280,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
           distance: parseFloat(distance.toFixed(2)),
           change: quote.changesPercentage || 0
         }
-      } catch (error: any) {
+      } catch (_error: any) {
         console.warn(`[DeepFinder] Error processing ${ticker}:`, error.message)
         return null
       }

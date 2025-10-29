@@ -177,7 +177,7 @@ export function validateBatchData(data: any): void {
   ]
   
   requiredEndpoints.forEach(endpoint => {
-    if (!(endpoint in data.data)) {
+    if (!(endpoint in data._data)) {
       throw new Error(`Batch data missing ${endpoint}`)
     }
   })

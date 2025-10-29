@@ -130,7 +130,7 @@ export function useWatchlists(): UseWatchlistsReturn {
         initialized.value = true
         lastFetchTime.value = now
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('[Watchlists] Error initializing:', error)
     } finally {
       loading.value = false
@@ -150,7 +150,7 @@ export function useWatchlists(): UseWatchlistsReturn {
         const data = await response.json()
         itemsCache.value.set(watchlistId, data.data.items || [])
       }
-    } catch (error) {
+    } catch (_error) {
       console.error(`[Watchlists] Error loading items for watchlist ${watchlistId}:`, error)
     }
   }
@@ -204,7 +204,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       console.log('[Watchlists] Created watchlist, total now:', watchlistsCache.value.length)
       
       return { success: true }
-    } catch (error) {
+    } catch (_error) {
       console.error('[Watchlists] Error creating watchlist:', error)
       throw error
     }
@@ -234,7 +234,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       }
       
       return { success: true }
-    } catch (error) {
+    } catch (_error) {
       // Rollback
       watchlistsCache.value = originalWatchlists
       console.error('[Watchlists] Error renaming watchlist:', error)
@@ -275,7 +275,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       }
       
       return { success: true }
-    } catch (error) {
+    } catch (_error) {
       // Rollback
       watchlistsCache.value = originalWatchlists
       itemsCache.value = originalItems
@@ -333,7 +333,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       }
       
       return { success: true }
-    } catch (error) {
+    } catch (_error) {
       // Rollback
       itemsCache.value.set(watchlistId, originalItems)
       console.error('[Watchlists] Error adding ticker:', error)
@@ -370,7 +370,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       }
       
       return { success: true }
-    } catch (error) {
+    } catch (_error) {
       // Rollback
       itemsCache.value.set(watchlistId, originalItems)
       console.error('[Watchlists] Error removing ticker:', error)
@@ -403,7 +403,7 @@ export function useWatchlists(): UseWatchlistsReturn {
     const originalItems = itemsCache.value.get(watchlistId) || []
     
     // Optimistic update
-    const reorderedItems: WatchlistItem[] = tickers.map((ticker, index) => {
+    const reorderedItems: WatchlistItem[] = tickers.map((_ticker, _index) => {
       const item = originalItems.find(i => i.ticker === ticker)
       return item ? { ...item, displayOrder: index } : { ticker, addedAt: new Date().toISOString(), displayOrder: index }
     })
@@ -420,7 +420,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       if (!response.ok) {
         throw new Error('Failed to reorder watchlist')
       }
-    } catch (error) {
+    } catch (_error) {
       // Rollback
       itemsCache.value.set(watchlistId, originalItems)
       console.error('[Watchlists] Error reordering:', error)

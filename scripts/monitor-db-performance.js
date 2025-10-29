@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Database Performance Monitoring Script
  * 
@@ -51,7 +52,7 @@ async function checkIndexes() {
     console.log('');
     return true;
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error checking indexes:', error.message);
     return false;
   }
@@ -136,7 +137,7 @@ async function measureQueryPerformance() {
       const duration = await query.fn();
       const status = duration < 1000 ? '✅' : duration < 5000 ? '⚠️' : '❌';
       console.log(`${status} ${query.name}: ${duration}ms`);
-    } catch (error) {
+    } catch (_error) {
       console.log(`❌ ${query.name}: ERROR - ${error.message}`);
     }
   }
@@ -177,7 +178,7 @@ async function checkConnectionPool() {
       console.log('\n   ✅ Connection pool healthy');
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.log(`   ⚠️  Could not fetch pool stats: ${error.message}`);
   }
   
@@ -203,7 +204,7 @@ async function checkDatabaseConfig() {
       console.log(`   ${c.name}: ${value}`);
     });
     
-  } catch (error) {
+  } catch (_error) {
     console.log(`   ⚠️  Could not fetch config: ${error.message}`);
   }
   
@@ -235,7 +236,7 @@ async function main() {
     console.log('=' .repeat(60));
     console.log('\n✅ Monitoring complete!\n');
     
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Monitoring failed:', error);
     process.exit(1);
   } finally {

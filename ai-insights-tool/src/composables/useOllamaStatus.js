@@ -9,7 +9,7 @@ export function useOllamaStatus() {
       const res = await fetch('/api/ollama/status')
       const data = await res.json()
       ollamaStatus.value = data.running ? 'connected' : 'offline'
-    } catch (error) {
+    } catch (_error) {
       ollamaStatus.value = 'offline'
     }
   }

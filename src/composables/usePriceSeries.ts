@@ -58,7 +58,7 @@ export function usePriceSeries(): UsePriceSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
+  const { _batchData, _loading, _currentTicker, _error: batchError } = storeToRefs(tickerStore)
   const { refresh } = tickerStore
 
   // Extract and filter price series based on timeframe
@@ -199,7 +199,7 @@ export function usePriceSeries(): UsePriceSeriesReturn {
     const rawPrices = getPriceSeriesFromBatch(batchData.value)
     if (!rawPrices || rawPrices.length < 2) return null
     
-    const sortedData = [...rawPrices].sort((a, b) => a[0] - b[0])
+    const sortedData = [...rawPrices].sort((_a, _b) => a[0] - b[0])
     const lastPoint = sortedData[sortedData.length - 1]
     if (!lastPoint) return null
     

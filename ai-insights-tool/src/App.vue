@@ -98,7 +98,7 @@ const regenerateAdvantage = async (ticker, advantageIndex, isGenerationResult = 
         tickerStatuses.value[ticker].data.advantages[advantageIndex] = data.advantage
       }
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to regenerate advantage:', error)
     alert('Failed to regenerate advantage: ' + error.message)
   } finally {
@@ -106,7 +106,7 @@ const regenerateAdvantage = async (ticker, advantageIndex, isGenerationResult = 
   }
 }
 
-const isRegenerating = (ticker, index) => {
+const isRegenerating = (_ticker, _index) => {
   return regeneratingAdvantages.value.has(`${ticker}-${index}`)
 }
 
@@ -142,7 +142,7 @@ const regenerateRisk = async (ticker, riskIndex, isGenerationResult = false) => 
         tickerStatuses.value[ticker].data.risks[riskIndex] = data.risk
       }
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to regenerate risk:', error)
     alert('Failed to regenerate risk: ' + error.message)
   } finally {
@@ -150,7 +150,7 @@ const regenerateRisk = async (ticker, riskIndex, isGenerationResult = false) => 
   }
 }
 
-const isRegeneratingRisk = (ticker, index) => {
+const isRegeneratingRisk = (_ticker, _index) => {
   return regeneratingRisks.value.has(`${ticker}-${index}`)
 }
 </script>

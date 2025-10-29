@@ -53,7 +53,7 @@ async function testWatchlistService() {
     console.log(`\n📋 Test 2: Get items from default watchlist`)
     const items = await watchlistService.getWatchlistItems(defaultWatchlist.id)
     console.log(`Found ${items.length} items in "${defaultWatchlist.name}":`)
-    items.forEach((item, i) => {
+    items.forEach((_item, _i) => {
       console.log(`  ${i + 1}. ${item.ticker} (Added: ${item.addedAt.toLocaleDateString()})`)
     })
     
@@ -70,7 +70,7 @@ async function testWatchlistService() {
     
     console.log('\n✅ All tests completed successfully!')
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error during testing:', error)
     throw error
   } finally {

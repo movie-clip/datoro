@@ -61,7 +61,7 @@ describe('Database Service', () => {
 
   describe('User Management', () => {
     it('should create new user with IP and user agent', async () => {
-      const user: any = await findOrCreateUser(testIpAddress, testUserAgent)
+      const user: unknown = await findOrCreateUser(testIpAddress, testUserAgent)
       
       expect(user).toBeDefined()
       expect(user.id).toBeDefined()
@@ -73,9 +73,9 @@ describe('Database Service', () => {
     })
 
     it('should update lastLoginAt on existing user', async () => {
-      const user1: any = await findOrCreateUser(testIpAddress, testUserAgent)
+      const user1: unknown = await findOrCreateUser(testIpAddress, testUserAgent)
       await sleep(100) // Wait 100ms
-      const user2: any = await findOrCreateUser(testIpAddress, testUserAgent)
+      const user2: unknown = await findOrCreateUser(testIpAddress, testUserAgent)
       
       expect(user1.id).toBe(user2.id)
       // lastLoginAt should be updated on subsequent logins

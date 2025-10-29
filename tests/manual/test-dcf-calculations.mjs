@@ -29,7 +29,7 @@ async function fetchBatchData(ticker) {
 /**
  * Manual DCF Calculation (replicate our service logic)
  */
-function calculateDCFManually(data, inputs) {
+function calculateDCFManually(_data, inputs) {
   const {
     currentFcf,
     sharesOutstanding,
@@ -71,7 +71,7 @@ function calculateDCFManually(data, inputs) {
   const terminalPV = terminalValue / Math.pow(1 + discountRate / 100, projectionYears);
 
   // Step 3: Sum all present values
-  const sumPvFcf = projectedFcfs.reduce((sum, p) => sum + p.presentValue, 0);
+  const sumPvFcf = projectedFcfs.reduce((_sum, _p) => sum + p.presentValue, 0);
   const enterpriseValue = sumPvFcf + terminalPV;
 
   // Step 4: Calculate equity value
@@ -164,8 +164,8 @@ function extractDcfData(batchData) {
   // Calculate TTM EPS growth
   let epsGrowth = 0;
   if (incomeQuarter.length >= 8) {
-    const ttmEps = incomeQuarter.slice(0, 4).reduce((sum, q) => sum + (q.eps || 0), 0);
-    const prevTtmEps = incomeQuarter.slice(4, 8).reduce((sum, q) => sum + (q.eps || 0), 0);
+    const ttmEps = incomeQuarter.slice(0, 4).reduce((_sum, _q) => sum + (q.eps || 0), 0);
+    const prevTtmEps = incomeQuarter.slice(4, 8).reduce((_sum, _q) => sum + (q.eps || 0), 0);
     if (ttmEps !== 0 && prevTtmEps !== 0) {
       epsGrowth = ((ttmEps - prevTtmEps) / Math.abs(prevTtmEps)) * 100;
     }
@@ -324,7 +324,7 @@ async function testDcfCalculations() {
       console.log('🔴 Recommendation: SELL (>20% downside)');
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Test failed:', error.message);
     console.error(error.stack);
     process.exit(1);

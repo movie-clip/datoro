@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 #!/usr/bin/env node
 /**
  * Get service name from centralized config
@@ -18,3 +19,4 @@ if (!serviceType || !SERVICES[serviceType]) {
 }
 
 console.log(SERVICES[serviceType].name)
+

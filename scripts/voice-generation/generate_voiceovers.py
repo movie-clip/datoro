@@ -20,7 +20,7 @@ from elevenlabs import ElevenLabs, VoiceSettings
 # ─────────────────────────────
 #  CONFIGURATION
 # ─────────────────────────────
-ELEVEN_API_KEY = "sk_734965751b4ac48fa1cc94ef32e5851d06d6bb3b72f32f65"  # Set via environment variable for security
+ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY", "")  # Set via environment variable for security
 
 # Voice cloning settings
 USE_VOICE_CLONING = False  # Set to True to use voice cloning

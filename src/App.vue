@@ -105,7 +105,7 @@ onMounted(async () => {
     if (authStore.isAuthenticated) {
       await initializeWatchlists()
     }
-  } catch (err) {
+  } catch (_err) {
     console.error('[App] Auth init failed:', err)
   }
   
@@ -213,7 +213,7 @@ const toggleWatchlistPanel = (): void => {
 const handleToggleWatchlist = async (ticker: string): Promise<void> => {
   try {
     await toggleWatchlist(ticker)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error toggling watchlist:', error)
     const message = error instanceof Error ? error.message : 'Failed to update watchlist'
     alert(message)

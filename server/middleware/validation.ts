@@ -244,7 +244,7 @@ interface ValidationSchema {
  * @example
  * app.get('/api/profile/:ticker', 
  *   validate(validateProfile),
- *   (req, res) => { ... }
+ *   (__req, __res) => { ... }
  * );
  */
 export function validate(schema: ValidationSchema) {
@@ -285,7 +285,7 @@ export function validate(schema: ValidationSchema) {
       }
 
       next();
-    } catch (error: any) {
+    } catch (_error: any) {
       // Joi validation error
       if (error.isJoi) {
         return res.status(400).json({

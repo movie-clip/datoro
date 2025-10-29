@@ -61,16 +61,16 @@ export interface BatchData {
     cashflowQuarter: FMPCashFlow[]
     
     /** Annual ratios */
-    ratiosAnnual?: any[]
+    ratiosAnnual?: unknown[]
     
     /** Key metrics (combined annual/quarter) */
-    keyMetrics?: any[]
+    keyMetrics?: unknown[]
     
     /** Historical price data with structure { symbol, historical: [...] } */
     priceHistory?: { symbol: string; historical: FMPHistoricalPrice[] }
     
     /** Revenue segments by product/geography */
-    revenueSegments?: any[]
+    revenueSegments?: unknown[]
     
     /** Dividend history with structure { symbol, historical: [...] } */
     dividendHistory?: { symbol: string; historical: FMPDividend[] }
@@ -79,16 +79,16 @@ export interface BatchData {
     stockSplit?: { symbol: string; historical: FMPStockSplit[] }
     
     /** Earnings calendar */
-    earningsCalendar?: any[]
+    earningsCalendar?: unknown[]
     
     /** Financial scores (Altman Z, Piotroski, etc.) */
-    financialScores?: any[]
+    financialScores?: unknown[]
     
     /** Price target summary */
-    priceTargetSummary?: any[]
+    priceTargetSummary?: unknown[]
     
     /** Price target consensus */
-    priceTargetConsensus?: any[]
+    priceTargetConsensus?: unknown[]
     
     /** Insider trading transactions */
     insiderTrading: FMPInsiderTrading[]

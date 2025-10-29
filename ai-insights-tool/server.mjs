@@ -69,7 +69,7 @@ async function loadBundle() {
   try {
     const data = await fs.readFile(BUNDLE_FILE, 'utf-8')
     return JSON.parse(data)
-  } catch (error) {
+  } catch (_error) {
     return {}
   }
 }
@@ -128,7 +128,7 @@ function parseAIResponse(rawResponse) {
     if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => item.title && item.description)) {
       return parsed
     }
-  } catch (e) {
+  } catch (_e) {
     // Continue to regex matching
   }
 
@@ -147,7 +147,7 @@ function parseAIResponse(rawResponse) {
       }
       
       return parsed
-    } catch (e) {
+    } catch (_e) {
       console.error('Failed to parse JSON array:', e.message)
       console.error('JSON string:', jsonMatch[0].substring(0, 200))
     }
@@ -162,7 +162,7 @@ function parseAIResponse(rawResponse) {
         console.log('⚠️  Found single object in response, wrapping it')
         return [parsed]
       }
-    } catch (e) {
+    } catch (_e) {
       console.error('Failed to parse JSON object:', e.message)
     }
   }
@@ -194,19 +194,19 @@ async function generateInsightsForTicker(ticker, companyName = ticker) {
 // API Endpoints
 
 // Check Ollama status
-app.get('/api/ollama/status', async (req, res) => {
+app.get('/api/ollama/status', async (__req, __res) => {
   try {
     const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
       signal: AbortSignal.timeout(2000)
     })
     res.json({ running: response.ok })
-  } catch (error) {
+  } catch (_error) {
     res.json({ running: false })
   }
 })
 
 // Get bundle statistics
-app.get('/api/bundle/stats', async (req, res) => {
+app.get('/api/bundle/stats', async (__req, __res) => {
   try {
     const bundle = await loadBundle()
     const tickers = Object.keys(bundle)
@@ -224,13 +224,13 @@ app.get('/api/bundle/stats', async (req, res) => {
     }
 
     res.json(stats)
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: error.message })
   }
 })
 
 // Check tickers
-app.post('/api/tickers/check', async (req, res) => {
+app.post('/api/tickers/check', async (__req, __res) => {
   try {
     const { tickers: tickersInput } = req.body
     const bundle = await loadBundle()
@@ -265,13 +265,13 @@ app.post('/api/tickers/check', async (req, res) => {
     }
 
     res.json({ validTickers, tickerInfo })
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: error.message })
   }
 })
 
 // Generate insights (streaming)
-app.post('/api/generate', async (req, res) => {
+app.post('/api/generate', async (__req, __res) => {
   const { tickers, force = false } = req.body
 
   // Set up Server-Sent Events
@@ -279,7 +279,7 @@ app.post('/api/generate', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
 
-  const sendEvent = (data) => {
+  const sendEvent = (_data) => {
     res.write(`data: ${JSON.stringify(data)}\n\n`)
   }
 
@@ -304,7 +304,7 @@ app.post('/api/generate', async (req, res) => {
           success: true,
           insights
         })
-      } catch (error) {
+      } catch (_error) {
         failed.push([ticker, error.message])
         sendEvent({
           type: 'result',
@@ -324,7 +324,7 @@ app.post('/api/generate', async (req, res) => {
     })
 
     res.end()
-  } catch (error) {
+  } catch (_error) {
     sendEvent({
       type: 'error',
       message: error.message
@@ -334,7 +334,7 @@ app.post('/api/generate', async (req, res) => {
 })
 
 // Apply selected tickers to main project
-app.post('/api/apply-to-main', async (req, res) => {
+app.post('/api/apply-to-main', async (__req, __res) => {
   try {
     const { tickers } = req.body
     
@@ -352,7 +352,7 @@ app.post('/api/apply-to-main', async (req, res) => {
     try {
       const mainData = await fs.readFile(mainBundlePath, 'utf-8')
       mainBundle = JSON.parse(mainData)
-    } catch (error) {
+    } catch (_error) {
       // File doesn't exist or is invalid, start fresh
       console.log('Main bundle not found, creating new one')
     }
@@ -374,14 +374,14 @@ app.post('/api/apply-to-main', async (req, res) => {
       appliedCount,
       message: `Successfully applied ${appliedCount} ticker(s) to main project`
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error applying to main project:', error)
     res.status(500).json({ success: false, error: error.message })
   }
 })
 
 // Regenerate single advantage
-app.post('/api/regenerate-advantage', async (req, res) => {
+app.post('/api/regenerate-advantage', async (__req, __res) => {
   try {
     const { ticker, advantageIndex } = req.body
     
@@ -429,14 +429,14 @@ app.post('/api/regenerate-advantage', async (req, res) => {
     }
 
     res.json({ advantage: newAdvantage })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error regenerating advantage:', error)
     res.status(500).json({ error: error.message })
   }
 })
 
 // Regenerate single risk
-app.post('/api/regenerate-risk', async (req, res) => {
+app.post('/api/regenerate-risk', async (__req, __res) => {
   try {
     const { ticker, riskIndex } = req.body
     
@@ -484,7 +484,7 @@ app.post('/api/regenerate-risk', async (req, res) => {
     }
 
     res.json({ risk: newRisk })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error regenerating risk:', error)
     res.status(500).json({ error: error.message })
   }

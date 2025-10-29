@@ -19,8 +19,47 @@ export default [
       '*.config.mjs',
       '*.config.cjs',
       'coverage/**',
-      '.github/**'
+      '.github/**',
+      'scripts/voice-generation/**/*.py',
+      'ai-insights-tool/**',
+      'docs/**',
+      '.venv/**',
+      'venv/**',
+      '__pycache__/**',
+      '**/__pycache__/**',
+      '.env*',
+      '*.log',
+      '*.pid',
+      '.DS_Store',
+      'Thumbs.db'
     ]
+  },
+
+  // Special configuration for test and manual files
+  {
+    files: ['tests/**/*.{js,mjs,ts}', 'scripts/**/*.{js,mjs}'],
+    rules: {
+      'no-console': 'off', // Allow console in test files
+      'no-unused-vars': 'off', // Be more lenient with test files
+      '@typescript-eslint/no-unused-vars': 'off'
+    }
+  },
+
+  // Special configuration for k6 load test files
+  {
+    files: ['tests/load/**/*.js'],
+    languageOptions: {
+      globals: {
+        __ENV: 'readonly',
+        __VU: 'readonly', 
+        __ITER: 'readonly',
+        console: 'readonly'
+      }
+    },
+    rules: {
+      'no-console': 'off',
+      'no-undef': 'off'
+    }
   },
 
   // Configuration for all JS/Vue files
@@ -60,13 +99,13 @@ export default [
 
   // TypeScript configuration
   {
-    files: ['**/*.{ts,tsx,vue}'],
+    files: ['**/*.{ts,tsx,vue}', 'tests/**/*.{ts,js}', 'server/**/*.{ts,js}'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: ['./tsconfig.app.json', './tsconfig.server.json']
+        project: ['./tsconfig.app.json', './tsconfig.server.json', './tsconfig.test.json']
       },
       globals: {
         ...globals.browser,

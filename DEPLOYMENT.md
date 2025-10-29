@@ -7,6 +7,8 @@ npm run start:dev
 
 before pushing into prod:
 node scripts/pre-deploy-check.mjs
+npm run security:audit
+npm run lint:check
 
 migration validation:
 node scripts/verify-migration.mjs

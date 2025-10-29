@@ -22,7 +22,7 @@ export class AppError extends Error {
   details: any
   isOperational: boolean
 
-  constructor(message: string, statusCode = 500, code = 'INTERNAL_ERROR', details: any = null) {
+  constructor(message: string, statusCode = 500, code = 'INTERNAL_ERROR', details: unknown = null) {
     super(message)
     this.statusCode = statusCode
     this.code = code
@@ -84,7 +84,7 @@ export const createError = {
  * Should be used as the last middleware in the Express app
  * Can accept monitoring service for tracking
  */
-export function errorHandler(monitoringService: any = null): ErrorRequestHandler {
+export function errorHandler(monitoringService: unknown = null): ErrorRequestHandler {
   return (err: any, req: Request, res: Response, _next: NextFunction) => {
     // Default to 500 if not specified
     const statusCode = err.statusCode || 500;
@@ -126,7 +126,7 @@ export function errorHandler(monitoringService: any = null): ErrorRequestHandler
     const shouldHideDetails = isProd && !isOperational;
 
     // Build error response with request ID for debugging
-    const errorResponse: any = {
+    const errorResponse: unknown = {
       error: {
         message: shouldHideDetails ? 'Internal server error' : err.message,
         code,
@@ -166,7 +166,7 @@ export function notFoundHandler(req: Request, res: Response, next: NextFunction)
 /**
  * Async error wrapper - catches errors from async route handlers
  */
-export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) {
+export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
@@ -176,7 +176,7 @@ export function asyncHandler(fn: (req: Request, res: Response, next: NextFunctio
  * Request logger middleware
  * Can accept monitoring service for tracking
  */
-export function requestLogger(monitoringService: any = null) {
+export function requestLogger(monitoringService: unknown = null) {
   return (req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     

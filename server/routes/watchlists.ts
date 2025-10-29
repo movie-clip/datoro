@@ -54,7 +54,7 @@ router.get(
           }))
         }
       })
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlists] Error fetching watchlists:', error)
       res.status(500).json({
         success: false,
@@ -127,7 +127,7 @@ router.post(
           }
         }
       })
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlists] Error creating watchlist:', error)
       res.status(500).json({
         success: false,
@@ -209,7 +209,7 @@ router.put(
           }
         }
       })
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlists] Error updating watchlist:', error)
       res.status(500).json({
         success: false,
@@ -279,7 +279,7 @@ router.delete(
           watchlistId: id
         }
       })
-    } catch (error: any) {
+    } catch (_error: any) {
       logger.error('[Watchlists] Error deleting watchlist:', error)
       res.status(500).json({
         success: false,

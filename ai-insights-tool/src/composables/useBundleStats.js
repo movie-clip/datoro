@@ -7,7 +7,7 @@ export function useBundleStats() {
     try {
       const res = await fetch('/api/bundle/stats')
       bundleStats.value = await res.json()
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load bundle stats:', error)
     }
   }

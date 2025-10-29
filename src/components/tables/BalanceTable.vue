@@ -36,7 +36,7 @@ import CashDebtChart from '../charts/CashDebtChart.vue'
 
 // Use Pinia store
 const tickerStore = useTickerStore()
-const { batchData, loading, error } = storeToRefs(tickerStore)
+const { _batchData, _loading, _error } = storeToRefs(tickerStore)
 
 // Mobile detection for collapsible behavior
 const { isMobile } = useIsMobile()

@@ -30,7 +30,7 @@ function fmtNumber(n: number): string {
 /**
  * Fetch JSON from URL
  */
-async function getJson(url: string): Promise<any> {
+async function getJson(url: string): Promise<unknown> {
   const r = await fetch(url)
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   return r.json()
@@ -50,7 +50,7 @@ function firstNumber(obj: any, keys: string[]): number {
 /**
  * Sum values across TTM (4 quarters)
  */
-function sumTTM(rows: any[], candidates: string[]): number {
+function sumTTM(rows: unknown[], candidates: string[]): number {
   let s = 0
   let found = false
   for (const r of rows) {
@@ -113,7 +113,7 @@ export async function fetchCashFlowFacts(ticker: string): Promise<ServiceRespons
     if (Number.isFinite(adjFcfTTM)) out.adjFcf = fmtNumber(adjFcfTTM)
     
     return { data: out, error: null }
-  } catch (error) {
+  } catch (_error) {
     return handleServiceError(error, 'fetchCashFlowFacts', out)
   }
 }

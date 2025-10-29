@@ -33,7 +33,7 @@ const TEST_USER = {
 }
 
 let authCookie = ''
-let authToken = ''
+const authToken = ''
 
 // Helper: Check if server is running
 async function checkServerRunning() {
@@ -74,7 +74,7 @@ describe('Authentication Flow - E2E Tests', () => {
         where: { email: TEST_USER.email }
       })
       console.log('🧹 Cleaned up test user\n')
-    } catch (error) {
+    } catch (_error) {
       console.log('⚠️  Cleanup warning:', error)
     }
   })

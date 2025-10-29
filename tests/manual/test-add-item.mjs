@@ -33,7 +33,7 @@ try {
   await watchlistService.removeWatchlistItem(watchlistId, ticker)
   console.log('✅ Test item removed')
   
-} catch (error) {
+} catch (_error) {
   console.error('❌ Error:', error.message)
   console.error('Full error:', error)
 }

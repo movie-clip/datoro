@@ -44,7 +44,7 @@ const fetchWatchlist = async () => {
     
     const data = await response.json()
     watchlist.value = data.tickers || []
-  } catch (err) {
+  } catch (_err) {
     console.error('Error fetching watchlist:', err)
     error.value = 'Failed to load watchlist'
   } finally {

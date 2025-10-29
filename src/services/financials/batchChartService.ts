@@ -97,8 +97,8 @@ class LRUCache<T = any> {
 const cache = new LRUCache(100)
 
 // Memoize wrapper: ticker + args only (no timestamp = no cache misses on refetch)
-const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
-  return function (this: any, ...args: any[]): ReturnType<T> {
+const memoize = <T extends (...args: unknown[]) => any>(fn: T): T => {
+  return function (this: any, ...args: unknown[]): ReturnType<T> {
     // Handle null/undefined batchData
     if (!args[0]) return fn.apply(this, args)
 
@@ -134,7 +134,7 @@ export function getRevenueSeriesFromBatch(batchData: BatchData | null, period: P
       Date.parse(row.date),
       Number(row.revenue) || 0
     ] as SeriesPoint)
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getRevenueSeriesFromBatch error:', error)
     return []
   }
@@ -198,7 +198,7 @@ export function getRevenueSegmentsFromBatch(batchData: BatchData | null): Revenu
     Object.keys(segmentSeries).forEach(key => {
       const series = segmentSeries[key]
       if (series) {
-        series.sort((a, b) => a[0] - b[0])
+        series.sort((_a, _b) => a[0] - b[0])
       }
     })
 
@@ -206,7 +206,7 @@ export function getRevenueSegmentsFromBatch(batchData: BatchData | null): Revenu
       segments: Array.from(allSegments).sort(),
       series: segmentSeries
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getRevenueSegmentsFromBatch error:', error)
     return { segments: [], series: {} }
   }
@@ -247,7 +247,7 @@ export function getFcfSeriesFromBatch(batchData: BatchData | null, period: Perio
         sbc: Number(row.stockBasedCompensation) || 0
       }
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getFcfSeriesFromBatch error:', error)
     return []
   }
@@ -272,7 +272,7 @@ export function getNetIncomeSeriesFromBatch(batchData: BatchData | null, period:
       Date.parse(row.date),
       Number(row.netIncome) || 0
     ] as SeriesPoint)
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getNetIncomeSeriesFromBatch error:', error)
     return []
   }
@@ -297,7 +297,7 @@ export function getEpsSeriesFromBatch(batchData: BatchData | null, period: Perio
       Date.parse(row.date),
       Number(row.eps) || 0
     ] as SeriesPoint)
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getEpsSeriesFromBatch error:', error)
     return []
   }
@@ -329,7 +329,7 @@ export function getEbitdaSeriesFromBatch(batchData: BatchData | null, period: Pe
       depreciationAndAmortization: Number(row.depreciationAndAmortization) || 0,
       ebitda: Number(row.ebitda) || 0
     }))
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getEbitdaSeriesFromBatch error:', error)
     return []
   }
@@ -362,7 +362,7 @@ export function getCashDebtSeriesFromBatch(batchData: BatchData | null, period: 
         debt: totalDebt
       }
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getCashDebtSeriesFromBatch error:', error)
     return []
   }
@@ -396,7 +396,7 @@ export function getCapitalReturnedSeriesFromBatch(batchData: BatchData | null, p
         total
       }
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getCapitalReturnedSeriesFromBatch error:', error)
     return []
   }
@@ -421,7 +421,7 @@ export function getSharesSeriesFromBatch(batchData: BatchData | null, period: Pe
       Date.parse(row.date),
       Number(row.weightedAverageShsOut) || 0
     ] as SeriesPoint)
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getSharesSeriesFromBatch error:', error)
     return []
   }
@@ -449,7 +449,7 @@ export function getExpensesSeriesFromBatch(batchData: BatchData | null, period: 
       researchAndDevelopment: Number(row.researchAndDevelopmentExpenses) || 0,
       sellingGeneralAdmin: Number(row.sellingGeneralAndAdministrativeExpenses) || 0
     }))
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getExpensesSeriesFromBatch error:', error)
     return []
   }
@@ -573,7 +573,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
         return [item.date, yieldValue] as SeriesPoint
       })
       .filter((point): point is SeriesPoint => point !== null)
-      .sort((a, b) => a[0] - b[0])
+      .sort((_a, _b) => a[0] - b[0])
 
     // For quarterly, limit to last 20 quarters to match other charts
     // For annual, return all available data (FMP typically returns ~20 years)
@@ -582,7 +582,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
     }
     return allData
 
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getDividendYieldSeriesFromBatch error:', error)
     return []
   }
@@ -631,14 +631,14 @@ export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFrom
     })
 
     // Convert to arrays sorted by date
-    const sorted = Object.values(grouped).sort((a, b) => a.date - b.date)
+    const sorted = Object.values(grouped).sort((_a, _b) => a.date - b.date)
 
     return {
       buys: sorted.map(item => [item.date, item.buyValue] as SeriesPoint),
       sells: sorted.map(item => [item.date, item.sellValue] as SeriesPoint),
       net: sorted.map(item => [item.date, item.netShares] as SeriesPoint)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getInsiderTradingFromBatch error:', error)
     return { buys: [], sells: [], net: [] }
   }
@@ -677,7 +677,7 @@ export function getPriceSeriesFromBatch(batchData: BatchData | null, maxDays: nu
     }
 
     return series
-  } catch (error) {
+  } catch (_error) {
     console.error('[BatchChartService] getPriceSeriesFromBatch error:', error)
     return []
   }

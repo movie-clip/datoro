@@ -19,7 +19,7 @@ const items = await prisma.watchlistItem.findMany({
 })
 
 console.log('Watchlist Items:')
-items.forEach((item, i) => {
+items.forEach((_item, _i) => {
   console.log(`\n${i + 1}. Ticker: ${item.ticker}`)
   console.log(`   User ID: ${item.userId || 'null'}`)
   console.log(`   User Email: ${item.user?.email || 'no user'}`)
@@ -35,7 +35,7 @@ const allWatchlists = await prisma.watchlist.findMany({
 })
 
 console.log(`\n\nAll Watchlists (${allWatchlists.length}):`)
-allWatchlists.forEach((w, i) => {
+allWatchlists.forEach((_w, _i) => {
   console.log(`${i + 1}. "${w.name}" - User: ${w.userId} - Items: ${w._count.items} - Default: ${w.isDefault}`)
 })
 

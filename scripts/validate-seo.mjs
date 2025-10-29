@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 #!/usr/bin/env node
 
 /**
@@ -247,7 +248,7 @@ if (check(existsSync(manifestPath), 'manifest.json exists', 'manifest.json NOT F
       'Start URL is correct',
       'Start URL incorrect'
     );
-  } catch (e) {
+  } catch (_e) {
     check(false, 'manifest.json is valid JSON', 'manifest.json has syntax errors');
   }
 }
@@ -261,7 +262,7 @@ if (existsSync(indexPath)) {
   if (jsonLdMatches) {
     info(`Found ${jsonLdMatches.length} JSON-LD schemas`);
     
-    jsonLdMatches.forEach((match, idx) => {
+    jsonLdMatches.forEach((_match, _idx) => {
       try {
         const jsonContent = match.replace(/<script type="application\/ld\+json">|<\/script>/g, '').trim();
         const schema = JSON.parse(jsonContent);
@@ -286,7 +287,7 @@ if (existsSync(indexPath)) {
         } else {
           info(`  Schema type: ${schema['@type']}`);
         }
-      } catch (e) {
+      } catch (_e) {
         warn(`Schema ${idx + 1} has JSON syntax errors`);
       }
     });
@@ -385,3 +386,4 @@ console.log(`${cyan}OG images guide: docs/CREATE_OG_IMAGES.md${reset}\n`);
 
 // Exit with error code if critical issues
 process.exit(failed > 0 ? 1 : 0);
+

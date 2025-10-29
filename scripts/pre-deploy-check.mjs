@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 #!/usr/bin/env node
 /**
  * Pre-Deployment Validation Script
@@ -114,7 +115,7 @@ try {
   execSync('npm run type-check:server', { cwd: rootDir, stdio: 'pipe' });
   checks.passed.push('TypeScript Backend');
   console.log('✅ Backend type-check passed');
-} catch (error) {
+} catch (_error) {
   // Backend type errors are warnings if tests pass (route handler signatures)
   warn('TypeScript Backend', 'Type errors found in backend. Verify tests pass to confirm runtime safety.');
 }
@@ -154,7 +155,7 @@ try {
     checks.passed.push('Prisma Migrations');
     console.log('✅ Prisma migrations status checked');
   }
-} catch (error) {
+} catch (_error) {
   warn('Prisma Migrations', 'Could not verify migration status. Ensure database is accessible.');
 }
 
@@ -341,3 +342,4 @@ if (checks.failed.length === 0) {
   console.log('\n⛔ Fix failed checks before deploying');
   process.exit(1);
 }
+

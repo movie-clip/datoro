@@ -69,7 +69,7 @@ async function checkApiVersion(cache: LRUCache): Promise<boolean> {
       localStorage.setItem(API_VERSION_KEY, version)
     }
     return false
-  } catch (err) {
+  } catch (_err) {
     const error = err as Error
     console.warn('[TickerStore] Version check failed:', error.message)
     return false
@@ -342,7 +342,7 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
         timestamp: Date.now()
       })
       
-    } catch (err) {
+    } catch (_err) {
       const errorObj = err as Error
       console.error(`[TickerStore] Error fetching ${t}:`, errorObj)
       error.value = errorObj.message

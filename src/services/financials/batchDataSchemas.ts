@@ -495,7 +495,7 @@ export type CashFlowStatementType = z.infer<typeof CashFlowStatementSchema>
 export function validateBatchData(data: unknown): BatchDataType {
   try {
     return BatchDataSchema.parse(data)
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       console.error('[BatchDataValidation] Validation failed:', {
         ticker: (data as any)?.ticker,

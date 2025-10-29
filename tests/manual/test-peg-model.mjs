@@ -124,8 +124,8 @@ function extractCompanyData(batchData) {
   // Calculate TTM EPS growth
   let epsGrowthTTM = 0;
   if (incomeQuarter.length >= 8) {
-    const ttmEps = incomeQuarter.slice(0, 4).reduce((sum, q) => sum + (q.eps || 0), 0);
-    const prevTtmEps = incomeQuarter.slice(4, 8).reduce((sum, q) => sum + (q.eps || 0), 0);
+    const ttmEps = incomeQuarter.slice(0, 4).reduce((_sum, _q) => sum + (q.eps || 0), 0);
+    const prevTtmEps = incomeQuarter.slice(4, 8).reduce((_sum, _q) => sum + (q.eps || 0), 0);
     if (ttmEps !== 0 && prevTtmEps !== 0) {
       epsGrowthTTM = ((ttmEps - prevTtmEps) / Math.abs(prevTtmEps)) * 100;
     }
@@ -202,7 +202,7 @@ function testMathematicalAccuracy() {
   let passedTests = 0;
   let failedTests = 0;
 
-  tests.forEach((test, idx) => {
+  tests.forEach((_test, _idx) => {
     console.log(`\nTest ${idx + 1}: ${test.name}`);
     console.log('─'.repeat(70));
 
@@ -330,7 +330,7 @@ function testEdgeCases() {
   let passed = 0;
   let failed = 0;
 
-  edgeCases.forEach((test, idx) => {
+  edgeCases.forEach((_test, _idx) => {
     console.log(`\nEdge Case ${idx + 1}: ${test.name}`);
     
     try {
@@ -360,7 +360,7 @@ function testEdgeCases() {
           failed++;
         }
       }
-    } catch (error) {
+    } catch (_error) {
       if (test.shouldWork) {
         console.log(`  ❌ Unexpected error: ${error.message}`);
         failed++;
@@ -422,7 +422,7 @@ async function testRealCompanyData() {
     console.log('\n📊 Scenario Analysis:');
     console.log('═'.repeat(70));
 
-    scenarios.forEach((scenario, idx) => {
+    scenarios.forEach((_scenario, _idx) => {
       console.log(`\n${idx + 1}. ${scenario.name} Scenario:`);
       console.log(`   Growth: ${scenario.growth.toFixed(1)}% | P/E: ${scenario.targetPE.toFixed(1)}x | ${scenario.years}Y`);
       
@@ -450,7 +450,7 @@ async function testRealCompanyData() {
     });
 
     return true;
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Real company test failed:', error.message);
     return false;
   }

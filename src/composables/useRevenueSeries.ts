@@ -38,7 +38,7 @@ export function useRevenueSeries(): UseRevenueSeriesReturn {
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
-  const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
+  const { _batchData, _loading, _currentTicker, _error: batchError, _timeframe } = storeToRefs(tickerStore)
   
   // Map timeframe from store ('annual' | 'quarterly') to period
   const period = computed<Period>(() => timeframe.value)
@@ -95,7 +95,7 @@ export function useRevenueSeries(): UseRevenueSeriesReturn {
       }
     })
     
-    const sortedDates = Array.from(allDates).sort((a, b) => a - b)
+    const sortedDates = Array.from(allDates).sort((_a, _b) => a - b)
     
     // Create a map for quick lookup: date -> value for each segment
     const segmentMaps: Record<string, Map<number, number>> = {}

@@ -35,5 +35,5 @@ const tickerStore = useTickerStore()
 const { timeframe, currentTicker: ticker } = storeToRefs(tickerStore)
 
 // No ticker prop - using Pinia store
-const { series, title, loading, error, message, emptyDataMessage } = useDividendYieldSeries()
+const { _series, _title, _loading, _error, _message, _emptyDataMessage } = useDividendYieldSeries()
 </script>

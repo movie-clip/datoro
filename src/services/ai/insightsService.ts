@@ -82,7 +82,7 @@ async function loadBundle(): Promise<InsightsBundle> {
       }
       insightsBundle = await response.json()
       return insightsBundle!
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading insights bundle:', error)
       bundleLoadPromise = null
       throw error
@@ -121,7 +121,7 @@ export async function getInsights(ticker: string): Promise<InsightsResponse> {
       provider: bundle[t].provider || 'static',
       version: bundle[t].version
     }
-  } catch (error) {
+  } catch (_error) {
     // Don't log "NOT_AVAILABLE" errors - they're expected
     if ((error as Error).message !== 'NOT_AVAILABLE') {
       console.error(`Error loading insights for ${t}:`, error)
@@ -158,7 +158,7 @@ export async function getCompetitiveAdvantages(
       version: insights.version,
       lastUpdated: insights.lastUpdated
     }
-  } catch (error) {
+  } catch (_error) {
     // Check if it's a "not available" error
     const isNotAvailable =
       (error as Error).message === 'NOT_AVAILABLE' || (error as Error).message.includes('Unexpected token')
@@ -220,7 +220,7 @@ export async function getInvestmentRisks(
       version: insights.version,
       lastUpdated: insights.lastUpdated
     }
-  } catch (error) {
+  } catch (_error) {
     // Check if it's a "not available" error
     const isNotAvailable =
       (error as Error).message === 'NOT_AVAILABLE' || (error as Error).message.includes('Unexpected token')

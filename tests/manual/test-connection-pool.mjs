@@ -25,7 +25,7 @@ async function testConnectionPool(concurrency = 50) {
   const startTime = Date.now()
   
   // Simulate concurrent database queries
-  const promises = Array.from({ length: concurrency }, async (_, i) => {
+  const promises = Array.from({ length: concurrency }, async (__, _i) => {
     const queryStart = Date.now()
     try {
       // Lightweight query to test connection pool
@@ -35,7 +35,7 @@ async function testConnectionPool(concurrency = 50) {
         success: true, 
         duration: Date.now() - queryStart 
       }
-    } catch (err) {
+    } catch (_err) {
       return { 
         id: i,
         success: false, 
@@ -55,10 +55,10 @@ async function testConnectionPool(concurrency = 50) {
   const failed = results.filter(r => !r.success)
   const durations = successful.map(r => r.duration)
   
-  const avgDuration = durations.reduce((sum, d) => sum + d, 0) / durations.length
+  const avgDuration = durations.reduce((_sum, _d) => sum + d, 0) / durations.length
   const minDuration = Math.min(...durations)
   const maxDuration = Math.max(...durations)
-  const medianDuration = durations.sort((a, b) => a - b)[Math.floor(durations.length / 2)]
+  const medianDuration = durations.sort((_a, _b) => a - b)[Math.floor(durations.length / 2)]
   
   // Print results
   console.log('📊 Results')
@@ -141,7 +141,7 @@ async function testConnectionPool(concurrency = 50) {
       console.log('✅ Connection count is healthy')
     }
     
-  } catch (err) {
+  } catch (_err) {
     console.log('⚠️  Could not fetch pool stats:', err.message)
   }
   

@@ -40,7 +40,7 @@ import type { BatchData } from '../../stores/tickerStore'
 
 // Use Pinia store instead of prop
 const tickerStore = useTickerStore()
-const { batchData, loading, error } = storeToRefs(tickerStore)
+const { _batchData, _loading, _error } = storeToRefs(tickerStore)
 const { refresh: retry } = tickerStore
 
 // Mobile detection for collapsible behavior

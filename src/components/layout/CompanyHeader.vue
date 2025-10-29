@@ -102,7 +102,7 @@ const earningsDate = computed(() => {
   const now = new Date()
   const upcoming = earningsData
     .filter(e => e.date && new Date(e.date) >= now)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((_a, _b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   return upcoming.length > 0 ? upcoming[0].date : null
 })
 
@@ -122,7 +122,7 @@ const handleImageError = (): void => {
 const handleToggleWatchlist = async (ticker: string): Promise<void> => {
   try {
     await toggleWatchlist(ticker)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error toggling watchlist:', error)
     alert((error as Error).message || 'Failed to update watchlist')
   }

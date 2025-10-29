@@ -19,7 +19,7 @@ from openai import OpenAI
 # ─────────────────────────────
 #  CONFIGURATION
 # ─────────────────────────────
-OPENAI_API_KEY = "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"  # Set via environment variable
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")  # Set via environment variable
 
 # Voice Selection for rap/music style
 # Options: alloy, echo, fable, onyx, nova, shimmer

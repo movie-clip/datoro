@@ -45,7 +45,7 @@ const API_URL = __ENV.API_URL || 'http://localhost:3001';
 const TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA', 'META', 'AMZN', 'JPM', 'V', 'MA'];
 
 // Simulate user authentication (if needed)
-let authToken = null;
+const authToken = null;
 
 export function setup() {
   console.log('Starting load test...');
@@ -65,7 +65,7 @@ export function setup() {
   return { authToken };
 }
 
-export default function (data) {
+export default function (_data) {
   // Random ticker for this iteration
   const ticker = TICKERS[Math.floor(Math.random() * TICKERS.length)];
   
@@ -200,18 +200,18 @@ export default function (data) {
   sleep(1);
 }
 
-export function teardown(data) {
+export function teardown(_data) {
   console.log('Load test completed!');
 }
 
-export function handleSummary(data) {
+export function handleSummary(_data) {
   return {
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),
     'tests/load/results/summary.json': JSON.stringify(data),
   };
 }
 
-function textSummary(data, options) {
+function textSummary(_data, _options) {
   // Simple text summary
   const metrics = data.metrics;
   

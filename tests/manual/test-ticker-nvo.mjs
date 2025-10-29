@@ -36,14 +36,14 @@ for (const endpoint of endpoints) {
       const hasData = Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0;
       console.log(`   ${hasData ? '✅' : '⚠️'} Data: ${Array.isArray(data) ? `${data.length} items` : 'object'}`);
       
-      if (!hasData && Array.isArray(data)) {
+      if (!hasData && Array.isArray(_data)) {
         console.log(`   ⚠️ Empty array returned`);
       }
-    } catch (e) {
+    } catch (_e) {
       console.log(`   ❌ JSON parse error: ${e.message}`);
       console.log(`   Response (first 100 chars): ${text.substring(0, 100)}`);
     }
-  } catch (error) {
+  } catch (_error) {
     console.log(`   ❌ Request failed: ${error.message}`);
   }
 }

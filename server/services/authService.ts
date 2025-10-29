@@ -103,7 +103,7 @@ export function verifyToken(token: string): any | null {
       issuer: 'datoro',
       audience: 'datoro-users'
     })
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Auth] Token verification failed:', error.message)
     return null
   }
@@ -121,7 +121,7 @@ export function verifyToken(token: string): any | null {
  * @returns {Promise<object>} - { user, token }
  */
 export async function registerUser(data: RegisterData, ipAddress: string | null = null, userAgent: string | null = null): Promise<AuthResult> {
-  const { email, password, name } = data
+  const { email, password, name } = _data
   
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -200,7 +200,7 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
  * @returns {Promise<object>} - { user, token }
  */
 export async function loginUser(data: LoginData, ipAddress: string | null = null, userAgent: string | null = null): Promise<AuthResult> {
-  const { email, password } = data
+  const { email, password } = _data
   
   // Find user by email
   const user = await prisma.user.findUnique({
@@ -334,7 +334,7 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
     const { password: _, ...userWithoutPassword } = user
     return { user: userWithoutPassword, token }
     
-  } catch (error: any) {
+  } catch (_error: any) {
     console.error('[Auth] Google OAuth error:', error.message);
     throw new Error('Google authentication failed');
   }
@@ -352,7 +352,7 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
  * @param {string} userAgent - User's browser user agent (optional)
  * @returns {Promise<object>} - Session object
  */
-async function createSession(userId: string, token: string, ipAddress: string | null = null, userAgent: string | null = null): Promise<any> {
+async function createSession(userId: string, token: string, ipAddress: string | null = null, userAgent: string | null = null): Promise<unknown> {
   // Hash token for storage (never store plain tokens)
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
   

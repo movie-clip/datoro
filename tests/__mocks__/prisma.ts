@@ -152,7 +152,7 @@ export function setupDefaultMocks(): void {
     if (include?.searches) {
       const userSearches = searchStore
         .filter(s => s.userId === user!.id)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .sort((_a, _b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, include.searches.take || 10)
         .map(s => ({
           id: s.id,
@@ -211,8 +211,8 @@ export function setupDefaultMocks(): void {
     }
   })
   
-  mockPrismaClient.user.findUnique.mockImplementation(async ({ where, include }: any): Promise<any> => {
-    const user: any = {
+  mockPrismaClient.user.findUnique.mockImplementation(async ({ where, include }: any): Promise<unknown> => {
+    const user: unknown = {
       id: `mock-user-${where.ipAddress}`,
       ipAddress: where.ipAddress,
       userAgent: 'Test Browser',
@@ -224,7 +224,7 @@ export function setupDefaultMocks(): void {
     if (include?.searches) {
       const userSearches = searchStore
         .filter(s => s.userId === user.id)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .sort((_a, _b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, include.searches.take || 10)
         .map(s => ({
           ticker: s.ticker,
@@ -292,7 +292,7 @@ export function setupDefaultMocks(): void {
     // Return searches for this user
     return searchStore
       .filter(s => !where?.userId || s.userId === where.userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .sort((_a, _b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, take || 10)
   })
   
@@ -328,7 +328,7 @@ export function setupDefaultMocks(): void {
     
     // Sort and limit
     return filtered
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .sort((_a, _b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, take || 100)
   })
   
@@ -354,7 +354,7 @@ export function setupDefaultMocks(): void {
     const successfulRequests = requests.filter(r => r.statusCode < 400).length
     const cachedRequests = requests.filter(r => r.cached).length
     const avgResponseTime = requests.length > 0
-      ? requests.reduce((sum, r) => sum + r.responseTime, 0) / requests.length
+      ? requests.reduce((_sum, _r) => sum + r.responseTime, 0) / requests.length
       : 0
     
     return [{
@@ -413,7 +413,7 @@ export function createMockApiRequest(overrides: Partial<Omit<MockApiRequest, 'id
 /**
  * Create mock popular ticker entry
  */
-export function createMockPopularTicker(overrides: any = {}): any {
+export function createMockPopularTicker(overrides: unknown = {}): any {
   return {
     ticker: 'AAPL',
     companyName: 'Apple Inc.',

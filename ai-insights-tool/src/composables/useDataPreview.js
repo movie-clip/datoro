@@ -65,7 +65,7 @@ export function useDataPreview() {
       let data
       try {
         data = JSON.parse(text)
-      } catch (e) {
+      } catch (_e) {
         throw new Error('Server returned invalid JSON. Make sure the backend server is running on port 7072.')
       }
 
@@ -75,7 +75,7 @@ export function useDataPreview() {
       } else {
         alert(`❌ Failed to apply: ${data.error}`)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Apply error:', error)
       alert(`❌ Failed to apply: ${error.message}`)
     }

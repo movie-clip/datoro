@@ -40,7 +40,7 @@ describe('Cache Service', () => {
       // When Redis URL is provided, it takes priority
       // In this test environment, REDIS_URL env var is set, so redisEnabled will be true
       // To truly test memory-only mode, the code would need no Redis URL anywhere
-      const memoryOnlyCache: any = new CacheService({ redisUrl: undefined });
+      const memoryOnlyCache: unknown = new CacheService({ redisUrl: undefined });
       // Since REDIS_URL env var exists in test environment (from .env.local),
       // the cache will still try to use Redis. This is expected behavior.
       expect(memoryOnlyCache.redisUrl).toBeDefined();
@@ -68,7 +68,7 @@ describe('Cache Service', () => {
 
     it('should handle Redis connection when URL fallback occurs', async () => {
       // When no URL is provided, falls back to process.env.REDIS_URL (if available)
-      const fallbackCache: any = new CacheService({ redisUrl: undefined });
+      const fallbackCache: unknown = new CacheService({ redisUrl: undefined });
       await fallbackCache.connect();
       // In test environment with REDIS_URL set, Redis will be initialized
       expect(fallbackCache.redis).toBeDefined();
@@ -505,7 +505,7 @@ describe('Cache Service', () => {
     });
 
     it('should work in memory-only mode', async () => {
-      const memoryOnlyCache: any = new CacheService({ redisUrl: undefined });
+      const memoryOnlyCache: unknown = new CacheService({ redisUrl: undefined });
       
       await memoryOnlyCache.set('test:1', { value: 1 }, 3600);
       expect(memoryOnlyCache.memoryCache.size).toBe(1);
@@ -679,7 +679,7 @@ describe('Cache Service', () => {
     it('should handle very large objects', async () => {
       const key = 'edge:large';
       const largeObject = {
-        data: new Array(1000).fill(null).map((_, i) => ({
+        data: new Array(1000).fill(null).map((__, _i) => ({
           id: i,
           value: `Value ${i}`,
           nested: { a: 1, b: 2, c: 3 },

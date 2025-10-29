@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Quick verification script for multi-watchlist migration
 // Run: node scripts/verify-migration.mjs
 
@@ -83,7 +84,7 @@ async function verifyMigration() {
     console.log(`  - ${defaultWatchlists} default watchlists`)
     console.log(`  - All items have valid watchlist_id: ${totalItems === itemsWithWatchlistId ? '✅' : '❌'}`)
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error during verification:', error)
     process.exit(1)
   } finally {
@@ -92,3 +93,4 @@ async function verifyMigration() {
 }
 
 verifyMigration()
+

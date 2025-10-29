@@ -13,7 +13,7 @@ if (res.ok) {
   console.log('\nFull response:');
   console.log(JSON.stringify(data, null, 2));
   
-  if (Array.isArray(data) && data.length > 0) {
+  if (Array.isArray(_data) && data.length > 0) {
     console.log('\nAltman Z-Score:', data[0]?.altmanZScore);
     console.log('Piotroski Score:', data[0]?.piotroskiScore);
   }

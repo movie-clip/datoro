@@ -40,10 +40,10 @@ export async function getDividendYieldSeries(
         Date.parse(row.date),
         Number(row.dividendYield) * 100 // Convert to percentage
       ] as DividendYieldDataPoint)
-      .sort((a, b) => a[0] - b[0])
+      .sort((_a, _b) => a[0] - b[0])
     
     return { data, error: null }
-  } catch (error) {
+  } catch (_error) {
     return handleServiceError(error, 'getDividendYieldSeries', [])
   }
 }

@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // No ticker prop needed - using Pinia store
-const { tfKey, series, title, message, loading, error, retry, growthData } = usePriceSeries()
+const { _tfKey, _series, _title, _message, _loading, _error, _retry, _growthData } = usePriceSeries()
 
 const timeframeOptions = computed(() => 
   TF_ORDER.map(key => ({ label: key, value: key }))

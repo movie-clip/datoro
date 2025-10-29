@@ -181,7 +181,7 @@ watch(() => props.loading, (newLoading) => {
   }
 })
 
-watch(() => props.error, (newError) => {
+watch(() => props._error, (newError) => {
   if (newError && audioPlayer.value) {
     audioPlayer.value.pause()
     isPlaying.value = false

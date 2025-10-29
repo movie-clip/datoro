@@ -12,7 +12,7 @@ function staticAssetCachingPlugin(): Plugin {
     name: 'static-asset-caching',
     configureServer(server) {
       // Add middleware to set caching headers for static assets
-      server.middlewares.use((req, res, next) => {
+      server.middlewares.use((_req, _res, next) => {
         // Match static assets (images, fonts, etc.)
         const isStaticAsset = req.url?.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot)$/i)
         
@@ -20,7 +20,7 @@ function staticAssetCachingPlugin(): Plugin {
           // Intercept writeHead to add cache headers
           const originalWriteHead = res.writeHead
           // @ts-ignore - Complex type overload for writeHead
-          res.writeHead = function(this: any, ...args: any[]): any {
+          res.writeHead = function(this: any, ...args: unknown[]): any {
             // Set aggressive caching for static assets
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
             // @ts-ignore

@@ -15,7 +15,7 @@ for (const ticker of tickers) {
     const res = await fetch(`${BASE}/api/v3/profile/${ticker}`);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(_data) && data.length > 0) {
         const profile = data[0];
         console.log(`   ✅ Company: ${profile.companyName}`);
         console.log(`   ✅ Price: $${profile.price}`);
@@ -26,7 +26,7 @@ for (const ticker of tickers) {
     } else {
       console.log(`   ❌ HTTP ${res.status}`);
     }
-  } catch (error) {
+  } catch (_error) {
     console.log(`   ❌ Error: ${error.message}`);
   }
   
@@ -35,7 +35,7 @@ for (const ticker of tickers) {
     const res = await fetch(`${BASE}/api/v3/ratios/${ticker}?period=annual&limit=1`);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(_data) && data.length > 0) {
         const ratios = data[0];
         console.log(`   ✅ PE: ${ratios.priceEarningsRatio?.toFixed(2) || 'N/A'}`);
         console.log(`   ✅ EV/EBITDA: ${ratios.enterpriseValueMultiple?.toFixed(2) || 'N/A'}`);
@@ -45,7 +45,7 @@ for (const ticker of tickers) {
     } else {
       console.log(`   ❌ Ratios HTTP ${res.status}`);
     }
-  } catch (error) {
+  } catch (_error) {
     console.log(`   ❌ Ratios error: ${error.message}`);
   }
 }

@@ -70,7 +70,7 @@ router.get('/database', asyncHandler(async (req: Request, res: Response) => {
   ` as any[]
   
   const stats = poolStats[0]
-  const health: any = {
+  const health: unknown = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     worker_pid: process.pid,

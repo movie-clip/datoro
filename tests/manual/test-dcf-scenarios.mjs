@@ -18,8 +18,8 @@ async function fetchBatchData(ticker) {
   return result.data;
 }
 
-function calculateDCF(data, growthRate, terminalGrowth, discountRate, years) {
-  const { currentFcf, sharesOutstanding, cashAndEquivalents, totalDebt } = data;
+function calculateDCF(_data, growthRate, terminalGrowth, discountRate, years) {
+  const { currentFcf, sharesOutstanding, cashAndEquivalents, totalDebt } = _data;
   
   // Project FCF
   let fcf = currentFcf;
@@ -89,8 +89,8 @@ function extractDcfData(batchData) {
   // TTM EPS growth
   let epsGrowthTTM = 0;
   if (incomeQuarter.length >= 8) {
-    const ttmEps = incomeQuarter.slice(0, 4).reduce((sum, q) => sum + (q.eps || 0), 0);
-    const prevTtmEps = incomeQuarter.slice(4, 8).reduce((sum, q) => sum + (q.eps || 0), 0);
+    const ttmEps = incomeQuarter.slice(0, 4).reduce((_sum, _q) => sum + (q.eps || 0), 0);
+    const prevTtmEps = incomeQuarter.slice(4, 8).reduce((_sum, _q) => sum + (q.eps || 0), 0);
     if (ttmEps !== 0 && prevTtmEps !== 0) {
       epsGrowthTTM = ((ttmEps - prevTtmEps) / Math.abs(prevTtmEps)) * 100;
     }
@@ -198,7 +198,7 @@ async function testScenarios() {
       scenarios[4].growth = bestGrowth;
     }
 
-    scenarios.forEach((scenario, idx) => {
+    scenarios.forEach((_scenario, _idx) => {
       const value = calculateDCF(dcfData, scenario.growth, scenario.terminal, scenario.discount, 5);
       const upside = ((value - dcfData.currentPrice) / dcfData.currentPrice) * 100;
       const vsTarget = fmpDcf ? ((value - fmpDcf) / fmpDcf) * 100 : 0;
@@ -243,7 +243,7 @@ async function testScenarios() {
       console.log(`\n🔴 Sell - Trading above conservative fair value`);
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Test failed:', error.message);
     process.exit(1);
   }

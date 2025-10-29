@@ -70,8 +70,8 @@ export interface CacheService {
  */
 export interface DatabaseService {
   isAvailable(): Promise<boolean>
-  query<T>(sql: string, params?: any[]): Promise<T[]>
-  execute(sql: string, params?: any[]): Promise<void>
+  query<T>(sql: string, params?: unknown[]): Promise<T[]>
+  execute(sql: string, params?: unknown[]): Promise<void>
   close(): Promise<void>
 }
 
