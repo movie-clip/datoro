@@ -193,9 +193,9 @@ const chartOption = computed<EChartsOption>(() => {
       {
         type: 'bar',
         data: distances.map((_distance, _index) => ({
-          value: distance,
+          value: _distance,
           itemStyle: {
-            color: colors[index]
+            color: colors[_index]
           }
         })),
         label: {
@@ -235,8 +235,8 @@ async function loadData(): Promise<void> {
     const data = await fetchDeepFinderData(props.tickers)
     stocks.value = data.stocks || []
   } catch (_err) {
-    console.error('[DeepFinderChart] Error loading data:', err)
-    error.value = err instanceof Error ? err.message : 'Failed to load data'
+    console.error('[DeepFinderChart] Error loading data:', _err)
+    error.value = _err instanceof Error ? _err.message : 'Failed to load data'
   } finally {
     loading.value = false
   }
@@ -257,7 +257,7 @@ onMounted(() => {
 // Watch for ticker changes with debounce (avoid excessive API calls)
 watch(() => props.tickers, (_newTickers, _oldTickers) => {
   // Skip if arrays are the same (avoid unnecessary reloads)
-  if (JSON.stringify(newTickers) === JSON.stringify(oldTickers)) {
+  if (JSON.stringify(_newTickers) === JSON.stringify(_oldTickers)) {
     return
   }
   
