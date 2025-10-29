@@ -115,7 +115,7 @@ import CompanyDescription from './CompanyDescription.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 
 const tickerStore = useTickerStore()
-const { _batchData, _loading, _error, _currentTicker } = storeToRefs(tickerStore)
+const { batchData, loading, error, currentTicker } = storeToRefs(tickerStore)
 
 // Extract company description from batch data
 const companyDescription = computed(() => {

@@ -111,7 +111,7 @@ app.use(requestLogger(monitoring))
 app.use(compression({
   level: 6, // Balance between speed and compression ratio
   threshold: 1024, // Only compress responses > 1KB
-  filter: (__req, __res) => {
+  filter: (req, res) => {
     // Don't compress if client doesn't accept encoding
     if (req.headers['x-no-compression']) {
       return false
@@ -126,7 +126,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : [DEV_ORIGIN];
 
 app.use(cors({ 
-  origin: (_origin, _callback) => {
+  origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
     
@@ -289,7 +289,7 @@ app.get('/api/company-icon/:ticker', async (req: Request, res: Response) => {
 })
 
 // Apply rate limiting to FMP endpoints
-app.use('/api/fmp', fmpLimiter, async (__req, __res) => {
+app.use('/api/fmp', fmpLimiter, async (req, res) => {
   const startTime = Date.now()
   let ticker = null
   

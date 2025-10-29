@@ -194,11 +194,11 @@ class MonitoringService {
 
     // Calculate percentiles
     if (this.metrics.performance.responseTimes.length > 0) {
-      const sorted = [...this.metrics.performance.responseTimes].sort((_a, _b) => a - b)
+      const sorted = [...this.metrics.performance.responseTimes].sort((a, b) => a - b)
       const len = sorted.length
 
       this.metrics.performance.avgResponseTime = 
-        Math.round(sorted.reduce((_a, _b) => a + b, 0) / len)
+        Math.round(sorted.reduce((a, b) => a + b, 0) / len)
       
       this.metrics.performance.p95ResponseTime = 
         Math.round(sorted[Math.floor(len * 0.95)])
@@ -241,7 +241,7 @@ class MonitoringService {
 
     // Keep only top 20 IPs
     const topIPs = Object.entries(this.metrics.rateLimit.byIP)
-      .sort((_a, _b) => (b[1].blocked + b[1].slowed) - (a[1].blocked + a[1].slowed))
+      .sort((a, b) => (b[1].blocked + b[1].slowed) - (a[1].blocked + a[1].slowed))
       .slice(0, 20)
     
     this.metrics.rateLimit.byIP = Object.fromEntries(topIPs)

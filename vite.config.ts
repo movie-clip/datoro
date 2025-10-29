@@ -12,7 +12,7 @@ function staticAssetCachingPlugin(): Plugin {
     name: 'static-asset-caching',
     configureServer(server) {
       // Add middleware to set caching headers for static assets
-      server.middlewares.use((_req, _res, next) => {
+      server.middlewares.use((req, res, next) => {
         // Match static assets (images, fonts, etc.)
         const isStaticAsset = req.url?.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot)$/i)
         
