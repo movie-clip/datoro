@@ -437,7 +437,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
     ] = await Promise.allSettled([
       // Treasury rates
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/treasury?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000),
-      // Economic indicators
+      // Economic indicators (FMP does NOT support batch for these - must be separate calls)
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=federalFunds&apikey=${FMP_API_KEY}`, {}, 10000),
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=consumerSentiment&apikey=${FMP_API_KEY}`, {}, 10000),
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=retailSales&apikey=${FMP_API_KEY}`, {}, 10000),
@@ -539,7 +539,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   })
   
   const duration = Date.now() - startTime
-  console.log(`[Macro] Batch → Fetched all data in ${duration}ms`)
+  console.log(`[Macro] Batch → Fetched all data in ${duration}ms (10 FMP API calls - optimized quotes to 1 batch)`)
   
   // Cache for 15 minutes (balanced between freshness and performance)
   await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
