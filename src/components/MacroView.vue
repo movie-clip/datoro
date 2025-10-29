@@ -167,7 +167,9 @@ import {
   TooltipComponent,
   GridComponent,
   LegendComponent,
-  DataZoomComponent
+  DataZoomComponent,
+  BrushComponent,
+  ToolboxComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { fetchAllMacroData, type MacroData } from '../services/macro/macroDataService'
@@ -182,8 +184,22 @@ use([
   TooltipComponent,
   GridComponent,
   LegendComponent,
-  DataZoomComponent
+  DataZoomComponent,
+  BrushComponent,
+  ToolboxComponent
 ])
+
+// Slider styling constants
+const SLIDER_STYLES = {
+  height: 30,
+  bottom: 10,
+  borderColor: 'rgba(255, 255, 255, 0.03)',
+  fillerColor: 'rgba(255, 255, 255, 0.03)',
+  handleColor: 'rgba(255, 255, 255, 0.03)',
+  textColor: '#999',
+  dataBackgroundLine: '#444',
+  dataBackgroundArea: 'rgba(0, 181, 154, 0.1)'
+}
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -271,8 +287,8 @@ const handleDataZoom = (zoomRef: any) => {
   }
 }
 
-onMounted(() => {
-  loadData()
+onMounted(async () => {
+  await loadData()
 })
 
 // Index Cards Data (S&P 500, Dow Jones, Russell 2000)
@@ -325,39 +341,24 @@ const unemploymentChartOption = computed(() => {
     dataZoom: [
       {
         type: 'slider',
+        xAxisIndex: 0,
         start: 0,
         end: 100,
-        height: 20,
-        bottom: 10,
-        borderColor: '#2A2A2E',
-        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        height: SLIDER_STYLES.height,
+        bottom: SLIDER_STYLES.bottom,
+        borderColor: SLIDER_STYLES.borderColor,
+        fillerColor: SLIDER_STYLES.fillerColor,
         handleStyle: {
-          color: '#00B59A',
-          borderColor: '#00B59A'
+          color: SLIDER_STYLES.handleColor,
+          borderColor: SLIDER_STYLES.handleColor
+        },
+        textStyle: {
+          color: SLIDER_STYLES.textColor
         },
         dataBackground: {
-          lineStyle: { color: '#444' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
-        },
-        selectedDataBackground: {
-          lineStyle: { color: '#00B59A' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
-        },
-        textStyle: { color: '#999' },
-        brushSelect: true,
-        brushStyle: {
-          color: 'rgba(0, 181, 154, 0.2)',
-          borderColor: 'rgba(0, 181, 154, 0.6)',
-          borderWidth: 1
+          lineStyle: { color: SLIDER_STYLES.dataBackgroundLine },
+          areaStyle: { color: SLIDER_STYLES.dataBackgroundArea }
         }
-      },
-      {
-        type: 'inside',
-        start: 0,
-        end: 100,
-        zoomOnMouseWheel: false,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false
       }
     ],
     xAxis: {
@@ -422,39 +423,24 @@ const consumerSentimentChartOption = computed(() => {
     dataZoom: [
       {
         type: 'slider',
+        xAxisIndex: 0,
         start: 0,
         end: 100,
-        height: 20,
-        bottom: 10,
-        borderColor: '#2A2A2E',
-        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        height: SLIDER_STYLES.height,
+        bottom: SLIDER_STYLES.bottom,
+        borderColor: SLIDER_STYLES.borderColor,
+        fillerColor: SLIDER_STYLES.fillerColor,
         handleStyle: {
-          color: '#00B59A',
-          borderColor: '#00B59A'
+          color: SLIDER_STYLES.handleColor,
+          borderColor: SLIDER_STYLES.handleColor
+        },
+        textStyle: {
+          color: SLIDER_STYLES.textColor
         },
         dataBackground: {
-          lineStyle: { color: '#444' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
-        },
-        selectedDataBackground: {
-          lineStyle: { color: '#00B59A' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
-        },
-        textStyle: { color: '#999' },
-        brushSelect: true,
-        brushStyle: {
-          color: 'rgba(0, 181, 154, 0.2)',
-          borderColor: 'rgba(0, 181, 154, 0.6)',
-          borderWidth: 1
+          lineStyle: { color: SLIDER_STYLES.dataBackgroundLine },
+          areaStyle: { color: SLIDER_STYLES.dataBackgroundArea }
         }
-      },
-      {
-        type: 'inside',
-        start: 0,
-        end: 100,
-        zoomOnMouseWheel: false,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false
       }
     ],
     xAxis: {
@@ -509,39 +495,24 @@ const retailSalesChartOption = computed(() => {
     dataZoom: [
       {
         type: 'slider',
+        xAxisIndex: 0,
         start: 0,
         end: 100,
-        height: 20,
-        bottom: 10,
-        borderColor: '#2A2A2E',
-        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        height: SLIDER_STYLES.height,
+        bottom: SLIDER_STYLES.bottom,
+        borderColor: SLIDER_STYLES.borderColor,
+        fillerColor: SLIDER_STYLES.fillerColor,
         handleStyle: {
-          color: '#00B59A',
-          borderColor: '#00B59A'
+          color: SLIDER_STYLES.handleColor,
+          borderColor: SLIDER_STYLES.handleColor
+        },
+        textStyle: {
+          color: SLIDER_STYLES.textColor
         },
         dataBackground: {
-          lineStyle: { color: '#444' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
-        },
-        selectedDataBackground: {
-          lineStyle: { color: '#00B59A' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
-        },
-        textStyle: { color: '#999' },
-        brushSelect: true,
-        brushStyle: {
-          color: 'rgba(0, 181, 154, 0.2)',
-          borderColor: 'rgba(0, 181, 154, 0.6)',
-          borderWidth: 1
+          lineStyle: { color: SLIDER_STYLES.dataBackgroundLine },
+          areaStyle: { color: SLIDER_STYLES.dataBackgroundArea }
         }
-      },
-      {
-        type: 'inside',
-        start: 0,
-        end: 100,
-        zoomOnMouseWheel: false,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false
       }
     ],
     xAxis: {
@@ -596,39 +567,24 @@ const inflationChartOption = computed(() => {
     dataZoom: [
       {
         type: 'slider',
+        xAxisIndex: 0,
         start: 0,
         end: 100,
-        height: 20,
-        bottom: 10,
-        borderColor: '#2A2A2E',
-        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        height: SLIDER_STYLES.height,
+        bottom: SLIDER_STYLES.bottom,
+        borderColor: SLIDER_STYLES.borderColor,
+        fillerColor: SLIDER_STYLES.fillerColor,
         handleStyle: {
-          color: '#00B59A',
-          borderColor: '#00B59A'
+          color: SLIDER_STYLES.handleColor,
+          borderColor: SLIDER_STYLES.handleColor
+        },
+        textStyle: {
+          color: SLIDER_STYLES.textColor
         },
         dataBackground: {
-          lineStyle: { color: '#444' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
-        },
-        selectedDataBackground: {
-          lineStyle: { color: '#00B59A' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
-        },
-        textStyle: { color: '#999' },
-        brushSelect: true,
-        brushStyle: {
-          color: 'rgba(0, 181, 154, 0.2)',
-          borderColor: 'rgba(0, 181, 154, 0.6)',
-          borderWidth: 1
+          lineStyle: { color: SLIDER_STYLES.dataBackgroundLine },
+          areaStyle: { color: SLIDER_STYLES.dataBackgroundArea }
         }
-      },
-      {
-        type: 'inside',
-        start: 0,
-        end: 100,
-        zoomOnMouseWheel: false,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false
       }
     ],
     xAxis: {
@@ -684,39 +640,24 @@ const fedFundsChartOption = computed(() => {
     dataZoom: [
       {
         type: 'slider',
+        xAxisIndex: 0,
         start: 0,
         end: 100,
-        height: 20,
-        bottom: 10,
-        borderColor: '#2A2A2E',
-        fillerColor: 'rgba(0, 181, 154, 0.2)',
+        height: SLIDER_STYLES.height,
+        bottom: SLIDER_STYLES.bottom,
+        borderColor: SLIDER_STYLES.borderColor,
+        fillerColor: SLIDER_STYLES.fillerColor,
         handleStyle: {
-          color: '#00B59A',
-          borderColor: '#00B59A'
+          color: SLIDER_STYLES.handleColor,
+          borderColor: SLIDER_STYLES.handleColor
+        },
+        textStyle: {
+          color: SLIDER_STYLES.textColor
         },
         dataBackground: {
-          lineStyle: { color: '#444' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
-        },
-        selectedDataBackground: {
-          lineStyle: { color: '#00B59A' },
-          areaStyle: { color: 'rgba(0, 181, 154, 0.3)' }
-        },
-        textStyle: { color: '#999' },
-        brushSelect: true,
-        brushStyle: {
-          color: 'rgba(0, 181, 154, 0.2)',
-          borderColor: 'rgba(0, 181, 154, 0.6)',
-          borderWidth: 1
+          lineStyle: { color: SLIDER_STYLES.dataBackgroundLine },
+          areaStyle: { color: SLIDER_STYLES.dataBackgroundArea }
         }
-      },
-      {
-        type: 'inside',
-        start: 0,
-        end: 100,
-        zoomOnMouseWheel: false,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false
       }
     ],
     xAxis: {
