@@ -1,7 +1,9 @@
 <template>
   <div class="macro-dashboard">
     <div class="macro-header">
-      <h1>Macro Economic Dashboard</h1>
+      <div class="header-content">
+        <h2>Macro Economic Dashboard</h2>
+      </div>
       
       <div class="index-cards">
         <div v-if="indexData.length === 0" class="index-card">
@@ -532,20 +534,28 @@ const riskPremiumChartOption = computed(() => {
 }
 
 .macro-header {
-  margin-bottom: 32px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  padding-right: 60px; /* Leave space for close button */
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 32px;
 }
 
-.macro-header h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #F9FAFB;
+.header-content h2 {
   margin: 0;
-  flex-shrink: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  color: #00C087;
+  width: 20px;
+  height: 20px;
 }
 
 .index-cards {

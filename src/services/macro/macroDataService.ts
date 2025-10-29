@@ -154,14 +154,43 @@ export async function fetchRiskPremium(): Promise<RiskPremium[]> {
 }
 
 /**
- * Fetch all macro data in one call
- * Uses Promise.allSettled for resilience - partial failures won't break the entire dashboard
+ * Fetch all macro data in one batch request (OPTIMIZED - 1 request instead of 10+)
  */
 export async function fetchAllMacroData(): Promise<MacroData> {
   const from = getDateMonthsAgo(24) // 2 years of data
   const to = getTodayDate()
   
-  console.log('[Macro] Fetching all macro data...')
+  console.log('[Macro] Fetching all macro data via batch endpoint...')
+  const startTime = performance.now()
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/macro/batch?from=${from}&to=${to}`)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch macro data: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    
+    const duration = performance.now() - startTime
+    console.log(`[Macro] Fetched all data in ${duration.toFixed(0)}ms (1 request)`)
+    
+    return data
+  } catch (error) {
+    console.error('[Macro] Batch fetch failed, falling back to individual requests:', error)
+    return fetchAllMacroDataLegacy()
+  }
+}
+
+/**
+ * LEGACY: Fetch all macro data individually (10+ requests)
+ * Only used as fallback if batch endpoint fails
+ */
+async function fetchAllMacroDataLegacy(): Promise<MacroData> {
+  const from = getDateMonthsAgo(24)
+  const to = getTodayDate()
+  
+  console.log('[Macro] Using legacy individual requests...')
   const startTime = performance.now()
   
   // Use Promise.allSettled to handle partial failures gracefully

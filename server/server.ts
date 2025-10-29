@@ -21,7 +21,7 @@ import searchRoutes, { initSearchRoutes } from './routes/searchRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
 import healthRoutes, { initHealthRoutes } from './routes/healthRoutes.js'
 import adminRoutes, { initAdminRoutes } from './routes/adminRoutes.js'
-import macroRoutes from './routes/macro.js'
+import macroRoutes, { initMacroRoutes } from './routes/macro.js'
 import { 
   validate,
   validateProfile,
@@ -217,6 +217,7 @@ initTickerRoutes(routeDeps)
 initSearchRoutes(routeDeps)
 initHealthRoutes(routeDeps)
 initAdminRoutes(routeDeps)
+initMacroRoutes(routeDeps)
 
 // Mount routes
 app.use('/api/ticker-data', tickerRoutes)
@@ -224,7 +225,7 @@ app.use('/api', searchRoutes)  // Mounts /api/search and /api/deep-finder
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/health', healthRoutes)
 app.use('/api', adminRoutes)
-app.use('/api/macro', macroRoutes) // Macro economic data
+app.use('/api/macro', macroRoutes)
 
 // ============================================
 // API Version Endpoint

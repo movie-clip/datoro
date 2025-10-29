@@ -1,149 +1,203 @@
 /**
  * Macro Economic Data Routes
  * Endpoints for fetching macro economic indicators
+ * 
+ * Features:
+ * - Multi-layer caching (memory + Redis)
+ * - Rate limiting (FMP API protection)
+ * - Request deduplication
+ * - Secure API key handling
  */
 
 import express from 'express'
 import type { Request, Response } from 'express'
 import { getCacheService } from '../services/cacheService.js'
 import { REDIS_TTL } from '../config/constants.js'
+import { fmpLimiter, globalFmpLimiter, decrementGlobalFmpCounter } from '../middleware/rateLimiter.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
 
 const router = express.Router()
 const FMP_BASE_URL = 'https://financialmodelingprep.com'
-const fmpApiKey = process.env.FMP_API_KEY
 const cache = getCacheService()
 
+// Dependencies injected from server.ts (secure pattern)
+let FMP_API_KEY = ''
+
 /**
- * Fetch with timeout helper
+ * Initialize route with dependencies
+ * Matches pattern from tickerRoutes for consistency
  */
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 8000): Promise<globalThis.Response> {
-  const controller = new AbortController()
-  const id = setTimeout(() => controller.abort(), timeout)
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    })
-    clearTimeout(id)
-    return response
-  } catch (error) {
-    clearTimeout(id)
-    throw error
+function initMacroRoutes(deps: { apiVersion?: string; fmpApiKey: string; isDatabaseAvailable?: boolean }) {
+  FMP_API_KEY = deps.fmpApiKey
+
+  // Request deduplication map (prevent duplicate API calls)
+  const inFlightRequests = new Map<string, Promise<unknown>>()
+
+  /**
+   * Request deduplication helper
+   * If multiple clients request same data, only make one API call
+   */
+  async function fetchWithDeduplication<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
+    if (inFlightRequests.has(key)) {
+      console.log(`[Macro] Dedup: Waiting for in-flight request: ${key}`)
+      return await inFlightRequests.get(key) as T
+    }
+    
+    const promise = fetchFn()
+    inFlightRequests.set(key, promise as Promise<unknown>)
+    
+    try {
+      const result = await promise
+      return result
+    } finally {
+      inFlightRequests.delete(key)
+    }
   }
-}
+
+  /**
+   * Fetch with timeout helper
+   */
+  async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 10000): Promise<globalThis.Response> {
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), timeout)
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      })
+      clearTimeout(id)
+      return response
+    } catch (error) {
+      clearTimeout(id)
+      throw error
+    }
+  }
 
 /**
  * GET /api/macro/treasury
  * Fetch Treasury Rates (yield curve)
  * Cache: 1 hour (treasury rates update daily)
  */
-router.get('/treasury', async (req: Request, res: Response) => {
-  try {
-    const { from, to } = req.query
-    
-    if (!from || !to) {
-      return res.status(400).json({ error: 'Missing required parameters: from, to' })
+router.get('/treasury', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+  const { from, to } = req.query
+  
+  if (!from || !to) {
+    return res.status(400).json({ error: 'Missing required parameters: from, to' })
+  }
+  
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'treasury', from as string, to as string)
+  
+  // Check cache first
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    // Decrement global FMP counter for cache hits
+    if ((req as any).fmpCallTracked) {
+      decrementGlobalFmpCounter()
     }
-    
-    // Generate cache key
-    const cacheKey = cache.generateKey('macro', 'treasury', from as string, to as string)
-    
-    // Check cache first
-    const cached = await cache.get(cacheKey)
-    if (cached.data) {
-      console.log(`[Macro] Treasury → CACHE HIT (${cached.source})`)
-      return res.json(cached.data)
-    }
-    
-    console.log(`[Macro] Treasury → Fetching from FMP API`)
-    const url = `${FMP_BASE_URL}/api/v4/treasury?from=${from}&to=${to}&apikey=${fmpApiKey}`
+    console.log(`[Macro] Treasury → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  console.log(`[Macro] Treasury → Fetching from FMP API`)
+  
+  // Use request deduplication
+  const data = await fetchWithDeduplication(cacheKey, async () => {
+    const url = `${FMP_BASE_URL}/api/v4/treasury?from=${from}&to=${to}&apikey=${FMP_API_KEY}`
     const response = await fetchWithTimeout(url, {}, 10000)
     
     if (!response.ok) {
       throw new Error(`FMP API error: ${response.statusText}`)
     }
     
-    const data = await response.json()
-    
-    // Cache for 1 hour
-    await cache.set(cacheKey, data, REDIS_TTL.DEFAULT)
-    
-    res.json(data)
-  } catch (error: any) {
-    console.error('[Macro] Treasury rates error:', error.message)
-    res.status(500).json({ error: error.message || 'Failed to fetch treasury rates' })
-  }
-})
+    return await response.json()
+  })
+  
+  // Cache for 1 hour
+  await cache.set(cacheKey, data, REDIS_TTL.DEFAULT)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(data)
+}))
 
 /**
  * GET /api/macro/economic
  * Fetch Economic Indicator by name
  * Cache: 1 hour (economic data updates infrequently)
  */
-router.get('/economic', async (req: Request, res: Response) => {
-  try {
-    const { name } = req.query
-    
-    if (!name) {
-      return res.status(400).json({ error: 'Missing required parameter: name' })
+router.get('/economic', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+  const { name } = req.query
+  
+  if (!name) {
+    return res.status(400).json({ error: 'Missing required parameter: name' })
+  }
+  
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'economic', name as string)
+  
+  // Check cache first
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    if ((req as any).fmpCallTracked) {
+      decrementGlobalFmpCounter()
     }
-    
-    // Generate cache key
-    const cacheKey = cache.generateKey('macro', 'economic', name as string)
-    
-    // Check cache first
-    const cached = await cache.get(cacheKey)
-    if (cached.data) {
-      console.log(`[Macro] Economic/${name} → CACHE HIT (${cached.source})`)
-      return res.json(cached.data)
-    }
-    
-    console.log(`[Macro] Economic/${name} → Fetching from FMP API`)
-    const url = `${FMP_BASE_URL}/api/v4/economic?name=${name}&apikey=${fmpApiKey}`
+    console.log(`[Macro] Economic/${name} → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  console.log(`[Macro] Economic/${name} → Fetching from FMP API`)
+  
+  const data = await fetchWithDeduplication(cacheKey, async () => {
+    const url = `${FMP_BASE_URL}/api/v4/economic?name=${name}&apikey=${FMP_API_KEY}`
     const response = await fetchWithTimeout(url, {}, 10000)
     
     if (!response.ok) {
       throw new Error(`FMP API error: ${response.statusText}`)
     }
     
-    const data = await response.json()
-    
-    // Cache for 1 hour
-    await cache.set(cacheKey, data, REDIS_TTL.DEFAULT)
-    
-    res.json(data)
-  } catch (error: any) {
-    console.error(`[Macro] Economic indicator (${req.query.name}) error:`, error.message)
-    res.status(500).json({ error: error.message || 'Failed to fetch economic indicator' })
-  }
-})
+    return await response.json()
+  })
+  
+  // Cache for 1 hour
+  await cache.set(cacheKey, data, REDIS_TTL.DEFAULT)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(data)
+}))
 
 /**
  * GET /api/macro/spx
  * Fetch S&P 500 historical data
  * Cache: 8 hours (historical data changes infrequently)
  */
-router.get('/spx', async (req: Request, res: Response) => {
-  try {
-    const { from, to } = req.query
-    
-    if (!from || !to) {
-      return res.status(400).json({ error: 'Missing required parameters: from, to' })
+router.get('/spx', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+  const { from, to } = req.query
+  
+  if (!from || !to) {
+    return res.status(400).json({ error: 'Missing required parameters: from, to' })
+  }
+  
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'spx', from as string, to as string)
+  
+  // Check cache first
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    if ((req as any).fmpCallTracked) {
+      decrementGlobalFmpCounter()
     }
-    
-    // Generate cache key
-    const cacheKey = cache.generateKey('macro', 'spx', from as string, to as string)
-    
-    // Check cache first
-    const cached = await cache.get(cacheKey)
-    if (cached.data) {
-      console.log(`[Macro] SPX → CACHE HIT (${cached.source})`)
-      return res.json(cached.data)
-    }
-    
-    console.log(`[Macro] SPX → Fetching from FMP API`)
-    const url = `${FMP_BASE_URL}/api/v3/historical-price-full/%5EGSPC?from=${from}&to=${to}&apikey=${fmpApiKey}`
+    console.log(`[Macro] SPX → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  console.log(`[Macro] SPX → Fetching from FMP API`)
+  
+  const historical = await fetchWithDeduplication(cacheKey, async () => {
+    const url = `${FMP_BASE_URL}/api/v3/historical-price-full/%5EGSPC?from=${from}&to=${to}&apikey=${FMP_API_KEY}`
     const response = await fetchWithTimeout(url, {}, 10000)
     
     if (!response.ok) {
@@ -151,17 +205,15 @@ router.get('/spx', async (req: Request, res: Response) => {
     }
     
     const data = await response.json()
-    const historical = (data as any).historical || []
-    
-    // Cache for 8 hours (price history)
-    await cache.set(cacheKey, historical, REDIS_TTL.PRICE_HISTORY as any)
-    
-    res.json(historical)
-  } catch (error: any) {
-    console.error('[Macro] SPX data error:', error.message)
-    res.status(500).json({ error: error.message || 'Failed to fetch SPX data' })
-  }
-})
+    return (data as any).historical || []
+  })
+  
+  // Cache for 8 hours (price history)
+  await cache.set(cacheKey, historical, REDIS_TTL.PRICE_HISTORY as any)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(historical)
+}))
 
 /**
  * GET /api/macro/index-stats
@@ -169,25 +221,30 @@ router.get('/spx', async (req: Request, res: Response) => {
  * Cache: 5 minutes (real-time quote data)
  * Uses quote endpoint which is more reliable than stock-price-change
  */
-router.get('/index-stats', async (req: Request, res: Response) => {
-  try {
-    // Generate cache key
-    const cacheKey = cache.generateKey('macro', 'index-stats')
-    
-    // Check cache first
-    const cached = await cache.get(cacheKey)
-    if (cached.data) {
-      console.log(`[Macro] Index Stats → CACHE HIT (${cached.source})`)
-      return res.json(cached.data)
+router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'index-stats')
+  
+  // Check cache first
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    if ((req as any).fmpCallTracked) {
+      decrementGlobalFmpCounter()
     }
-    
-    console.log(`[Macro] Index Stats → Fetching from FMP API`)
+    console.log(`[Macro] Index Stats → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  console.log(`[Macro] Index Stats → Fetching from FMP API`)
+  
+  const validData = await fetchWithDeduplication(cacheKey, async () => {
     const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT'] // S&P 500, Dow Jones, Russell 2000 (URL encoded ^)
     
     // Use quote endpoint instead of stock-price-change for better reliability
     const requests = symbols.map(symbol => 
       fetchWithTimeout(
-        `${FMP_BASE_URL}/api/v3/quote/${symbol}?apikey=${fmpApiKey}`,
+        `${FMP_BASE_URL}/api/v3/quote/${symbol}?apikey=${FMP_API_KEY}`,
         {},
         10000
       )
@@ -232,103 +289,287 @@ router.get('/index-stats', async (req: Request, res: Response) => {
     }))
     
     // Filter out failed requests
-    const validData = data.filter(d => d !== null)
+    const validDataResults = data.filter(d => d !== null)
     
-    if (validData.length === 0) {
+    if (validDataResults.length === 0) {
       console.error('[Macro] No valid index stats data received')
-      return res.json([])
+      return []
     }
     
-    console.log(`[Macro] Index Stats → Successfully fetched ${validData.length} indices`)
-    
-    // Cache for 5 minutes (quote data)
-    await cache.set(cacheKey, validData, REDIS_TTL.QUOTE as any)
-    
-    res.json(validData)
-  } catch (error: any) {
-    console.error('[Macro] Index stats error:', error.message)
-    res.status(500).json({ error: error.message || 'Failed to fetch index stats' })
-  }
-})
+    console.log(`[Macro] Index Stats → Successfully fetched ${validDataResults.length} indices`)
+    return validDataResults
+  })
+  
+  // Cache for 5 minutes (quote data)
+  await cache.set(cacheKey, validData, REDIS_TTL.QUOTE as any)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(validData)
+}))
 
 /**
  * GET /api/macro/sectors
  * Fetch sector performance data
  * Cache: 5 minutes (sector performance updates frequently during trading hours)
  */
-router.get('/sectors', async (req: Request, res: Response) => {
-  try {
-    // Generate cache key
-    const cacheKey = cache.generateKey('macro', 'sectors')
-    
-    // Check cache first
-    const cached = await cache.get(cacheKey)
-    if (cached.data) {
-      console.log(`[Macro] Sectors → CACHE HIT (${cached.source})`)
-      return res.json(cached.data)
+router.get('/sectors', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'sectors')
+  
+  // Check cache first
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    if ((req as any).fmpCallTracked) {
+      decrementGlobalFmpCounter()
     }
-    
-    console.log(`[Macro] Sectors → Fetching from FMP API`)
-    const url = `${FMP_BASE_URL}/api/v3/sector-performance?apikey=${fmpApiKey}`
+    console.log(`[Macro] Sectors → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  console.log(`[Macro] Sectors → Fetching from FMP API`)
+  
+  const data = await fetchWithDeduplication(cacheKey, async () => {
+    const url = `${FMP_BASE_URL}/api/v3/sector-performance?apikey=${FMP_API_KEY}`
     const response = await fetchWithTimeout(url, {}, 10000)
     
     if (!response.ok) {
       throw new Error(`FMP API error: ${response.statusText}`)
     }
     
-    const data = await response.json()
-    
-    // Cache for 5 minutes
-    await cache.set(cacheKey, data, REDIS_TTL.QUOTE as any)
-    
-    res.json(data)
-  } catch (error: any) {
-    console.error('[Macro] Sectors data error:', error.message)
-    res.status(500).json({ error: error.message || 'Failed to fetch sector data' })
-  }
-})
+    return await response.json()
+  })
+  
+  // Cache for 5 minutes
+  await cache.set(cacheKey, data, REDIS_TTL.QUOTE as any)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(data)
+}))
 
 /**
  * GET /api/macro/risk-premium
  * Fetch market risk premium data for all countries
  * Cache: 7 days (risk premium data rarely changes)
  */
-router.get('/risk-premium', async (req: Request, res: Response) => {
-  try {
-    // Generate cache key
-    const cacheKey = cache.generateKey('macro', 'risk-premium')
-    
-    // Check cache first
-    const cached = await cache.get(cacheKey)
-    if (cached.data) {
-      console.log(`[Macro] Risk Premium → CACHE HIT (${cached.source})`)
-      return res.json(cached.data)
+router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'risk-premium')
+  
+  // Check cache first
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    if ((req as any).fmpCallTracked) {
+      decrementGlobalFmpCounter()
     }
-    
-    console.log(`[Macro] Risk Premium → Fetching from FMP API`)
-    const url = `${FMP_BASE_URL}/stable/market-risk-premium?apikey=${fmpApiKey}`
+    console.log(`[Macro] Risk Premium → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  console.log(`[Macro] Risk Premium → Fetching from FMP API`)
+  
+  const data = await fetchWithDeduplication(cacheKey, async () => {
+    const url = `${FMP_BASE_URL}/stable/market-risk-premium?apikey=${FMP_API_KEY}`
     const response = await fetchWithTimeout(url, {}, 10000)
     
     if (!response.ok) {
       throw new Error(`FMP API error: ${response.statusText}`)
     }
     
-    const data = await response.json()
+    return await response.json()
+  })
+  
+  // Validate data structure
+  if (!Array.isArray(data) || data.length === 0) {
+    console.warn('[Macro] Risk premium returned empty or invalid data')
+    res.setHeader('X-Cache', 'miss')
+    return res.json([])
+  }
+  
+  // Cache for 7 days (data rarely changes)
+  await cache.set(cacheKey, data, REDIS_TTL.FINANCIAL_STATEMENTS as any)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(data)
+}))
+
+/**
+ * GET /api/macro/batch
+ * Fetch ALL macro data in a single request (optimized)
+ * Cache: 5 minutes (real-time data updates frequently)
+ * 
+ * This replaces 10+ individual API calls with 1 batch request
+ */
+router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response) => {
+  const { from, to } = req.query
+  const fromDate = from || getDateMonthsAgo(12)
+  const toDate = to || getTodayDate()
+  
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'batch', fromDate as string, toDate as string)
+  
+  // Check cache first
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    if ((req as any).fmpCallTracked) {
+      decrementGlobalFmpCounter()
+    }
+    console.log(`[Macro] Batch → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  console.log(`[Macro] Batch → Fetching all data from FMP API`)
+  const startTime = Date.now()
+  
+  // Fetch all data in parallel
+  const data = await fetchWithDeduplication(cacheKey, async () => {
+    const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT'] // Index symbols
     
-    // Validate data structure
-    if (!Array.isArray(data) || data.length === 0) {
-      console.warn('[Macro] Risk premium returned empty or invalid data')
-      return res.json([])
+    const [
+      treasuryRes,
+      fedFundsRes,
+      consumerSentimentRes,
+      retailSalesRes,
+      inflationRes,
+      unemploymentRes,
+      spxRes,
+      indexQuotesRes,
+      sectorsRes,
+      riskPremiumRes
+    ] = await Promise.allSettled([
+      // Treasury rates
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/treasury?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000),
+      // Economic indicators
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=federalFunds&apikey=${FMP_API_KEY}`, {}, 10000),
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=consumerSentiment&apikey=${FMP_API_KEY}`, {}, 10000),
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=retailSales&apikey=${FMP_API_KEY}`, {}, 10000),
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=inflation&apikey=${FMP_API_KEY}`, {}, 10000),
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=unemploymentRate&apikey=${FMP_API_KEY}`, {}, 10000),
+      // SPX historical
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v3/historical-price-full/%5EGSPC?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000),
+      // Index quotes (all 3 in parallel)
+      Promise.all(symbols.map(symbol => 
+        fetchWithTimeout(`${FMP_BASE_URL}/api/v3/quote/${symbol}?apikey=${FMP_API_KEY}`, {}, 10000)
+      )),
+      // Sectors
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v3/sector-performance?apikey=${FMP_API_KEY}`, {}, 10000),
+      // Risk premium
+      fetchWithTimeout(`${FMP_BASE_URL}/stable/market-risk-premium?apikey=${FMP_API_KEY}`, {}, 10000)
+    ])
+    
+    // Process results
+    const batchData: any = {
+      treasuryRates: [],
+      federalFunds: [],
+      consumerSentiment: [],
+      retailSales: [],
+      inflation: [],
+      unemploymentRate: [],
+      spx: [],
+      indexStats: [],
+      sectors: [],
+      riskPremium: [],
+      timestamp: new Date().toISOString()
     }
     
-    // Cache for 7 days (data rarely changes)
-    await cache.set(cacheKey, data, REDIS_TTL.FINANCIAL_STATEMENTS as any)
+    // Treasury rates
+    if (treasuryRes.status === 'fulfilled' && treasuryRes.value.ok) {
+      batchData.treasuryRates = await treasuryRes.value.json()
+    }
     
-    res.json(data)
-  } catch (error: any) {
-    console.error('[Macro] Risk premium data error:', error.message)
-    res.status(500).json({ error: error.message || 'Failed to fetch risk premium data' })
-  }
-})
+    // Economic indicators
+    if (fedFundsRes.status === 'fulfilled' && fedFundsRes.value.ok) {
+      batchData.federalFunds = await fedFundsRes.value.json()
+    }
+    if (consumerSentimentRes.status === 'fulfilled' && consumerSentimentRes.value.ok) {
+      batchData.consumerSentiment = await consumerSentimentRes.value.json()
+    }
+    if (retailSalesRes.status === 'fulfilled' && retailSalesRes.value.ok) {
+      batchData.retailSales = await retailSalesRes.value.json()
+    }
+    if (inflationRes.status === 'fulfilled' && inflationRes.value.ok) {
+      batchData.inflation = await inflationRes.value.json()
+    }
+    if (unemploymentRes.status === 'fulfilled' && unemploymentRes.value.ok) {
+      batchData.unemploymentRate = await unemploymentRes.value.json()
+    }
+    
+    // SPX historical
+    if (spxRes.status === 'fulfilled' && spxRes.value.ok) {
+      const spxData = await spxRes.value.json()
+      batchData.spx = (spxData as any).historical || []
+    }
+    
+    // Index stats (transform quotes to IndexStats format)
+    if (indexQuotesRes.status === 'fulfilled') {
+      const quotes = await Promise.all(
+        indexQuotesRes.value.map(async (r: globalThis.Response) => {
+          if (!r.ok) return null
+          const json = await r.json()
+          const quote = Array.isArray(json) ? json[0] : json
+          
+          if (quote && typeof quote === 'object' && 'symbol' in quote && 'changesPercentage' in quote) {
+            return {
+              symbol: quote.symbol,
+              '1D': quote.changesPercentage || 0,
+              '5D': 0,
+              '1M': 0,
+              '3M': 0,
+              '6M': 0,
+              ytd: 0,
+              '1Y': 0,
+              '3Y': 0,
+              '5Y': 0,
+              '10Y': 0,
+              max: 0
+            }
+          }
+          return null
+        })
+      )
+      batchData.indexStats = quotes.filter(q => q !== null)
+    }
+    
+    // Sectors
+    if (sectorsRes.status === 'fulfilled' && sectorsRes.value.ok) {
+      batchData.sectors = await sectorsRes.value.json()
+    }
+    
+    // Risk premium
+    if (riskPremiumRes.status === 'fulfilled' && riskPremiumRes.value.ok) {
+      const riskData = await riskPremiumRes.value.json()
+      batchData.riskPremium = Array.isArray(riskData) ? riskData : []
+    }
+    
+    return batchData
+  })
+  
+  const duration = Date.now() - startTime
+  console.log(`[Macro] Batch → Fetched all data in ${duration}ms`)
+  
+  // Cache for 5 minutes (real-time data)
+  await cache.set(cacheKey, data, REDIS_TTL.QUOTE as any)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(data)
+}))
 
+  return router
+}
+
+// Helper functions
+function getDateMonthsAgo(months: number): string {
+  const date = new Date()
+  date.setMonth(date.getMonth() - months)
+  return date.toISOString().split('T')[0] || ''
+}
+
+function getTodayDate(): string {
+  return new Date().toISOString().split('T')[0] || ''
+}
+
+// Export both router and initialization function for consistency with other routes
+export { initMacroRoutes }
 export default router
