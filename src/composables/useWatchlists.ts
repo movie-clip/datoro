@@ -313,7 +313,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       addedAt: new Date().toISOString(),
       displayOrder: originalItems.length
     }
-    itemsCache.value.set(watchlistId, [newItem, ...originalItems])
+    itemsCache.value.set(watchlistId, [...originalItems, newItem])
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/watchlists/${watchlistId}/items/${upperTicker}`, {
