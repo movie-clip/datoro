@@ -505,7 +505,8 @@ const createOption = (isLarge = false): EChartsOption => {
     xAxis: createXAxisConfig(props.kind, {
       categoryData,
       isLarge,
-      isMobile: isMobile.value
+      isMobile: isMobile.value,
+      isQuarterly: props.timeframe === 'quarterly'
     }),
     yAxis: createYAxisConfig({
       dualAxis: props.dualAxis,

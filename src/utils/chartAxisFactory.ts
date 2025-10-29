@@ -13,6 +13,7 @@ interface XAxisOptions {
   categoryData?: string[]
   isLarge?: boolean
   isMobile?: boolean
+  isQuarterly?: boolean
 }
 
 interface YAxisOptions {
@@ -49,8 +50,25 @@ export function createXAxisConfig(kind: ChartKind, options: XAxisOptions = {}) {
   const {
     categoryData = [],
     isLarge = false,
-    isMobile = false
+    isMobile = false,
+    isQuarterly = false
   } = options
+
+  // For quarterly data in compact mode, only show Q1 labels
+  let axisLabelFormatter: ((value: string, index: number) => string) | undefined
+  let axisLabelInterval: number | 'auto' | ((index: number, value: string) => boolean) = 'auto'
+
+  if (kind === 'bar' && isQuarterly && !isLarge) {
+    // In compact mode with quarterly data, only show Q1 labels
+    // Use interval function to control which labels are shown
+    axisLabelInterval = (index: number, value: string) => {
+      // Only show labels that start with 'Q1 '
+      return value.startsWith('Q1 ')
+    }
+  } else if (kind === 'bar' && isLarge) {
+    // Large view: show all labels on desktop, fewer on mobile
+    axisLabelInterval = isMobile ? 1 : 0
+  }
 
   return {
     type: kind === 'bar' ? 'category' : 'time',
@@ -63,9 +81,9 @@ export function createXAxisConfig(kind: ChartKind, options: XAxisOptions = {}) {
       hideOverlap: false,
       showMinLabel: true,
       showMaxLabel: true,
-      formatter: kind === 'bar' ? undefined : '{yyyy}', // Category axis shows data as-is
-      // For bar charts: show all labels on desktop (interval: 0), fewer on mobile (interval: 1)
-      interval: (kind === 'bar' && isLarge) ? (isMobile ? 1 : 0) : 'auto'
+      formatter: axisLabelFormatter || (kind === 'bar' ? undefined : '{yyyy}'), // Category axis shows data as-is or custom formatter
+      // For bar charts: controlled by logic above
+      interval: axisLabelInterval
     },
     axisTick: {
       alignWithLabel: true,
