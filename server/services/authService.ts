@@ -87,8 +87,8 @@ export function generateToken(user: Partial<User>): string {
   
   return jwt.sign(payload, JWT_SECRET as string, {
     expiresIn: JWT_EXPIRES_IN as string,
-    issuer: 'factorly',
-    audience: 'factorly-users'
+    issuer: 'datoro',
+    audience: 'datoro-users'
   } as jwt.SignOptions)
 }
 
@@ -100,8 +100,8 @@ export function generateToken(user: Partial<User>): string {
 export function verifyToken(token: string): any | null {
   try {
     return jwt.verify(token, JWT_SECRET as string, {
-      issuer: 'factorly',
-      audience: 'factorly-users'
+      issuer: 'datoro',
+      audience: 'datoro-users'
     })
   } catch (error: any) {
     console.error('[Auth] Token verification failed:', error.message)

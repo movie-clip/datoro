@@ -1,5 +1,5 @@
 /**
- * Centralized color system for Factorly
+ * Centralized color system for the application
  * 
  * This file defines all colors used throughout the application to ensure
  * consistency across components. Update colors here to change them globally.

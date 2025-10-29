@@ -10,18 +10,18 @@ services:
   # PostgreSQL Database
   postgres-dev:
     image: postgres:16-alpine
-    container_name: factorly-postgres-dev
+    container_name: datoro-postgres-dev
     restart: unless-stopped
     ports:
       - "5433:5432"  # External port 5433 to avoid conflicts
     environment:
-      POSTGRES_USER: factorly_dev
+      POSTGRES_USER: datoro_dev
       POSTGRES_PASSWORD: dev_password_123
-      POSTGRES_DB: factorly_dev
+      POSTGRES_DB: datoro_dev
     volumes:
       - postgres-dev-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U factorly_dev"]
+      test: ["CMD-SHELL", "pg_isready -U datoro_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,7 +29,7 @@ services:
   # Redis Cache (Optional but recommended)
   redis-dev:
     image: redis:7-alpine
-    container_name: factorly-redis-dev
+    container_name: datoro-redis-dev
     restart: unless-stopped
     ports:
       - "6380:6379"  # External port 6380 to avoid conflicts

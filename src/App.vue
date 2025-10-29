@@ -3,6 +3,8 @@ import { ref, computed, watch, onMounted, nextTick, defineAsyncComponent } from 
 import { useTickerStore } from './stores/tickerStore'
 import { useAuthStore } from './stores/authStore'
 import { useWatchlists } from './composables/useWatchlists'
+import { STORAGE_KEYS } from './config/storage'
+import BRAND from './config/brand'
 
 // Temporary type for auth user until authStore is fully typed
 interface AuthUser {
@@ -107,7 +109,7 @@ onMounted(async () => {
     console.error('[App] Auth init failed:', err)
   }
   
-  const savedTab = localStorage.getItem('factorly_active_tab')
+  const savedTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB)
   if (savedTab && tabs.some(t => t.id === savedTab)) {
     activeTab.value = savedTab
   }
@@ -144,7 +146,7 @@ const tabs: Tab[] = [
 
 // Save tab preference
 watch(activeTab, (newTab) => {
-  localStorage.setItem('factorly_active_tab', newTab)
+  localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, newTab)
 })
 
 // Watch ticker changes and update store
@@ -257,11 +259,11 @@ const handleSelectTicker = (ticker: string): void => {
           
           <img 
             src="/logo.png" 
-            alt="Factorly Logo" 
+            :alt="`${BRAND.name} Logo`"
             class="brand-logo"
             @error="handleImageError"
           >
-          <span class="brand-text">Factorly</span>
+          <span class="brand-text">{{ BRAND.name }}</span>
         </div>
         
         <div class="header-right">

@@ -1,9 +1,15 @@
 // PM2 Ecosystem Configuration
 // Run with: pm2 start ecosystem.config.cjs
 
+// Import service names from centralized config
+// Note: Using require() since this is a CommonJS file
+const SERVICES = {
+  api: { name: 'datoro-api' }
+}
+
 module.exports = {
   apps: [{
-    name: 'factorly-api',
+    name: SERVICES.api.name,
     script: './server/server.ts',
     interpreter: 'node',
     interpreter_args: '--import tsx',

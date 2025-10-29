@@ -1,7 +1,7 @@
-# Factorly
+# Datoro
 
-![CI Status](https://github.com/movie-clip/factorly/workflows/CI%2FCD%20Pipeline/badge.svg)
-![Tests](https://github.com/movie-clip/factorly/workflows/Pull%20Request%20Checks/badge.svg)
+![CI Status](https://github.com/movie-clip/Datoro/workflows/CI%2FCD%20Pipeline/badge.svg)
+![Tests](https://github.com/movie-clip/Datoro/workflows/Pull%20Request%20Checks/badge.svg)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 
 Interactive financial data dashboard built with Vue 3, displaying equity price charts, revenue, cash flow, margins, and valuation metrics.

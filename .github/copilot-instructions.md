@@ -1,4 +1,4 @@
-# Copilot Instructions for `Factorly`
+# Copilot Instructions for `Datoro`
 
 ## Project Overview
 - **Stack:** Vue 3 (TypeScript + script setup), Vite, TypeScript Node.js server (Express), ECharts, Prisma ORM, PostgreSQL, Redis.
@@ -81,7 +81,7 @@
 ## Key Conventions & Patterns
 
 ### API Endpoints & Routing
-- **Base URL:** `http://localhost:7071/api` (development), `https://factorly.onrender.com/api` (production).
+- **Base URL:** `http://localhost:7071/api` (development), `https://Datoro.onrender.com/api` (production).
 - **Main endpoints:**
   - `/api/ticker-data/:ticker?mode=full` - Batch data (24 FMP endpoints).
   - `/api/search?q=AAPL` - Search tickers.
@@ -272,7 +272,7 @@ Get-Process -Name node | Stop-Process -Force
 
 # Start server in new window (won't be interrupted by other commands)
 Start-Process powershell -ArgumentList "-NoExit", "-Command", 
-  "cd D:\projects\Vue\factorly; npm run server" -WindowStyle Normal
+  "cd D:\projects\Vue\Datoro; npm run server" -WindowStyle Normal
 
 # Wait for server to start
 Start-Sleep -Seconds 8
@@ -323,7 +323,7 @@ $serverResponse.data.financialScores | ConvertTo-Json
 **Issue: Cached old data**
 ```powershell
 # Clear Redis cache
-docker exec factorly-redis-dev redis-cli FLUSHDB
+docker exec Datoro-redis-dev redis-cli FLUSHDB
 
 # Restart server (clears memory cache)
 Get-Process -Name node | Stop-Process -Force
