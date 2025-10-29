@@ -219,7 +219,7 @@ initSearchRoutes(routeDeps)
 initHealthRoutes(routeDeps)
 initAdminRoutes(routeDeps)
 initMacroRoutes(routeDeps)
-initFeedbackRoutes({ feedbackEmail: 'datoro@gmail.com' })
+initFeedbackRoutes({ feedbackEmail: 'datoro.info@gmail.com' })
 
 // Mount routes
 app.use('/api/ticker-data', tickerRoutes)

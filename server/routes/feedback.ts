@@ -18,7 +18,7 @@ import rateLimit from 'express-rate-limit'
 const router = express.Router()
 
 // Email configuration (injected from server.ts)
-let FEEDBACK_EMAIL = 'datoro@gmail.com'
+let FEEDBACK_EMAIL = 'datoro.info@gmail.com'
 let nodemailer: any = null
 
 /**

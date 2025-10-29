@@ -80,6 +80,8 @@
 import { ref, computed } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
 
+const emit = defineEmits(['submitted'])
+
 interface FeedbackData {
   name: string
   email: string
@@ -136,6 +138,7 @@ const submitFeedback = async () => {
     }
 
     submitted.value = true
+    emit('submitted')
     console.log('[Feedback] Submitted successfully')
   } catch (err: any) {
     console.error('[Feedback] Submission failed:', err)
@@ -181,9 +184,6 @@ h2 {
 .success-message {
   text-align: center;
   padding: 48px 24px;
-  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
-  border: 1px solid rgba(0, 168, 142, 0.3);
-  border-radius: 12px;
 }
 
 .success-message .icon {
@@ -201,7 +201,7 @@ h2 {
 }
 
 .success-message p {
-  margin: 0 0 24px 0;
+  margin: 0;
   color: #999;
 }
 

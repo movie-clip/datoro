@@ -102,6 +102,7 @@ const showMainMenu = ref(false)
 const showDeepFinder = ref(false)
 const showMacro = ref(false)
 const showFeedback = ref(false)
+const feedbackSubmitted = ref(false)
 
 // Watchlist (multi-watchlist support)
 const { initializeWatchlists, toggleWatchlist, clearAll } = useWatchlists()
@@ -224,6 +225,13 @@ const toggleMacro = (): void => {
 
 const toggleFeedback = (): void => {
   showFeedback.value = !showFeedback.value
+  if (!showFeedback.value) {
+    feedbackSubmitted.value = false
+  }
+}
+
+const handleFeedbackSubmitted = (): void => {
+  feedbackSubmitted.value = true
 }
 
 const toggleWatchlistPanel = (): void => {
@@ -493,13 +501,13 @@ const handleSelectTicker = (ticker: string): void => {
     <Teleport to="body">
       <div v-if="showFeedback" class="modal-overlay" @click.self="showFeedback = false">
         <div class="modal-container feedback-modal">
-          <button class="modal-close" @click="showFeedback = false">
+          <button v-if="!feedbackSubmitted" class="modal-close" @click="showFeedback = false">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
-          <FeedbackForm />
+          <FeedbackForm @submitted="handleFeedbackSubmitted" />
         </div>
       </div>
     </Teleport>
