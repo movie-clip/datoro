@@ -1,7 +1,7 @@
 # Development Server Startup Script
 # Loads development environment and starts the API server
 
-Write-Host "=== Starting Factorly Dev Server ===" -ForegroundColor Cyan
+Write-Host "=== Starting Datoro Dev Server ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Load development environment variables

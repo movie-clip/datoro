@@ -19,7 +19,7 @@
           <img 
             v-if="currentView === 'menu'"
             src="/logo.png" 
-            alt="Factorly Logo" 
+            :alt="`${BRAND.name} Logo`"
             class="menu-logo"
           >
           <span class="menu-title">{{ currentView === 'menu' ? 'Menu' : 'Watchlist' }}</span>
@@ -185,6 +185,7 @@ import { useWatchlists } from '../../composables/useWatchlists'
 import WatchlistDropdown from './WatchlistDropdown.vue'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
+import BRAND from '../../config/brand'
 
 // Helper to get full icon URL for production compatibility
 const getIconUrl = (ticker) => {

@@ -18,6 +18,7 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
 import { CACHE_TTL as CLIENT_CACHE_TTL, VALIDATION } from '../config/constants'
+import { STORAGE_KEYS } from '../config/storage'
 
 export interface Watchlist {
   id: string
@@ -78,7 +79,7 @@ const lastFetchTime = ref(0)
 const CACHE_TTL = CLIENT_CACHE_TTL.WATCHLIST
 
 // LocalStorage key for active watchlist
-const ACTIVE_WATCHLIST_KEY = 'factorly-active-watchlist'
+const ACTIVE_WATCHLIST_KEY = STORAGE_KEYS.ACTIVE_WATCHLIST
 
 export function useWatchlists(): UseWatchlistsReturn {
   /**

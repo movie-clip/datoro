@@ -5,9 +5,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
-import type { 
-  BatchData, 
-  FMPProfile, 
+import type {
+  BatchData,
+  FMPProfile,
   FMPQuote,
   FMPIncomeStatement,
   FMPBalanceSheet,
@@ -16,14 +16,13 @@ import type {
   FMPHistoricalPrice,
   FMPDividend
 } from '../types'
+import { STORAGE_KEYS } from '../config/storage'
 
 // Re-export types for components
 export type { BatchData, FMPProfile, FMPQuote, FMPIncomeStatement, FMPBalanceSheet, FMPCashFlow, FMPInsiderTrading, FMPHistoricalPrice, FMPDividend }
 
 // Local storage key for API version tracking
-const API_VERSION_KEY = 'factorly-api-version'
-
-/**
+const API_VERSION_KEY = STORAGE_KEYS.API_VERSION/**
  * API version response
  */
 interface ApiVersionResponse {

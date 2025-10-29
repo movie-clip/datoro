@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue'
+import { STORAGE_KEYS } from '../config/storage'
 
 interface RecentSearchReturn {
   recentSearches: Ref<string[]>
@@ -12,7 +13,7 @@ interface RecentSearchReturn {
  * Data persists only during the browser session (no server/database calls)
  */
 export function useRecentSearch(): RecentSearchReturn {
-  const STORAGE_KEY = 'factorly_recent_search'
+  const STORAGE_KEY = STORAGE_KEYS.RECENT_SEARCH
   const MAX_HISTORY = 5
 
   // Load from sessionStorage (client-side only, no API calls)

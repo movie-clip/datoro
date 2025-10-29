@@ -1,6 +1,6 @@
 {
-  "name": "Factorly - Free Stock Analysis with AI Insights",
-  "short_name": "Factorly",
+  "name": "Datoro - Free Stock Analysis with AI Insights",
+  "short_name": "Datoro",
   "description": "Professional stock analysis dashboard with real-time financial data, AI insights, and interactive charts. 10,000+ stocks. Completely free.",
   "start_url": "/",
   "display": "standalone",
@@ -64,7 +64,7 @@
       "sizes": "512x512",
       "type": "image/png",
       "platform": "wide",
-      "label": "Factorly Dashboard"
+      "label": "Datoro Dashboard"
     }
   ]
 }

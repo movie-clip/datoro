@@ -8,7 +8,7 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://factorly.onrender.com/</loc>
+    <loc>https://datoro.onrender.com/</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -16,49 +16,49 @@
   
   <!-- Popular stock pages (examples - add more as needed) -->
   <url>
-    <loc>https://factorly.onrender.com/?ticker=AAPL</loc>
+    <loc>https://datoro.onrender.com/?ticker=AAPL</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://factorly.onrender.com/?ticker=MSFT</loc>
+    <loc>https://datoro.onrender.com/?ticker=MSFT</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://factorly.onrender.com/?ticker=GOOGL</loc>
+    <loc>https://datoro.onrender.com/?ticker=GOOGL</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://factorly.onrender.com/?ticker=TSLA</loc>
+    <loc>https://datoro.onrender.com/?ticker=TSLA</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://factorly.onrender.com/?ticker=NVDA</loc>
+    <loc>https://datoro.onrender.com/?ticker=NVDA</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://factorly.onrender.com/?ticker=META</loc>
+    <loc>https://datoro.onrender.com/?ticker=META</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://factorly.onrender.com/?ticker=AMZN</loc>
+    <loc>https://datoro.onrender.com/?ticker=AMZN</loc>
     <lastmod>2025-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
