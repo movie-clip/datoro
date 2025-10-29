@@ -74,6 +74,19 @@
               <span>Deep Finder</span>
             </button>
 
+            <!-- Macro Dashboard Button -->
+            <button 
+              class="menu-item" 
+              @click="showMacro"
+            >
+              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="20" x2="12" y2="10"/>
+                <line x1="18" y1="20" x2="18" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="16"/>
+              </svg>
+              <span>Macro Dashboard</span>
+            </button>
+
             <!-- Placeholder for future menu items -->
             <div class="menu-section-divider"></div>
             
@@ -203,7 +216,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker', 'show-deep-finder'])
+const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker', 'show-deep-finder', 'show-macro'])
 
 const currentView = ref('menu') // 'menu' or 'watchlist'
 const isDcfModalOpen = ref(false)
@@ -252,6 +265,11 @@ function showDcfCalculator() {
 
 function showDeepFinder() {
   emit('show-deep-finder')
+  emit('close') // Close the main menu
+}
+
+function showMacro() {
+  emit('show-macro')
   emit('close') // Close the main menu
 }
 

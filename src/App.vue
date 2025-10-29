@@ -24,6 +24,11 @@ import MainMenu from './components/common/MainMenu.vue'
 import DeepFinderModal from './components/modals/DeepFinderModal.vue'
 import TimeframeToggle from './components/common/TimeframeToggle.vue'
 
+// Lazy load MacroView
+const MacroView = defineAsyncComponent(() =>
+  import('./components/MacroView.vue')
+)
+
 // Lazy load AIAnalysisPanel (only loads when Insights tab is opened)
 const AIAnalysisPanel = defineAsyncComponent(() =>
   import('./components/layout/AIAnalysisPanel.vue')
@@ -90,6 +95,7 @@ const showMainMenu = ref(false)
 
 // Deep Finder
 const showDeepFinder = ref(false)
+const showMacro = ref(false)
 
 // Watchlist (multi-watchlist support)
 const { initializeWatchlists, toggleWatchlist, clearAll } = useWatchlists()
@@ -204,6 +210,10 @@ const toggleMainMenu = (): void => {
 
 const toggleDeepFinder = (): void => {
   showDeepFinder.value = !showDeepFinder.value
+}
+
+const toggleMacro = (): void => {
+  showMacro.value = !showMacro.value
 }
 
 const toggleWatchlistPanel = (): void => {
@@ -447,10 +457,26 @@ const handleSelectTicker = (ticker: string): void => {
       @toggle-watchlist="handleToggleWatchlist"
       @select-ticker="handleSelectTicker"
       @show-deep-finder="toggleDeepFinder"
+      @show-macro="toggleMacro"
     />
     
     <!-- Deep Finder Modal -->
     <DeepFinderModal v-model="showDeepFinder" />
+
+    <!-- Macro Dashboard Modal -->
+    <Teleport to="body">
+      <div v-if="showMacro" class="modal-overlay" @click.self="showMacro = false">
+        <div class="modal-container macro-modal">
+          <button class="modal-close" @click="showMacro = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <MacroView />
+        </div>
+      </div>
+    </Teleport>
     
     <!-- Watchlist Panel -->
     <WatchlistPanel 
@@ -880,6 +906,59 @@ const handleSelectTicker = (ticker: string): void => {
   .desktop-only {
     display: none !important;
   }
+}
+
+/* Macro Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.modal-container.macro-modal {
+  background: linear-gradient(180deg, #0A0E13 0%, #0D1117 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 89, 76, 0.3);
+  max-width: 1400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.modal-close svg {
+  color: #fff;
 }
 
 </style>
