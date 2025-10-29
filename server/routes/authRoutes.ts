@@ -129,6 +129,17 @@ router.post(
       
     } catch (_error: any) {
       console.error('[Auth API] Login error:', _error)
+      
+      // Handle email not verified error
+      if (_error.code === 'EMAIL_NOT_VERIFIED') {
+        return res.status(403).json({
+          success: false,
+          error: _error.message,
+          code: 'EMAIL_NOT_VERIFIED',
+          email: _error.email
+        } as any)
+      }
+      
       res.status(401).json({
         success: false,
         error: _error.message
@@ -264,6 +275,116 @@ router.post(
       res.status(500).json({
         success: false,
         error: 'Logout failed'
+      })
+    }
+  }
+)
+
+// ============================================
+// Email Verification
+// ============================================
+
+/**
+ * Verify email with token
+ * GET /api/auth/verify-email/:token
+ */
+router.get(
+  '/verify-email/:token',
+  async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params
+      
+      if (!token || token.length < 20) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid verification token'
+        })
+      }
+
+      const { verifyEmailToken } = await import('../services/authService.js')
+      const result = await verifyEmailToken(token)
+
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error || 'Verification failed'
+        })
+      }
+
+      // Send welcome email (optional)
+      if (result.user?.email) {
+        const { sendWelcomeEmail } = await import('../services/emailService.js')
+        sendWelcomeEmail(
+          result.user.email,
+          result.user.name || 'there'
+        ).catch(err => console.error('[Auth] Welcome email failed:', err))
+      }
+
+      res.json({
+        success: true,
+        message: 'Email verified successfully! You can now log in.',
+        data: { user: result.user as AuthUser }
+      })
+
+    } catch (_error: any) {
+      console.error('[Auth API] Verify email error:', _error)
+      res.status(500).json({
+        success: false,
+        error: 'Verification failed'
+      })
+    }
+  }
+)
+
+/**
+ * Resend verification email
+ * POST /api/auth/resend-verification
+ */
+router.post(
+  '/resend-verification',
+  speedLimiter,
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required')
+  ],
+  async (req: Request, res: Response) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array()
+        })
+      }
+
+      const { email } = req.body
+
+      const { resendVerificationEmail } = await import('../services/authService.js')
+      const result = await resendVerificationEmail(email)
+
+      if (!result.success) {
+        if (result.rateLimited) {
+          return res.status(429).json({
+            success: false,
+            error: result.error || 'Too many requests'
+          })
+        }
+        
+        return res.status(400).json({
+          success: false,
+          error: result.error || 'Failed to resend verification email'
+        })
+      }
+
+      res.json({
+        success: true,
+        message: 'Verification email sent! Please check your inbox.'
+      })
+
+    } catch (_error: any) {
+      console.error('[Auth API] Resend verification error:', _error)
+      res.status(500).json({
+        success: false,
+        error: 'Failed to resend verification email'
       })
     }
   }

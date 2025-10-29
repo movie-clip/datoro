@@ -21,6 +21,9 @@ model User {
   email     String?  @unique
   password  String?  // bcrypt hash (null for OAuth-only users)
   emailVerified Boolean @default(false) @map("email_verified")
+  verificationToken String? @map("verification_token") // Email verification token
+  verificationTokenExpiry DateTime? @map("verification_token_expiry") // Token expiration
+  emailVerificationSentAt DateTime? @map("email_verification_sent_at") // Rate limiting
   
   // OAuth fields
   googleId  String?  @unique @map("google_id")

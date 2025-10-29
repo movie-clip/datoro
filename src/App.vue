@@ -39,6 +39,9 @@ const AIAnalysisPanel = defineAsyncComponent(() =>
   import('./components/layout/AIAnalysisPanel.vue')
 )
 
+// Email verification page
+import VerifyEmailPage from './components/auth/VerifyEmailPage.vue'
+
 // PriceChart is used in HeroSection (always visible), so import it statically
 import PriceChart from './components/charts/PriceChart.vue'
 
@@ -108,8 +111,27 @@ const feedbackSubmitted = ref(false)
 const { initializeWatchlists, toggleWatchlist, clearAll } = useWatchlists()
 const showWatchlistPanel = ref(false)
 
+// Email verification
+const showVerifyEmailPage = ref(false)
+const verifyEmailToken = ref<string | undefined>(undefined)
+const verifyEmailMode = ref<'verify' | 'pending'>('pending')
+const verifyEmailAddress = ref<string | undefined>(undefined)
+
 // Initialize auth store on mount
 onMounted(async () => {
+  // Check for email verification token in URL
+  const urlParams = new URLSearchParams(window.location.search)
+  const token = urlParams.get('token')
+  const action = urlParams.get('action')
+  
+  if (token && action === 'verify-email') {
+    verifyEmailToken.value = token
+    verifyEmailMode.value = 'verify'
+    showVerifyEmailPage.value = true
+    // Clean URL without reloading
+    window.history.replaceState({}, '', window.location.pathname)
+  }
+  
   // Wait for auth init before loading watchlist
   try {
     await authStore.init()
@@ -202,6 +224,12 @@ const closeAuthModal = (): void => {
 const handleAuthSuccess = (): void => {
   console.log('[App] User authenticated:', authStore.user)
   // Could show a success toast here
+}
+
+const handleShowVerifyEmail = (email: string, mode: 'pending' | 'verify'): void => {
+  verifyEmailAddress.value = email
+  verifyEmailMode.value = mode
+  showVerifyEmailPage.value = true
 }
 
 const handleLogout = (): void => {
@@ -337,6 +365,7 @@ const handleSelectTicker = (ticker: string): void => {
       :default-tab="authModalTab"
       @close="closeAuthModal"
       @success="handleAuthSuccess"
+      @show-verify-email="handleShowVerifyEmail"
     />
 
     <section
@@ -518,6 +547,15 @@ const handleSelectTicker = (ticker: string): void => {
       @close="showWatchlistPanel = false"
       @toggle-watchlist="handleToggleWatchlist"
       @select-ticker="handleSelectTicker"
+    />
+    
+    <!-- Email Verification Page -->
+    <VerifyEmailPage 
+      v-if="showVerifyEmailPage"
+      :token="verifyEmailToken"
+      :mode="verifyEmailMode"
+      :email="verifyEmailAddress"
+      @close="showVerifyEmailPage = false"
     />
   </main>
 </template>

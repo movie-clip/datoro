@@ -12,6 +12,7 @@ interface User {
   name?: string
   subscriptionTier: 'free' | 'premium' | 'enterprise'
   avatarUrl?: string
+  emailVerified?: boolean
 }
 
 interface AuthResponse {
@@ -194,6 +195,14 @@ export const useAuthStore = defineStore('auth', () => {
       const data: AuthResponse = await response.json()
       
       if (!response.ok) {
+        // Check for email not verified error (403)
+        if (response.status === 403 && (data as any).code === 'EMAIL_NOT_VERIFIED') {
+          const unverifiedError: any = new Error('Please verify your email address before logging in')
+          unverifiedError.code = 'EMAIL_NOT_VERIFIED'
+          unverifiedError.email = (data as any).email
+          throw unverifiedError
+        }
+        
         // Extract detailed error message
         let errorMessage = data.error || 'Login failed'
         
@@ -320,6 +329,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
   
+  // ============================================
+  // Check Auth (Refresh User Data)
+  // ============================================
+  
+  async function checkAuth(): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        credentials: 'include'
+      })
+      
+      if (response.ok) {
+        const data: AuthResponse = await response.json()
+        user.value = data.data?.user || null
+        token.value = 'cookie'
+      }
+    } catch (_err) {
+      console.error('[Auth] Check auth error:', _err)
+    }
+  }
+  
   return {
     // State
     user,
@@ -338,6 +367,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     loginWithGoogle,
     logout,
-    updateUser
+    updateUser,
+    checkAuth
   }
 })

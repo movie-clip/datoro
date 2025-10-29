@@ -167,6 +167,7 @@ interface SuccessPayload {
 interface Emits {
   (e: 'close'): void
   (e: 'success', payload: SuccessPayload): void
+  (e: 'show-verify-email', email: string, mode: 'pending' | 'verify'): void
 }
 
 const emit = defineEmits<Emits>()
@@ -218,15 +219,27 @@ const handleSignIn = async (): Promise<void> => {
   loading.value = true
   error.value = null
   
-  const result = await authStore.login(signInForm.value.email, signInForm.value.password)
-  
-  loading.value = false
-  
-  if (result.success) {
-    emit('success', { type: 'signin' })
-    closeModal()
-  } else {
-    error.value = result.error
+  try {
+    const result = await authStore.login(signInForm.value.email, signInForm.value.password)
+    
+    loading.value = false
+    
+    if (result.success) {
+      emit('success', { type: 'signin' })
+      closeModal()
+    } else {
+      error.value = result.error || null
+    }
+  } catch (err: any) {
+    loading.value = false
+    
+    // Check if it's an email not verified error
+    if (err.code === 'EMAIL_NOT_VERIFIED') {
+      closeModal()
+      emit('show-verify-email', err.email || signInForm.value.email, 'pending')
+    } else {
+      error.value = err.message || 'Login failed'
+    }
   }
 }
 
@@ -243,10 +256,11 @@ const handleSignUp = async (): Promise<void> => {
   loading.value = false
   
   if (result.success) {
-    emit('success', { type: 'signup' })
+    // Show verification pending page instead of just closing
     closeModal()
+    emit('show-verify-email', signUpForm.value.email, 'pending')
   } else {
-    error.value = result.error
+    error.value = result.error || null
   }
 }
 

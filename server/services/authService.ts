@@ -110,6 +110,184 @@ export function verifyToken(token: string): any | null {
 }
 
 // ============================================
+// Email Verification
+// ============================================
+
+/**
+ * Generate secure verification token (32 bytes, URL-safe)
+ */
+export function generateVerificationToken(): string {
+  return crypto.randomBytes(32).toString('base64url')
+}
+
+/**
+ * Get verification token expiry (24 hours from now)
+ */
+export function getVerificationTokenExpiry(): Date {
+  const expiry = new Date()
+  expiry.setHours(expiry.getHours() + 24) // 24 hour expiry
+  return expiry
+}
+
+/**
+ * Verify email with token
+ * @param {string} token - Verification token from email link
+ * @returns {Promise<{ success: boolean, user?: Partial<User>, error?: string }>}
+ */
+export async function verifyEmailToken(token: string): Promise<{
+  success: boolean
+  user?: Partial<User>
+  error?: string
+}> {
+  try {
+    // Find user with matching token
+    const user = await prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+        verificationTokenExpiry: {
+          gt: new Date() // Token not expired
+        }
+      }
+    })
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Invalid or expired verification token'
+      }
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      const { password, ...userWithoutPassword } = user
+      return {
+        success: true,
+        user: userWithoutPassword,
+        error: 'Email already verified'
+      }
+    }
+
+    // Update user: set emailVerified = true, clear token
+    const verifiedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        emailVerified: true,
+        subscriptionTier: true,
+        createdAt: true
+      }
+    })
+
+    console.log(`[Auth] Email verified for user: ${verifiedUser.email}`)
+
+    return {
+      success: true,
+      user: verifiedUser
+    }
+  } catch (error: any) {
+    console.error('[Auth] Email verification error:', error)
+    return {
+      success: false,
+      error: 'Failed to verify email'
+    }
+  }
+}
+
+/**
+ * Resend verification email
+ * @param {string} email - User email
+ * @returns {Promise<{ success: boolean, error?: string, rateLimited?: boolean }>}
+ */
+export async function resendVerificationEmail(email: string): Promise<{
+  success: boolean
+  error?: string
+  rateLimited?: boolean
+}> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (!user) {
+      // Don't reveal if email exists
+      return {
+        success: false,
+        error: 'If an account with that email exists, a verification email will be sent.'
+      }
+    }
+
+    // Already verified
+    if (user.emailVerified) {
+      return {
+        success: false,
+        error: 'Email already verified'
+      }
+    }
+
+    // Rate limiting: Only allow resend if 60 seconds have passed
+    if (user.emailVerificationSentAt) {
+      const secondsSinceLastSent = (Date.now() - user.emailVerificationSentAt.getTime()) / 1000
+      if (secondsSinceLastSent < 60) {
+        return {
+          success: false,
+          rateLimited: true,
+          error: `Please wait ${Math.ceil(60 - secondsSinceLastSent)} seconds before requesting another email`
+        }
+      }
+    }
+
+    // Generate new token
+    const verificationToken = generateVerificationToken()
+    const verificationTokenExpiry = getVerificationTokenExpiry()
+
+    // Update user with new token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken,
+        verificationTokenExpiry,
+        emailVerificationSentAt: new Date()
+      }
+    })
+
+    // Send email (import at top of file needed)
+    const { sendVerificationEmail } = await import('./emailService.js')
+    const emailResult = await sendVerificationEmail(
+      user.email!,
+      user.name || 'there',
+      verificationToken
+    )
+
+    if (!emailResult.success) {
+      return {
+        success: false,
+        error: 'Failed to send verification email'
+      }
+    }
+
+    console.log(`[Auth] Verification email resent to: ${user.email}`)
+
+    return {
+      success: true
+    }
+  } catch (error: any) {
+    console.error('[Auth] Resend verification error:', error)
+    return {
+      success: false,
+      error: 'Failed to resend verification email'
+    }
+  }
+}
+
+// ============================================
 // User Registration
 // ============================================
 
@@ -155,15 +333,22 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
   // Hash password
   const hashedPassword = await hashPassword(password)
   
-  // Create user
+  // Generate verification token
+  const verificationToken = generateVerificationToken()
+  const verificationTokenExpiry = getVerificationTokenExpiry()
+  
+  // Create user (NOT verified yet)
   const user = await prisma.user.create({
     data: {
       email: email.toLowerCase(),
       password: hashedPassword,
       name: name || null,
+      emailVerified: false, // Require email verification
+      verificationToken,
+      verificationTokenExpiry,
+      emailVerificationSentAt: new Date(),
       subscriptionTier: 'free',
-      subscriptionStatus: 'active',
-      lastLoginAt: new Date()
+      subscriptionStatus: 'active'
     },
     select: {
       id: true,
@@ -177,13 +362,28 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
     }
   })
   
-  // Generate token
+  // Send verification email
+  const { sendVerificationEmail } = await import('./emailService.js')
+  const emailResult = await sendVerificationEmail(
+    user.email!,
+    user.name || 'there',
+    verificationToken
+  )
+  
+  if (!emailResult.success) {
+    console.warn(`[Auth] Failed to send verification email to ${user.email}:`, emailResult.error)
+  } else {
+    console.log(`[Auth] Verification email sent to: ${user.email}`)
+  }
+  
+  // Generate token for auto-login after registration (even unverified)
+  // User can browse but some features require verification
   const token = generateToken(user)
   
   // Create session with IP and user agent tracking
   await createSession(user.id, token, ipAddress, userAgent)
   
-  console.log(`[Auth] User registered: ${user.email}`)
+  console.log(`[Auth] User registered: ${user.email} (email verification pending)`)
   
   return { user, token }
 }
@@ -220,6 +420,14 @@ export async function loginUser(data: LoginData, ipAddress: string | null = null
   const isValid = await verifyPassword(password, user.password)
   if (!isValid) {
     throw new Error('Invalid email or password')
+  }
+  
+  // Check email verification
+  if (!user.emailVerified) {
+    const error: any = new Error('Please verify your email address before logging in')
+    error.code = 'EMAIL_NOT_VERIFIED'
+    error.email = user.email
+    throw error
   }
   
   // Update last login
