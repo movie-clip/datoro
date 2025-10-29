@@ -37,32 +37,37 @@ const handleTimeframeChange = (newTimeframe: 'annual' | 'quarterly'): void => {
 }
 
 .toggle-btn {
-  padding: 8px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 8px;
+  color: #9E9E9E;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   white-space: nowrap;
+  position: relative;
+  outline: none;
 }
 
 .toggle-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 89, 76, 0.1);
+  color: #E5E5E5;
+  border-color: rgba(0, 89, 76, 0.3);
 }
 
 .toggle-btn.active {
-  color: #fff;
-  background: rgba(0, 181, 154, 0.2);
-  border: 1px solid rgba(0, 181, 154, 0.5);
-  box-shadow: 0 0 10px rgba(0, 181, 154, 0.15);
+  background: linear-gradient(135deg, rgba(0, 89, 76, 0.2) 0%, rgba(0, 89, 76, 0.15) 100%);
+  border-color: #00594C;
+  color: #00A88E;
+  box-shadow: 0 2px 8px rgba(0, 89, 76, 0.2);
 }
 
-.toggle-btn.active:hover {
-  background: rgba(0, 181, 154, 0.25);
+.toggle-btn:focus-visible {
+  outline: 2px solid #00594C;
+  outline-offset: 2px;
 }
 </style>
