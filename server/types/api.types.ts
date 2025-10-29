@@ -110,6 +110,7 @@ export interface AuthResponse {
   success: boolean
   data?: {
     user: AuthUser
+    token?: string  // JWT token (optional - not included in /me endpoint)
   }
   error?: string
   errors?: Array<{
@@ -288,26 +289,29 @@ export interface ClearCacheResponse {
 
 import type { User } from '@prisma/client'
 
+// Note: user property is provided by Express namespace augmentation in express.d.ts
+// These interfaces just ensure proper typing for route-specific properties
+
 export interface AuthenticatedRequest extends Request {
-  user?: Partial<User> | null
+  // user property inherited from Express.Request augmentation
 }
 
 export interface AuthenticatedTickerDataRequest extends TickerDataRequest {
-  user?: Partial<User> | null
+  // user property inherited from Express.Request augmentation
 }
 
 export interface AuthenticatedWatchlistRequest extends Request {
-  user?: Partial<User> | null
+  // user property inherited from Express.Request augmentation
 }
 
 export interface AuthenticatedAddWatchlistRequest extends Request<AddWatchlistParams> {
-  user?: Partial<User> | null
+  // user property inherited from Express.Request augmentation
 }
 
 export interface AuthenticatedDeleteWatchlistRequest extends Request<DeleteWatchlistParams> {
-  user?: Partial<User> | null
+  // user property inherited from Express.Request augmentation
 }
 
 export interface AuthenticatedReorderWatchlistRequest extends Request<unknown, unknown, ReorderWatchlistBody> {
-  user?: Partial<User> | null
+  // user property inherited from Express.Request augmentation
 }

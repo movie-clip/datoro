@@ -61,7 +61,7 @@ export const asyncHandlerWithTimeout = (
   timeoutMs: number = 30000
 ): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const timeoutPromise = new Promise<never>((__, _reject) => {
+    const timeoutPromise = new Promise<never>((__, reject) => {
       setTimeout(() => {
         reject(new Error(`Request timeout after ${timeoutMs}ms`))
       }, timeoutMs)

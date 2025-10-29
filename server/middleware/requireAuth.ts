@@ -55,7 +55,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
  * and handle everything in one place
  */
 export function enforceAuth(req: Request, res: Response, next: NextFunction): void {
-  if (!isAuthenticated(_req)) {
+  if (!isAuthenticated(req)) {
     res.status(401).json({
       success: false,
       error: 'Authentication required. Please log in.',

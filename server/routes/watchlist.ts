@@ -3,8 +3,10 @@
  * Endpoints for managing user watchlists (add/remove/fetch tickers)
  */
 
+/// <reference path="../types/express.d.ts" />
+
 import express from 'express'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 import type {
   ErrorResponse
 } from '../types/api.types.js'
@@ -13,6 +15,7 @@ import { authenticate } from '../middleware/auth.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
 import { getPrismaClient } from '../services/databaseService.js'
 import { generalLimiter } from '../middleware/rateLimiter.js'
+import { watchlistService } from '../services/watchlistService.js'
 
 const router = express.Router()
 const prisma = getPrismaClient()
@@ -53,10 +56,10 @@ interface ReorderWatchlistResponse {
  * GET /api/watchlist
  * Fetch user's watchlist with ticker details
  */
-router.get('/watchlist', generalLimiter, authenticate(), requireAuth, async (req: AuthenticatedRequest, res: Response<WatchlistResponse | ErrorResponse>) => {
+router.get('/watchlist', generalLimiter, authenticate(), requireAuth, async (req: Request, res: Response<WatchlistResponse | ErrorResponse>) => {
   try {
-    // No need for req.user.id! - TypeScript knows it exists
-    const userId = req.user.id
+    // After requireAuth middleware, user is guaranteed to exist
+    const userId = req.user!.id
 
     // Fetch watchlist items sorted by displayOrder, then by addedAt as fallback
     const watchlistItems = await prisma.watchlistItem.findMany({
@@ -84,10 +87,10 @@ router.get('/watchlist', generalLimiter, authenticate(), requireAuth, async (req
  * Reorder watchlist items (update displayOrder)
  * NOTE: Must come BEFORE parameterized routes to avoid route conflicts
  */
-router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, async (req: ReorderWatchlistRequest, res: Response<ReorderWatchlistResponse | ErrorResponse>) => {
+router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, async (req: Request, res: Response<ReorderWatchlistResponse | ErrorResponse>) => {
   try {
-    const userId = req.user.id // Type-safe, no ! needed
-    const { tickers } = req.body // Array of tickers in new order
+    const userId = req.user!.id // After requireAuth, user is guaranteed
+    const { tickers } = req.body as { tickers: string[] } // Array of tickers in new order
 
     if (!Array.isArray(tickers) || tickers.length === 0) {
       return res.status(400).json({ error: 'Invalid request: tickers must be a non-empty array' })
@@ -129,9 +132,9 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, as
  * POST /api/watchlist/:ticker
  * Add a ticker to user's watchlist
  */
-router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, async (req: AuthenticatedRequest, res: Response<AddWatchlistResponse | ErrorResponse>) => {
+router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, async (req: Request, res: Response<AddWatchlistResponse | ErrorResponse>) => {
   try {
-    const userId = req.user.id // Type-safe
+    const userId = req.user!.id // After requireAuth, user is guaranteed
     const ticker = req.params.ticker.toUpperCase().trim()
 
     // Validate ticker format (basic validation)
@@ -139,11 +142,15 @@ router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, a
       return res.status(400).json({ error: 'Invalid ticker symbol' })
     }
 
+    // Ensure user has a default watchlist
+    const defaultWatchlist = await watchlistService.ensureDefaultWatchlist(userId)
+
     // Create watchlist item (unique constraint will prevent duplicates)
     const watchlistItem = await prisma.watchlistItem.create({
       data: {
         id: randomUUID(),
-        userId,
+        watchlistId: defaultWatchlist.id,
+        userId, // Still included for backward compatibility
         ticker
       }
     })
@@ -168,9 +175,9 @@ router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, a
  * DELETE /api/watchlist/:ticker
  * Remove a ticker from user's watchlist
  */
-router.delete('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, async (req: AuthenticatedRequest, res: Response<DeleteWatchlistResponse | ErrorResponse>) => {
+router.delete('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, async (req: Request, res: Response<DeleteWatchlistResponse | ErrorResponse>) => {
   try {
-    const userId = req.user.id // Type-safe
+    const userId = req.user!.id // After requireAuth, user is guaranteed
     const ticker = req.params.ticker.toUpperCase().trim()
 
     // Delete the watchlist item

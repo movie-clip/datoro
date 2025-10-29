@@ -287,14 +287,14 @@ export function validate(schema: ValidationSchema) {
       next();
     } catch (_error: any) {
       // Joi validation error
-      if (error.isJoi) {
+      if (_error.isJoi) {
         return res.status(400).json({
           error: {
             message: 'Validation failed',
             code: 'E001',
             timestamp: new Date().toISOString(),
             path: req.path,
-            details: error.details.map((detail: any) => ({
+            details: _error.details.map((detail: any) => ({
               field: detail.path.join('.'),
               message: detail.message,
               type: detail.type
@@ -304,7 +304,7 @@ export function validate(schema: ValidationSchema) {
       }
 
       // Other errors
-      next(error);
+      next(_error);
     }
   };
 }

@@ -70,7 +70,7 @@ router.get('/database', asyncHandler(async (req: Request, res: Response) => {
   ` as any[]
   
   const stats = poolStats[0]
-  const health: unknown = {
+  const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     worker_pid: process.pid,
@@ -80,7 +80,8 @@ router.get('/database', asyncHandler(async (req: Request, res: Response) => {
       idle: Number(stats.idle_connections),
       total: Number(stats.total_connections)
     },
-    longest_query_ms: stats.longest_query_ms || 0
+    longest_query_ms: stats.longest_query_ms || 0,
+    warning: undefined as string | undefined
   }
   
   // Add warnings for concerning metrics

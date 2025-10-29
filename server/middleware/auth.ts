@@ -1,19 +1,11 @@
 // server/middleware/auth.ts
 // Authentication middleware - protects routes, verifies JWT tokens
 
+/// <reference path="../types/express.d.ts" />
+
 import { verifySession } from '../services/authService.js'
 import type { Request, Response, NextFunction } from 'express'
 import type { User } from '@prisma/client'
-
-// Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: Partial<User> | null
-      userId?: string
-    }
-  }
-}
 
 /**
  * Middleware to verify JWT token and attach user to request
@@ -74,8 +66,13 @@ export function authenticate(requireAuth = true) {
         }
       }
       
+      // Ensure user has required id property
+      if (!user.id) {
+        throw new Error('User object missing required id property')
+      }
+      
       // Attach user to request
-      req.user = user
+      req.user = user as Partial<User> & { id: string }
       req.userId = user.id
       
       next()

@@ -72,19 +72,24 @@ export const createError = {
   fmpApiError: (message: string, statusCode?: number) => 
     new AppError(message, statusCode || 502, ErrorCodes.FMP_API_ERROR),
   
-  cacheError: (message: string) => 
-    new AppError(message, 500, ErrorCodes.CACHE_ERROR),
-  
   internalError: (message: string) => 
     new AppError(message, 500, ErrorCodes.INTERNAL_ERROR),
 };
+
+/**
+ * Monitoring Service interface for error tracking
+ */
+interface MonitoringService {
+  trackError(error: any, req: Request): void
+  trackRequest(req: Request, res: Response, duration: number): void
+}
 
 /**
  * Global error handler middleware
  * Should be used as the last middleware in the Express app
  * Can accept monitoring service for tracking
  */
-export function errorHandler(monitoringService: unknown = null): ErrorRequestHandler {
+export function errorHandler(monitoringService: MonitoringService | null = null): ErrorRequestHandler {
   return (err: any, req: Request, res: Response, _next: NextFunction) => {
     // Default to 500 if not specified
     const statusCode = err.statusCode || 500;
@@ -126,7 +131,17 @@ export function errorHandler(monitoringService: unknown = null): ErrorRequestHan
     const shouldHideDetails = isProd && !isOperational;
 
     // Build error response with request ID for debugging
-    const errorResponse: unknown = {
+    const errorResponse: {
+      error: {
+        message: string
+        code: string
+        timestamp: string
+        path: string
+        requestId?: string
+        details?: any
+        stack?: string[]
+      }
+    } = {
       error: {
         message: shouldHideDetails ? 'Internal server error' : err.message,
         code,
@@ -176,7 +191,7 @@ export function asyncHandler(fn: (req: Request, res: Response, next: NextFunctio
  * Request logger middleware
  * Can accept monitoring service for tracking
  */
-export function requestLogger(monitoringService: unknown = null) {
+export function requestLogger(monitoringService: MonitoringService | null = null) {
   return (req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     

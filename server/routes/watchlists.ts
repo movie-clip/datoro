@@ -8,6 +8,8 @@
  * - GET    /api/watchlists          - List all user's watchlists
  * - POST   /api/watchlists          - Create new watchlist
  * - PUT    /api/watchlists/:id      - Rename watchlist
+
+/// <reference path="../types/express.d.ts" />
  * - DELETE /api/watchlists/:id      - Delete watchlist
  */
 
@@ -32,9 +34,9 @@ router.get(
   generalLimiter,
   authenticate(),
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id
+      const userId = req.user!.id
       
       // Ensure user has at least a default watchlist
       await watchlistService.ensureDefaultWatchlist(userId)
@@ -55,7 +57,7 @@ router.get(
         }
       })
     } catch (_error: any) {
-      logger.error('[Watchlists] Error fetching watchlists:', error)
+      logger.error('[Watchlists] Error fetching watchlists:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to fetch watchlists'
@@ -81,7 +83,7 @@ router.post(
       .isLength({ min: VALIDATION.WATCHLIST_NAME_MIN, max: VALIDATION.WATCHLIST_NAME_MAX })
       .withMessage(`Watchlist name must be ${VALIDATION.WATCHLIST_NAME_MIN}-${VALIDATION.WATCHLIST_NAME_MAX} characters`)
   ],
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req)
@@ -93,7 +95,7 @@ router.post(
         return
       }
       
-      const userId = req.user.id
+      const userId = req.user!.id
       const { name } = req.body
       
       // Check watchlist limit (max 5 per user)
@@ -128,7 +130,7 @@ router.post(
         }
       })
     } catch (_error: any) {
-      logger.error('[Watchlists] Error creating watchlist:', error)
+      logger.error('[Watchlists] Error creating watchlist:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to create watchlist'
@@ -158,7 +160,7 @@ router.put(
       .isLength({ min: VALIDATION.WATCHLIST_NAME_MIN, max: VALIDATION.WATCHLIST_NAME_MAX })
       .withMessage(`Watchlist name must be ${VALIDATION.WATCHLIST_NAME_MIN}-${VALIDATION.WATCHLIST_NAME_MAX} characters`)
   ],
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req)
@@ -170,7 +172,7 @@ router.put(
         return
       }
       
-      const userId = req.user.id
+      const userId = req.user!.id
       const { id } = req.params
       const { name } = req.body
       
@@ -210,7 +212,7 @@ router.put(
         }
       })
     } catch (_error: any) {
-      logger.error('[Watchlists] Error updating watchlist:', error)
+      logger.error('[Watchlists] Error updating watchlist:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to update watchlist'
@@ -234,7 +236,7 @@ router.delete(
       .notEmpty()
       .withMessage('Watchlist ID is required')
   ],
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req)
@@ -246,7 +248,7 @@ router.delete(
         return
       }
       
-      const userId = req.user.id
+      const userId = req.user!.id
       const { id } = req.params
       
       // Verify ownership
@@ -280,7 +282,7 @@ router.delete(
         }
       })
     } catch (_error: any) {
-      logger.error('[Watchlists] Error deleting watchlist:', error)
+      logger.error('[Watchlists] Error deleting watchlist:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to delete watchlist'

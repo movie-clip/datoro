@@ -188,7 +188,7 @@ class CacheService {
   /**
    * Set in cache (stores in both L1 and L2)
    */
-  async set<T = any>(key: string, value: T, ttlSeconds = REDIS_TTL.DEFAULT): Promise<void> {
+  async set<T = any>(key: string, value: T, ttlSeconds: number = REDIS_TTL.DEFAULT): Promise<void> {
     this.stats.sets++
 
     // Layer 1: Memory cache (store raw data)

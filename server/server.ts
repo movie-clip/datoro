@@ -1,6 +1,8 @@
 // server/server.ts — FMP Proxy Server (ESM, Node 18+)
 // Run: npm run server (or: node server/server.ts)
 
+/// <reference path="./types/express.d.ts" />
+
 import express, { type Express, type Request, type Response, type NextFunction } from 'express'
 import compression from 'compression'
 import cors from 'cors'
@@ -171,16 +173,16 @@ const UA =
 // If multiple clients request the same data simultaneously, only make one API call
 const inFlightRequests = new Map<string, Promise<unknown>>()
 
-async function fetchWithDeduplication(key: string, fetchFn: () => Promise<unknown>): Promise<unknown> {
+async function fetchWithDeduplication<T = any>(key: string, fetchFn: () => Promise<T>): Promise<T> {
   // If request is already in-flight, wait for it
   if (inFlightRequests.has(key)) {
     console.log(`[Dedup] Waiting for in-flight request: ${key}`)
-    return await inFlightRequests.get(key)!
+    return await inFlightRequests.get(key)! as T
   }
   
   // Start new request
   const promise = fetchFn()
-  inFlightRequests.set(key, promise)
+  inFlightRequests.set(key, promise as any)
   
   try {
     const result = await promise
@@ -346,7 +348,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = incomeMatch[1]
         await validateIncomeStatement.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: unknown = {}
+          const query: any = {}
           if (params.has('period')) query.period = params.get('period')
           if (params.has('limit')) query.limit = params.get('limit')
           
@@ -377,7 +379,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = balanceMatch[1]
         await validateBalanceSheet.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: unknown = {}
+          const query: any = {}
           if (params.has('period')) query.period = params.get('period')
           if (params.has('limit')) query.limit = params.get('limit')
           
@@ -407,7 +409,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = cashflowMatch[1]
         await validateCashFlow.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: unknown = {}
+          const query: any = {}
           if (params.has('period')) query.period = params.get('period')
           if (params.has('limit')) query.limit = params.get('limit')
           
@@ -582,10 +584,10 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     console.log(`[FMP] ${req.method} ${subpath} → ${upstream}`)
     
     // Forward all headers except host
-    const headers: unknown = { ...req.headers, host: 'financialmodelingprep.com', 'user-agent': UA }
+    const headers = { ...req.headers as any, host: 'financialmodelingprep.com', 'user-agent': UA }
     delete headers.host
     const method = req.method || 'GET'
-    const options: unknown = { method, headers }
+    const options: any = { method, headers }
     if (method !== 'GET' && method !== 'HEAD') {
       options.body = req.body
     }
@@ -637,7 +639,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     }
     
     // Cache successful responses (only for GET)
-    if (req.method === 'GET' && fmpRes.status === 200 && _data) {
+    if (req.method === 'GET' && fmpRes.status === 200 && data) {
       await cache.set(cacheKey, data, ttl)
       res.setHeader('X-Cache', 'miss')
       
@@ -649,7 +651,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         })
         
         // Update company name if this is a profile request
-        if (path.includes('/profile') && Array.isArray(_data) && data[0]?.companyName) {
+        if (path.includes('/profile') && Array.isArray(data) && data[0]?.companyName) {
           updateTickerCompanyName(ticker, data[0].companyName).catch((err: any) => {
             console.error('[Database] Company name update error:', err.message)
             isDatabaseAvailable = false // Disable if database is down

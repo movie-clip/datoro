@@ -92,7 +92,12 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
   const url = new URL(baseUrl)
   
   // Get pooling configuration
-  const config: unknown = { ...CONNECTION_POOL_CONFIG.poolParams }
+  const config = { ...CONNECTION_POOL_CONFIG.poolParams } as {
+    connection_limit?: number | null
+    pool_timeout?: number
+    connect_timeout?: number
+    statement_cache?: boolean
+  }
   config.connection_limit = provider.connectionsPerWorker
   
   // Build parameter string

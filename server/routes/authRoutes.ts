@@ -1,13 +1,18 @@
 // server/routes/authRoutes.ts
 // Authentication API routes
 
+/// <reference path="../types/express.d.ts" />
+
 import express from 'express'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 import type {
   RegisterRequest,
   LoginRequest,
+  LoginBody,
   GoogleLoginRequest,
+  GoogleLoginBody,
   AuthResponse,
+  AuthUser,
   LogoutResponse
 } from '../types/api.types.js'
 import { body, validationResult } from 'express-validator'
@@ -46,7 +51,11 @@ router.post(
         })
       }
       
-      const { user, token } = await registerUser(req.body, req.ip!, req.headers['user-agent']!)
+      const { user, token } = await registerUser(
+        req.body, 
+        req.ip || null, 
+        req.headers['user-agent'] || null
+      )
       
       // Set HTTP-only cookie
       const isProduction = process.env.NODE_ENV === 'production'
@@ -84,7 +93,7 @@ router.post(
     body('email').isEmail().normalizeEmail(),
     body('password').notEmpty()
   ],
-  async (req: LoginRequest, res: Response<AuthResponse>) => {
+  async (req: Request, res: Response<AuthResponse>) => {
     try {
       // Validate input
       const errors = validationResult(req)
@@ -95,14 +104,15 @@ router.post(
         })
       }
       
-      const { user, token } = await loginUser(req.body, req.ip!, req.headers['user-agent']!)
+      const loginBody = req.body as LoginBody
+      const { user, token } = await loginUser(loginBody, req.ip || null, req.headers['user-agent'] || null)
       
       // Set HTTP-only cookie
       const isProduction = process.env.NODE_ENV === 'production'
-      const cookieOptions: unknown = {
+      const cookieOptions = {
         httpOnly: true,
         secure: isProduction,  // Must be true for SameSite=none
-        sameSite: isProduction ? 'none' : 'lax',  // 'none' allows cross-domain cookies in production
+        sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
         // Don't set domain - let browser use the exact domain the cookie is set from
@@ -114,7 +124,7 @@ router.post(
       console.log('[Auth] Cookie set, sending response')
       res.json({
         success: true,
-        data: { user, token }
+        data: { user: user as AuthUser, token }
       })
       
     } catch (_error: any) {
@@ -137,7 +147,7 @@ router.post(
   [
     body('token').notEmpty().withMessage('Google token required')
   ],
-  async (req: GoogleLoginRequest, res: Response<AuthResponse>) => {
+  async (req: Request, res: Response<AuthResponse>) => {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -147,21 +157,22 @@ router.post(
         })
       }
       
-      const { user, token } = await loginWithGoogle(req.body.token, req.ip!, req.headers['user-agent']!)
+      const googleBody = req.body as GoogleLoginBody
+      const { user, token } = await loginWithGoogle(googleBody.credential, req.ip || null, req.headers['user-agent'] || null)
       
       // Set HTTP-only cookie
       const isProduction = process.env.NODE_ENV === 'production'
       res.cookie('authToken', token, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',  // 'none' allows cross-domain cookies in production
+        sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       })
       
       res.json({
         success: true,
-        data: { user, token }
+        data: { user: user as AuthUser, token }
       })
       
     } catch (_error: any) {

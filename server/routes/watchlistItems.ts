@@ -8,12 +8,14 @@
  * - GET    /api/watchlists/:id/items         - Get all items in a watchlist
  * - POST   /api/watchlists/:id/items/:ticker - Add ticker to watchlist
  * - DELETE /api/watchlists/:id/items/:ticker - Remove ticker from watchlist
+
+/// <reference path="../types/express.d.ts" />
  * - PUT    /api/watchlists/:id/reorder       - Reorder tickers in watchlist
  * 
  * 
  */
 
-import { Router, type Response } from 'express'
+import { Router, type Request, type Response } from 'express'
 import { body, param, validationResult } from 'express-validator'
 import { authenticate } from '../middleware/auth.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
@@ -41,7 +43,7 @@ router.get(
       .notEmpty()
       .withMessage('Watchlist ID is required')
   ],
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req)
@@ -53,7 +55,7 @@ router.get(
         return
       }
       
-      const userId = req.user.id
+      const userId = req.user!.id
       const { id } = req.params
       
       // Verify ownership
@@ -81,7 +83,7 @@ router.get(
         }
       })
     } catch (_error: any) {
-      logger.error('[Watchlist Items] Error fetching items:', error)
+      logger.error('[Watchlist Items] Error fetching items:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to fetch watchlist items'
@@ -112,7 +114,7 @@ router.post(
       .matches(TICKER_REGEX)
       .withMessage('Invalid ticker symbol')
   ],
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req)
@@ -124,7 +126,7 @@ router.post(
         return
       }
       
-      const userId = req.user.id
+      const userId = req.user!.id
       const { id, ticker } = req.params
       
       // Verify ownership
@@ -155,17 +157,17 @@ router.post(
           }
         })
       } catch (_error: any) {
-        if (error.message === 'Ticker already in watchlist') {
+        if (_error.message === 'Ticker already in watchlist') {
           res.status(409).json({
             success: false,
             error: 'Ticker already in watchlist'
           })
           return
         }
-        throw error
+        throw _error
       }
     } catch (_error: any) {
-      logger.error('[Watchlist Items] Error adding item:', error)
+      logger.error('[Watchlist Items] Error adding item:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to add ticker to watchlist'
@@ -194,7 +196,7 @@ router.delete(
       .notEmpty()
       .withMessage('Ticker is required')
   ],
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req)
@@ -206,7 +208,7 @@ router.delete(
         return
       }
       
-      const userId = req.user.id
+      const userId = req.user!.id
       const { id, ticker } = req.params
       
       // Verify ownership
@@ -232,7 +234,7 @@ router.delete(
         }
       })
     } catch (_error: any) {
-      logger.error('[Watchlist Items] Error removing item:', error)
+      logger.error('[Watchlist Items] Error removing item:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to remove ticker from watchlist'
@@ -261,7 +263,7 @@ router.put(
       .notEmpty()
       .withMessage('Tickers array cannot be empty')
   ],
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req)
@@ -273,7 +275,7 @@ router.put(
         return
       }
       
-      const userId = req.user.id
+      const userId = req.user!.id
       const { id } = req.params
       const { tickers } = req.body
       
@@ -309,7 +311,7 @@ router.put(
         }
       })
     } catch (_error: any) {
-      logger.error('[Watchlist Items] Error reordering items:', error)
+      logger.error('[Watchlist Items] Error reordering items:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to reorder watchlist items'
