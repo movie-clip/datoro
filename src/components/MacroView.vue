@@ -19,22 +19,18 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading macro data...</p>
-    </div>
-
-    <div v-else-if="error" class="error-state">
+    <div v-if="error" class="error-state">
       <p>{{ error }}</p>
       <button @click="retry" class="retry-btn">Retry</button>
     </div>
 
-    <div v-else class="macro-grid">
+    <div class="macro-grid">
       <!-- Unemployment Rate -->
       <div class="macro-card">
         <h2>Unemployment Rate</h2>
         <div class="chart-container">
-          <v-chart :option="unemploymentChartOption" autoresize />
+          <SkeletonLoader v-if="loading" variant="chart" height="250px" />
+          <v-chart v-else :option="unemploymentChartOption" autoresize />
         </div>
       </div>
 
@@ -42,7 +38,8 @@
       <div class="macro-card">
         <h2>Retail Sales</h2>
         <div class="chart-container">
-          <v-chart :option="retailSalesChartOption" autoresize />
+          <SkeletonLoader v-if="loading" variant="chart" height="250px" />
+          <v-chart v-else :option="retailSalesChartOption" autoresize />
         </div>
       </div>
 
@@ -50,7 +47,8 @@
       <div class="macro-card">
         <h2>Consumer Sentiment</h2>
         <div class="chart-container">
-          <v-chart :option="consumerSentimentChartOption" autoresize />
+          <SkeletonLoader v-if="loading" variant="chart" height="250px" />
+          <v-chart v-else :option="consumerSentimentChartOption" autoresize />
         </div>
       </div>
 
@@ -58,7 +56,8 @@
       <div class="macro-card">
         <h2>Inflation</h2>
         <div class="chart-container">
-          <v-chart :option="inflationChartOption" autoresize />
+          <SkeletonLoader v-if="loading" variant="chart" height="250px" />
+          <v-chart v-else :option="inflationChartOption" autoresize />
         </div>
       </div>
 
@@ -66,7 +65,8 @@
       <div class="macro-card">
         <h2>Federal Funds Rate</h2>
         <div class="chart-container">
-          <v-chart :option="fedFundsChartOption" autoresize />
+          <SkeletonLoader v-if="loading" variant="chart" height="250px" />
+          <v-chart v-else :option="fedFundsChartOption" autoresize />
         </div>
       </div>
 
@@ -74,7 +74,8 @@
       <div class="macro-card">
         <h2>Market Risk Premium (Global)</h2>
         <div class="chart-container">
-          <v-chart :option="riskPremiumChartOption" autoresize />
+          <SkeletonLoader v-if="loading" variant="chart" height="250px" />
+          <v-chart v-else :option="riskPremiumChartOption" autoresize />
         </div>
       </div>
     </div>
@@ -95,6 +96,7 @@ import {
 import VChart from 'vue-echarts'
 import { fetchAllMacroData, type MacroData } from '../services/macro/macroDataService'
 import { COLORS } from '../config/colors'
+import SkeletonLoader from './common/SkeletonLoader.vue'
 
 use([
   CanvasRenderer,
@@ -552,7 +554,7 @@ const riskPremiumChartOption = computed(() => {
   max-width: 1400px;
   margin: 0 auto;
   background: #0F0F10;
-  min-height: 100%;
+  min-height: 600px;
 }
 
 .macro-header {
@@ -702,6 +704,7 @@ const riskPremiumChartOption = computed(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+  min-height: 500px;
 }
 
 @media (max-width: 1024px) {

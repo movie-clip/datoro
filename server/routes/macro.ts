@@ -115,8 +115,8 @@ router.get('/treasury', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
     return await response.json()
   })
   
-  // Cache for 1 hour
-  await cache.set(cacheKey, data, REDIS_TTL.DEFAULT)
+  // Cache for 7 days (historical treasury data doesn't change)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_HISTORICAL as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -161,8 +161,8 @@ router.get('/economic', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
     return await response.json()
   })
   
-  // Cache for 1 hour
-  await cache.set(cacheKey, data, REDIS_TTL.DEFAULT)
+  // Cache for 7 days (economic indicators update monthly/quarterly)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_LONG as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -208,8 +208,8 @@ router.get('/spx', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Reques
     return (data as any).historical || []
   })
   
-  // Cache for 8 hours (price history)
-  await cache.set(cacheKey, historical, REDIS_TTL.PRICE_HISTORY as any)
+  // Cache for 7 days (historical price data doesn't change)
+  await cache.set(cacheKey, historical, REDIS_TTL.MACRO_HISTORICAL as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(historical)
@@ -300,8 +300,8 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
     return validDataResults
   })
   
-  // Cache for 5 minutes (quote data)
-  await cache.set(cacheKey, validData, REDIS_TTL.QUOTE as any)
+  // Cache for 15 minutes (reasonable delay for macro dashboard)
+  await cache.set(cacheKey, validData, REDIS_TTL.MACRO_QUOTE as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(validData)
@@ -340,8 +340,8 @@ router.get('/sectors', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
     return await response.json()
   })
   
-  // Cache for 5 minutes
-  await cache.set(cacheKey, data, REDIS_TTL.QUOTE as any)
+  // Cache for 15 minutes (reasonable delay for macro dashboard)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -387,8 +387,8 @@ router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (re
     return res.json([])
   }
   
-  // Cache for 7 days (data rarely changes)
-  await cache.set(cacheKey, data, REDIS_TTL.FINANCIAL_STATEMENTS as any)
+  // Cache for 1 hour (derived from treasury data)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_CALCULATED as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -549,8 +549,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   const duration = Date.now() - startTime
   console.log(`[Macro] Batch → Fetched all data in ${duration}ms`)
   
-  // Cache for 5 minutes (real-time data)
-  await cache.set(cacheKey, data, REDIS_TTL.QUOTE as any)
+  // Cache for 15 minutes (balanced between freshness and performance)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)

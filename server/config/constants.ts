@@ -72,6 +72,22 @@ export const REDIS_TTL = {
   
   /** AI analysis: 30 days (expensive to regenerate) */
   AI_ANALYSIS: 30 * 24 * 60 * 60,
+  
+  // ============================================
+  // MACRO DATA (Global - same for all users)
+  // ============================================
+  
+  /** Macro economic indicators (GDP, CPI, unemployment): 7 days (updates monthly/quarterly) */
+  MACRO_LONG: 7 * 24 * 60 * 60,
+  
+  /** Macro historical data (treasury rates, indices): 7 days (historical data doesn't change) */
+  MACRO_HISTORICAL: 7 * 24 * 60 * 60,
+  
+  /** Macro current quotes (index prices): 15 minutes (reasonable delay for macro view) */
+  MACRO_QUOTE: 15 * 60,
+  
+  /** Macro calculated data (risk premiums): 1 hour (derived from treasury rates) */
+  MACRO_CALCULATED: 60 * 60,
 } as const
 
 // ============================================

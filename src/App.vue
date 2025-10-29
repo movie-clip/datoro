@@ -964,6 +964,7 @@ const handleSelectTicker = (ticker: string): void => {
   border: 1px solid #2A2A2E;
   max-width: 1400px;
   width: 100%;
+  min-height: 600px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
