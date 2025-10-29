@@ -412,19 +412,13 @@ const fedFundsChartOption = computed(() => {
 const riskPremiumChartOption = computed(() => {
   if (!macroData.value?.riskPremium || macroData.value.riskPremium.length === 0) return {}
   
-  // Select key countries: USA, China, and top 10 European countries by risk
-  // Optimized to reduce re-computation
+  // Select only USA, Germany, and China
   const usa = macroData.value.riskPremium.find(c => c.country === 'United States')
+  const germany = macroData.value.riskPremium.find(c => c.country === 'Germany')
   const china = macroData.value.riskPremium.find(c => c.country === 'China')
   
-  // Pre-filter and sort EU countries efficiently
-  const topEU = macroData.value.riskPremium
-    .filter(c => c.continent === 'Europe')
-    .sort((a, b) => b.totalEquityRiskPremium - a.totalEquityRiskPremium)
-    .slice(0, 10)
-  
   // Combine and filter out null/undefined values
-  const countries = [usa, china, ...topEU].filter((c): c is NonNullable<typeof usa> => c != null)
+  const countries = [usa, germany, china].filter((c): c is NonNullable<typeof usa> => c != null)
   
   // Early return if no valid data
   if (countries.length === 0) return {}
@@ -537,14 +531,14 @@ const riskPremiumChartOption = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 12px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 32px;
 }
 
 .header-content h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #fff;
   display: flex;
@@ -562,6 +556,7 @@ const riskPremiumChartOption = computed(() => {
   display: flex;
   gap: 12px;
   flex-shrink: 0;
+  margin-right: 50px; /* Leave space for close button */
 }
 
 .index-card {
