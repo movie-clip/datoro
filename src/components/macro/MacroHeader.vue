@@ -33,7 +33,7 @@ defineProps({
 
 <style scoped>
 .macro-header {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   padding-bottom: 0px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

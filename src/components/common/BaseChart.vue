@@ -1,5 +1,15 @@
 <template>
   <div class="chart-wrapper">
+    <!-- Expand button - always visible on chart card (like macro charts) -->
+    <button
+      v-if="!isModal && !loading && !forceExpanded"
+      class="expand-hint"
+      title="Click to expand"
+      @click="handleClick"
+    >
+      ⛶
+    </button>
+    
     <!-- Force Expanded Mode: Show modal content directly without compact view -->
     <template v-if="forceExpanded">
       <h2 class="modal-title">
@@ -79,14 +89,6 @@
         <div class="loading-spinner">
           Updating...
         </div>
-      </div>
-      <div
-        v-if="!isModal && !loading"
-        class="expand-hint"
-        title="Click to expand"
-        @click="handleClick"
-      >
-        ⛶
       </div>
       
       <!-- Error and message display (compact mode) -->
@@ -544,26 +546,16 @@ const modalOption = computed(() => {
 </script>
 
 <style scoped>
+/* ============================================
+   CHART WRAPPER CONTAINER
+   ============================================ */
 .chart-wrapper {
   position: relative;
 }
 
-.echart {
-  width: 100%; 
-  height: 340px;
-  display: block; 
-  margin: 0;
-}
-
-.echart.clickable {
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.echart.clickable:hover {
-  opacity: 0.85;
-}
-
+/* ============================================
+   EXPAND BUTTON (Top-right corner, part of card)
+   ============================================ */
 .expand-hint {
   position: absolute;
   top: 8px;
@@ -594,12 +586,106 @@ const modalOption = computed(() => {
   box-shadow: 0 0 12px rgba(0, 89, 76, 0.4);
 }
 
+/* ============================================
+   CHART ELEMENTS
+   ============================================ */
+.echart {
+  width: 100%; 
+  height: 340px;
+  display: block; 
+  margin: 0;
+}
+
+.echart.clickable {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.echart.clickable:hover {
+  opacity: 0.85;
+}
+
 .echart-modal {
   width: 100%;
   height: 70vh;
   min-height: 500px;
 }
 
+/* ============================================
+   LOADING STATES
+   ============================================ */
+.loading-chart {
+  opacity: 0.5;
+}
+
+.chart-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 15, 16, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.loading-spinner {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 6px;
+  color: #E5E5E5;
+  font-size: 14px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+}
+
+/* ============================================
+   EMPTY DATA STATE
+   ============================================ */
+.empty-chart {
+  opacity: 0.3;
+  filter: blur(2px);
+}
+
+.empty-data-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 15, 16, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.empty-data-panel {
+  padding: 20px 28px;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
+  border-radius: 8px;
+  color: #E5E5E5;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
+}
+
+.empty-message {
+  font-size: 13px;
+  color: #B8B8B8;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================
+   MODAL ELEMENTS
+   ============================================ */
 .modal-title {
   text-align: center;
   color: #E5E5E5;
@@ -609,6 +695,9 @@ const modalOption = computed(() => {
   padding: 0;
 }
 
+/* ============================================
+   VIEW MODE TOGGLE BUTTONS
+   ============================================ */
 .view-mode-buttons {
   display: flex;
   gap: 6px;
@@ -643,81 +732,27 @@ const modalOption = computed(() => {
   font-weight: 500;
 }
 
-.chart-loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 15, 16, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-  pointer-events: none;
+/* ============================================
+   ERROR & MESSAGE DISPLAY
+   ============================================ */
+.msg { 
+  margin: 6px 0 0; 
+  opacity: 0.85; 
 }
 
-.loading-spinner {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
-  border: 1px solid #2A2A2E;
-  border-radius: 6px;
-  color: #E5E5E5;
-  font-size: 14px;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+.msg.error { 
+  color: #ff6b6b !important; 
+  font-weight: bold; 
 }
 
-.loading-chart {
-  opacity: 0.5;
-}
-
-.empty-chart {
-  opacity: 0.3;
-  filter: blur(2px);
-}
-
-/* Empty data overlay (matches loading overlay style) */
-.empty-data-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 15, 16, 0.85);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-  pointer-events: none;
-}
-
-.empty-data-panel {
-  padding: 20px 28px;
-  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
-  border: 1px solid #2A2A2E;
-  border-radius: 8px;
-  color: #E5E5E5;
-  text-align: center;
-  max-width: 400px;
-  box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
-}
-
-.empty-message {
-  font-size: 13px;
-  color: #B8B8B8;
-  line-height: 1.6;
-  margin: 0;
-}
-
-/* Mobile responsive styles */
+/* ============================================
+   MOBILE RESPONSIVE (MAX-WIDTH: 768PX)
+   ============================================ */
 @media (max-width: 768px) {
-  /* Make charts more square-shaped on mobile (2-column layout ~175px wide each) */
   .echart {
-    height: 230px;
+    height: 230px; /* More square-shaped on mobile (2-column layout ~175px wide each) */
   }
 
-  /* Smaller expand hint on mobile */
   .expand-hint {
     width: 20px;
     height: 20px;
@@ -726,7 +761,6 @@ const modalOption = computed(() => {
     right: 4px;
   }
 
-  /* Modal - smaller on mobile, not full screen */
   .echart-modal {
     height: 55vh;
     min-height: 300px;
@@ -738,27 +772,21 @@ const modalOption = computed(() => {
     margin: 0 0 1px 0;
   }
 
-  /* Stack view mode buttons on very small screens */
-  /* .view-mode-buttons {
-    flex-wrap: wrap;
-    gap: 6px;
-  } */
-
   .view-mode-btn {
     padding: 6px 12px;
     font-size: 13px;
   }
 }
 
-/* iPhone 13 / iPhone 14 (390px width) specific styles */
+/* ============================================
+   IPHONE 13/14 SPECIFIC (390PX WIDTH)
+   ============================================ */
 @media (max-width: 414px) and (min-width: 375px) {
-  /* Slightly smaller modal for iPhone 13 */
   .echart-modal {
     height: 50vh;
     max-height: 450px;
   }
   
-  /* Growth labels closer to chart */
   .growth-labels {
     margin-top: 8px !important;
     gap: 6px;
@@ -770,7 +798,9 @@ const modalOption = computed(() => {
   }
 }
 
-/* Very small phones */
+/* ============================================
+   VERY SMALL PHONES (MAX-WIDTH: 400PX)
+   ============================================ */
 @media (max-width: 400px) {
   .echart {
     height: 230px; /* More square on smaller screens */
@@ -786,7 +816,9 @@ const modalOption = computed(() => {
   }
 }
 
-/* Landscape orientation - more square for 3-column layout */
+/* ============================================
+   LANDSCAPE ORIENTATION
+   ============================================ */
 @media (max-width: 768px) and (orientation: landscape) {
   .echart {
     height: 240px; /* Square-ish for 3 columns (~260px wide each on 844px screen) */
@@ -795,17 +827,6 @@ const modalOption = computed(() => {
   .modal-title {
     font-size: 16px;
   }
-}
-
-/* Error and message styles */
-.msg { 
-  margin: 6px 0 0; 
-  opacity: 0.85; 
-}
-
-.msg.error { 
-  color: #ff6b6b !important; 
-  font-weight: bold; 
 }
 </style>
 

@@ -24,13 +24,23 @@
     
     <!-- Chart Container -->
     <div class="chart-container">
-      <SkeletonLoader v-if="loading" variant="chart" height="250px" />
+      <SkeletonLoader v-if="loading && !hasChartData" variant="chart" height="250px" />
       <v-chart 
-        v-else
+        v-else-if="hasChartData"
         :ref="(el: any) => chart.chartRef.value = el"
-        :option="chartOption" 
+        :option="chartOption"
+        :class="{ 'loading-chart': loading }"
         autoresize
       />
+      <!-- Loading overlay (when updating existing data) -->
+      <div
+        v-if="loading && hasChartData"
+        class="chart-loading-overlay"
+      >
+        <div class="loading-spinner">
+          Updating...
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -60,6 +70,15 @@ const props = defineProps({
     default: false
   }
 })
+
+/**
+ * Check if chart has data to display
+ */
+const hasChartData = computed(() => {
+  const series = props.chartOption?.series
+  if (!series || !Array.isArray(series)) return false
+  return series.some((s: any) => s.data && Array.isArray(s.data) && s.data.length > 0)
+})
 </script>
 
 <style scoped>
@@ -67,9 +86,10 @@ const props = defineProps({
    CHART CARD CONTAINER
    ============================================ */
 .macro-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
   border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   padding: 20px;
   position: relative;
   transition: all 0.3s ease;
@@ -78,8 +98,9 @@ const props = defineProps({
 }
 
 .macro-card:hover {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: #00594C;
+  box-shadow: 0 4px 20px rgba(0, 89, 76, 0.3);
+  transform: translateY(-2px);
 }
 
 .macro-card h2 {
@@ -106,6 +127,48 @@ const props = defineProps({
 
 .chart-container :deep(.echarts-container) {
   pointer-events: auto;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+.loading-chart {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.chart-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.loading-spinner {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px 24px;
+  color: #999;
+  font-size: 14px;
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* ============================================
