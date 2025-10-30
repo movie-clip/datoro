@@ -210,6 +210,7 @@ import WatchlistDropdown from './WatchlistDropdown.vue'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 import BRAND from '../../config/brand'
+import { trackDcfCalculatorOpen } from '../../services/analytics/gaService'
 
 // Helper to get full icon URL for production compatibility
 const getIconUrl = (ticker) => {
@@ -272,6 +273,9 @@ function showWatchlist() {
 function showDcfCalculator() {
   isDcfModalOpen.value = true
   emit('close') // Close the main menu
+  
+  // Track DCF Calculator opening
+  trackDcfCalculatorOpen()
 }
 
 function showDeepFinder() {

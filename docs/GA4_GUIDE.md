@@ -16,6 +16,9 @@
 | `view_ticker_data` | Ticker data loads | ticker_symbol, load_time_ms |
 | `add_to_watchlist` | Add to watchlist | ticker_symbol, is_authenticated |
 | `remove_from_watchlist` | Remove from watchlist | ticker_symbol |
+| `open_deep_finder` | Opens Deep Finder tool | ticker_symbol (optional) |
+| `open_dcf_calculator` | Opens DCF Calculator tool | ticker_symbol (optional) |
+| `open_macro_dashboard` | Opens Macro Dashboard tool | - |
 | `sign_up` | User registration | method (email/google) |
 | `login` | User login | method (email/google) |
 | `verify_email` | Email verified | - |
@@ -52,13 +55,16 @@ window.dataLayer  // Should show array of events
    - ✅ `sign_up` (Primary conversion)
    - ✅ `verify_email` (Registration completion)
    - ✅ `add_to_watchlist` (Engagement signal)
+   - ✅ `open_dcf_calculator` (Tool usage - high intent)
+   - ✅ `open_deep_finder` (Tool usage - high intent)
 3. These conversions will be imported into Google Ads for campaign optimization
 
 ### 2. Create Retargeting Audiences
 1. Go to GA4 Admin → Audiences → New Audience
 2. Create:
    - **Active Users**: Users who triggered `search_ticker` in last 30 days
-   - **High Intent**: Users who added to watchlist but didn't sign up
+   - **High Intent - Tools**: Users who opened DCF Calculator or Deep Finder
+   - **High Intent - Watchlist**: Users who added to watchlist but didn't sign up
    - **Registered Users**: Users who triggered `sign_up`
 3. Link audiences to Google Ads account for retargeting campaigns
 

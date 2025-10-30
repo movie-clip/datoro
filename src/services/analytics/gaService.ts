@@ -153,6 +153,33 @@ export const trackAIInsight = (ticker: string, insightType: string): void => {
 };
 
 /**
+ * Track Deep Finder tool usage
+ * @param ticker - Current ticker (if any) when Deep Finder opened
+ */
+export const trackDeepFinderOpen = (ticker?: string): void => {
+  trackEvent('open_deep_finder', {
+    ticker_symbol: ticker?.toUpperCase(),
+  });
+};
+
+/**
+ * Track DCF Calculator tool usage
+ * @param ticker - Current ticker (if any) when DCF Calculator opened
+ */
+export const trackDcfCalculatorOpen = (ticker?: string): void => {
+  trackEvent('open_dcf_calculator', {
+    ticker_symbol: ticker?.toUpperCase(),
+  });
+};
+
+/**
+ * Track Macro Dashboard tool usage
+ */
+export const trackMacroOpen = (): void => {
+  trackEvent('open_macro_dashboard');
+};
+
+/**
  * Track errors for debugging
  * @param errorType - Type of error (e.g., 'api_error', 'chart_render_error')
  * @param errorMessage - Error message or code
