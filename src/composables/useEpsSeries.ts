@@ -25,6 +25,8 @@ export function useEpsSeries(): UseEpsSeriesReturn {
 
   const error = computed<string | null>(() => {
     if (batchError.value) return batchError.value
+    // Don't show error during initial loading
+    if (loading.value) return null
     const t = (currentTicker.value || '').toUpperCase()
     if (t && series.value.length === 0) {
       return `No EPS data for '${t}'`

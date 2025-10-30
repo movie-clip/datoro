@@ -48,6 +48,8 @@ export function useCashDebtSeries(): UseCashDebtSeriesReturn {
 
   const error = computed<string | null>(() => {
     if (batchError.value) return batchError.value
+    // Don't show error during initial loading
+    if (loading.value) return null
     const t = (currentTicker.value || '').toUpperCase()
     if (t && rawData.value.length === 0) {
       return `No cash/debt data for '${t}'`

@@ -57,6 +57,8 @@ export function useExpensesSeries(): UseExpensesSeriesReturn {
 
   const error = computed<string | null>(() => {
     if (batchError.value) return batchError.value
+    // Don't show error during initial loading
+    if (loading.value) return null
     const t = (currentTicker.value || '').toUpperCase()
     if (t && rawData.value.length === 0) {
       return `No expense data for '${t}'`

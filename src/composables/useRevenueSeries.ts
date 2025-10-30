@@ -56,6 +56,8 @@ export function useRevenueSeries(): UseRevenueSeriesReturn {
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
+    // Don't show error during initial loading
+    if (loading.value) return null
     const t = currentTicker.value
     if (t && totalRevenue.value.length === 0) {
       return `No revenue data for '${t}'`
