@@ -5,6 +5,7 @@ import { useAuthStore } from './stores/authStore'
 import { useWatchlists } from './composables/useWatchlists'
 import { STORAGE_KEYS } from './config/storage'
 import BRAND from './config/brand'
+import { trackTabView } from './services/analytics/gaService'
 
 // Temporary type for auth user until authStore is fully typed
 interface AuthUser {
@@ -179,9 +180,12 @@ const tabs: Tab[] = [
   { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null }
 ]
 
-// Save tab preference
+// Save tab preference and track tab views
 watch(activeTab, (newTab) => {
   localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, newTab)
+  
+  // Track tab view in GA4
+  trackTabView(newTab)
 })
 
 // Watch ticker changes and update store

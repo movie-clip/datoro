@@ -14,10 +14,11 @@
 |-------|---------|------------|
 | `search_ticker` | User searches/selects ticker | ticker_symbol, search_method |
 | `view_ticker_data` | Ticker data loads | ticker_symbol, load_time_ms |
+| `view_tab` | User switches tabs | tab_name |
 | `add_to_watchlist` | Add to watchlist | ticker_symbol, is_authenticated |
 | `remove_from_watchlist` | Remove from watchlist | ticker_symbol |
-| `open_deep_finder` | Opens Deep Finder tool | ticker_symbol (optional) |
-| `open_dcf_calculator` | Opens DCF Calculator tool | ticker_symbol (optional) |
+| `open_deep_finder` | Opens Deep Finder tool | - |
+| `open_dcf_calculator` | Opens DCF Calculator tool | - |
 | `open_macro_dashboard` | Opens Macro Dashboard tool | - |
 | `sign_up` | User registration | method (email/google) |
 | `login` | User login | method (email/google) |
@@ -63,6 +64,7 @@ window.dataLayer  // Should show array of events
 1. Go to GA4 Admin → Audiences → New Audience
 2. Create:
    - **Active Users**: Users who triggered `search_ticker` in last 30 days
+   - **Tab Engagement**: Users who viewed multiple tabs (view_tab count > 3)
    - **High Intent - Tools**: Users who opened DCF Calculator or Deep Finder
    - **High Intent - Watchlist**: Users who added to watchlist but didn't sign up
    - **Registered Users**: Users who triggered `sign_up`

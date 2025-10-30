@@ -180,6 +180,16 @@ export const trackMacroOpen = (): void => {
 };
 
 /**
+ * Track tab navigation
+ * @param tabName - Name of the tab (e.g., 'valuation', 'performance', 'profitability', 'balance', 'insights')
+ */
+export const trackTabView = (tabName: string): void => {
+  trackEvent('view_tab', {
+    tab_name: tabName,
+  });
+};
+
+/**
  * Track errors for debugging
  * @param errorType - Type of error (e.g., 'api_error', 'chart_render_error')
  * @param errorMessage - Error message or code
