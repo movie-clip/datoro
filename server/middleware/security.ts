@@ -41,12 +41,12 @@ export function securityHeaders() {
         // Allow images from anywhere (chart.js, external logos, data URIs)
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         
-        // Allow connections to FMP API, Google Analytics, and local backend
+        // Allow connections to FMP API, Google Analytics (all regions), and local backend
         connectSrc: [
           "'self'",
           "https://financialmodelingprep.com",
-          "https://www.google-analytics.com",
-          "https://analytics.google.com",
+          "https://*.google-analytics.com",
+          "https://*.analytics.google.com",
           "http://localhost:*",
           "ws://localhost:*"  // WebSocket for HMR in development
         ],
