@@ -5,7 +5,6 @@ import { useAuthStore } from './stores/authStore'
 import { useWatchlists } from './composables/useWatchlists'
 import { STORAGE_KEYS } from './config/storage'
 import BRAND from './config/brand'
-import { trackDeepFinderOpen, trackDcfCalculatorOpen, trackMacroOpen } from './services/analytics/gaService'
 
 // Temporary type for auth user until authStore is fully typed
 interface AuthUser {
@@ -249,20 +248,10 @@ const toggleMainMenu = (): void => {
 
 const toggleDeepFinder = (): void => {
   showDeepFinder.value = !showDeepFinder.value
-  
-  // Track when Deep Finder is opened
-  if (showDeepFinder.value) {
-    trackDeepFinderOpen(tickerStore.currentTicker || undefined)
-  }
 }
 
 const toggleMacro = (): void => {
   showMacro.value = !showMacro.value
-  
-  // Track when Macro Dashboard is opened
-  if (showMacro.value) {
-    trackMacroOpen()
-  }
 }
 
 const toggleFeedback = (): void => {
