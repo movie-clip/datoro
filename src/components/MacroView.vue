@@ -1,25 +1,30 @@
 <template>
   <div class="macro-dashboard">
-    <!-- Header with Index Cards -->
-    <MacroHeader :index-data="indexData" />
-
-    <!-- Error State -->
-    <div v-if="error" class="error-state">
-      <p>{{ error }}</p>
-      <button @click="retry" class="retry-btn">Retry</button>
+    <!-- Fixed Header -->
+    <div class="macro-header-wrapper">
+      <MacroHeader :index-data="indexData" />
     </div>
 
-    <!-- Charts Grid -->
-    <div class="macro-grid">
-      <!-- Dynamic Charts (with sync) -->
-      <MacroChart
-        v-for="(config, index) in chartConfigs"
-        :key="config.id"
-        :title="config.title"
-        :chart="charts[index]!"
-        :chart-option="getChartOption(config).value"
-        :loading="loading"
-      />
+    <!-- Scrollable Body -->
+    <div class="macro-body">
+      <!-- Error State -->
+      <div v-if="error" class="error-state">
+        <p>{{ error }}</p>
+        <button @click="retry" class="retry-btn">Retry</button>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="macro-grid">
+        <!-- Dynamic Charts (with sync) -->
+        <MacroChart
+          v-for="(config, index) in chartConfigs"
+          :key="config.id"
+          :title="config.title"
+          :chart="charts[index]!"
+          :chart-option="getChartOption(config).value"
+          :loading="loading"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -228,12 +233,52 @@ onMounted(async () => {
 
 <style scoped>
 /* ============================================
-   MAIN CONTAINER
+   MAIN CONTAINER (fills modal-container)
    ============================================ */
 .macro-dashboard {
-  padding: 0 12px;
-  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ============================================
+   FIXED HEADER
+   ============================================ */
+.macro-header-wrapper {
+  flex-shrink: 0;
+  border-bottom: 1px solid #2A2A2E;
+  background: #1a1a1a;
+}
+
+/* ============================================
+   SCROLLABLE BODY
+   ============================================ */
+.macro-body {
+  flex: 1;
+  overflow-y: auto;
   overflow-x: hidden;
+  padding: 24px;
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 20px;
+}
+
+.macro-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.macro-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.macro-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 89, 76, 0.3);
+  border-radius: 4px;
+}
+
+.macro-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 89, 76, 0.5);
 }
 
 /* ============================================
@@ -246,6 +291,7 @@ onMounted(async () => {
   padding: 20px;
   text-align: center;
   margin-bottom: 20px;
+  scroll-snap-align: start;
 }
 
 .error-state p {
@@ -277,54 +323,18 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
-  min-height: 900px;
-  overflow: hidden;
   max-width: 100%;
 }
 
-/* ============================================
-   CHART CARDS
-   ============================================ */
-.macro-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 20px;
-  position: relative;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  min-width: 0;
+/* Each row of charts will snap into view */
+.macro-grid > * {
+  scroll-snap-align: start;
 }
 
-.macro-card:hover {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.macro-card h2 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 15px 0;
-  color: #FFF;
-}
-
-/* ============================================
-   CHART CONTAINER
-   ============================================ */
-.chart-container {
-  height: 280px;
-  position: relative;
-  pointer-events: none;
-  overflow: hidden;
-  max-width: 100%;
-}
-
-.chart-container :deep(canvas) {
-  pointer-events: auto;
-}
-
-.chart-container :deep(.echarts-container) {
-  pointer-events: auto;
+/* First two charts (first row) */
+.macro-grid > *:nth-child(1),
+.macro-grid > *:nth-child(2) {
+  scroll-snap-align: start;
 }
 
 /* ============================================
@@ -333,6 +343,14 @@ onMounted(async () => {
 @media (max-width: 1024px) {
   .macro-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .macro-header-wrapper {
+    padding: 15px 15px 0 15px;
+  }
+  
+  .macro-body {
+    padding: 15px;
   }
 }
 </style>

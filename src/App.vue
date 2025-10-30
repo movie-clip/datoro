@@ -957,30 +957,13 @@ const handleSelectTicker = (ticker: string): void => {
   max-width: 1200px;
   width: 95%;
   min-height: 600px;
-  max-height: 93vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  max-height: 92vh;
+  overflow: hidden;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  padding: 20px;
-}
-
-.modal-container.macro-modal::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-container.macro-modal::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-}
-
-.modal-container.macro-modal::-webkit-scrollbar-thumb {
-  background: rgba(0, 89, 76, 0.3);
-  border-radius: 4px;
-}
-
-.modal-container.macro-modal::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 89, 76, 0.5);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-container.feedback-modal {

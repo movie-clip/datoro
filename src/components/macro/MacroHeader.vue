@@ -33,16 +33,16 @@ defineProps({
 
 <style scoped>
 .macro-header {
-  margin-bottom: 10px;
+  margin-bottom: 0px;
   padding-bottom: 0px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px 35px;
 }
 
 .header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 0px;
   flex-wrap: wrap;
 }
 
@@ -57,7 +57,6 @@ defineProps({
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
-  padding: 12px 0px;
 }
 
 .index-card {
