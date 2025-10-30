@@ -194,7 +194,10 @@ watch(() => inputTicker.value, (newTicker) => {
 const applyTicker = (): void => {
   const t = (inputTicker.value || '').trim().toUpperCase()
   if (t) {
-    tickerStore.setTicker(t)
+    // Don't call setTicker here - the watcher already handles it
+    // This prevents duplicate GA4 search_ticker events
+    // tickerStore.setTicker(t)
+    
     // Reset company name when ticker changes - it will be updated by CompanyHeader
     companyName.value = ''
   }
@@ -280,11 +283,12 @@ const handleSelectTicker = (ticker: string): void => {
   // Save current scroll position before updating ticker
   const scrollY = window.scrollY
   
-  // Update the input field
+  // Update the input field (the watcher will handle calling setTicker)
   inputTicker.value = ticker
   
-  // Update the store (this will trigger data fetch)
-  tickerStore.setTicker(ticker)
+  // Don't call setTicker here - the watcher already handles it
+  // This prevents duplicate GA4 search_ticker events
+  // tickerStore.setTicker(ticker)
   
   // Restore scroll position after Vue updates the DOM
   // Use nextTick to ensure DOM has updated

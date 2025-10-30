@@ -15,6 +15,13 @@ declare global {
 }
 
 /**
+ * Check if GA4 is initialized and ready
+ */
+export const isGA4Ready = (): boolean => {
+  return typeof window !== 'undefined' && typeof window.gtag === 'function';
+};
+
+/**
  * Generic event tracking function
  * @param eventName - GA4 event name (e.g., 'search_ticker', 'sign_up')
  * @param params - Event parameters (custom dimensions/metrics)
@@ -27,6 +34,9 @@ export const trackEvent = (eventName: string, params?: Record<string, any>): voi
     if (import.meta.env.DEV) {
       console.log('[GA4 Event]', eventName, params);
     }
+  } else if (import.meta.env.DEV) {
+    // Log warning in development if gtag is not available
+    console.warn('[GA4] gtag not available, event not tracked:', eventName, params);
   }
 };
 

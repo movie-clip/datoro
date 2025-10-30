@@ -67,10 +67,11 @@
         send_page_view: true
       });
       
-      // Default consent to denied (will be updated by cookie consent banner)
-      gtag('consent', 'default', {
-        analytics_storage: 'denied',
-        ad_storage: 'denied'
+      // For development: Grant consent automatically
+      // In production, this will be controlled by cookie consent banner (Task #7)
+      gtag('consent', 'update', {
+        analytics_storage: 'granted',
+        ad_storage: 'granted'
       });
     </script>
     
