@@ -25,7 +25,15 @@ export function securityHeaders() {
         // Vue requires 'unsafe-eval' for template compilation
         // 'unsafe-inline' needed for inline styles/scripts
         // 'data:' needed for Vite's base64-encoded module preloads
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "data:"],
+        // Google Analytics requires googletagmanager.com
+        scriptSrc: [
+          "'self'", 
+          "'unsafe-inline'", 
+          "'unsafe-eval'", 
+          "data:",
+          "https://www.googletagmanager.com",
+          "https://www.google-analytics.com"
+        ],
         
         // Allow inline styles (common in Vue components)
         styleSrc: ["'self'", "'unsafe-inline'"],
@@ -33,10 +41,12 @@ export function securityHeaders() {
         // Allow images from anywhere (chart.js, external logos, data URIs)
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         
-        // Allow connections to FMP API and local backend
+        // Allow connections to FMP API, Google Analytics, and local backend
         connectSrc: [
           "'self'",
           "https://financialmodelingprep.com",
+          "https://www.google-analytics.com",
+          "https://analytics.google.com",
           "http://localhost:*",
           "ws://localhost:*"  // WebSocket for HMR in development
         ],
