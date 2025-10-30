@@ -17,6 +17,7 @@ import type {
   FMPDividend
 } from '../types'
 import { STORAGE_KEYS } from '../config/storage'
+import { trackSearch, trackTickerView } from '../services/analytics/gaService'
 
 // Re-export types for components
 export type { BatchData, FMPProfile, FMPQuote, FMPIncomeStatement, FMPBalanceSheet, FMPCashFlow, FMPInsiderTrading, FMPHistoricalPrice, FMPDividend }
@@ -277,6 +278,10 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     if (!t) return
     
     currentTicker.value = t
+    
+    // Track ticker search in GA4
+    trackSearch(t, 'direct')
+    
     await fetchTickerData(t, mode)
   }
   
@@ -332,6 +337,9 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
       fetchTime.value = Math.round(performance.now() - startTime)
       
       batchData.value = result
+      
+      // Track successful ticker data load in GA4
+      trackTickerView(t, fetchTime.value)
       
       // Store in cache with ETag and version for future 304 responses
       const etag = response.headers.get('etag')

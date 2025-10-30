@@ -10,7 +10,7 @@ export const BRAND = {
   name: 'Datoro',
   
   /** Brand tagline */
-  tagline: 'Free Stock Analysis with AI Insights',
+  tagline: 'Comprehensive Stock Analysis with AI Insights',
   
   /** Domains */
   domain: {
@@ -20,10 +20,10 @@ export const BRAND = {
   
   /** SEO metadata */
   seo: {
-    title: 'Datoro - Free Stock Analysis with AI Insights | 10,000+ Stocks',
-    titleShort: 'Datoro - Free Stock Analysis with AI Insights',
-    description: 'Professional stock analysis dashboard with real-time financial data, AI-powered insights, interactive charts, and comprehensive metrics. Completely free. No signup required. Analyze revenue, P/E ratios, cash flow, and more for any stock.',
-    keywords: 'stock analysis, financial data, stock charts, P/E ratio, revenue analysis, AI stock insights, free stock data, stock dashboard, financial metrics, stock screener, investment analysis',
+    title: 'Datoro - Comprehensive Stock Analysis with AI Insights',
+    titleShort: 'Datoro - Comprehensive Stock Analysis with AI Insights',
+    description: 'Professional stock analysis dashboard with real-time financial data, AI-powered insights, interactive charts, and comprehensive metrics. No signup required. Analyze revenue, P/E ratios, cash flow, and more for any stock. Macro analysis.',
+    keywords: 'stock analysis, financial data, stock charts, P/E ratio, revenue analysis, AI stock insights, free stock data, stock dashboard, financial metrics, stock screener, investment analysis, macro analysis',
     author: 'Datoro',
   },
   
@@ -50,7 +50,7 @@ export const BRAND = {
   
   /** PWA metadata */
   pwa: {
-    name: 'Datoro - Free Stock Analysis with AI Insights',
+    name: 'Datoro - Comprehensive Stock Analysis with AI Insights',
     shortName: 'Datoro',
     themeColor: '#1a1a1d',
     backgroundColor: '#0a0a0a',

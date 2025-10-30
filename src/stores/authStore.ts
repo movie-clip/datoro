@@ -5,6 +5,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Ref, ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
+import { trackSignup, trackLogin, setUserId } from '../services/analytics/gaService'
 
 interface User {
   id: string
@@ -160,6 +161,10 @@ export const useAuthStore = defineStore('auth', () => {
       // SECURITY: Token is ONLY in HttpOnly cookie (server-side)
       // JavaScript never touches the token - XSS protection!
       
+      // Track successful signup in GA4
+      trackSignup('email')
+      setUserId(user.value?.id || null)
+      
       console.log('[Auth] ✓ Registration successful:', user.value?.email)
       return { success: true }
       
@@ -232,6 +237,10 @@ export const useAuthStore = defineStore('auth', () => {
       
       // SECURITY: Token is ONLY in HttpOnly cookie (server-side)
       // JavaScript never touches the token - XSS protection!
+      
+      // Track successful login in GA4
+      trackLogin('email')
+      setUserId(user.value?.id || null)
       
       console.log('[Auth] ✓ Login successful:', user.value?.email)
       

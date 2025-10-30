@@ -1,5 +1,6 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
+import { trackWatchlistAdd, trackWatchlistRemove } from '../services/analytics/gaService'
 
 interface WatchlistItem {
   ticker: string
@@ -134,6 +135,20 @@ export function useWatchlist(): UseWatchlistReturn {
         throw new Error(errorMessage)
       }
       
+      // Track successful watchlist addition in GA4
+      // Check if authenticated (default false if auth store not available, e.g., in tests)
+      let isAuthenticated = false
+      try {
+        // Dynamic import to avoid Pinia dependency errors in tests
+        const { useAuthStore } = await import('../stores/authStore')
+        const authStore = useAuthStore()
+        isAuthenticated = authStore.isAuthenticated
+      } catch {
+        // Auth store not available (e.g., tests without Pinia setup)
+        isAuthenticated = false
+      }
+      trackWatchlistAdd(upperTicker, isAuthenticated)
+      
       return { success: true }
     } catch (_error) {
       // Revert optimistic update on network error
@@ -184,6 +199,9 @@ export function useWatchlist(): UseWatchlistReturn {
         }
         throw new Error(errorMessage)
       }
+      
+      // Track watchlist removal in GA4
+      trackWatchlistRemove(upperTicker)
       
       return { success: true }
     } catch (_error) {

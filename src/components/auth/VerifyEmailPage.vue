@@ -89,6 +89,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
+import { trackEmailVerification } from '../../services/analytics/gaService'
 
 interface Props {
   token?: string
@@ -141,6 +142,10 @@ const verifyEmail = async () => {
 
     if (data.success) {
       status.value = 'success'
+      
+      // Track successful email verification in GA4
+      trackEmailVerification()
+      
       // Update auth store with verified user
       if (data.data?.user) {
         authStore.user = data.data.user

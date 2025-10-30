@@ -557,6 +557,22 @@ const handleSelectTicker = (ticker: string): void => {
       :email="verifyEmailAddress"
       @close="showVerifyEmailPage = false"
     />
+    
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <p class="footer-copyright">© 2025 Datoro. All rights reserved.</p>
+        </div>
+        <div class="footer-section">
+          <a href="/privacy-policy.html" target="_blank" class="footer-link">Privacy Policy</a>
+          <span class="footer-divider">|</span>
+          <a href="/terms-of-service.html" target="_blank" class="footer-link">Terms of Service</a>
+          <span class="footer-divider">|</span>
+          <a href="/cookie-policy.html" target="_blank" class="footer-link">Cookie Policy</a>
+        </div>
+      </div>
+    </footer>
   </main>
 </template>
 
@@ -1101,4 +1117,63 @@ const handleSelectTicker = (ticker: string): void => {
     margin-top: 1rem;
   }
 }
+
+/* ============================================
+   APP FOOTER
+   ============================================ */
+.app-footer {
+  background: #0f0f10;
+  border-top: 1px solid #2A2A2E;
+  padding: 30px 20px;
+  margin-top: 60px;
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  text-align: center;
+}
+
+.footer-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-copyright {
+  color: #9E9E9E;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.footer-link {
+  color: #C0C0C0;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #00A88E;
+  text-decoration: underline;
+}
+
+.footer-divider {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .footer-content {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
 </style>
+
