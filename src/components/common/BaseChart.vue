@@ -347,14 +347,14 @@ const growthData = computed((): GrowthRates | null => {
     if (props.series.length > 0 && Array.isArray(props.series[0])) {
       // Simple array of [timestamp, value] pairs
       dataToAnalyze = props.series as Array<[number, number]>
-    } else if (props.series.length > 0 && (props.series[0] as any)?._data) {
+    } else if (props.series.length > 0 && (props.series[0] as any)?.data) {
       // Multi-series: use the first series or sum all series
       // For stacked charts, we should sum all series values at each timestamp
       if (props.stacked && props.series.length > 1) {
         // Sum all series values at each timestamp
         const dateMap = new Map<number, number>()
         props.series.forEach((s: any) => {
-          if (s.data && Array.isArray(s._data)) {
+          if (s.data && Array.isArray(s.data)) {
             s.data.forEach(([date, value]: [number, number]) => {
               dateMap.set(date, (dateMap.get(date) || 0) + value)
             })

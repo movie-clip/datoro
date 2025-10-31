@@ -223,7 +223,10 @@ export function getFcfSeriesFromBatch(batchData: BatchData | null, period: Perio
       ? batchData?.data?.cashflowQuarter
       : batchData?.data?.cashflowAnnual
 
-    const keyMetrics = batchData?.data?.keyMetrics
+    // Use the correct key metrics based on period
+    const keyMetrics = period === 'quarterly'
+      ? batchData?.data?.keyMetricsQuarter
+      : batchData?.data?.keyMetrics
 
     if (!cashflow || !Array.isArray(cashflow)) {
       return []

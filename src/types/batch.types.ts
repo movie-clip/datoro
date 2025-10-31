@@ -63,8 +63,11 @@ export interface BatchData {
     /** Annual ratios */
     ratiosAnnual?: unknown[]
     
-    /** Key metrics (combined annual/quarter) */
+    /** Key metrics (annual) */
     keyMetrics?: unknown[]
+    
+    /** Key metrics (quarterly) - for FCF per share and other quarterly metrics */
+    keyMetricsQuarter?: unknown[]
     
     /** Historical price data with structure { symbol, historical: [...] } */
     priceHistory?: { symbol: string; historical: FMPHistoricalPrice[] }

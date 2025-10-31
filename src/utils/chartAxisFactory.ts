@@ -115,9 +115,9 @@ export function createSingleYAxisConfig(options: YAxisOptions = {}) {
     scale: true,
     splitNumber: 4, // Limit to 4 intervals (5 lines total) for cleaner axis
     min: (v: MinMaxValue) => {
-      // Special handling for Shares Outstanding: min is 20% below lowest value
+      // Special handling for Shares Outstanding: min is 15% below lowest value (reduced from 20% for more visual difference)
       if (isSharesChart) {
-        return v.min * 0.8
+        return v.min * 0.85
       }
       
       const r = v.max - v.min
@@ -133,6 +133,11 @@ export function createSingleYAxisConfig(options: YAxisOptions = {}) {
       return calculated
     },
     max: (v: MinMaxValue) => {
+      // Special handling for Shares Outstanding: max is 5% above highest value for better visual range
+      if (isSharesChart) {
+        return v.max * 1.05
+      }
+      
       const r = v.max - v.min
       if (r === 0) {
         const p = Math.abs(v.max) * 0.05 || 1

@@ -59,7 +59,10 @@ export function useFcfSeries(): UseFcfSeriesReturn {
     
     switch (viewMode.value) {
       case 'fcfPerShare':
-        return rawData.value.map(d => [d.date, d.fcfPerShare])
+        // Filter out zero/null values for FCF Per Share
+        return rawData.value
+          .filter(d => d.fcfPerShare && d.fcfPerShare !== 0)
+          .map(d => [d.date, d.fcfPerShare])
       case 'fcfAndSbc':
         // Return array of series for multi-bar chart
         return [
