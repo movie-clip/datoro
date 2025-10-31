@@ -30,11 +30,12 @@ interface AuthResult {
 }
 
 // Environment variables
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex')
-if (!process.env.JWT_SECRET) {
-  console.error('[Auth] CRITICAL: JWT_SECRET environment variable is not set!')
-  console.error('[Auth] This will cause authentication failures in production.')
-  console.error('[Auth] Using temporary random secret - ALL SESSIONS WILL BE INVALIDATED ON RESTART!')
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  const errorMsg = '[Auth] CRITICAL: JWT_SECRET environment variable is required. Server cannot start without it.'
+  console.error(errorMsg)
+  console.error('[Auth] Generate a secure secret with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"')
+  throw new Error('JWT_SECRET environment variable is required')
 }
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID

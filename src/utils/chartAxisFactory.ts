@@ -169,6 +169,28 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
       type: 'value' as const,
       scale: true,
       position: 'left' as const,
+      splitNumber: 4, // Limit to 4 intervals for cleaner axis
+      min: (v: MinMaxValue) => {
+        const r = v.max - v.min
+        if (r === 0) {
+          const p = Math.abs(v.min) * 0.05 || 1
+          return v.min - p
+        }
+        const calculated = v.min - r * 0.03
+        // If all data is positive, don't let axis go negative
+        if (v.min >= 0 && calculated < 0) {
+          return 0
+        }
+        return calculated
+      },
+      max: (v: MinMaxValue) => {
+        const r = v.max - v.min
+        if (r === 0) {
+          const p = Math.abs(v.max) * 0.05 || 1
+          return v.max + p
+        }
+        return v.max + r * 0.03
+      },
       axisLabel: { 
         color: '#ddd', 
         fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
