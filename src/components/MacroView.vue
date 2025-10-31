@@ -152,7 +152,8 @@ function getChartOption(config: ChartConfig) {
       yAxisLabel: config.yAxisLabel,
       sliderConfig: DEFAULT_SLIDER_CONFIG,
       valueFormatter: config.valueFormatter,
-      tooltipFormatter: config.tooltipFormatter
+      tooltipFormatter: config.tooltipFormatter,
+      showAverage: false // DISABLED: SMA200 feature (set to true to enable for inflation: config.id === 'inflation')
     })
   })
 }

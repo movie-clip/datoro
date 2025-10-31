@@ -78,4 +78,5 @@ export interface ChartOptionsParams {
   sliderConfig: SliderConfig
   valueFormatter?: (value: number) => string
   tooltipFormatter?: (value: number) => string
+  showAverage?: boolean
 }

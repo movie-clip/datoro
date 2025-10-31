@@ -40,6 +40,9 @@ const AIAnalysisPanel = defineAsyncComponent(() =>
   import('./components/layout/AIAnalysisPanel.vue')
 )
 
+// Cookie Consent Banner
+import CookieConsent from './components/common/CookieConsent.vue'
+
 // Email verification page
 import VerifyEmailPage from './components/auth/VerifyEmailPage.vue'
 
@@ -581,6 +584,9 @@ const handleSelectTicker = (ticker: string): void => {
         </div>
       </div>
     </footer>
+
+    <!-- Cookie Consent Banner -->
+    <CookieConsent />
   </main>
 </template>
 

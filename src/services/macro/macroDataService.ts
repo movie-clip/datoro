@@ -235,7 +235,7 @@ async function fetchAllMacroDataLegacy(): Promise<MacroData> {
     federalFunds: (federalFundsResult.status === 'fulfilled' ? federalFundsResult.value : []).slice(0, 50),
     consumerSentiment: (consumerSentimentResult.status === 'fulfilled' ? consumerSentimentResult.value : []).slice(0, 50),
     retailSales: (retailSalesResult.status === 'fulfilled' ? retailSalesResult.value : []).slice(0, 50),
-    inflation: (inflationResult.status === 'fulfilled' ? inflationResult.value : []).slice(0, 50),
+    inflation: (inflationResult.status === 'fulfilled' ? inflationResult.value : []).slice(0, 250), // 250 points for SMA200
     unemploymentRate: (unemploymentRateResult.status === 'fulfilled' ? unemploymentRateResult.value : []).slice(0, 50),
     indexStats: indexStatsResult.status === 'fulfilled' ? indexStatsResult.value : [],
     housingStarts: [], // Not available in legacy fallback

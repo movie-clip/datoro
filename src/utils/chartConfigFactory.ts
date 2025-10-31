@@ -27,6 +27,32 @@ export const DEFAULT_SLIDER_CONFIG: SliderConfig = {
 const defaultFormatter = (value: number): string => value.toFixed(2)
 
 /**
+ * Calculate Simple Moving Average (SMA)
+ */
+function calculateSMA(data: [number, number][], period: number): [number, number][] {
+  if (data.length < period) return []
+  
+  const sma: [number, number][] = []
+  
+  for (let i = period - 1; i < data.length; i++) {
+    let sum = 0
+    for (let j = 0; j < period; j++) {
+      const dataPoint = data[i - j]
+      if (dataPoint) {
+        sum += dataPoint[1]
+      }
+    }
+    const average = sum / period
+    const timestamp = data[i]?.[0]
+    if (timestamp !== undefined) {
+      sma.push([timestamp, average])
+    }
+  }
+  
+  return sma
+}
+
+/**
  * Creates a standardized ECharts option configuration
  */
 export function createChartOptions(params: ChartOptionsParams): EChartsOption {
@@ -37,18 +63,39 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
     yAxisLabel = '',
     sliderConfig = DEFAULT_SLIDER_CONFIG,
     valueFormatter = defaultFormatter,
-    tooltipFormatter = valueFormatter
+    tooltipFormatter = valueFormatter,
+    showAverage = false
   } = params
 
   if (!data || data.length === 0) {
     return createEmptyChartOptions(title)
   }
 
+  // Calculate SMA (Simple Moving Average) if requested
+  const smaData = showAverage && data.length > 0
+    ? calculateSMA(data, 200) // SMA200
+    : []
+
+  const hasSMA = smaData.length > 0
+
   return {
     backgroundColor: 'transparent',
     title: {
       show: false
     },
+    legend: showAverage && hasSMA ? {
+      data: [title, 'SMA 200'],
+      top: 5,
+      left: 'center',
+      textStyle: {
+        color: '#9CA3AF',
+        fontSize: 12
+      },
+      selected: {
+        [title]: true,
+        'SMA 200': false // Hidden by default
+      }
+    } : undefined,
     tooltip: {
       trigger: 'axis',
       backgroundColor: 'rgba(20, 20, 25, 0.95)',
@@ -59,29 +106,35 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
         fontSize: 13
       },
       formatter: (params: any) => {
-        const point = params[0]
-        if (!point) return ''
+        if (!params || params.length === 0) return ''
         
-        const date = new Date(point.data[0])
+        const date = new Date(params[0].data[0])
         const dateStr = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short'
         })
-        const value = tooltipFormatter(point.data[1])
         
-        return `
-          <div style="padding: 4px 0;">
-            <div style="color: #999; font-size: 11px; margin-bottom: 4px;">${dateStr}</div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 50%;"></span>
-              <span style="font-weight: 600;">${value}</span>
-            </div>
-          </div>
-        `
+        let content = `<div style="padding: 4px 0;">
+          <div style="color: #999; font-size: 11px; margin-bottom: 4px;">${dateStr}</div>`
+        
+        // Show all visible series
+        params.forEach((param: any) => {
+          const value = tooltipFormatter(param.data[1])
+          const seriesColor = param.seriesName === 'SMA 200' ? '#FBBF24' : color
+          content += `
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+            <span style="display: inline-block; width: 10px; height: 10px; background: ${seriesColor}; border-radius: 50%;"></span>
+            <span style="color: #999; font-size: 11px; min-width: 60px;">${param.seriesName}:</span>
+            <span style="font-weight: 600;">${value}</span>
+          </div>`
+        })
+        
+        content += `</div>`
+        return content
       }
     },
     grid: {
-      top: 20,
+      top: showAverage && hasSMA ? 40 : 20,
       left: 60,
       right: 20,
       bottom: 60,
@@ -170,7 +223,25 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
             borderColor: '#fff'
           }
         }
-      } as any
+      } as any,
+      // Add SMA line if requested
+      ...(showAverage && smaData.length > 0 ? [{
+        name: 'SMA 200',
+        type: 'line',
+        data: smaData,
+        smooth: false,
+        symbol: 'none',
+        lineStyle: {
+          color: '#FBBF24', // Yellow
+          width: 2,
+          type: 'dashed'
+        },
+        itemStyle: {
+          color: '#FBBF24'
+        },
+        z: 10,
+        animation: false
+      } as any] : [])
     ],
     dataZoom: [
       {
