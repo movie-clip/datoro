@@ -96,7 +96,7 @@
         @click="isExpanded = !isExpanded"
         class="news-toggle-btn"
       >
-        {{ isExpanded ? 'Show less' : `Show ${props.newsItems.length - 1} more news` }}
+        {{ isExpanded ? 'less' : 'more' }}
         <svg 
           width="16" 
           height="16" 
@@ -331,17 +331,14 @@ const handleImageError = (event: Event) => {
   color: #00FF87;
 }
 
-/* Toggle Button */
+/* Toggle Button - Match CollapsibleContent style */
 .news-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #2A2A2E;
+  border-radius: 6px;
   color: #00A88E;
   font-size: 13px;
   font-weight: 500;
@@ -350,13 +347,19 @@ const handleImageError = (event: Event) => {
 }
 
 .news-toggle-btn:hover {
-  background: rgba(0, 168, 142, 0.1);
-  border-color: rgba(0, 168, 142, 0.3);
-  color: #00FF87;
+  background: rgba(0, 89, 76, 0.1);
+  border-color: #00594C;
+  transform: translateY(-1px);
+}
+
+.news-toggle-btn:active {
+  transform: translateY(0);
 }
 
 .news-toggle-btn svg {
-  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
 }
 
 /* Responsive adjustments */

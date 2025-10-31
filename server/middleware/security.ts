@@ -26,15 +26,13 @@ export function securityHeaders() {
         // 'unsafe-inline' needed for inline styles/scripts
         // 'data:' needed for Vite's base64-encoded module preloads
         // Google Analytics requires googletagmanager.com
-        // Facebook Pixel requires connect.facebook.net
         scriptSrc: [
           "'self'", 
           "'unsafe-inline'", 
           "'unsafe-eval'", 
           "data:",
           "https://www.googletagmanager.com",
-          "https://www.google-analytics.com",
-          "https://connect.facebook.net"
+          "https://www.google-analytics.com"
         ],
         
         // Allow inline styles (common in Vue components)

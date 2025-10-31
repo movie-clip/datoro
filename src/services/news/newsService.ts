@@ -2,8 +2,7 @@
 // Service for fetching stock news from FMP API
 
 import type { FMPNewsItem } from '../../types/fmp.types'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071/api'
+import { API_BASE_URL } from '../../utils/apiConfig'
 
 // Client-side cache (5 minutes TTL like other data)
 const newsCache = new Map<string, { data: FMPNewsItem[]; timestamp: number }>()
@@ -50,7 +49,7 @@ export async function fetchTickerNews(
     console.log(`[newsService] Client cache MISS for ${tickerUpper} - fetching from API`)
 
     const response = await fetch(
-      `${API_BASE_URL}/news/${tickerUpper}?limit=${limit}`,
+      `${API_BASE_URL}/api/news/${tickerUpper}?limit=${limit}`,
       {
         method: 'GET',
         headers: {
