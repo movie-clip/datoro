@@ -18,11 +18,12 @@ export interface Watchlist {
   isDefault: boolean
   createdAt: Date
   updatedAt: Date
+  items?: WatchlistItem[]
 }
 
 export interface WatchlistItem {
   id: string
-  watchlistId: string
+  watchlistId?: string
   ticker: string
   addedAt: Date
   displayOrder: number
@@ -65,6 +66,11 @@ class WatchlistService {
   async getWatchlistsByUserId(userId: string): Promise<Watchlist[]> {
     const watchlists = await prisma.watchlist.findMany({
       where: { userId },
+      include: {
+        items: {
+          orderBy: { displayOrder: 'asc' }
+        }
+      },
       orderBy: [
         { isDefault: 'desc' }, // Default first
         { createdAt: 'asc' }   // Then by creation date

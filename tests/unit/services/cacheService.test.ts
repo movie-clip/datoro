@@ -54,6 +54,8 @@ describe('Cache Service', () => {
         sets: 0,
         errors: 0,
         totalRequests: 0,
+        cacheWrites: 0,
+        skippedWrites: 0,
       });
     });
   });
@@ -596,6 +598,8 @@ describe('Cache Service', () => {
         sets: 0,
         errors: 0,
         totalRequests: 0,
+        cacheWrites: 0,
+        skippedWrites: 0,
       });
     });
 

@@ -441,6 +441,11 @@ const fedFundsChartOption = computed((): EChartsOption => {
 })
 
 const riskPremiumChartOption = computed((): EChartsOption => {
+  // Risk Premium data not currently available in MacroData interface
+  // TODO: Add riskPremium to MacroData interface if needed
+  return {}
+  
+  /* Commented out until riskPremium is added to MacroData
   if (!macroData.value?.riskPremium || macroData.value.riskPremium.length === 0) return {}
   
   // Filter for USA, China, and top EU countries
@@ -486,6 +491,7 @@ const riskPremiumChartOption = computed((): EChartsOption => {
       }
     }]
   }
+  */
 })
 
 // Load data when modal opens

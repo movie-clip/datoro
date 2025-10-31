@@ -52,7 +52,13 @@ router.get(
             name: w.name,
             isDefault: w.isDefault,
             createdAt: w.createdAt,
-            updatedAt: w.updatedAt
+            updatedAt: w.updatedAt,
+            items: (w.items || []).map((item: any) => ({
+              id: item.id,
+              ticker: item.ticker,
+              addedAt: item.addedAt,
+              displayOrder: item.displayOrder
+            }))
           }))
         }
       })

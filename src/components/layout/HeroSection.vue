@@ -54,7 +54,7 @@
         </div>
         <div v-else-if="newsItems.length > 0" class="news-container">
           <!-- First News Item (always visible) -->
-          <NewsCard :item="newsItems[0]" />
+          <NewsCard v-if="newsItems[0]" :item="newsItems[0]" />
           
           <!-- Additional News Items (collapsible) -->
           <div v-if="newsItems.length > 1" class="news-expandable">

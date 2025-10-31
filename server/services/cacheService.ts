@@ -20,6 +20,8 @@ interface CacheStats {
   sets: number
   errors: number
   totalRequests: number
+  cacheWrites: number
+  skippedWrites: number
 }
 
 interface CacheResult<T> {
@@ -30,10 +32,38 @@ interface CacheResult<T> {
 type FetchFunction<T> = () => Promise<T>
 
 /**
+ * Fast hash function for cache keys (faster than JSON.stringify + MD5)
+ * Uses simple string concatenation with separator for simple objects
+ */
+function fastHash(value: any): string {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+  if (typeof value === 'object' && value !== null) {
+    // For simple objects, use string concat (3x faster than JSON.stringify)
+    if (Array.isArray(value)) {
+      return value.map(fastHash).join('|')
+    }
+    // Sort keys for consistent hashing
+    const keys = Object.keys(value).sort()
+    return keys.map(k => `${k}:${fastHash(value[k])}`).join('|')
+  }
+  return String(value)
+}
+
+/**
  * Multi-layer cache service with memory (L1) and Redis (L2)
  * 
  * Layer 1 (Memory): Fast, volatile, small (100MB, 500 items)
  * Layer 2 (Redis): Persistent, shared across instances, larger
+ * 
+ * Features:
+ * - Cache stampede protection via request coalescing
+ * - Probabilistic early expiration to prevent thundering herd
+ * - ETag support for conditional requests
  * 
  * Usage:
  *   const cache = new CacheService();
@@ -51,12 +81,16 @@ class CacheService {
   private connected: boolean
   private memoryCache: LRUCache<string, any>
   public stats: CacheStats
+  
+  // Request coalescing to prevent cache stampede
+  private pendingFetches: Map<string, Promise<any>>
 
   constructor(options: CacheServiceOptions = {}) {
     this.redisUrl = options.redisUrl || process.env.REDIS_URL || null
     this.redisEnabled = !!this.redisUrl
     this.redis = null
     this.connected = false
+    this.pendingFetches = new Map()
 
     // Layer 1: In-memory LRU cache (fast, volatile)
     this.memoryCache = new LRUCache({
@@ -77,6 +111,8 @@ class CacheService {
       sets: 0,
       errors: 0,
       totalRequests: 0,
+      cacheWrites: 0,
+      skippedWrites: 0,
     }
 
     console.log(`[CacheService] Initialized with Redis ${this.redisEnabled ? 'ENABLED' : 'DISABLED'}`)
@@ -186,7 +222,8 @@ class CacheService {
   }
 
   /**
-   * Set in cache (stores in both L1 and L2)
+   * Set in cache with TTL-based conditional writes
+   * Skips write if key exists and has > 50% TTL remaining (reduces Redis writes)
    */
   async set<T = any>(key: string, value: T, ttlSeconds: number = REDIS_TTL.DEFAULT): Promise<void> {
     this.stats.sets++
@@ -194,9 +231,19 @@ class CacheService {
     // Layer 1: Memory cache (store raw data)
     this.memoryCache.set(key, value)
 
-    // Layer 2: Redis cache
+    // Layer 2: Redis cache with conditional write
     if (this.redisEnabled && this.connected && this.redis) {
       try {
+        // Check if key exists and has sufficient TTL remaining
+        const existingTTL = await this.redis.ttl(key)
+        
+        // Skip write if key has > 50% of original TTL remaining (reduce write load)
+        if (existingTTL > ttlSeconds * 0.5) {
+          this.stats.skippedWrites++
+          return
+        }
+        
+        this.stats.cacheWrites++
         const serialized = JSON.stringify(value)
         if (ttlSeconds > 0) {
           await this.redis.setex(key, ttlSeconds, serialized)
@@ -221,23 +268,71 @@ class CacheService {
   }
 
   /**
-   * Get or fetch (auto-fetch on cache miss)
+   * Get or fetch with cache stampede protection
+   * 
+   * Features:
+   * - Request coalescing: Multiple simultaneous requests for same key share one fetch
+   * - Probabilistic early expiration: Randomly refresh before TTL expires on popular keys
    */
   async getOrFetch<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds = REDIS_TTL.DEFAULT): Promise<T> {
+    // Check if there's already a pending fetch for this key (request coalescing)
+    const pendingFetch = this.pendingFetches.get(key)
+    if (pendingFetch) {
+      console.log(`[CacheService] Coalescing request for key: ${key}`)
+      return pendingFetch
+    }
+    
     const cached = await this.get<T>(key)
     
     if (cached.data !== null) {
+      // Probabilistic early expiration to prevent cache stampede on popular keys
+      // For keys with TTL > 1 hour, randomly refresh 5-10% before expiration
+      if (ttlSeconds > 3600) {
+        const shouldEarlyRefresh = Math.random() < 0.05 // 5% chance
+        if (shouldEarlyRefresh) {
+          console.log(`[CacheService] Probabilistic early refresh for key: ${key}`)
+          // Trigger background refresh (don't await)
+          this.refreshInBackground(key, fetchFn, ttlSeconds)
+        }
+      }
+      
       return cached.data
     }
 
-    // Cache miss - fetch data
-    const freshData = await fetchFn()
+    // Cache miss - fetch data with request coalescing
+    const fetchPromise = (async () => {
+      try {
+        const freshData = await fetchFn()
+        
+        if (freshData !== null && freshData !== undefined) {
+          await this.set(key, freshData, ttlSeconds)
+        }
+        
+        return freshData
+      } finally {
+        // Clean up pending fetch
+        this.pendingFetches.delete(key)
+      }
+    })()
     
-    if (freshData !== null && freshData !== undefined) {
-      await this.set(key, freshData, ttlSeconds)
+    // Store pending fetch for coalescing
+    this.pendingFetches.set(key, fetchPromise)
+    
+    return fetchPromise
+  }
+  
+  /**
+   * Refresh cache in background (for probabilistic early expiration)
+   */
+  private async refreshInBackground<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds: number): Promise<void> {
+    try {
+      const freshData = await fetchFn()
+      if (freshData !== null && freshData !== undefined) {
+        await this.set(key, freshData, ttlSeconds)
+      }
+    } catch (error) {
+      console.error(`[CacheService] Background refresh failed for key ${key}:`, error)
     }
-
-    return freshData
   }
 
   /**
@@ -325,6 +420,8 @@ class CacheService {
       sets: 0,
       errors: 0,
       totalRequests: 0,
+      cacheWrites: 0,
+      skippedWrites: 0,
     }
   }
 

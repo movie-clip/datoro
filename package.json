@@ -92,6 +92,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
+    "@fullhuman/postcss-purgecss": "^7.0.2",
     "@tsconfig/node18": "^18.2.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
@@ -124,6 +125,7 @@
     "terser": "^5.44.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.7",
+    "vite-plugin-compression": "^0.5.1",
     "vitest": "^3.2.4",
     "vue-tsc": "^3.1.2"
   }

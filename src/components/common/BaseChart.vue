@@ -37,6 +37,7 @@
         </button>
       </div>
       <VChart
+        ref="modalChartRef"
         v-if="isMounted && hasSeriesData(modalOption)"
         class="echart-modal"
         :option="modalOption"
@@ -66,6 +67,7 @@
         variant="chart"
       />
       <VChart 
+        ref="chartRef"
         v-else-if="isMounted && (hasSeriesData(option) || hasEmptyData)"
         class="echart" 
         :class="{ 'clickable': !isModal, 'loading-chart': loading, 'empty-chart': hasEmptyData }" 
@@ -172,6 +174,10 @@ import { useIsMobile } from '../../composables/useIsMobile.js'
 const isMounted = ref(false)
 const echartsReady = ref(false)
 
+// Chart instance refs for proper cleanup
+const chartRef = ref<InstanceType<typeof VChart> | null>(null)
+const modalChartRef = ref<InstanceType<typeof VChart> | null>(null)
+
 // Ensure ECharts is registered before rendering
 onMounted(async () => {
   // Wait for ECharts to be registered
@@ -183,6 +189,12 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   isMounted.value = false
+  
+  // Note: Vue-echarts handles chart disposal automatically
+  // Manually disposing can cause "Instance has been disposed" errors
+  // The library's internal cleanup is sufficient for memory leak prevention
+  chartRef.value = null
+  modalChartRef.value = null
 })
 
 type ChartKind = 'line' | 'bar'
@@ -514,7 +526,7 @@ const createOption = (isLarge = false): EChartsOption => {
     yAxis: createYAxisConfig({
       dualAxis: props.dualAxis,
       yFormat: props.yFormat,
-      rightAxisType: props.rightAxisType,
+      rightAxisType: props.rightAxisType as any,
       isLarge,
       isMobile: isMobile.value
     }),
@@ -525,12 +537,15 @@ const createOption = (isLarge = false): EChartsOption => {
     title: props.title,
     yearsList: props.timeframe === 'quarterly' ? timestamps : yearsList,
     barMaxWidth: props.barMaxWidth,
-    smooth: props.smooth,
+    smooth: props.smooth as any,
     isLarge
   })
 
   // Don't show legend - we have view mode buttons for switching
-  return { ...base, series }
+  if (!base || !series) {
+    return {} as EChartsOption
+  }
+  return { ...base, series } as EChartsOption
 }
 
 // Optimized: Compute compact option (always needed for initial render)

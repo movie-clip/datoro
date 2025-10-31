@@ -1,6 +1,8 @@
 // server/services/batchDataService.ts
 // Batch data fetcher - fetches all ticker data in one optimized request
 
+import { z } from 'zod'
+
 interface FetchOptions {
   headers?: Record<string, string>
   signal?: AbortSignal
@@ -12,6 +14,91 @@ interface BatchResult {
   fetchDuration: number
   data: Record<string, any>
   failures?: string[]
+}
+
+// Basic validation schemas for FMP responses
+const FMPProfileSchema = z.array(z.object({
+  symbol: z.string(),
+  companyName: z.string().optional(),
+  price: z.number().optional(),
+  currency: z.string().optional(),
+}))
+
+const FMPQuoteSchema = z.array(z.object({
+  symbol: z.string(),
+  price: z.number().optional(),
+  changesPercentage: z.number().optional(),
+  change: z.number().optional(),
+}))
+
+const FMPIncomeStatementSchema = z.array(z.object({
+  date: z.string(),
+  symbol: z.string(),
+  revenue: z.number().nullable().optional(),
+  netIncome: z.number().nullable().optional(),
+}))
+
+const FMPBalanceSheetSchema = z.array(z.object({
+  date: z.string(),
+  symbol: z.string(),
+  totalAssets: z.number().nullable().optional(),
+  totalLiabilities: z.number().nullable().optional(),
+}))
+
+const FMPCashFlowSchema = z.array(z.object({
+  date: z.string(),
+  symbol: z.string(),
+  operatingCashFlow: z.number().nullable().optional(),
+  freeCashFlow: z.number().nullable().optional(),
+}))
+
+// Validation map for each endpoint
+const validationSchemas: Record<string, z.ZodSchema | null> = {
+  profile: FMPProfileSchema,
+  quote: FMPQuoteSchema,
+  incomeAnnual: FMPIncomeStatementSchema,
+  incomeQuarter: FMPIncomeStatementSchema,
+  balanceAnnual: FMPBalanceSheetSchema,
+  balanceQuarter: FMPBalanceSheetSchema,
+  cashflowAnnual: FMPCashFlowSchema,
+  cashflowQuarter: FMPCashFlowSchema,
+  // Add null for endpoints without validation yet
+  ratiosTTM: null,
+  keyMetricsTTM: null,
+  ratiosAnnual: null,
+  keyMetrics: null,
+  priceHistory: null,
+  fmpDcf: null,
+  advancedDcf: null,
+  revenueSegments: null,
+  dividendHistory: null,
+  stockSplit: null,
+  earningsCalendar: null,
+  financialScores: null,
+  priceTargetSummary: null,
+  priceTargetConsensus: null,
+  insiderTrading: null,
+}
+
+/**
+ * Validate FMP API response with schema
+ */
+function validateResponse(dataKey: string, data: any): { valid: boolean; error?: string } {
+  const schema = validationSchemas[dataKey]
+  
+  // Skip validation if no schema defined
+  if (!schema) {
+    return { valid: true }
+  }
+  
+  try {
+    schema.parse(data)
+    return { valid: true }
+  } catch (error: any) {
+    const errorMsg = error.errors?.[0]?.message || error.message
+    console.warn(`[BatchData] Validation failed for ${dataKey}:`, errorMsg)
+    return { valid: false, error: errorMsg }
+  }
 }
 
 /**
@@ -140,6 +227,15 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
       const key = Object.keys(endpoints)[_index];
       if (__response.status === 'fulfilled') {
         const [dataKey, data] = __response.value;
+        
+        // Validate response data
+        if (data) {
+          const validation = validateResponse(dataKey, data)
+          if (!validation.valid) {
+            console.warn(`[BatchData] ${dataKey} validation failed: ${validation.error}`)
+            // Still include data but log warning
+          }
+        }
         
         // Special handling: /api/v4/score returns object, but we need array for consistency
         if (dataKey === 'financialScores' && data && !Array.isArray(data)) {

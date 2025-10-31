@@ -18,6 +18,7 @@ import type {
 } from '../types'
 import { STORAGE_KEYS } from '../config/storage'
 import { trackSearch, trackTickerView } from '../services/analytics/gaService'
+import { setItemAsync } from '../utils/asyncStorage'
 
 // Re-export types for components
 export type { BatchData, FMPProfile, FMPQuote, FMPIncomeStatement, FMPBalanceSheet, FMPCashFlow, FMPInsiderTrading, FMPHistoricalPrice, FMPDividend }
@@ -63,11 +64,16 @@ async function checkApiVersion(cache: LRUCache): Promise<boolean> {
       console.log(`[TickerStore] API version changed: ${cachedVersion} → ${version}`)
       console.log('[TickerStore] Clearing cache to prevent stale data')
       cache.clear()
-      localStorage.setItem(API_VERSION_KEY, version)
+      // Async write (non-critical)
+      setItemAsync(API_VERSION_KEY, version).catch(err => {
+        console.warn('[TickerStore] Failed to persist API version:', err)
+      })
       return true // Cache was cleared
     } else if (!cachedVersion) {
-      // First time - just store version
-      localStorage.setItem(API_VERSION_KEY, version)
+      // First time - just store version (async)
+      setItemAsync(API_VERSION_KEY, version).catch(err => {
+        console.warn('[TickerStore] Failed to persist API version:', err)
+      })
     }
     return false
   } catch (_err) {
@@ -216,6 +222,9 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   const cache = new LRUCache(50)
   const CACHE_TTL = 5 * 60 * 1000
   
+  // Request deduplication: Track in-flight requests
+  const pendingRequests = new Map<string, Promise<void>>()
+  
   // Check API version on startup (auto-clear cache if version changed)
   checkApiVersion(cache).catch(err => {
     console.error('[TickerStore] Version check error:', err)
@@ -289,6 +298,14 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     const t = ticker.trim().toUpperCase()
     if (!t) return
     
+    // Request deduplication: If there's already a pending request for this ticker+mode, return that promise
+    const requestKey = `${t}-${mode}`
+    const existingRequest = pendingRequests.get(requestKey)
+    if (existingRequest) {
+      console.log(`[TickerStore] ${t} - Deduplicating concurrent request`)
+      return existingRequest
+    }
+    
     // Check cache first
     const cacheKey = `${t}-${mode}`
     const cached = cache.get(cacheKey)
@@ -306,58 +323,70 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
       return
     }
     
-    loading.value = true
-    error.value = null
-    const startTime = performance.now()
-    
-    try {
-      // Send ETag if we have cached data with matching version
-      const headers: HeadersInit = {}
-      if (cached?.etag && cached?.version === currentVersion) {
-        headers['If-None-Match'] = cached.etag
-      }
+    // Create new request promise
+    const requestPromise = (async () => {
+      loading.value = true
+      error.value = null
+      const startTime = performance.now()
       
-      const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`, { headers })
-      
-      // Handle 304 Not Modified - use cached data (server validated it's still fresh)
-      if (response.status === 304 && cached) {
-        console.log(`[TickerStore] ${t} - 304 Not Modified (using cached data)`)
-        batchData.value = cached.data
+      try {
+        // Send ETag if we have cached data with matching version
+        const headers: HeadersInit = {}
+        if (cached?.etag && cached?.version === currentVersion) {
+          headers['If-None-Match'] = cached.etag
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`, { headers })
+        
+        // Handle 304 Not Modified - use cached data (server validated it's still fresh)
+        if (response.status === 304 && cached) {
+          console.log(`[TickerStore] ${t} - 304 Not Modified (using cached data)`)
+          batchData.value = cached.data
+          loading.value = false
+          error.value = null
+          fetchTime.value = Math.round(performance.now() - startTime)
+          return
+        }
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
+        const result: BatchData = await response.json()
+        fetchTime.value = Math.round(performance.now() - startTime)
+        
+        batchData.value = result
+        
+        // Track successful ticker data load in GA4
+        trackTickerView(t, fetchTime.value)
+        
+        // Store in cache with ETag and version for future 304 responses
+        const etag = response.headers.get('etag')
+        cache.set(cacheKey, {
+          data: result,
+          etag: etag || null,
+          version: currentVersion,
+          timestamp: Date.now()
+        })
+        
         loading.value = false
         error.value = null
-        fetchTime.value = Math.round(performance.now() - startTime)
-        return
+      } catch (err) {
+        const e = err as Error
+        console.error(`[TickerStore] Fetch error for ${t}:`, e.message)
+        error.value = e.message || 'Failed to fetch ticker data'
+        loading.value = false
+        throw err // Re-throw so all waiting promises reject
+      } finally {
+        // Clean up pending request tracking
+        pendingRequests.delete(requestKey)
       }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-      
-      const result: BatchData = await response.json()
-      fetchTime.value = Math.round(performance.now() - startTime)
-      
-      batchData.value = result
-      
-      // Track successful ticker data load in GA4
-      trackTickerView(t, fetchTime.value)
-      
-      // Store in cache with ETag and version for future 304 responses
-      const etag = response.headers.get('etag')
-      cache.set(cacheKey, {
-        data: result,
-        etag: etag || null,
-        version: currentVersion,
-        timestamp: Date.now()
-      })
-      
-    } catch (_err) {
-      const errorObj = _err as Error
-      console.error(`[TickerStore] Error fetching ${t}:`, errorObj)
-      error.value = errorObj.message
-      batchData.value = null
-    } finally {
-      loading.value = false
-    }
+    })()
+    
+    // Track this request
+    pendingRequests.set(requestKey, requestPromise)
+    
+    return requestPromise
   }
   
   // Refresh current ticker data

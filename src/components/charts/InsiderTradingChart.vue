@@ -6,7 +6,7 @@
     :error="error ?? undefined"
     :message="message ?? undefined"
     :empty-data-message="emptyDataMessage ?? undefined"
-    kind="mixed"
+    kind="bar"
     :dual-axis="true"
     :bar-max-width="40"
     :force-expanded="forceExpanded"

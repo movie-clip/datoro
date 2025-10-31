@@ -1,6 +1,8 @@
 // vite.config.ts
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
+// @ts-ignore - vite-plugin-compression types
+import viteCompression from 'vite-plugin-compression'
 import type { Plugin, ProxyOptions } from 'vite'
 
 /**
@@ -50,6 +52,24 @@ export default defineConfig(({ mode }) => {
             cacheHandlers: false // Less memory, faster in dev
           }
         }
+      }),
+      // Gzip compression for production
+      viteCompression({
+        verbose: true,
+        disable: false,
+        threshold: 10240, // Only compress files > 10KB
+        algorithm: 'gzip',
+        ext: '.gz',
+        deleteOriginFile: false
+      }),
+      // Brotli compression for production (better compression)
+      viteCompression({
+        verbose: true,
+        disable: false,
+        threshold: 10240,
+        algorithm: 'brotliCompress',
+        ext: '.br',
+        deleteOriginFile: false
       })
     ],
 
@@ -131,7 +151,7 @@ export default defineConfig(({ mode }) => {
     // Production build optimization
     build: {
       // Target modern browsers for smaller output
-      target: 'es2015',
+      target: 'es2020', // Changed from es2015 for better tree-shaking
       
       // Minify using terser for better control
       minify: 'terser',
@@ -146,17 +166,44 @@ export default defineConfig(({ mode }) => {
           // Reduce dead code
           dead_code: true,
           // Optimize expressions
-          passes: 2
+          passes: 3, // Increased from 2 for better compression
+          // Additional compression options
+          arrows: true,
+          collapse_vars: true,
+          comparisons: true,
+          computed_props: true,
+          hoist_funs: true,
+          hoist_props: true,
+          hoist_vars: false,
+          if_return: true,
+          inline: true,
+          join_vars: true,
+          keep_infinity: true,
+          loops: true,
+          negate_iife: true,
+          properties: true,
+          reduce_funcs: true,
+          reduce_vars: true,
+          sequences: true,
+          side_effects: true,
+          switches: true,
+          top_retain: null,
+          toplevel: false,
+          typeofs: true,
+          unused: true
         },
         format: {
           // Remove comments in production
-          comments: false
+          comments: false,
+          // Reduce whitespace
+          ascii_only: true
         },
         mangle: {
           // Mangle variable names for smaller output
           safari10: true,
           // CRITICAL: Keep function names for memoization cache keys
-          keep_fnames: true
+          keep_fnames: true,
+          toplevel: false
         }
       },
       
@@ -164,7 +211,7 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       
       // Chunk size warnings (raised for chart-heavy app)
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 500, // Reduced from 1000 to catch issues
       
       // CSS code splitting for faster loads
       cssCodeSplit: true,
@@ -189,6 +236,15 @@ export default defineConfig(({ mode }) => {
               return 'chartjs-vendor'
             }
             
+            // Split composables and services for better caching
+            if (id.includes('/src/composables/')) {
+              return 'composables'
+            }
+            
+            if (id.includes('/src/services/')) {
+              return 'services'
+            }
+            
             // All other node_modules
             if (id.includes('node_modules')) {
               return 'vendor'
@@ -202,6 +258,13 @@ export default defineConfig(({ mode }) => {
           chunkFileNames: 'assets/js/[name]-[hash].js',
           entryFileNames: 'assets/js/[name]-[hash].js',
           assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        },
+        
+        // Tree-shaking optimizations
+        treeshake: {
+          moduleSideEffects: false,
+          propertyReadSideEffects: false,
+          tryCatchDeoptimization: false
         }
       },
       
@@ -209,7 +272,12 @@ export default defineConfig(({ mode }) => {
       cssMinify: true,
       
       // Compress output with brotli if server supports it
-      reportCompressedSize: true
+      reportCompressedSize: true,
+      
+      // Reduce polyfills for modern browsers
+      modulePreload: {
+        polyfill: false
+      }
     }
   }
 })

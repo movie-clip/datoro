@@ -21,13 +21,13 @@ export const CONNECTION_POOL_CONFIG = {
   providers: {
     'render-postgres': {
       maxConnections: 97,
-      connectionsPerWorker: 22,  // (97 - 9 buffer) / 4 workers
-      buffer: 9
+      connectionsPerWorker: 20,  // (97 - 17 buffer) / 4 workers - increased buffer from 9 to 17
+      buffer: 17
     },
     'local-postgres': {
       maxConnections: 100,
-      connectionsPerWorker: 23,  // (100 - 8 buffer) / 4 workers
-      buffer: 8
+      connectionsPerWorker: 20,  // (100 - 20 buffer) / 4 workers - increased buffer from 8 to 20
+      buffer: 20
     }
   },
   
@@ -39,6 +39,7 @@ export const CONNECTION_POOL_CONFIG = {
     connection_limit: null,      // Set dynamically based on provider
     pool_timeout: 10,            // Seconds to wait for available connection
     connect_timeout: 5,          // Seconds for initial connection
+    statement_timeout: 10000,    // Milliseconds for query timeout (prevents hung connections)
     statement_cache: true,       // Cache prepared statements for performance
     prepared_statements: true,   // Enable prepared statements
   },
@@ -96,6 +97,7 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
     connection_limit?: number | null
     pool_timeout?: number
     connect_timeout?: number
+    statement_timeout?: number
     statement_cache?: boolean
   }
   config.connection_limit = provider.connectionsPerWorker
@@ -107,6 +109,11 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
   params.push(`connection_limit=${config.connection_limit}`)
   params.push(`pool_timeout=${config.pool_timeout}`)
   params.push(`connect_timeout=${config.connect_timeout}`)
+  
+  // Query timeout to prevent hung connections
+  if (config.statement_timeout) {
+    params.push(`statement_timeout=${config.statement_timeout}`)
+  }
   
   // Performance optimizations
   if (config.statement_cache) {

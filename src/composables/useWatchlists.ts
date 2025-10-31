@@ -19,6 +19,7 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
 import { CACHE_TTL as CLIENT_CACHE_TTL, VALIDATION } from '../config/constants'
 import { STORAGE_KEYS } from '../config/storage'
+import { setItemAsync } from '../utils/asyncStorage'
 
 export interface Watchlist {
   id: string
@@ -114,10 +115,12 @@ export function useWatchlists(): UseWatchlistsReturn {
           activeWatchlistIdRef.value = 
             savedWatchlist?.id || 
             defaultWatchlist?.id || 
-            watchlistsCache.value[0].id
+            watchlistsCache.value[0]?.id || ''
           
           // Load items for active watchlist
-          await loadWatchlistItems(activeWatchlistIdRef.value)
+          if (activeWatchlistIdRef.value) {
+            await loadWatchlistItems(activeWatchlistIdRef.value)
+          }
         }
         
         initialized.value = true
@@ -162,7 +165,10 @@ export function useWatchlists(): UseWatchlistsReturn {
     if (activeWatchlistIdRef.value === id) return
     
     activeWatchlistIdRef.value = id
-    localStorage.setItem(ACTIVE_WATCHLIST_KEY, id)
+    // Async localStorage write (non-critical preference data)
+    setItemAsync(ACTIVE_WATCHLIST_KEY, id).catch(err => {
+      console.warn('[useWatchlists] Failed to persist active watchlist:', err)
+    })
     
     // Load items if not cached
     if (!itemsCache.value.has(id)) {
@@ -195,7 +201,10 @@ export function useWatchlists(): UseWatchlistsReturn {
       
       // Set as active
       activeWatchlistIdRef.value = newWatchlist.id
-      localStorage.setItem(ACTIVE_WATCHLIST_KEY, newWatchlist.id)
+      // Async localStorage write
+      setItemAsync(ACTIVE_WATCHLIST_KEY, newWatchlist.id).catch(err => {
+        console.warn('[useWatchlists] Failed to persist active watchlist:', err)
+      })
       itemsCache.value.set(newWatchlist.id, [])
       
       // Invalidate cache timestamp to force refresh on next init
@@ -256,8 +265,14 @@ export function useWatchlists(): UseWatchlistsReturn {
     
     // If deleting active watchlist, switch to first available
     if (activeWatchlistIdRef.value === id && watchlistsCache.value.length > 0) {
-      activeWatchlistIdRef.value = watchlistsCache.value[0].id
-      localStorage.setItem(ACTIVE_WATCHLIST_KEY, watchlistsCache.value[0].id)
+      const firstWatchlist = watchlistsCache.value[0]
+      if (firstWatchlist) {
+        activeWatchlistIdRef.value = firstWatchlist.id
+        // Async localStorage write
+        setItemAsync(ACTIVE_WATCHLIST_KEY, firstWatchlist.id).catch(err => {
+          console.warn('[useWatchlists] Failed to persist active watchlist:', err)
+        })
+      }
     }
     
     try {
