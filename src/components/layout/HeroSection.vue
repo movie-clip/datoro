@@ -38,12 +38,44 @@
 
       <!-- News Tab -->
       <div v-show="activeTab === 'news'" class="tab-content">
-        <NewsTab 
-          :news-items="newsItems"
-          :loading="newsLoading"
-          :error="newsError"
-          :ticker="currentTicker"
-        />
+        <div v-if="newsLoading" class="description-skeleton">
+          <SkeletonLoader 
+            variant="text" 
+            :style="{ marginBottom: '8px', height: '14px' }" 
+          />
+          <SkeletonLoader 
+            variant="text" 
+            :style="{ marginBottom: '8px', height: '14px' }" 
+          />
+          <SkeletonLoader 
+            variant="text" 
+            :style="{ height: '14px' }" 
+          />
+        </div>
+        <div v-else-if="newsItems.length > 0" class="news-container">
+          <!-- First News Item (always visible) -->
+          <NewsCard :item="newsItems[0]" />
+          
+          <!-- Additional News Items (collapsible) -->
+          <div v-if="newsItems.length > 1" class="news-expandable">
+            <div v-show="newsExpanded" class="additional-news">
+              <NewsCard 
+                v-for="(item, index) in newsItems.slice(1, 3)" 
+                :key="index"
+                :item="item"
+              />
+            </div>
+            <button 
+              class="news-toggle"
+              @click="newsExpanded = !newsExpanded"
+            >
+              {{ newsExpanded ? 'less' : 'more' }}
+            </button>
+          </div>
+        </div>
+        <div v-else class="description-placeholder">
+          <p>{{ newsError || 'No recent news available' }}</p>
+        </div>
       </div>
       
       <!-- Price Chart -->
@@ -122,7 +154,7 @@
         <div v-else class="metrics-error">
           <p>{{ error }}</p>
         </div>
-      </div>
+    </div>
     </div>
 </template>
 
@@ -136,7 +168,7 @@ import { useTickerNews } from '../../composables/useTickerNews'
 import PriceChart from '../charts/PriceChart.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 import TabNavigation, { type Tab } from '../common/TabNavigation.vue'
-import NewsTab from '../news/NewsTab.vue'
+import NewsCard from '../news/NewsCard.vue'
 import CollapsibleContent from '../common/CollapsibleContent.vue'
 
 const tickerStore = useTickerStore()
@@ -152,6 +184,7 @@ const tabs: Tab[] = [
 // Reset to About tab when ticker changes
 watch(currentTicker, () => {
   activeTab.value = 'about'
+  newsExpanded.value = false // Reset news expansion
 })
 
 // News Data
@@ -159,6 +192,9 @@ const { newsItems, loading: newsLoading, error: newsError } = useTickerNews(curr
   limit: 5, // Fetch top 5 news items but display only the most important one
   autoFetch: true 
 })
+
+// News expansion state
+const newsExpanded = ref(false)
 
 // Extract company description from batch data
 const companyDescription = computed(() => {
@@ -268,6 +304,43 @@ const getMarginClass = (marginStr: string): string => {
 
 .description-placeholder p {
   margin: 0;
+}
+
+/* News Expandable Section */
+.news-expandable {
+  margin-top: 8px;
+}
+
+/* Additional News Container */
+.additional-news {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+/* News Toggle Button - Match CollapsibleContent style */
+.news-toggle {
+  display: inline-block;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #2A2A2E;
+  border-radius: 6px;
+  color: #00A88E;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.news-toggle:hover {
+  background: rgba(0, 89, 76, 0.1);
+  border-color: #00594C;
+  transform: translateY(-1px);
+}
+
+.news-toggle:active {
+  transform: translateY(0);
 }
 
 .key-metrics-card {

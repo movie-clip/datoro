@@ -1,47 +1,64 @@
-<!-- src/components/news/NewsTab.vue -->
+<!-- src/components/news/NewsContent.vue -->
 <template>
-  <div class="news-tab">
-    <!-- Loading State -->
-    <div v-if="loading" class="news-loading">
-      <div class="news-card-skeleton" v-for="i in 3" :key="i">
-        <SkeletonLoader 
-          variant="text" 
-          :style="{ width: '80px', height: '80px', borderRadius: '8px', marginRight: '12px' }" 
+  <div class="news-content-wrapper">
+    <!-- Primary News Item (always visible - line 1) -->
+    <article 
+      v-if="firstNewsItem"
+      class="news-card"
+    >
+      <!-- News Image -->
+      <div class="news-image-wrapper">
+        <img 
+          v-if="firstNewsItem.image" 
+          :src="firstNewsItem.image"
+          :alt="firstNewsItem.title"
+          class="news-image"
+          loading="lazy"
+          @error="handleImageError"
         />
-        <div style="flex: 1;">
-          <SkeletonLoader 
-            variant="text" 
-            :style="{ marginBottom: '8px', height: '14px', width: '100%' }" 
-          />
-          <SkeletonLoader 
-            variant="text" 
-            :style="{ marginBottom: '8px', height: '12px', width: '60%' }" 
-          />
-          <SkeletonLoader 
-            variant="text" 
-            :style="{ height: '12px', width: '80%' }" 
-          />
+        <div v-else class="news-image-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM9 11H6V8H9V11ZM19 19H5V5H19V19Z" fill="currentColor" opacity="0.3"/>
+          </svg>
         </div>
       </div>
-    </div>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="news-error">
-      <p>Unable to load news for {{ ticker }}</p>
-    </div>
+      <!-- News Content -->
+      <div class="news-text">
+        <h4 class="news-title">{{ firstNewsItem.title }}</h4>
+        
+        <div class="news-meta">
+          <time 
+            :datetime="firstNewsItem.publishedDate"
+            :title="fullDate(firstNewsItem.publishedDate)"
+            class="news-date"
+          >
+            {{ formattedDate(firstNewsItem.publishedDate) }}
+          </time>
+          <span class="news-separator">•</span>
+          <span class="news-source-badge">{{ firstNewsItem.site }}</span>
+        </div>
 
-    <!-- Empty State -->
-    <div v-else-if="!hasNews" class="news-empty">
-      <p>No recent news available for {{ ticker }}</p>
-    </div>
+        <p class="news-excerpt">{{ truncateText(firstNewsItem.text, 100) }}</p>
 
-    <!-- News Content - Show 1 card, expand to 3 -->
-    <div v-else class="news-grid">
+        <a 
+          v-if="firstNewsItem.url"
+          :href="firstNewsItem.url" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="news-read-more"
+        >
+          Read full article →
+        </a>
+      </div>
+    </article>
+
+    <!-- Additional News Items (2-3, collapsible via parent) -->
+    <div v-if="additionalNewsItems.length > 0" class="additional-news">
       <article 
-        v-for="(item, index) in displayedNews" 
+        v-for="(item, index) in additionalNewsItems" 
         :key="index"
         class="news-card"
-        :class="{ 'is-hidden': !isExpanded && index > 0 }"
       >
         <!-- News Image -->
         <div class="news-image-wrapper">
@@ -61,7 +78,7 @@
         </div>
 
         <!-- News Content -->
-        <div class="news-content">
+        <div class="news-text">
           <h4 class="news-title">{{ item.title }}</h4>
           
           <div class="news-meta">
@@ -89,48 +106,29 @@
           </a>
         </div>
       </article>
-
-      <!-- Show More/Less Button -->
-      <button 
-        v-if="props.newsItems.length > 1"
-        @click="isExpanded = !isExpanded"
-        class="news-toggle-btn"
-      >
-        {{ isExpanded ? 'less' : 'more' }}
-        <svg 
-          width="16" 
-          height="16" 
-          viewBox="0 0 24 24" 
-          :style="{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }"
-        >
-          <path d="M7 10l5 5 5-5z" fill="currentColor"/>
-        </svg>
-      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { formatNewsDate, truncateText } from '../../services/news/newsService'
 import type { FMPNewsItem } from '../../types/fmp.types'
-import SkeletonLoader from '../common/SkeletonLoader.vue'
 
 interface Props {
   newsItems: FMPNewsItem[]
-  loading: boolean
-  error: string | null
-  ticker: string
 }
 
 const props = defineProps<Props>()
 
-const hasNews = computed(() => props.newsItems.length > 0)
-const isExpanded = ref(false)
+// First news item (always visible)
+const firstNewsItem = computed(() => {
+  return props.newsItems[0] || null
+})
 
-// Show up to 3 news items
-const displayedNews = computed(() => {
-  return props.newsItems.slice(0, 3)
+// Additional news items (2-3, collapsible)
+const additionalNewsItems = computed(() => {
+  return props.newsItems.slice(1, 3)
 })
 
 const formattedDate = (dateString: string): string => {
@@ -161,52 +159,12 @@ const handleImageError = (event: Event) => {
 </script>
 
 <style scoped>
-.news-tab {
-  min-height: 110px;
-}
-
-/* Loading State */
-.news-loading {
-  padding: 8px 0;
+/* Additional News Container */
+.additional-news {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.news-card-skeleton {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-/* Error State */
-.news-error {
-  padding: 16px 0;
-  color: rgba(229, 114, 115, 0.9);
-  font-size: 14px;
-}
-
-.news-error p {
-  margin: 0;
-}
-
-/* Empty State */
-.news-empty {
-  padding: 16px 0;
-  color: rgba(158, 158, 158, 0.8);
-  font-size: 14px;
-}
-
-.news-empty p {
-  margin: 0;
-}
-
-/* News Grid */
-.news-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 8px 0;
+  margin-top: 16px;
 }
 
 /* News Card */
@@ -224,10 +182,6 @@ const handleImageError = (event: Event) => {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(0, 168, 142, 0.3);
   transform: translateY(-2px);
-}
-
-.news-card.is-hidden {
-  display: none;
 }
 
 /* News Image */
@@ -256,8 +210,8 @@ const handleImageError = (event: Event) => {
   justify-content: center;
 }
 
-/* News Content */
-.news-content {
+/* News Text Content */
+.news-text {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -273,6 +227,7 @@ const handleImageError = (event: Event) => {
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -311,6 +266,7 @@ const handleImageError = (event: Event) => {
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -329,37 +285,6 @@ const handleImageError = (event: Event) => {
 
 .news-read-more:hover {
   color: #00FF87;
-}
-
-/* Toggle Button - Match CollapsibleContent style */
-.news-toggle-btn {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 4px 12px;
-  background: transparent;
-  border: 1px solid #2A2A2E;
-  border-radius: 6px;
-  color: #00A88E;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.news-toggle-btn:hover {
-  background: rgba(0, 89, 76, 0.1);
-  border-color: #00594C;
-  transform: translateY(-1px);
-}
-
-.news-toggle-btn:active {
-  transform: translateY(0);
-}
-
-.news-toggle-btn svg {
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 4px;
 }
 
 /* Responsive adjustments */
