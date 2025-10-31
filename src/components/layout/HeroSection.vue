@@ -2,26 +2,48 @@
   <div class="hero-container">
     <!-- Primary: Price Chart (60% width) -->
     <div class="price-chart-container">
-      <!-- Company Description - with skeleton loading -->
-      <div class="company-description-section">
+      <!-- Tab Navigation -->
+      <TabNavigation 
+        v-model="activeTab" 
+        :tabs="tabs"
+      />
+      
+      <!-- About Tab - Company Description -->
+      <div v-show="activeTab === 'about'" class="tab-content">
         <div v-if="loading" class="description-skeleton">
-          <div class="description-title-skeleton">
-            <SkeletonLoader variant="text" :style="{ width: '60px', height: '14px' }" />
-          </div>
           <SkeletonLoader 
-            v-for="i in 3" 
-            :key="i" 
             variant="text" 
             :style="{ marginBottom: '8px', height: '14px' }" 
           />
+          <SkeletonLoader 
+            variant="text" 
+            :style="{ marginBottom: '8px', height: '14px' }" 
+          />
+          <SkeletonLoader 
+            variant="text" 
+            :style="{ height: '14px' }" 
+          />
         </div>
-        <CompanyDescription 
+        <CollapsibleContent 
           v-else-if="companyDescription"
-          :description="companyDescription"
-        />
+          :min-height="110"
+          :collapsed-lines="3"
+        >
+          {{ companyDescription }}
+        </CollapsibleContent>
         <div v-else class="description-placeholder">
-          <!-- Empty state when no description available -->
+          <p>No company description available</p>
         </div>
+      </div>
+
+      <!-- News Tab -->
+      <div v-show="activeTab === 'news'" class="tab-content">
+        <NewsTab 
+          :news-items="newsItems"
+          :loading="newsLoading"
+          :error="newsError"
+          :ticker="currentTicker"
+        />
       </div>
       
       <!-- Price Chart -->
@@ -105,17 +127,38 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { getValuationFromBatch, getCashFlowFactsFromBatch, getMarginsGrowthFromBatch, getBalanceFromBatch } from '../../services/financials/batchTableService'
 import { calculateAllHealthIndicators, type HealthIndicator } from '../../services/health/healthIndicatorService'
+import { useTickerNews } from '../../composables/useTickerNews'
 import PriceChart from '../charts/PriceChart.vue'
-import CompanyDescription from './CompanyDescription.vue'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
+import TabNavigation, { type Tab } from '../common/TabNavigation.vue'
+import NewsTab from '../news/NewsTab.vue'
+import CollapsibleContent from '../common/CollapsibleContent.vue'
 
 const tickerStore = useTickerStore()
 const { batchData, loading, error, currentTicker } = storeToRefs(tickerStore)
+
+// Tab Navigation State
+const activeTab = ref<string>('about')
+const tabs: Tab[] = [
+  { id: 'about', label: 'About' },
+  { id: 'news', label: 'News' }
+]
+
+// Reset to About tab when ticker changes
+watch(currentTicker, () => {
+  activeTab.value = 'about'
+})
+
+// News Data
+const { newsItems, loading: newsLoading, error: newsError } = useTickerNews(currentTicker, { 
+  limit: 5, // Fetch top 5 news items but display only the most important one
+  autoFetch: true 
+})
 
 // Extract company description from batch data
 const companyDescription = computed(() => {
@@ -205,25 +248,26 @@ const getMarginClass = (marginStr: string): string => {
   transform: translateY(-2px);
 }
 
-/* Company Description Section - Fixed sizing */
-.company-description-section {
+/* Tab Content Area - Fixed sizing */
+.tab-content {
   min-height: 110px; /* Fixed height to prevent layout shift */
   margin-bottom: 16px;
 }
 
 .description-skeleton {
-  padding: 16px 0;
-  border-bottom: 1px solid #2A2A2E;
-  margin-bottom: 16px;
-  min-height: 110px; /* Match company description height */
-}
-
-.description-title-skeleton {
-  margin-bottom: 10px;
+  padding: 8px 0;
+  min-height: 110px;
 }
 
 .description-placeholder {
-  min-height: 110px; /* Reserve space even when no description */
+  min-height: 110px;
+  padding: 16px 0;
+  color: rgba(158, 158, 158, 0.8);
+  font-size: 14px;
+}
+
+.description-placeholder p {
+  margin: 0;
 }
 
 .key-metrics-card {

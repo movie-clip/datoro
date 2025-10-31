@@ -25,6 +25,7 @@ import healthRoutes, { initHealthRoutes } from './routes/healthRoutes.js'
 import adminRoutes, { initAdminRoutes } from './routes/adminRoutes.js'
 import macroRoutes, { initMacroRoutes } from './routes/macro.js'
 import feedbackRoutes, { initFeedbackRoutes } from './routes/feedback.js'
+import newsRoutes, { initNewsRoutes } from './routes/newsRoutes.js'
 import { 
   validate,
   validateProfile,
@@ -222,6 +223,7 @@ initHealthRoutes(routeDeps)
 initAdminRoutes(routeDeps)
 initMacroRoutes(routeDeps)
 initFeedbackRoutes({ feedbackEmail: 'datoro.info@gmail.com' })
+initNewsRoutes({ fmpApiKey: FMP_API_KEY })
 
 // Mount routes
 app.use('/api/ticker-data', tickerRoutes)
@@ -231,6 +233,7 @@ app.use('/api/health', healthRoutes)
 app.use('/api', adminRoutes)
 app.use('/api/macro', macroRoutes)
 app.use('/api/feedback', feedbackRoutes)
+app.use('/api/news', newsRoutes)
 
 // ============================================
 // API Version Endpoint

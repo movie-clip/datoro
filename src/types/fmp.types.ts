@@ -52,6 +52,20 @@ export interface FMPQuote {
 }
 
 /**
+ * Stock News Item
+ * Endpoint: /stable/news/stock
+ */
+export interface FMPNewsItem {
+  symbol: string | string[]
+  publishedDate: string
+  title: string
+  image: string
+  site: string
+  text: string
+  url: string
+}
+
+/**
  * Income Statement (Annual or Quarterly)
  * Endpoints: /income-statement/{symbol}, /income-statement/{symbol}?period=quarter
  */

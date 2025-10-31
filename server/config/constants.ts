@@ -88,6 +88,9 @@ export const REDIS_TTL = {
   
   /** Macro calculated data (risk premiums): 1 hour (derived from treasury rates) */
   MACRO_CALCULATED: 60 * 60,
+  
+  /** Stock news: 1 hour (news updates frequently but not real-time) */
+  NEWS: 60 * 60,
 } as const
 
 // ============================================
