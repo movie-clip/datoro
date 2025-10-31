@@ -459,7 +459,8 @@ const createOption = (isLarge = false): EChartsOption => {
     // Only show title in non-modal view (in modal, it's shown as HTML element)
     title: isLarge ? undefined : {
       text: props.title, 
-      left: 'center', 
+      left: 'center',
+      top: 0,
       textStyle: { color: '#fff', fontSize: 14 } 
     },
     // Legend configuration
@@ -558,10 +559,10 @@ const modalOption = computed(() => {
    ============================================ */
 .expand-hint {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
+  top: 1px;
+  right: 1px;
+  width: 30px;
+  height: 30px;
   background: rgba(15, 15, 16, 0.6);
   border: 1px solid #2A2A2E;
   border-radius: 6px;
@@ -691,7 +692,7 @@ const modalOption = computed(() => {
   color: #E5E5E5;
   font-size: 22px;
   font-weight: 600;
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
   padding: 0;
 }
 

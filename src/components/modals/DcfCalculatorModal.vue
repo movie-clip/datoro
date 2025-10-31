@@ -476,14 +476,14 @@ onUnmounted(() => {
   padding: 12px 16px;
   min-height: auto;
   gap: 6px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* background removed - controlled by DcfResults.vue */
+  border: 1px solid #2A2A2E;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .compact-results :deep(.result-card:hover) {
-  background: rgba(0, 0, 0, 0.5);
+  /* background removed - controlled by DcfResults.vue */
   border-color: rgba(255, 255, 255, 0.2);
 }
 

@@ -741,7 +741,7 @@ onUnmounted(() => {
 /* ============================================ */
 .modal-enter-active,
 .modal-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.3s ease;
 }
 
 .modal-enter-from,
@@ -749,9 +749,14 @@ onUnmounted(() => {
   opacity: 0;
 }
 
+.modal-enter-active .modal-container,
+.modal-leave-active .modal-container {
+  transition: transform 0.3s ease;
+}
+
 .modal-enter-from .modal-container,
 .modal-leave-to .modal-container {
-  transform: scale(0.95) translateY(20px);
+  transform: scale(0.95);
 }
 
 /* ============================================ */

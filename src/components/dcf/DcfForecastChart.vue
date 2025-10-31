@@ -334,10 +334,10 @@ const chartOptions = computed((): EChartsOption | null => {
 
 <style scoped>
 .dcf-chart {
-  background: rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
   border-radius: 8px;
   padding: 24px;
-  border: 1px solid rgba(0, 89, 76, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.1);
   display: flex;
   flex-direction: column;
   height: 100%;

@@ -5,10 +5,8 @@
     <div v-if="intrinsicValue !== null || advancedDcfValue?.intrinsicValue" class="results-grid">
       <!-- Custom DCF Intrinsic Value Card -->
       <div 
-        class="result-card" 
-        :class="{ 'active': selectedModel === 'peg', 'clickable': !pegError }"
+        class="result-card active" 
         :data-tooltip="getDcfTooltip()"
-        @click="handleModelClick('peg')"
       >
         <div class="card-label">PEG Model</div>
         <div v-if="intrinsicValue !== null" class="card-value" :class="getDcfValueClass(intrinsicValue)">
@@ -31,9 +29,9 @@
 
       <!-- Advanced DCF Card (not clickable) -->
       <div 
-        class="result-card" 
-        :data-tooltip="getAdvancedDcfTooltip()"
+        class="result-card"
         :class="{ 'has-warning': advancedDcfValue?.warning }"
+        :data-tooltip="getAdvancedDcfTooltip()"
       >
         <div class="card-label">
           Advanced DCF
@@ -109,15 +107,6 @@ const emit = defineEmits<{
   selectModel: [model: ValuationModel]
 }>()
 
-const handleModelClick = (model: ValuationModel): void => {
-  // Only emit if model has data
-  if (model === 'peg' && !props.pegError) {
-    emit('selectModel', model)
-  } else if (model === 'advancedDcf' && props.advancedDcfValue?.intrinsicValue) {
-    emit('selectModel', model)
-  }
-}
-
 const formatNumber = (num: number | null | undefined): string => {
   if (num === null || num === undefined) return 'N/A'
   return num.toLocaleString('en-US', { 
@@ -188,6 +177,9 @@ const getCurrentPriceTooltip = (): string => {
 </script>
 
 <style scoped>
+/* ============================================
+   CONTAINER
+   ============================================ */
 .dcf-results {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
@@ -204,6 +196,9 @@ const getCurrentPriceTooltip = (): string => {
   color: #fff;
 }
 
+/* ============================================
+   RESULTS GRID
+   ============================================ */
 .results-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -211,28 +206,19 @@ const getCurrentPriceTooltip = (): string => {
   overflow: visible;
 }
 
-@media (max-width: 1200px) {
-  .results-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .results-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
+/* ============================================
+   RESULT CARDS
+   ============================================ */
 .result-card {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%) !important;
+  border: 1px solid #2A2A2E;
+  border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.2s ease;
-  cursor: help;
+  transition: all 0.3s ease;
+  cursor: default;
   position: relative;
   overflow: visible;
 }
@@ -242,76 +228,24 @@ const getCurrentPriceTooltip = (): string => {
 }
 
 .result-card.clickable:hover {
-  background: rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: #00594C;
+  box-shadow: 0 4px 20px rgba(0, 89, 76, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: visible;
 }
 
 .result-card.active {
-  background: rgba(0, 89, 76, 0.15);
-  border-color: rgba(0, 181, 154, 0.5);
-  box-shadow: 0 0 20px rgba(0, 181, 154, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
+  /* box-shadow: 0 0 20px #f59f0b3a; */
 }
 
 .result-card.has-warning {
   border-color: rgba(255, 152, 0, 0.3);
 }
 
-.result-card:hover {
-  overflow: visible;
-}
-
-/* Custom tooltip styling matching project design - positioned BELOW */
-.result-card[data-tooltip]:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 16px;
-  background: rgba(30, 30, 34, 0.98);
-  color: #E5E5E5;
-  font-size: 0.8rem;
-  line-height: 1.6;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 89, 76, 0.3);
-  white-space: pre-line;
-  z-index: 1000;
-  pointer-events: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  animation: tooltipFadeInBelow 0.2s ease;
-  max-width: 400px;
-  min-width: 280px;
-  font-weight: 400;
-  text-align: left;
-}
-
-.result-card[data-tooltip]:hover::before {
-  content: '';
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-bottom-color: rgba(30, 30, 34, 0.98);
-  z-index: 1000;
-  pointer-events: none;
-  animation: tooltipFadeInBelow 0.2s ease;
-}
-
-@keyframes tooltipFadeInBelow {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
+/* ============================================
+   CARD CONTENT
+   ============================================ */
 .card-label {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.6);
@@ -366,24 +300,67 @@ const getCurrentPriceTooltip = (): string => {
   font-size: 18px;
 }
 
-.loading-indicator {
-  display: inline-block;
-  margin-left: 6px;
-  animation: pulse 1.5s ease-in-out infinite;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
 .card-hint {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   margin-top: 4px;
 }
 
+/* ============================================
+   TOOLTIPS
+   ============================================ */
+/* Custom tooltip styling matching project design - positioned BELOW */
+.result-card[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 16px;
+  background: rgba(30, 30, 34, 0.98);
+  color: #E5E5E5;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 89, 76, 0.3);
+  white-space: pre-line;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  animation: tooltipFadeInBelow 0.2s ease;
+  max-width: 400px;
+  min-width: 280px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.result-card[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: rgba(30, 30, 34, 0.98);
+  z-index: 1000;
+  pointer-events: none;
+  animation: tooltipFadeInBelow 0.2s ease;
+}
+
+@keyframes tooltipFadeInBelow {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ============================================
+   PLACEHOLDER STATE
+   ============================================ */
 .results-placeholder {
   display: flex;
   flex-direction: column;
@@ -403,7 +380,30 @@ const getCurrentPriceTooltip = (): string => {
   font-size: 15px;
 }
 
-/* Mobile responsive */
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+.loading-indicator {
+  display: inline-block;
+  margin-left: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1200px) {
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .results-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -420,6 +420,12 @@ const getCurrentPriceTooltip = (): string => {
 
   .dcf-results {
     padding: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .results-grid {
+    grid-template-columns: 1fr;
   }
 }
 

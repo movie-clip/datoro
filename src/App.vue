@@ -868,7 +868,7 @@ const handleSelectTicker = (ticker: string): void => {
 
 .price-target-section {
   max-width: 1400px;
-  margin: 12px auto 16px;
+  margin: 0px auto 16px;
   padding: 0 12px;
 }
 
