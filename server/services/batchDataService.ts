@@ -183,10 +183,12 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
 
   // Fetch all in parallel
   const startTime = Date.now();
+  const endpointTimings: Record<string, number> = {};
   
   try {
     const responses = await Promise.allSettled(
       Object.entries(endpoints).map(async ([key, endpoint]): Promise<[string, any]> => {
+        const endpointStart = Date.now();
         try {
           // Fetch with 8 second timeout (reduced from 10 for faster failures)
           const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
@@ -195,8 +197,11 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
             }
           }, 8000);
           
+          const duration = Date.now() - endpointStart;
+          endpointTimings[key] = duration;
+          
           if (!res.ok) {
-            console.warn(`[BatchData] ${key} failed: ${res.status}`);
+            console.warn(`[BatchData] ${key} failed: ${res.status} (${duration}ms)`);
             if (key === 'advancedDcf') {
               console.error(`[BatchData] advancedDcf endpoint failed: ${baseUrl}${endpoint}`);
               console.error(`[BatchData] advancedDcf status: ${res.status}, statusText: ${res.statusText}`);
@@ -210,7 +215,9 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           }
           return [key, data];
         } catch (_error: any) {
-          console.warn(`[BatchData] ${key} error:`, _error.message);
+          const duration = Date.now() - endpointStart;
+          endpointTimings[key] = duration;
+          console.warn(`[BatchData] ${key} error: ${_error.message} (${duration}ms)`);
           return [key, null];
         }
       })
@@ -255,6 +262,16 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
         result.failures!.push(key);
       }
     });
+
+    // Log timing breakdown for slowest endpoints (> 500ms)
+    const slowEndpoints = Object.entries(endpointTimings)
+      .filter(([_, duration]) => duration > 500)
+      .sort((a, b) => b[1] - a[1]);
+    
+    if (slowEndpoints.length > 0) {
+      console.log(`[Batch] ${t} - Slow endpoints (>500ms):`, 
+        slowEndpoints.map(([key, duration]) => `${key}:${duration}ms`).join(', '));
+    }
 
     return result;
   } catch (_error) {

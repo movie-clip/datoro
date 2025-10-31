@@ -408,8 +408,13 @@ describe('Batch Data Service', () => {
         .reply(200, mockRatios)
         
       nock(FMP_BASE_URL)
-        .get('/api/v4/key-metrics/AAPL')
+        .get(`/api/v3/key-metrics/${TEST_TICKER}`)
         .query({ period: 'annual', limit: '20', apikey: TEST_API_KEY })
+        .reply(200, mockKeyMetrics)
+        
+      nock(FMP_BASE_URL)
+        .get(`/api/v3/key-metrics/${TEST_TICKER}`)
+        .query({ period: 'quarter', limit: '40', apikey: TEST_API_KEY })
         .reply(200, mockKeyMetrics)
         
       nock(FMP_BASE_URL)
@@ -490,6 +495,7 @@ describe('Batch Data Service', () => {
       expect(result.data.keyMetricsTTM).toEqual(mockKeyMetrics)
       expect(result.data.ratiosAnnual).toEqual(mockRatios)
       expect(result.data.keyMetrics).toEqual(mockKeyMetrics)
+      expect(result.data.keyMetricsQuarter).toEqual(mockKeyMetrics)
       expect(result.data.priceHistory).toEqual(mockPriceHistory)
       expect(result.data.revenueSegments).toEqual([])
       expect(result.data.dividendHistory).toBeDefined()
