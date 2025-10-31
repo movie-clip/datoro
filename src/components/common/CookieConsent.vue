@@ -89,9 +89,9 @@
 
           <!-- Links -->
           <div class="cookie-links">
-            <router-link to="/privacy" class="cookie-link">Privacy Policy</router-link>
+            <a href="/privacy" class="cookie-link">Privacy Policy</a>
             <span class="separator">•</span>
-            <router-link to="/cookies" class="cookie-link">Cookie Policy</router-link>
+            <a href="/cookies" class="cookie-link">Cookie Policy</a>
           </div>
         </div>
       </div>

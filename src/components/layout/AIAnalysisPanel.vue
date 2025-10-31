@@ -23,10 +23,16 @@
       v-else-if="data"
       class="content"
     >
-      <div
-        class="analysis-text"
-        v-html="formattedData"
-      />
+      <div class="analysis-text">
+        <div
+          v-for="(item, index) in formattedDataItems"
+          :key="index"
+          class="bullet-point"
+        >
+          <strong v-if="item.title">{{ item.title }}:</strong>
+          <span>{{ item.description }}</span>
+        </div>
+      </div>
     </div>
     
     <div
@@ -77,22 +83,20 @@ const title = computed(() =>
   props.type === 'advantages' ? 'Competitive Advantages' : 'Investment Risks'
 )
 
-const formattedData = computed(() => {
-  if (!data.value) return ''
+// Safe text-only rendering - no v-html needed
+const formattedDataItems = computed(() => {
+  if (!data.value) return []
   
   // Handle JSON format: array of {title, description}
   // This includes both success=true (real insights) and success=false (friendly messages)
   if (Array.isArray(data.value.data)) {
-    return data.value.data
-      .map(item => {
-        const title = item.title ? `<strong>${item.title}:</strong>` : ''
-        const description = item.description || ''
-        return `<div class="bullet-point">${title} ${description}</div>`
-      })
-      .join('')
+    return data.value.data.map(item => ({
+      title: item.title || '',
+      description: item.description || ''
+    }))
   }
   
-  return ''
+  return []
 })
 
 async function fetchAnalysis(): Promise<void> {

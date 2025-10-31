@@ -75,7 +75,7 @@ const monitoring = getMonitoringService()
 
 // API Version - increment when FMP endpoints change to auto-invalidate caches
 // v2.3 - Added fmpDcf endpoint to batch data service
-const API_VERSION = 'v2.7' // Incremented for Advanced DCF addition
+const API_VERSION = 'v2.8' // Incremented for News feature improvements (security, validation, UI)
 const API_UPDATED = '2025-10-29T18:40:00Z'
 
 // Database health flag (disabled if offline to prevent 5s timeouts)

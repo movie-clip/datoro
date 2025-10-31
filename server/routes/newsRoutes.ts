@@ -10,11 +10,38 @@ import { getCacheService } from '../services/cacheService.js'
 import { REDIS_TTL } from '../config/constants.js'
 import logger from '../services/logger.js'
 import { fmpLimiter } from '../middleware/rateLimiter.js'
+import { safeParseNewsResponse } from '../schemas/newsSchemas.js'
 
 const router = express.Router()
 const cache = getCacheService()
 
 let FMP_API_KEY = ''
+
+/**
+ * Validate URL to prevent malicious protocols
+ * @param url - URL to validate
+ * @returns true if URL is safe (http/https), false otherwise
+ */
+function isValidUrl(url: string | undefined | null): boolean {
+  if (!url || typeof url !== 'string') return false
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Validate ticker format
+ * Accepts: AAPL, MSFT, BRK.B, AUTO.L (up to 5 chars + optional .XX suffix)
+ * @param ticker - Ticker symbol to validate
+ * @returns true if valid format, false otherwise
+ */
+function isValidTicker(ticker: string): boolean {
+  // Allow 1-5 uppercase letters, optional dot + 1-2 uppercase letters
+  return /^[A-Z]{1,5}(\.[A-Z]{1,2})?$/.test(ticker)
+}
 
 /**
  * Initialize route with dependencies
@@ -48,7 +75,7 @@ router.get(
     const { ticker } = req.params
     const limit = Math.min(parseInt(req.query.limit as string) || 5, 20) // Default 5, max 20
 
-    // Validate ticker
+    // Validate ticker format
     if (!ticker || ticker.trim() === '') {
       return res.status(400).json({
         success: false,
@@ -57,6 +84,16 @@ router.get(
     }
 
     const tickerUpper = ticker.toUpperCase()
+    
+    // Validate ticker format (prevent injection attacks)
+    if (!isValidTicker(tickerUpper)) {
+      logger.warn(`[newsRoutes] Invalid ticker format: ${tickerUpper}`)
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid ticker format. Use uppercase letters (e.g., AAPL, BRK.B, AUTO.L)'
+      })
+    }
+
     const cacheKey = `news:${tickerUpper}:${limit}`
 
     try {
@@ -90,12 +127,24 @@ router.get(
 
       const data = await response.json()
 
-      // FMP returns an array of news items
+      // Validate response structure with Zod
+      const validatedData = safeParseNewsResponse(data)
+      
+      if (validatedData.length === 0 && Array.isArray(data) && data.length > 0) {
+        logger.warn(`[newsRoutes] News data validation failed for ${tickerUpper}`)
+      }
+
       // Filter to ensure we only get news that mentions this ticker in the symbol field
-      const tickerNews = Array.isArray(data) 
-        ? data.filter((item: any) => {
+      const tickerNews = validatedData.filter((item) => {
             // Check if this news item is specifically about our ticker
             if (!item.symbol) return false
+            
+            // Validate URL to prevent malicious protocols (javascript:, data:, etc.)
+            if (item.url && !isValidUrl(item.url)) {
+              logger.warn(`[newsRoutes] Invalid URL detected for ${tickerUpper}: ${item.url}`)
+              // Skip this news item
+              return false
+            }
             
             // Handle both single symbol and array of symbols
             if (typeof item.symbol === 'string') {
@@ -109,7 +158,6 @@ router.get(
             
             return false
           })
-        : []
 
       // Sort by published date (most recent first)
       const sortedNews = tickerNews.sort((a: any, b: any) => {
