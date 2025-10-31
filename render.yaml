@@ -118,10 +118,12 @@ services:
         name: Cache-Control
         value: public, max-age=3600
       
-      # Content Security Policy - Allow Google Analytics
+      # Content Security Policy - Allow Google Analytics and ECharts
+      # 'unsafe-eval' required for ECharts dynamic function generation
+      # 'wasm-unsafe-eval' is safer alternative but 'unsafe-eval' needed for compatibility
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://datoro-api.onrender.com https://*.google-analytics.com https://*.analytics.google.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' data: https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://datoro-api.onrender.com https://*.google-analytics.com https://*.analytics.google.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
     
     # SPA routing: redirect all routes to index.html
     routes:

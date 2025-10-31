@@ -22,14 +22,17 @@ export function securityHeaders() {
       directives: {
         defaultSrc: ["'self'"],
         
-        // Vue requires 'unsafe-eval' for template compilation
+        // Vue requires 'unsafe-eval' for template compilation in dev
+        // ECharts requires 'unsafe-eval' for dynamic function generation
+        // 'wasm-unsafe-eval' is safer but included for compatibility
         // 'unsafe-inline' needed for inline styles/scripts
         // 'data:' needed for Vite's base64-encoded module preloads
         // Google Analytics requires googletagmanager.com
         scriptSrc: [
           "'self'", 
           "'unsafe-inline'", 
-          "'unsafe-eval'", 
+          "'unsafe-eval'",
+          "'wasm-unsafe-eval'",
           "data:",
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com"

@@ -85,6 +85,21 @@ const PORT = Number(process.env.PORT) || 7071
 const DEV_ORIGIN = process.env.DEV_ORIGIN || 'http://localhost:5173'
 const FMP_API_KEY = process.env.FMP_API_KEY || ''
 
+// Validate FMP API key on startup
+if (!FMP_API_KEY) {
+  console.error('[FMP] CRITICAL: FMP_API_KEY environment variable is required')
+  console.error('[FMP] Server cannot start without FMP API key')
+  console.error('[FMP] Please add FMP_API_KEY to your .env file')
+  throw new Error('FMP_API_KEY environment variable is required')
+}
+
+// Validate FMP key format (32 hexadecimal characters)
+if (!/^[a-f0-9]{32}$/i.test(FMP_API_KEY)) {
+  console.warn('[FMP] WARNING: FMP_API_KEY format looks invalid (expected 32 hex characters)')
+  console.warn('[FMP] Key length:', FMP_API_KEY.length, 'chars')
+  console.warn('[FMP] API requests may fail. Please verify your FMP API key.')
+}
+
 const app: Express = express()
 
 // Trust Render proxy for rate limiting and IP detection

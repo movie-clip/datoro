@@ -156,10 +156,9 @@ export function errorHandler(monitoringService: MonitoringService | null = null)
       errorResponse.error.details = err.details;
     }
 
-    // Add stack trace in development
-    if (!isProd && err.stack) {
-      errorResponse.error.stack = err.stack.split('\n').slice(0, 5); // First 5 lines
-    }
+    // Stack traces should NEVER be sent to client (security risk)
+    // Always log stack traces server-side only
+    // Client-side developers can use requestId to trace errors in logs
 
     res.status(statusCode).json(errorResponse)
   }
