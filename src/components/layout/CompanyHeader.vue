@@ -59,6 +59,12 @@
         </span>
       </div>
     </div>
+    
+    <!-- Next Earnings Date -->
+    <div v-if="nextEarningsDate" class="earnings-info">
+      <div class="earnings-label">Next Earnings</div>
+      <div class="earnings-date">{{ formatEarningsDate(nextEarningsDate) }}</div>
+    </div>
   </div>
 </template>
 
@@ -92,18 +98,9 @@ const imageError = ref(false)
 const tickerStore = useTickerStore()
 const { batchData, loading, profile, quote } = storeToRefs(tickerStore)
 
-// Extract earnings date from batch data
-const earningsDate = computed(() => {
-  if (!batchData.value?.data?.earningsCalendar) return null
-  const earningsData = batchData.value.data.earningsCalendar
-  if (!Array.isArray(earningsData) || earningsData.length === 0) return null
-  
-  // Find next earnings date (future date)
-  const now = new Date()
-  const upcoming = earningsData
-    .filter((e: any) => e.date && new Date(e.date) >= now)
-    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  return upcoming.length > 0 ? upcoming[0].date : null
+// Get next earnings date from quote data (simpler than parsing calendar)
+const nextEarningsDate = computed(() => {
+  return quote.value?.earningsAnnouncement || null
 })
 
 // Emit company name and profile when data changes
@@ -133,14 +130,18 @@ const formatPrice = (price: number | null | undefined): string => {
   return Number(price).toFixed(2)
 }
 
-const formatEarningsDate = (date: string | null): string => {
-  if (!date) return 'N/A'
-  const d = new Date(date)
-  return d.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  })
+const formatEarningsDate = (dateString: string): string => {
+  try {
+    const earningsDate = new Date(dateString)
+    // Always show formatted date (e.g., "Dec 18, 2025")
+    return earningsDate.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    })
+  } catch {
+    return dateString // Fallback to raw string if parsing fails
+  }
 }
 
 const formatMarketCap = (mktCap: number | null | undefined): string => {
@@ -273,6 +274,29 @@ const formatMarketCap = (mktCap: number | null | undefined): string => {
   color: #ef4444;
 }
 
+.earnings-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 16px;
+  padding-left: 16px;
+  border-left: 1px solid #2A2A2E;
+}
+
+.earnings-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(229, 229, 229, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.earnings-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: #00A88E;
+}
+
 .loading-placeholder {
   justify-content: center;
   color: rgba(229, 229, 229, 0.5);
@@ -311,6 +335,19 @@ const formatMarketCap = (mktCap: number | null | undefined): string => {
   .price-change {
     font-size: 13px;
   }
+
+  .earnings-info {
+    margin-left: 12px;
+    padding-left: 12px;
+  }
+
+  .earnings-label {
+    font-size: 10px;
+  }
+
+  .earnings-date {
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 400px) {
@@ -338,7 +375,7 @@ const formatMarketCap = (mktCap: number | null | undefined): string => {
     font-size: 12px;
   }
 
-  .earnings-section {
+  .earnings-info {
     display: none; /* Hide earnings on very small screens to save space */
   }
 }
@@ -349,7 +386,7 @@ const formatMarketCap = (mktCap: number | null | undefined): string => {
     padding: 6px 12px;
   }
 
-  .earnings-section {
+  .earnings-info {
     display: flex; /* Show earnings in landscape */
   }
 
