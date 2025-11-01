@@ -63,7 +63,7 @@ export function createXAxisConfig(kind: ChartKind, options: XAxisOptions = {}) {
     // Use interval function to control which labels are shown
     axisLabelInterval = (index: number, value: string) => {
       // Only show labels that start with 'Q1 '
-      return value.startsWith('Q1 ')
+      return value.startsWith('Q4')
     }
   } else if (kind === 'bar' && isLarge) {
     // Large view: show all labels on desktop, fewer on mobile
