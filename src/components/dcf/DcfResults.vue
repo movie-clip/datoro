@@ -429,9 +429,78 @@ const getCurrentPriceTooltip = (): string => {
   }
 }
 
-@media (max-width: 480px) {
+/* iPhone 12-16 Portrait (390px-430px) */
+@media (max-width: 430px) {
+  .dcf-results {
+    padding: 12px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
   .results-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .result-card {
+    padding: 12px;
+  }
+
+  .card-label {
+    font-size: 12px;
+  }
+
+  .card-value {
+    font-size: 20px;
+  }
+
+  .card-description {
+    font-size: 11px;
+  }
+
+  .model-selector {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .model-button {
+    padding: 8px 12px;
+    font-size: 12px;
+    /* Ensure 44px touch target */
+    min-height: 44px;
+  }
+}
+
+/* iPhone 12-16 Landscape */
+@media (max-height: 430px) and (orientation: landscape) {
+  .dcf-results {
+    padding: 8px;
+  }
+
+  .section-title {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .result-card {
+    padding: 10px;
+  }
+
+  .card-value {
+    font-size: 18px;
+  }
+
+  .model-button {
+    min-height: 40px;
+    padding: 6px 10px;
   }
 }
 </style>

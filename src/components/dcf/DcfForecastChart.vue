@@ -408,4 +408,55 @@ const chartOptions = computed((): EChartsOption | null => {
     padding: 20px 16px;
   }
 }
+
+/* iPhone 12-16 Portrait (390px-430px) */
+@media (max-width: 430px) {
+  .dcf-chart {
+    padding: 12px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .chart-container {
+    height: 280px;
+  }
+
+  .scenario-legend {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
+/* iPhone 12-16 Landscape */
+@media (max-height: 430px) and (orientation: landscape) {
+  .dcf-chart {
+    padding: 8px;
+  }
+
+  .section-title {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+
+  .scenario-legend {
+    gap: 6px;
+  }
+
+  .legend-item {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
 </style>

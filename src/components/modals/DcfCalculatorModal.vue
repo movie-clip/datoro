@@ -570,4 +570,93 @@ onUnmounted(() => {
     gap: 20px;
   }
 }
+
+/* iPhone 12-16 Portrait (390px-430px) */
+@media (max-width: 430px) {
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-container {
+    border-radius: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .modal-header {
+    padding: 16px;
+    flex-wrap: wrap;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  .company-context {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .company-icon,
+  .company-icon-placeholder {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .company-name {
+    font-size: 14px;
+  }
+
+  .close-button {
+    /* Ensure 44x44px touch target */
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+  }
+
+  .modal-body {
+    padding: 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dcf-content {
+    gap: 16px;
+  }
+
+  .data-loading,
+  .data-warning {
+    padding: 20px 12px;
+  }
+}
+
+/* iPhone 12-16 Landscape */
+@media (max-height: 430px) and (orientation: landscape) {
+  .modal-container {
+    height: 100vh;
+  }
+
+  .modal-header {
+    padding: 12px 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 16px;
+  }
+
+  .modal-body {
+    padding: 12px 16px;
+  }
+
+  .dcf-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .close-button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
 </style>

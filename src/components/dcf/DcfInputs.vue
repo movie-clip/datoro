@@ -587,4 +587,81 @@ input[type="number"] {
     padding: 20px;
   }
 }
+
+/* iPhone 12-16 Portrait (390px-430px) */
+@media (max-width: 430px) {
+  .dcf-inputs {
+    padding: 12px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .inputs-grid {
+    gap: 12px;
+  }
+
+  .input-group label {
+    font-size: 13px;
+  }
+
+  .scenario-labels {
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .scenario-label {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  input {
+    font-size: 14px;
+    padding: 10px 32px 10px 10px;
+    /* Ensure touch-friendly input fields */
+    min-height: 44px;
+  }
+
+  .input-hint {
+    font-size: 11px;
+  }
+
+  .company-data-labels .data-label {
+    font-size: 11px;
+  }
+
+  .readonly-value {
+    font-size: 14px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* iPhone 12-16 Landscape */
+@media (max-height: 430px) and (orientation: landscape) {
+  .dcf-inputs {
+    padding: 8px;
+  }
+
+  .section-title {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+
+  .inputs-grid {
+    gap: 10px;
+  }
+
+  input {
+    min-height: 40px;
+    padding: 8px 28px 8px 8px;
+  }
+
+  .readonly-value {
+    min-height: 40px;
+  }
+}
 </style>

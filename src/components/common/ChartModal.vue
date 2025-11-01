@@ -144,4 +144,54 @@ watch(() => props.isOpen, (isOpen) => {
     right: 8px;
   }
 }
+
+/* iPhone 12-16 Portrait (390px-430px) */
+@media (max-width: 430px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-container {
+    max-height: 85vh;
+    border-radius: 12px;
+  }
+
+  .modal-content {
+    padding: 16px;
+    max-height: 85vh;
+  }
+
+  .close-btn {
+    /* Ensure touch target is at least 44x44px */
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+/* iPhone 12-16 Landscape */
+@media (max-height: 430px) and (orientation: landscape) {
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .modal-container {
+    max-height: 95vh;
+  }
+
+  .modal-content {
+    padding: 12px;
+    max-height: 95vh;
+  }
+
+  .close-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    top: 6px;
+    right: 6px;
+  }
+}
 </style>

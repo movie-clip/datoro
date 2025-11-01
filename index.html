@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Primary Meta Tags -->
     <title>Datoro - Free Stock Analysis with AI Insights | 10,000+ Stocks</title>
@@ -248,7 +248,26 @@
         }
       </style>
     </div>
-    <script type="module" src="/src/main.js"></script>
+    
+    <!-- Global error handler for debugging mobile issues -->
+    <script>
+      window.addEventListener('error', function(event) {
+        console.error('Global error:', event.error);
+        var shell = document.getElementById('app-shell');
+        if (shell) {
+          var errorDiv = document.createElement('div');
+          errorDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 12px; padding: 20px; max-width: 90%; color: #fff; z-index: 10000;';
+          errorDiv.innerHTML = '<h3 style="color: #ef4444; margin: 0 0 12px 0;">Error Loading App</h3><p style="margin: 0; font-size: 14px;">' + (event.error ? event.error.message : 'Unknown error') + '</p><button onclick="location.reload()" style="margin-top: 16px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Reload</button>';
+          document.body.appendChild(errorDiv);
+        }
+      });
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled promise rejection:', event.reason);
+      });
+    </script>
+    
+    <script type="module" src="/src/main.ts"></script>
     
     <!-- Lazy load tab icons after app is ready -->
     <script>

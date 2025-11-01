@@ -619,4 +619,51 @@ const getMarginClass = (marginStr: string): string => {
     font-size: 0.85rem;
   }
 }
+
+/* iPhone 12-16 Portrait (390px-430px) */
+@media (max-width: 430px) {
+  .hero-section {
+    padding: 0 12px;
+    margin: 12px auto;
+  }
+
+  .price-chart-container,
+  .key-metrics-card {
+    padding: 0.875rem;
+  }
+
+  .metrics-grid {
+    gap: 10px;
+  }
+}
+
+/* iPhone 12-16 Landscape */
+@media (max-height: 430px) and (orientation: landscape) {
+  .hero-section {
+    margin: 8px auto;
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .price-chart-container,
+  .key-metrics-card {
+    padding: 0.75rem;
+  }
+
+  .metrics-title {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .metric-item {
+    min-height: 70px;
+  }
+
+  .metric-item-full {
+    min-height: 75px;
+  }
+}
 </style>

@@ -14,6 +14,9 @@ interface AuthUser {
   avatarUrl?: string | null
 }
 
+// Error Boundary - Load immediately for mobile error handling
+import ErrorBoundary from './components/common/ErrorBoundary.vue'
+
 // Layout components - Load immediately (visible on page load)
 import GlobalTickerBar from './components/layout/GlobalTickerBar.vue'
 import HeroSection from './components/layout/HeroSection.vue'
@@ -309,8 +312,9 @@ const handleSelectTicker = (ticker: string): void => {
 </script>
 
 <template>
-  <main class="page">
-    <header class="app-header">
+  <ErrorBoundary>
+    <main class="page">
+      <header class="app-header">
       <div class="header-container">
         <div class="header-left">
           <!-- Hamburger Menu Button -->
@@ -594,6 +598,7 @@ const handleSelectTicker = (ticker: string): void => {
     <!-- Cookie Consent Banner -->
     <CookieConsent />
   </main>
+  </ErrorBoundary>
 </template>
 
 <style>

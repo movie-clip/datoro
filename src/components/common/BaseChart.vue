@@ -853,12 +853,17 @@ const modalOption = computed(() => {
 }
 
 /* ============================================
-   IPHONE 13/14 SPECIFIC (390PX WIDTH)
+   IPHONE 12-16 PORTRAIT (390PX-430PX WIDTH)
    ============================================ */
-@media (max-width: 414px) and (min-width: 375px) {
+@media (max-width: 430px) {
+  .echart {
+    height: 240px; /* Optimized for single column layout on iPhone 12-16 */
+  }
+
   .echart-modal {
     height: 50vh;
     max-height: 450px;
+    padding: 16px;
   }
   
   .growth-labels {
@@ -870,43 +875,46 @@ const modalOption = computed(() => {
     padding: 4px 8px !important;
     min-width: 50px !important;
   }
-}
 
-/* ============================================
-   VERY SMALL PHONES (MAX-WIDTH: 400PX)
-   ============================================ */
-@media (max-width: 400px) {
-  .echart {
-    height: 230px; /* More square on smaller screens */
+  .view-mode-btn {
+    /* Ensure touch targets are at least 44px */
+    min-height: 44px;
+    padding: 8px 16px;
+    font-size: 13px;
   }
 
   .modal-title {
-    font-size: 16px;
+    font-size: 17px;
+  }
+}
+
+/* ============================================
+   IPHONE 12-16 LANDSCAPE
+   ============================================ */
+@media (max-height: 430px) and (orientation: landscape) {
+  .echart {
+    height: 200px; /* Shorter for landscape with 2-column grid */
+  }
+
+  .echart-modal {
+    height: 65vh;
+    max-height: none;
+  }
+
+  .modal-title {
+    font-size: 15px;
   }
 
   .view-mode-buttons {
-    gap: 5px;
-    margin-bottom: 10px;
+    gap: 4px;
+    margin-bottom: 8px;
   }
 
   .view-mode-btn {
-    padding: 6px 10px;
-    font-size: 11px;
-    border-radius: 6px;
-  }
-}
-
-/* ============================================
-   LANDSCAPE ORIENTATION
-   ============================================ */
-@media (max-width: 768px) and (orientation: landscape) {
-  .echart {
-    height: 240px; /* Square-ish for 3 columns (~260px wide each on 844px screen) */
-  }
-
-  .modal-title {
-    font-size: 16px;
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 </style>
+
 
