@@ -231,8 +231,12 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
           if (rightAxisType === 'percentage') {
             return val.toFixed(1) + '%'
           }
-          // Use yFormat for right axis (e.g., ratio format for P/S)
-          return yFormatter(val, yFormat)
+          // For ratio format, use it on right axis too
+          if (yFormat === 'ratio') {
+            return yFormatter(val, yFormat)
+          }
+          // Default: use short format for right axis (shares, counts, etc.)
+          return fmtShort(val)
         }
       },
       axisLine: { lineStyle: { color: '#aaa' } },

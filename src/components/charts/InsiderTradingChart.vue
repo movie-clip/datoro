@@ -8,6 +8,7 @@
     :empty-data-message="emptyDataMessage ?? undefined"
     kind="line"
     :dual-axis="true"
+    y-format="price"
     :bar-max-width="40"
     :force-expanded="forceExpanded"
   />
