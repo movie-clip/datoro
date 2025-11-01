@@ -5,6 +5,7 @@ import { getFcfSeriesFromBatch } from '../services/financials/batchChartService'
 
 type Period = 'annual' | 'quarterly'
 type ViewMode = 'fcfPerShare' | 'fcfAndSbc' | 'fcf'
+type YFormat = 'short' | 'decimal'
 
 interface SeriesItem {
   name: string
@@ -14,6 +15,7 @@ interface SeriesItem {
 export interface UseFcfSeriesReturn {
   period: ComputedRef<Period>
   viewMode: Ref<ViewMode>
+  yFormat: ComputedRef<YFormat>
   series: ComputedRef<[number, number][] | SeriesItem[]>
   compactSeries: ComputedRef<SeriesItem[]>
   title: Ref<string>
@@ -51,6 +53,11 @@ export function useFcfSeries(): UseFcfSeriesReturn {
       return `No FCF data for '${t}'`
     }
     return null
+  })
+
+  // Y-axis format based on view mode
+  const yFormat = computed<YFormat>(() => {
+    return viewMode.value === 'fcfPerShare' ? 'decimal' : 'short'
   })
 
   // Transform data based on view mode
@@ -113,7 +120,8 @@ export function useFcfSeries(): UseFcfSeriesReturn {
 
   return { 
     period, 
-    viewMode, 
+    viewMode,
+    yFormat,
     series, 
     compactSeries, 
     title, 

@@ -8,7 +8,7 @@ import { yFormatter } from '../utils/chartFormatters'
 interface TooltipFormatterOptions {
   kind?: 'bar' | 'line'
   dualAxis?: boolean
-  yFormat?: 'short' | 'currency' | 'percent' | 'price' | 'int'
+  yFormat?: 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal'
 }
 
 interface TooltipConfigOptions extends TooltipFormatterOptions {

@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
 })
 
 type ChartKind = 'line' | 'bar'
-type YFormat = 'int' | 'currency' | 'percent' | 'short' | 'price'
+type YFormat = 'int' | 'currency' | 'percent' | 'short' | 'price' | 'decimal'
 type RightAxisType = 'symmetric' | 'percentage'
 
 interface ViewModeOption {
@@ -301,6 +301,23 @@ const toggleSegment = (segmentValue: string): void => {
   if (!props.selectedSegments) return
   
   const current = [...props.selectedSegments]
+  
+  // Special handling for 'total' - replace all segments with just 'total'
+  if (segmentValue === 'total') {
+    // If already showing total, do nothing
+    if (current.length === 1 && current[0] === 'total') return
+    // Otherwise switch to total mode
+    emit('update:selectedSegments', ['total'])
+    return
+  }
+  
+  // If switching from 'total' to individual segments, clear total first
+  if (current.includes('total')) {
+    emit('update:selectedSegments', [segmentValue])
+    return
+  }
+  
+  // Toggle individual segment
   const idx = current.indexOf(segmentValue)
   
   if (idx >= 0) {
@@ -717,36 +734,70 @@ const modalOption = computed(() => {
    ============================================ */
 .view-mode-buttons {
   display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 16px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .view-mode-btn {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(42, 42, 42, 0.5);
-  color: rgba(229, 229, 229, 0.7);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(30, 30, 34, 0.8) 0%, rgba(25, 25, 28, 0.8) 100%);
+  color: rgba(229, 229, 229, 0.65);
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 400;
-  transition: all 0.15s;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: fit-content;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.view-mode-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 
 .view-mode-btn:hover {
-  background: rgba(42, 42, 42, 0.8);
-  color: rgba(229, 229, 229, 0.9);
+  background: linear-gradient(135deg, rgba(35, 35, 39, 0.9) 0%, rgba(30, 30, 34, 0.9) 100%);
+  color: rgba(229, 229, 229, 0.85);
   border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.view-mode-btn:hover::before {
+  opacity: 1;
 }
 
 .view-mode-btn.active {
-  border-color: rgba(0, 89, 76, 0.4);
-  background: rgba(0, 89, 76, 0.2);
-  color: #E5E5E5;
-  font-weight: 500;
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.15) 100%);
+  color: #10B981;
+  font-weight: 600;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), 0 4px 12px rgba(16, 185, 129, 0.2);
+  transform: translateY(0);
+}
+
+.view-mode-btn.active::before {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+  opacity: 1;
+}
+
+.view-mode-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* ============================================
@@ -789,9 +840,15 @@ const modalOption = computed(() => {
     margin: 0 0 1px 0;
   }
 
+  .view-mode-buttons {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
   .view-mode-btn {
-    padding: 6px 12px;
-    font-size: 13px;
+    padding: 7px 14px;
+    font-size: 12px;
+    border-radius: 6px;
   }
 }
 
@@ -827,9 +884,15 @@ const modalOption = computed(() => {
     font-size: 16px;
   }
 
+  .view-mode-buttons {
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
   .view-mode-btn {
-    padding: 5px 10px;
-    font-size: 12px;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 6px;
   }
 }
 

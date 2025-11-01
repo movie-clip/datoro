@@ -6,7 +6,7 @@
 import { yFormatter, fmtShort } from './chartFormatters'
 
 type ChartKind = 'bar' | 'line'
-type YFormat = 'short' | 'currency' | 'percent' | 'price' | 'int' | 'default'
+type YFormat = 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal' | 'default'
 type RightAxisType = 'percentage' | 'default'
 
 interface XAxisOptions {

@@ -7,7 +7,7 @@
     :series="series"
     :compact-series="compactSeries"
     kind="bar"
-    y-format="short"
+    :y-format="yFormat"
     :loading="loading"
     :error="error ?? undefined"
     :message="message"
@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
-const { viewMode, series, compactSeries, title, message, loading, error, ticker, dataType } = useFcfSeries()
+const { viewMode, yFormat, series, compactSeries, title, message, loading, error, ticker, dataType } = useFcfSeries()
 
 const viewModeOptions = [
   { label: 'FCF', value: 'fcf' },

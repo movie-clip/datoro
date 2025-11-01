@@ -41,7 +41,7 @@ export interface UseExpensesSeriesReturn {
 }
 
 export function useExpensesSeries(): UseExpensesSeriesReturn {
-  const selectedSegments = ref<string[]>(['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']) // Show all by default
+  const selectedSegments = ref<string[]>(['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']) // Show all segments stacked by default
   const title = ref('Operating Expenses — Empty')
   const message = ref('')
 
@@ -81,7 +81,7 @@ export function useExpensesSeries(): UseExpensesSeriesReturn {
         name: 'Total Expenses',
         data: totalData,
         stack: 'expenses',
-        itemStyle: { color: '#6b7280' }
+        itemStyle: { color: '#5470C6' }
       }]
     }
     
@@ -115,9 +115,36 @@ export function useExpensesSeries(): UseExpensesSeriesReturn {
     })
   })
 
-  // Compact series shows stacked expenses by default (same as full view)
+  // Compact series always shows all three segments stacked
   const compactSeries = computed<SeriesItem[]>(() => {
-    return series.value
+    if (!rawData.value.length) return []
+    
+    // Collect all dates
+    const allDates = [...new Set(rawData.value.map(d => d.date))].sort((a, b) => a - b)
+    
+    // Create stacked series for all three segments
+    const segmentColors: Record<SegmentKey, string> = {
+      costOfRevenue: '#ef4444',        // Red
+      researchAndDevelopment: '#3b82f6', // Blue
+      sellingGeneralAdmin: '#10b981'    // Green
+    }
+    
+    const segments: SegmentKey[] = ['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']
+    
+    return segments.map(segment => {
+      // Align all data to common dates
+      const alignedData = allDates.map(date => {
+        const dataPoint = rawData.value.find(d => d.date === date)
+        return [date, dataPoint ? dataPoint[segment] : 0] as [number, number]
+      })
+      
+      return {
+        name: segmentLabels[segment],
+        data: alignedData,
+        stack: 'expenses',
+        itemStyle: { color: segmentColors[segment] }
+      }
+    })
   })
 
   const viewModeOptions = computed<ViewModeOption[]>(() => [
