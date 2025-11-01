@@ -6,7 +6,7 @@
 import { yFormatter, fmtShort } from './chartFormatters'
 
 type ChartKind = 'bar' | 'line'
-type YFormat = 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal' | 'default'
+type YFormat = 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal' | 'ratio' | 'default'
 type RightAxisType = 'percentage' | 'default'
 
 interface XAxisOptions {
@@ -231,8 +231,8 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
           if (rightAxisType === 'percentage') {
             return val.toFixed(1) + '%'
           }
-          // Use same formatting as shares outstanding chart
-          return fmtShort(val)
+          // Use yFormat for right axis (e.g., ratio format for P/S)
+          return yFormatter(val, yFormat)
         }
       },
       axisLine: { lineStyle: { color: '#aaa' } },

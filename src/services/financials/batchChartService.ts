@@ -604,9 +604,15 @@ export interface ValuationRatiosDataPoint {
 
 export function getValuationRatiosSeriesFromBatch(batchData: BatchData | null, period: Period = 'annual'): ValuationRatiosDataPoint[] {
   try {
-    const ratios = period === 'annual' 
+    // Try requested period first
+    let ratios = period === 'annual' 
       ? batchData?.data?.ratiosAnnual 
       : batchData?.data?.ratiosQuarter
+
+    // Fallback to annual if quarterly is unavailable
+    if ((!ratios || !Array.isArray(ratios) || ratios.length === 0) && period === 'quarterly') {
+      ratios = batchData?.data?.ratiosAnnual
+    }
 
     if (!ratios || !Array.isArray(ratios)) {
       return []

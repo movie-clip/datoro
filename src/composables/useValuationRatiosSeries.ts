@@ -7,7 +7,12 @@ type Period = 'annual' | 'quarterly'
 
 interface SeriesItem {
   name: string
+  type: string
   data: [number, number][]
+  yAxisIndex: number
+  smooth?: boolean
+  lineStyle?: { width: number }
+  showSymbol?: boolean
 }
 
 export interface UseValuationRatiosSeriesReturn {
@@ -24,7 +29,7 @@ export interface UseValuationRatiosSeriesReturn {
 }
 
 export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
-  const title = ref('P/E & P/S Ratios — Empty')
+  const title = ref('Ratios — Empty')
   const message = ref('')
 
   // Use Pinia store with storeToRefs to maintain reactivity
@@ -50,22 +55,30 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
     return null
   })
 
-  // Transform data to multi-series format for dual-line chart
+  // Transform data to multi-series format for dual-axis chart
   const series = computed<SeriesItem[]>(() => {
     if (!rawData.value.length) return []
     
     return [
       {
         name: 'P/E Ratio',
+        type: 'line',
         data: rawData.value
           .filter(d => d.peRatio !== 0)
-          .map(d => [d.date, d.peRatio] as [number, number])
+          .map(d => [d.date, d.peRatio] as [number, number]),
+        yAxisIndex: 0,
+        lineStyle: { width: 2 },
+        showSymbol: false
       },
       {
         name: 'P/S Ratio',
+        type: 'line',
         data: rawData.value
           .filter(d => d.psRatio !== 0)
-          .map(d => [d.date, d.psRatio] as [number, number])
+          .map(d => [d.date, d.psRatio] as [number, number]),
+        yAxisIndex: 1,
+        lineStyle: { width: 2 },
+        showSymbol: false
       }
     ].filter(s => s.data.length > 0) // Only include series with data
   })
@@ -76,20 +89,20 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
   // Update title based on ticker
   watch(currentTicker, (ticker) => {
     if (!ticker) {
-      title.value = 'P/E & P/S Ratios — Empty'
+      title.value = 'Ratios — Empty'
       message.value = 'Enter a ticker'
     } else if (rawData.value.length > 0) {
-      title.value = 'P/E & P/S Ratios'
+      title.value = 'Ratios'
       message.value = ''
     } else if (error.value && !loading.value) {
       // Keep original title, show error in message
-      title.value = 'P/E & P/S Ratios'
+      title.value = 'Ratios'
       message.value = error.value
     } else if (!loading.value) {
-      title.value = 'P/E & P/S Ratios — No data'
+      title.value = 'Ratios — No data'
       message.value = `No ratios data for '${ticker}'`
     } else {
-      title.value = 'P/E & P/S Ratios'
+      title.value = 'Ratios'
       message.value = ''
     }
   }, { immediate: true })

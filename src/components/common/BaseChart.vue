@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
 })
 
 type ChartKind = 'line' | 'bar'
-type YFormat = 'int' | 'currency' | 'percent' | 'short' | 'price' | 'decimal'
+type YFormat = 'int' | 'currency' | 'percent' | 'short' | 'price' | 'decimal' | 'ratio'
 type RightAxisType = 'symmetric' | 'percentage'
 
 interface ViewModeOption {

@@ -90,7 +90,7 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
     return [{
       name: 'Net Income',
       data: rawData.value,
-      color: '#4ade80' // green color for profit
+      color: '#5470c6' // ECharts default blue (matches Revenue chart)
     }]
   })
 
@@ -102,7 +102,7 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
       {
         name: 'Net Income',
         data: rawData.value,
-        color: '#4ade80',
+        color: '#5470c6', // ECharts default blue (matches Revenue chart)
         type: 'bar',
         yAxisIndex: 0
       }
@@ -112,7 +112,7 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
       result.push({
         name: 'Net Margin %',
         data: marginData.value,
-        color: '#60a5fa', // blue color for margin line
+        color: '#4ade80', // green color for margin line
         type: 'line',
         yAxisIndex: 1
       })

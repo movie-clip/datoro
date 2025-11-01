@@ -3,7 +3,7 @@
  * Pure functions for formatting chart values (numbers, currency, percentages)
  */
 
-type FormatMode = 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal' | 'default'
+type FormatMode = 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal' | 'ratio' | 'default'
 
 /**
  * Format large numbers with abbreviated suffixes (K, M, B, T)
@@ -31,13 +31,24 @@ export function fmtDecimal(n: number): string {
 }
 
 /**
+ * Format ratio numbers (e.g., P/E, P/S ratios)
+ * @param n - Number to format
+ * @returns Formatted ratio with 1 decimal place
+ * @example fmtRatio(25.67) => "25.7"
+ */
+export function fmtRatio(n: number): string {
+  return n.toFixed(1)
+}
+
+/**
  * Format Y-axis values based on display mode
  * @param v - Value to format
- * @param mode - Format mode: 'short', 'currency', 'percent', 'price', 'int', 'decimal', or default
+ * @param mode - Format mode: 'short', 'currency', 'percent', 'price', 'int', 'decimal', 'ratio', or default
  * @returns Formatted value
  * @example yFormatter(1500000, 'currency') => "$2M"
  * @example yFormatter(182.45, 'price') => "$182"
  * @example yFormatter(7.3020, 'decimal') => "$7.3"
+ * @example yFormatter(25.67, 'ratio') => "25.7"
  */
 export function yFormatter(v: number, mode: FormatMode): string {
   if (mode === 'short') return fmtShort(v)
@@ -46,5 +57,6 @@ export function yFormatter(v: number, mode: FormatMode): string {
   if (mode === 'price') return '$' + Math.round(v).toString()
   if (mode === 'int') return Math.round(v).toLocaleString()
   if (mode === 'decimal') return fmtDecimal(v)
+  if (mode === 'ratio') return fmtRatio(v)
   return Math.round(v).toString()
 }

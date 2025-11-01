@@ -8,7 +8,7 @@ import { yFormatter } from '../utils/chartFormatters'
 interface TooltipFormatterOptions {
   kind?: 'bar' | 'line'
   dualAxis?: boolean
-  yFormat?: 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal'
+  yFormat?: 'short' | 'currency' | 'percent' | 'price' | 'int' | 'decimal' | 'ratio'
 }
 
 interface TooltipConfigOptions extends TooltipFormatterOptions {
@@ -88,7 +88,10 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
 
       if (dualAxis) {
         // Dual axis specific formatting
-        if (lname.includes('price')) {
+        if (yFormat === 'ratio') {
+          // For ratio charts (P/E, P/S, etc.)
+          formatted = value.toFixed(1)
+        } else if (lname.includes('price')) {
           formatted = `$${value.toFixed(2)}`
         } else if (lname.includes('margin') || lname.includes('%')) {
           formatted = `${value.toFixed(1)}%`
@@ -123,6 +126,10 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
           formatted = `$${value.toFixed(2)}`
         } else if (yFormat === 'int') {
           formatted = Math.round(value).toLocaleString()
+        } else if (yFormat === 'decimal') {
+          formatted = yFormatter(value, 'decimal')
+        } else if (yFormat === 'ratio') {
+          formatted = value.toFixed(1)
         } else {
           // For 'short' and 'currency' modes, always show currency format in tooltip
           formatted = yFormatter(value, 'currency')
