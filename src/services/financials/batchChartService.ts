@@ -592,6 +592,51 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
 }
 
 /**
+ * Get P/E and P/S ratio series from batch data
+ * Used by: ValuationRatiosChart
+ * Replaces: /api/v3/ratios (uses ratiosAnnual or ratiosQuarter from batch)
+ */
+export interface ValuationRatiosDataPoint {
+  date: number
+  peRatio: number
+  psRatio: number
+}
+
+export function getValuationRatiosSeriesFromBatch(batchData: BatchData | null, period: Period = 'annual'): ValuationRatiosDataPoint[] {
+  try {
+    const ratios = period === 'annual' 
+      ? batchData?.data?.ratiosAnnual 
+      : batchData?.data?.ratiosQuarter
+
+    if (!ratios || !Array.isArray(ratios)) {
+      return []
+    }
+
+    return ratios
+      .map((r: any) => {
+        if (!r.date) return null
+        
+        const peRatio = Number(r.priceEarningsRatioTTM || r.priceEarningsRatio || 0)
+        const psRatio = Number(r.priceToSalesRatioTTM || r.priceToSalesRatio || 0)
+        
+        // Skip invalid data points
+        if (peRatio === 0 && psRatio === 0) return null
+        
+        return {
+          date: new Date(r.date).getTime(),
+          peRatio,
+          psRatio
+        }
+      })
+      .filter((point): point is ValuationRatiosDataPoint => point !== null)
+      .sort((a, b) => a.date - b.date)
+  } catch (_error) {
+    console.error('[BatchChartService] getValuationRatiosSeriesFromBatch error:', _error)
+    return []
+  }
+}
+
+/**
  * Get Insider Trading aggregated data from batch data (MEMOIZED - expensive)
  * Used by: InsiderTradingChart
  * Replaces: /api/v4/insider-trading (1 call from insiderTrading)

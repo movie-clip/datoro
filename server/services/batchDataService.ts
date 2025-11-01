@@ -66,6 +66,7 @@ const validationSchemas: Record<string, z.ZodSchema | null> = {
   ratiosTTM: null,
   keyMetricsTTM: null,
   ratiosAnnual: null,
+  ratiosQuarter: null, // Quarterly ratios for P/E, P/S trends
   keyMetrics: null,
   keyMetricsQuarter: null, // Quarterly key metrics for FCF per share
   priceHistory: null,
@@ -155,6 +156,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     
     // Ratios and metrics (Priority 1)
     ratiosAnnual: `/api/v3/ratios/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
+    ratiosQuarter: `/api/v3/ratios/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     keyMetrics: `/api/v3/key-metrics/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
     keyMetricsQuarter: `/api/v3/key-metrics/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     

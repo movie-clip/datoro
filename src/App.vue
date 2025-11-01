@@ -65,6 +65,9 @@ const FcfChart = defineAsyncComponent(() =>
 const EbitdaChart = defineAsyncComponent(() =>
   import('./components/charts/EbitdaChart.vue')
 )
+const ValuationRatiosChart = defineAsyncComponent(() =>
+  import('./components/charts/ValuationRatiosChart.vue')
+)
 const ExpensesChart = defineAsyncComponent(() =>
   import('./components/charts/ExpensesChart.vue')
 )
@@ -416,7 +419,7 @@ const handleSelectTicker = (ticker: string): void => {
       >
         <section class="charts">
           <section class="panel">
-            <EpsChart />
+            <ValuationRatiosChart />
           </section>
           <section class="panel">
             <EbitdaChart />
@@ -477,6 +480,9 @@ const handleSelectTicker = (ticker: string): void => {
           </section>
           <section class="panel">
             <SharesChart />
+          </section>
+          <section class="panel">
+            <EpsChart />
           </section>
         </section>
       </TabPanel>

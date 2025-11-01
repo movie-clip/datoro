@@ -3,6 +3,7 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getNetIncomeSeriesFromBatch } from '../services/financials/batchChartService'
+import type { FMPIncomeStatement } from '../types/fmp.types'
 
 type Period = 'annual' | 'quarterly'
 
@@ -14,11 +15,14 @@ interface ViewModeOption {
 interface SeriesItem {
   name: string
   data: [number, number][]
-  color: string
+  color?: string
+  type?: string
+  yAxisIndex?: number
 }
 
 export interface UseNetIncomeSeriesReturn {
   series: ComputedRef<SeriesItem[]>
+  netIncomeWithMargin: ComputedRef<SeriesItem[]>
   title: ComputedRef<string>
   message: Ref<string | null>
   loading: Ref<boolean>
@@ -43,6 +47,25 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
   const rawData = computed<[number, number][]>(() =>
     getNetIncomeSeriesFromBatch(batchData.value, period.value)
   )
+
+  // Extract net margin data from income statements
+  const marginData = computed<[number, number][]>(() => {
+    const income = period.value === 'annual'
+      ? batchData.value?.data?.incomeAnnual
+      : batchData.value?.data?.incomeQuarter
+
+    if (!income || !Array.isArray(income)) return []
+
+    return income
+      .map((row: FMPIncomeStatement) => {
+        if (!row.date) return null
+        const margin = Number(row.netIncomeRatio) || 0
+        // Convert to percentage (ratio is 0-1, we want 0-100)
+        return [new Date(row.date).getTime(), margin * 100] as [number, number]
+      })
+      .filter((point): point is [number, number] => point !== null)
+      .sort((a, b) => a[0] - b[0])
+  })
 
   const error = computed<string | null>(() => {
     if (batchError.value) return batchError.value
@@ -71,6 +94,33 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
     }]
   })
 
+  // Combined net income bars with margin line for dual-axis view
+  const netIncomeWithMargin = computed<SeriesItem[]>(() => {
+    if (!rawData.value || rawData.value.length === 0) return []
+    
+    const result: SeriesItem[] = [
+      {
+        name: 'Net Income',
+        data: rawData.value,
+        color: '#4ade80',
+        type: 'bar',
+        yAxisIndex: 0
+      }
+    ]
+
+    if (marginData.value.length > 0) {
+      result.push({
+        name: 'Net Margin %',
+        data: marginData.value,
+        color: '#60a5fa', // blue color for margin line
+        type: 'line',
+        yAxisIndex: 1
+      })
+    }
+
+    return result
+  })
+
   const title = computed(() => 'Net Income')
 
   // Update message based on state
@@ -89,6 +139,7 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
 
   return {
     series,
+    netIncomeWithMargin,
     title,
     message,
     loading,

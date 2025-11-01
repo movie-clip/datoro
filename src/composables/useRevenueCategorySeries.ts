@@ -36,7 +36,7 @@ export interface UseRevenueCategorySeriesReturn {
 
 export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
   const viewMode = ref<ViewMode>('total')
-  const title = ref('Revenue by Category')
+  const title = ref('Revenue')
   const message = ref('')
 
   // Use Pinia store with storeToRefs to maintain reactivity
@@ -131,19 +131,19 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
   watch([currentTicker, viewMode, productCategories, geographicCategories, loading], 
     ([ticker, mode, product, geo, isLoading]) => {
       if (!ticker) {
-        title.value = 'Revenue by Category — Empty'
+        title.value = 'Revenue — Empty'
         message.value = 'Enter a ticker to view revenue breakdown'
         return
       }
 
       if (isLoading) {
-        title.value = 'Revenue by Category — Loading...'
+        title.value = 'Revenue — Loading...'
         message.value = ''
         return
       }
 
       if (error.value) {
-        title.value = 'Revenue by Category'
+        title.value = 'Revenue'
         message.value = error.value
         return
       }
@@ -169,15 +169,15 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
 
       if (!hasData && totalRevenue.value.length === 0) {
         // No data at all
-        title.value = 'Revenue by Category'
+        title.value = 'Revenue'
         message.value = `No revenue data available for ${ticker.toUpperCase()}`
       } else if (!hasData) {
         // Has total revenue but no segments
-        title.value = 'Revenue by Category'
+        title.value = 'Revenue'
         message.value = fallbackMessage
       } else {
         // Has segment data
-        title.value = 'Revenue by Category'
+        title.value = 'Revenue'
         message.value = ''
       }
     }, 

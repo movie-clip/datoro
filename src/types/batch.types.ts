@@ -63,6 +63,9 @@ export interface BatchData {
     /** Annual ratios */
     ratiosAnnual?: unknown[]
     
+    /** Quarterly ratios */
+    ratiosQuarter?: unknown[]
+    
     /** Key metrics (annual) */
     keyMetrics?: unknown[]
     

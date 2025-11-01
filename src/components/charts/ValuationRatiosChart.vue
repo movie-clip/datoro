@@ -1,29 +1,24 @@
 <template>
   <BaseChart
-    :key="`netincome-${ticker}-${period}`"
-    v-model:period="period"
+    :key="`valuation-ratios-${ticker}-${timeframe}`"
     :title="title"
-    :series="netIncomeWithMargin"
-    :compact-series="netIncomeWithMargin"
-    kind="bar"
-    y-format="currency"
+    :series="series"
+    :compact-series="compactSeries"
+    kind="line"
+    y-format="int"
     :loading="loading"
     :error="error ?? undefined"
-    :message="message ?? undefined"
-    aria-label="Net Income chart"
-    :period-options="viewModeOptions"
-    :show-growth-labels="true"
-    :dual-axis="true"
-    right-axis-type="percentage"
-    :ticker="ticker"
-    :data-type="dataType"
+    :message="message"
+    aria-label="P/E and P/S Ratios chart"
+    :show-legend="true"
     :force-expanded="forceExpanded"
-    :timeframe="period"
+    :timeframe="timeframe"
   />
 </template>
 
 <script setup lang="ts">
-import { useNetIncomeSeries } from '../../composables/useNetIncomeSeries'
+import { storeToRefs } from 'pinia'
+import { useValuationRatiosSeries } from '../../composables/useValuationRatiosSeries'
 import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
@@ -37,7 +32,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 // No ticker prop - using Pinia store
 const tickerStore = useTickerStore()
-const { netIncomeWithMargin, title, message, loading, error, period, viewModeOptions, ticker, dataType } = useNetIncomeSeries()
+const { timeframe } = storeToRefs(tickerStore)
+const { series, compactSeries, title, message, loading, error, ticker } = useValuationRatiosSeries()
 </script>
 
 <style scoped>
