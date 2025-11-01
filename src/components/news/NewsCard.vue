@@ -129,6 +129,10 @@ const handleImageError = (event: Event) => {
   transition: all 0.2s ease;
   min-height: 104px; /* Fixed height: 80px image + 24px padding */
   max-height: 104px; /* Prevent expansion */
+  width: 100%; /* Take full width of container */
+  max-width: 100%; /* Don't exceed container width */
+  overflow: hidden; /* Prevent content overflow */
+  box-sizing: border-box; /* Include padding/border in width calculation */
 }
 
 .news-card:hover {
@@ -210,8 +214,9 @@ const handleImageError = (event: Event) => {
 .news-source-badge {
   display: inline-block;
   padding: 2px 8px;
-  background: rgba(0, 168, 142, 0.15);
-  color: #00FF87;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(158, 158, 158, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   font-size: 10px;
   font-weight: 500;

@@ -276,6 +276,8 @@ const getMarginClass = (marginStr: string): string => {
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
   min-height: 500px; /* Fixed minimum height to prevent scaling */
+  overflow: hidden; /* Prevent content from expanding container */
+  max-width: 100%; /* Ensure it doesn't exceed grid column width */
 }
 
 .price-chart-container:hover {
@@ -304,6 +306,13 @@ const getMarginClass = (marginStr: string): string => {
 
 .description-placeholder p {
   margin: 0;
+}
+
+/* News Container - Constrain width */
+.news-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden; /* Prevent horizontal overflow */
 }
 
 /* News Expandable Section */
