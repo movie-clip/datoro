@@ -72,8 +72,11 @@ export interface BatchData {
     /** Historical price data with structure { symbol, historical: [...] } */
     priceHistory?: { symbol: string; historical: FMPHistoricalPrice[] }
     
-    /** Revenue segments by product/geography */
+    /** Revenue segments by product (FMP returns { "date": { "Category": value } }) */
     revenueSegments?: unknown[]
+    
+    /** Revenue segments by geography (FMP returns { "date": { "Region": value } }) */
+    revenueGeographicSegments?: unknown[]
     
     /** Dividend history with structure { symbol, historical: [...] } */
     dividendHistory?: { symbol: string; historical: FMPDividend[] }

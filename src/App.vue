@@ -53,9 +53,6 @@ import PriceChart from './components/charts/PriceChart.vue'
 const PriceTargetBar = defineAsyncComponent(() =>
   import('./components/charts/PriceTargetBar.vue')
 )
-const RevenueChart = defineAsyncComponent(() =>
-  import('./components/charts/RevenueChart.vue')
-)
 const NetIncomeChart = defineAsyncComponent(() =>
   import('./components/charts/NetIncomeChart.vue')
 )
@@ -85,6 +82,9 @@ const SharesChart = defineAsyncComponent(() =>
 )
 const CashDebtChart = defineAsyncComponent(() =>
   import('./components/charts/CashDebtChart.vue')
+)
+const RevenueByCategoryChart = defineAsyncComponent(() =>
+  import('./components/charts/RevenueByCategoryChart.vue')
 )
 
 // Use Pinia stores
@@ -435,7 +435,7 @@ const handleSelectTicker = (ticker: string): void => {
       >
         <section class="charts">
           <section class="panel">
-            <RevenueChart />
+            <RevenueByCategoryChart />
           </section>
           <section class="panel">
             <NetIncomeChart />

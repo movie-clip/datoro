@@ -685,3 +685,143 @@ export function getPriceSeriesFromBatch(batchData: BatchData | null, maxDays: nu
     return []
   }
 }
+
+/**
+ * Get product revenue categories from batch data (MEMOIZED)
+ * New structure: FMP returns { "date": { "Category": value, ... } }
+ * Used by: RevenueByCategoryChart (product segmentation)
+ */
+export const getProductCategoriesFromBatch = memoize(function getProductCategoriesFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
+  try {
+    const segmentData = batchData?.data?.revenueSegments
+
+    if (!segmentData || !Array.isArray(segmentData) || segmentData.length === 0) {
+      return { segments: [], series: {} }
+    }
+
+    const allCategories = new Set<string>()
+    const categorySeries: Record<string, SeriesPoint[]> = {}
+    let skippedEntries = 0
+
+    // FMP structure: each entry is { "date": { "CategoryName": value, ... } }
+    segmentData.forEach(entry => {
+      if (!entry || typeof entry !== 'object') {
+        skippedEntries++
+        return
+      }
+      
+      const entryObj = entry as Record<string, unknown>
+      const dateKey = Object.keys(entryObj)[0] // First key is the date
+      if (!dateKey) {
+        skippedEntries++
+        return
+      }
+
+      const date = Date.parse(dateKey)
+      const categories = entryObj[dateKey]
+
+      if (categories && typeof categories === 'object') {
+        Object.entries(categories).forEach(([categoryName, value]) => {
+          const numValue = Number(value)
+          if (!isNaN(numValue) && numValue > 0) {
+            allCategories.add(categoryName)
+            if (!categorySeries[categoryName]) {
+              categorySeries[categoryName] = []
+            }
+            categorySeries[categoryName].push([date, numValue])
+          }
+        })
+      } else {
+        skippedEntries++
+      }
+    })
+
+    // Sort each category series by date
+    Object.values(categorySeries).forEach(series => {
+      series.sort((a, b) => a[0] - b[0])
+    })
+
+    if (skippedEntries > 0) {
+      console.warn(`[BatchChartService] Skipped ${skippedEntries} invalid product segment entries`)
+    }
+
+    return {
+      segments: Array.from(allCategories).sort(),
+      series: categorySeries
+    }
+  } catch (error) {
+    console.error('[BatchChartService] getProductCategoriesFromBatch error:', error)
+    return { segments: [], series: {} }
+  }
+}) as (batchData: BatchData | null) => RevenueSegmentsResult
+
+/**
+ * Get geographic revenue categories from batch data (MEMOIZED)
+ * Structure: { "date": { "Region Name": value, ... } }
+ * Used by: RevenueByCategoryChart (geographic segmentation)
+ */
+export const getGeographicCategoriesFromBatch = memoize(function getGeographicCategoriesFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
+  try {
+    const segmentData = batchData?.data?.revenueGeographicSegments
+
+    if (!segmentData || !Array.isArray(segmentData) || segmentData.length === 0) {
+      return { segments: [], series: {} }
+    }
+
+    const allRegions = new Set<string>()
+    const regionSeries: Record<string, SeriesPoint[]> = {}
+    let skippedEntries = 0
+
+    // Same structure as product segmentation
+    segmentData.forEach(entry => {
+      if (!entry || typeof entry !== 'object') {
+        skippedEntries++
+        return
+      }
+      
+      const entryObj = entry as Record<string, unknown>
+      const dateKey = Object.keys(entryObj)[0]
+      if (!dateKey) {
+        skippedEntries++
+        return
+      }
+
+      const date = Date.parse(dateKey)
+      const regions = entryObj[dateKey]
+
+      if (regions && typeof regions === 'object') {
+        Object.entries(regions).forEach(([regionName, value]) => {
+          const numValue = Number(value)
+          if (!isNaN(numValue) && numValue > 0) {
+            // Normalize region names (remove "Segment" suffix)
+            const normalizedName = regionName.replace(/ Segment$/i, '').trim()
+            allRegions.add(normalizedName)
+            if (!regionSeries[normalizedName]) {
+              regionSeries[normalizedName] = []
+            }
+            regionSeries[normalizedName].push([date, numValue])
+          }
+        })
+      } else {
+        skippedEntries++
+      }
+    })
+
+    // Sort each region series by date
+    Object.values(regionSeries).forEach(series => {
+      series.sort((a, b) => a[0] - b[0])
+    })
+
+    if (skippedEntries > 0) {
+      console.warn(`[BatchChartService] Skipped ${skippedEntries} invalid geographic segment entries`)
+    }
+
+    return {
+      segments: Array.from(allRegions).sort(),
+      series: regionSeries
+    }
+  } catch (error) {
+    console.error('[BatchChartService] getGeographicCategoriesFromBatch error:', error)
+    return { segments: [], series: {} }
+  }
+}) as (batchData: BatchData | null) => RevenueSegmentsResult

@@ -625,6 +625,7 @@ const modalOption = computed(() => {
   width: 100%;
   height: 70vh;
   min-height: 500px;
+  overflow: hidden; /* Disable chart scrolling */
 }
 
 /* ============================================

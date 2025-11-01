@@ -77,7 +77,7 @@ watch(() => props.isOpen, (isOpen) => {
   max-width: 1400px;
   max-height: 90vh;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
+  overflow: hidden; /* Disable container scrolling */
 }
 
 .close-btn {
@@ -105,7 +105,7 @@ watch(() => props.isOpen, (isOpen) => {
 
 .modal-content {
   padding: 20px;
-  overflow-y: auto;
+  overflow: hidden; /* Disable all scrolling */
   max-height: 90vh;
 }
 

@@ -65,10 +65,20 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
 
     let html = `<div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #E5E5E5;">${date}</div>`
 
-    paramsArray.forEach(item => {
+    // Filter out zero values and sort by value (descending)
+    const sortedParams = paramsArray
+      .map(item => {
+        const value = isBarChart ? Number(item.value) : Number((item.value as [number, number])[1])
+        return { ...item, numericValue: value }
+      })
+      .filter(item => item.numericValue !== 0 && !isNaN(item.numericValue))
+      .sort((a, b) => b.numericValue - a.numericValue) // Sort descending (biggest first)
+
+    sortedParams.forEach(item => {
       const marker = item.marker
       const name = item.seriesName || ''
-      const value = isBarChart ? Number(item.value) : Number((item.value as [number, number])[1])
+      const value = item.numericValue
+      
       const lname = String(name).toLowerCase()
       let formatted: string
 

@@ -72,6 +72,7 @@ const validationSchemas: Record<string, z.ZodSchema | null> = {
   fmpDcf: null,
   advancedDcf: null,
   revenueSegments: null,
+  revenueGeographicSegments: null, // Geographic revenue segmentation
   dividendHistory: null,
   stockSplit: null,
   earningsCalendar: null,
@@ -168,6 +169,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     
     // Additional data (Priority 2)
     revenueSegments: `/api/v4/revenue-product-segmentation?symbol=${t}&structure=flat&apikey=${fmpApiKey}`,
+    revenueGeographicSegments: `/api/v4/revenue-geographic-segmentation?symbol=${t}&structure=flat&apikey=${fmpApiKey}`,
     dividendHistory: `/api/v3/historical-price-full/stock_dividend/${t}?apikey=${fmpApiKey}`,
     stockSplit: `/api/v3/historical-price-full/stock_split/${t}?apikey=${fmpApiKey}`,
     earningsCalendar: `/api/v3/historical/earning_calendar/${t}?apikey=${fmpApiKey}`,
