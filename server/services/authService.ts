@@ -423,13 +423,8 @@ export async function loginUser(data: LoginData, ipAddress: string | null = null
     throw new Error('Invalid email or password')
   }
   
-  // Check email verification
-  if (!user.emailVerified) {
-    const error: any = new Error('Please verify your email address before logging in')
-    error.code = 'EMAIL_NOT_VERIFIED'
-    error.email = user.email
-    throw error
-  }
+  // Note: Email verification is optional - users can login without verifying
+  // This improves UX by not blocking access, while still encouraging verification
   
   // Update last login
   await prisma.user.update({
