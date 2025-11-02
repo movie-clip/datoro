@@ -62,6 +62,9 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
     if (batchError.value) return batchError.value
     if (loading.value) return null
     
+    // Don't show error while still loading
+    if (!batchData.value) return null
+    
     const t = currentTicker.value
     if (t && totalRevenue.value.length === 0) {
       return `No revenue data for '${t}'`
@@ -78,10 +81,15 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
 
   // Series based on current view mode
   const series = computed<[number, number][] | SeriesDataPoint[]>(() => {
+    // Safety check: don't process if data isn't loaded yet
+    if (!batchData.value) {
+      return []
+    }
+
     switch (viewMode.value) {
       case 'product': {
         const categories = productCategories.value
-        if (categories.segments.length === 0) {
+        if (!categories || categories.segments.length === 0) {
           // No product data, fallback to total
           return totalRevenue.value || []
         }
@@ -102,7 +110,7 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
       
       case 'geographic': {
         const regions = geographicCategories.value
-        if (regions.segments.length === 0) {
+        if (!regions || regions.segments.length === 0) {
           // No geographic data, fallback to total
           return totalRevenue.value || []
         }

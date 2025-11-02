@@ -744,7 +744,12 @@ export function getPriceSeriesFromBatch(batchData: BatchData | null, maxDays: nu
  */
 export const getProductCategoriesFromBatch = memoize(function getProductCategoriesFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
   try {
-    const segmentData = batchData?.data?.revenueSegments
+    // Defensive null checks
+    if (!batchData || !batchData.data) {
+      return { segments: [], series: {} }
+    }
+
+    const segmentData = batchData.data.revenueSegments
 
     if (!segmentData || !Array.isArray(segmentData) || segmentData.length === 0) {
       return { segments: [], series: {} }
@@ -769,6 +774,11 @@ export const getProductCategoriesFromBatch = memoize(function getProductCategori
       }
 
       const date = Date.parse(dateKey)
+      if (isNaN(date)) {
+        skippedEntries++
+        return
+      }
+
       const categories = entryObj[dateKey]
 
       if (categories && typeof categories === 'object') {
