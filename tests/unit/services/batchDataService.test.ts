@@ -369,7 +369,7 @@ describe('Batch Data Service', () => {
         
       nock(FMP_BASE_URL)
         .get(`/api/v3/income-statement/${TEST_TICKER}`)
-        .query({ period: 'quarter', limit: '20', apikey: TEST_API_KEY })
+        .query({ period: 'quarter', limit: '40', apikey: TEST_API_KEY })
         .reply(200, mockIncomeStatement)
         
       nock(FMP_BASE_URL)
@@ -379,7 +379,7 @@ describe('Batch Data Service', () => {
         
       nock(FMP_BASE_URL)
         .get(`/api/v3/balance-sheet-statement/${TEST_TICKER}`)
-        .query({ period: 'quarter', limit: '20', apikey: TEST_API_KEY })
+        .query({ period: 'quarter', limit: '40', apikey: TEST_API_KEY })
         .reply(200, mockBalanceSheet)
         
       nock(FMP_BASE_URL)
@@ -389,7 +389,7 @@ describe('Batch Data Service', () => {
         
       nock(FMP_BASE_URL)
         .get(`/api/v3/cash-flow-statement/${TEST_TICKER}`)
-        .query({ period: 'quarter', limit: '20', apikey: TEST_API_KEY })
+        .query({ period: 'quarter', limit: '40', apikey: TEST_API_KEY })
         .reply(200, mockCashFlow)
         
       nock(FMP_BASE_URL)
@@ -405,6 +405,11 @@ describe('Batch Data Service', () => {
       nock(FMP_BASE_URL)
         .get(`/api/v3/ratios/${TEST_TICKER}`)
         .query({ period: 'annual', limit: '20', apikey: TEST_API_KEY })
+        .reply(200, mockRatios)
+        
+      nock(FMP_BASE_URL)
+        .get(`/api/v3/ratios/${TEST_TICKER}`)
+        .query({ period: 'quarter', limit: '40', apikey: TEST_API_KEY })
         .reply(200, mockRatios)
         
       nock(FMP_BASE_URL)

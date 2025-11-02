@@ -609,16 +609,21 @@ export function getExpensesSeriesFromBatch(batchData: BatchData | null, period: 
 export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, period: Period = 'annual'): SeriesPoint[] {
   try {
     // Use FMP's pre-calculated dividend yield (no need to manually calculate!)
-    const data = period === 'quarterly'
+    let data = period === 'quarterly'
       ? batchData?.data?.keyMetricsQuarter
       : batchData?.data?.ratiosAnnual
+
+    // Fallback to annual if quarterly is unavailable
+    if ((!data || !Array.isArray(data) || data.length === 0) && period === 'quarterly') {
+      data = batchData?.data?.ratiosAnnual
+    }
 
     if (!data || !Array.isArray(data) || data.length === 0) {
       return []
     }
 
     // For quarterly data, include fiscal quarter info
-    if (period === 'quarterly') {
+    if (period === 'quarterly' && batchData?.data?.keyMetricsQuarter?.length) {
       return data
         .map((row: any) => {
           if (!row.date) return null

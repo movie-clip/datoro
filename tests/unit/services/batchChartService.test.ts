@@ -66,6 +66,17 @@ const mockBatchData = {
       { date: '2022-09-24', freeCashFlowPerShare: 6.87 },
       { date: '2021-09-25', freeCashFlowPerShare: 5.56 }
     ],
+    ratiosAnnual: [
+      { date: '2023-09-30', dividendYield: 0.00551, priceEarningsRatio: 28.5, priceToSalesRatio: 7.2 },
+      { date: '2022-09-24', dividendYield: 0.00580, priceEarningsRatio: 25.8, priceToSalesRatio: 6.8 },
+      { date: '2021-09-25', dividendYield: 0.00520, priceEarningsRatio: 30.2, priceToSalesRatio: 8.1 }
+    ],
+    keyMetricsQuarter: [
+      { date: '2023-12-30', dividendYield: 0.00540, period: 'Q1', calendarYear: '2024' },
+      { date: '2023-09-30', dividendYield: 0.00551, period: 'Q4', calendarYear: '2023' },
+      { date: '2023-07-01', dividendYield: 0.00560, period: 'Q3', calendarYear: '2023' },
+      { date: '2023-04-01', dividendYield: 0.00545, period: 'Q2', calendarYear: '2023' }
+    ],
     revenueSegments: [
       { 
         date: '2023-09-30', 
@@ -523,39 +534,43 @@ describe('Batch Chart Service', () => {
   });
 
   describe('getDividendYieldSeriesFromBatch', () => {
-    it('should calculate dividend yield grouped by year', () => {
+    it('should return annual dividend yield from ratiosAnnual', () => {
       const result = getDividendYieldSeriesFromBatch(mockBatchData, 'annual');
       
       expect(result.length).toBeGreaterThan(0);
       expect(result[0]).toHaveLength(2); // [timestamp, yield%]
       
-      // Verify yield is a percentage
+      // Verify yield matches mock data (0.00551 * 100 = 0.551%)
+      expect(result[0][1]).toBe(0.551);
       expect(result[0][1]).toBeGreaterThan(0);
       expect(result[0][1]).toBeLessThan(100); // Reasonable yield percentage
     });
 
-    it('should calculate yield based on historical prices at dividend dates', () => {
-      const result = getDividendYieldSeriesFromBatch(mockBatchData, 'annual');
-      
-      // 2023 dividends: 0.24 (Nov @ $180) + 0.24 (Aug @ $175) + 0.24 (May @ $170) + 0.23 (Feb @ $165) = 0.95
-      // Avg price: (180 + 175 + 170 + 165) / 4 = 172.5
-      // Yield = (0.95 / 172.5) * 100 = 0.551%
-      const yield2023 = result.find(item => {
-        const year = new Date(item[0]).getFullYear();
-        return year === 2023;
-      });
-      
-      expect(yield2023).toBeDefined();
-      if (yield2023) {
-        expect(yield2023[1]).toBeCloseTo(0.551, 2);
-      }
-    });
-
-    it('should group dividends by quarter', () => {
+    it('should return quarterly dividend yield from keyMetricsQuarter', () => {
       const result = getDividendYieldSeriesFromBatch(mockBatchData, 'quarterly');
       
       expect(result.length).toBeGreaterThan(0);
-      // Each quarter should have aggregated dividends
+      // Quarterly data includes fiscal period metadata (4-element arrays)
+      expect(result[0].length).toBeGreaterThanOrEqual(2);
+      
+      // First point should be Q1 2024 with yield 0.540% (0.00540 * 100)
+      expect(result[0][1]).toBe(0.540);
+    });
+
+    it('should fallback to ratiosAnnual if quarterly data unavailable', () => {
+      const dataWithoutQuarterly = {
+        ...mockBatchData,
+        data: {
+          ...mockBatchData.data,
+          keyMetricsQuarter: [] // Empty quarterly data
+        }
+      };
+      
+      const result = getDividendYieldSeriesFromBatch(dataWithoutQuarterly as any, 'quarterly');
+      
+      // Should fallback to annual data
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0][1]).toBe(0.551); // From ratiosAnnual
     });
 
     it('should return empty array if no dividend data', () => {
