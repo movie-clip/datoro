@@ -47,6 +47,7 @@
             <!-- DCF Calculator Button -->
             <button 
               class="menu-item" 
+              :disabled="!hasActiveSubscription"
               @click="showDcfCalculator"
             >
               <img 
@@ -62,6 +63,7 @@
             <!-- Deep Finder Button -->
             <button 
               class="menu-item" 
+              :disabled="!hasActiveSubscription"
               @click="showDeepFinder"
             >
               <img 
@@ -77,6 +79,7 @@
             <!-- Macro Dashboard Button -->
             <button 
               class="menu-item" 
+              :disabled="!hasActiveSubscription"
               @click="showMacro"
             >
               <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -85,6 +88,19 @@
                 <line x1="6" y1="20" x2="6" y2="16"/>
               </svg>
               <span>Macro Dashboard</span>
+            </button>
+
+            <!-- Account Settings Button -->
+            <button 
+              v-if="isAuthenticated"
+              class="menu-item" 
+              @click="showAccountSettings"
+            >
+              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>Account</span>
             </button>
 
             <!-- Feedback Button -->
@@ -200,14 +216,24 @@
 
     <!-- DCF Calculator Modal -->
     <DcfCalculatorModal v-model="isDcfModalOpen" />
+
+    <!-- Account Settings Modal -->
+    <AccountSettings 
+      v-if="isAccountSettingsOpen"
+      :isOpen="isAccountSettingsOpen"
+      @close="isAccountSettingsOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useWatchlists } from '../../composables/useWatchlists'
+import { useAuthStore } from '../../stores/authStore'
 import WatchlistDropdown from './WatchlistDropdown.vue'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
+import AccountSettings from './AccountSettings.vue'
+// import PricingPage from '../pages/PricingPage.vue' // Removed - pricing disabled
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 import BRAND from '../../config/brand'
 import { trackDcfCalculatorOpen, trackDeepFinderOpen, trackMacroOpen } from '../../services/analytics/gaService'
@@ -232,6 +258,26 @@ const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker', 'show-de
 
 const currentView = ref('menu') // 'menu' or 'watchlist'
 const isDcfModalOpen = ref(false)
+const isAccountSettingsOpen = ref(false)
+// const isPricingPageOpen = ref(false) // Removed - pricing disabled
+
+// Check subscription status
+const authStore = useAuthStore()
+const hasActiveSubscription = computed(() => {
+  // FEATURE GATE DISABLED - All features available to all users
+  // To re-enable subscription checks, uncomment the code below:
+  /*
+  const user = authStore.user
+  if (!user?.subscription) return false
+  const sub = user.subscription
+  // Active if in trial (not expired) OR paid subscription is active
+  if (sub.isInTrial && sub.trialEndsAt) {
+    return new Date() < new Date(sub.trialEndsAt)
+  }
+  return sub.status === 'ACTIVE'
+  */
+  return true // All features enabled for everyone
+})
 
 // Use shared watchlists composable with multi-watchlist support
 const { 
@@ -298,6 +344,16 @@ function showFeedback() {
   emit('show-feedback')
   emit('close') // Close the main menu
 }
+
+function showAccountSettings() {
+  isAccountSettingsOpen.value = true
+  emit('close') // Close the main menu
+}
+
+// function showPricing() {
+//   isPricingPageOpen.value = true
+//   emit('close') // Close the main menu
+// }
 
 const handleRemove = async (ticker) => {
   try {
@@ -522,10 +578,26 @@ const handleDrop = async (__event, _dropIndex) => {
   color: #00A88E;
 }
 
-.menu-item.disabled {
+.menu-item.disabled,
+.menu-item:disabled {
   color: #666;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.menu-item-highlight {
+  background: linear-gradient(135deg, rgba(0, 168, 142, 0.1) 0%, rgba(0, 89, 76, 0.1) 100%); /* Project green gradient */
+  border: 1px solid rgba(0, 168, 142, 0.3);
+  border-radius: 8px;
+  margin: 0 0.75rem;
+  color: #00A88E !important; /* Project green */
+}
+
+.menu-item-highlight:hover {
+  background: linear-gradient(135deg, rgba(0, 168, 142, 0.2) 0%, rgba(0, 89, 76, 0.2) 100%);
+  border-color: rgba(0, 168, 142, 0.5);
+  color: #00A88E !important;
 }
 
 .menu-item-icon {

@@ -1,4 +1,7 @@
 import { PrismaClient, type User, type PopularTicker } from '@prisma/client';
+
+// Re-export PrismaClient type for proper type inference in other files
+export type { PrismaClient } from '@prisma/client';
 import { buildDatabaseUrl, getPoolConfig } from '../config/database.config.js';
 
 interface ApiRequestData {

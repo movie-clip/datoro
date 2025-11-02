@@ -96,7 +96,7 @@ describe('Authentication Flow - E2E Tests', () => {
       expect(response.body.data.user).toBeDefined()
       expect(response.body.data.user.email).toBe(TEST_USER.email.toLowerCase())
       expect(response.body.data.user.name).toBe(TEST_USER.name)
-      expect(response.body.data.user.subscriptionTier).toBe('free')
+      // User should not have subscription data in response (loaded separately if needed)
       
       // Verify password is NOT returned
       expect(response.body.data.user.password).toBeUndefined()

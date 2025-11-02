@@ -155,7 +155,7 @@ onMounted(async () => {
   }
   
   const savedTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB)
-  if (savedTab && tabs.some(t => t.id === savedTab)) {
+  if (savedTab && tabs.value.some((t: Tab) => t.id === savedTab)) {
     activeTab.value = savedTab
   }
 })
@@ -178,16 +178,34 @@ interface Tab {
   label: string
   icon: string
   badge: string | null
+  disabled?: boolean
 }
 
+// Check subscription status
+const hasActiveSubscription = computed(() => {
+  // FEATURE GATE DISABLED - All features available to all users
+  // To re-enable subscription checks, uncomment the code below:
+  /*
+  const user = authStore.user
+  if (!user?.subscription) return false
+  const sub = user.subscription
+  // Active if in trial (not expired) OR paid subscription is active
+  if (sub.isInTrial && sub.trialEndsAt) {
+    return new Date() < new Date(sub.trialEndsAt)
+  }
+  return sub.status === 'ACTIVE'
+  */
+  return true // All features enabled for everyone
+})
+
 // Tab configuration with PNG icon paths
-const tabs: Tab[] = [
-  { id: 'valuation', label: 'Valuation', icon: '/icons/valuation.png', badge: null },
-  { id: 'performance', label: 'Performance', icon: '/icons/performance.png', badge: null },
-  { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null },
-  { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null },
-  { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null }
-]
+const tabs = computed<Tab[]>(() => [
+  { id: 'valuation', label: 'Valuation', icon: '/icons/valuation.png', badge: null, disabled: false },
+  { id: 'performance', label: 'Performance', icon: '/icons/performance.png', badge: null, disabled: !hasActiveSubscription.value },
+  { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null, disabled: !hasActiveSubscription.value },
+  { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null, disabled: !hasActiveSubscription.value },
+  { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null, disabled: !hasActiveSubscription.value }
+])
 
 // Save tab preference and track tab views
 watch(activeTab, (newTab) => {

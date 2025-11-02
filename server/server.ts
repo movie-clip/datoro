@@ -18,6 +18,8 @@ import authRoutes from './routes/authRoutes.js'
 import watchlistRoutes from './routes/watchlist.js'
 import watchlistsRoutes from './routes/watchlists.js'
 import watchlistItemsRoutes from './routes/watchlistItems.js'
+import subscriptionRoutes from './routes/subscription.routes.js'
+import webhookRoutes from './routes/webhook.routes.js'
 import tickerRoutes, { initTickerRoutes } from './routes/tickerRoutes.js'
 import searchRoutes, { initSearchRoutes } from './routes/searchRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
@@ -173,6 +175,10 @@ app.use(cors({
   optionsSuccessStatus: 204
 }))
 
+// Webhook routes MUST use raw body for Stripe signature verification
+// Must be registered BEFORE express.json() middleware
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
+
 // Body parser with size limits (prevent DoS attacks)
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
@@ -213,6 +219,12 @@ async function fetchWithDeduplication<T = any>(key: string, fetchFn: () => Promi
 // Authentication Routes
 // ============================================
 app.use('/api/auth', authRoutes)
+
+// ============================================
+// Subscription & Payment Routes
+// ============================================
+app.use('/api/subscription', subscriptionRoutes)
+app.use('/api/webhooks', webhookRoutes)
 
 // ============================================
 // Watchlist Routes

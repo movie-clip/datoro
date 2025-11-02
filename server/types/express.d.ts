@@ -9,7 +9,15 @@ declare global {
   namespace Express {
     interface Request {
       /** Authenticated user from JWT token */
-      user?: (Partial<User> & { id: string }) | null
+      user?: (Partial<User> & { 
+        id: string
+        subscription?: {
+          status: string
+          isInTrial: boolean
+          trialEndsAt: Date | null
+          cancelAtPeriodEnd: boolean
+        } | null
+      }) | null
       
       /** User ID extracted from JWT token */
       userId?: string

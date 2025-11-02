@@ -32,13 +32,6 @@ model User {
   // User profile
   name      String?
   
-  // Subscription fields
-  subscriptionTier String @default("free") @map("subscription_tier") // free, premium, enterprise
-  subscriptionStatus String @default("active") @map("subscription_status") // active, canceled, expired
-  subscriptionEndsAt DateTime? @map("subscription_ends_at")
-  stripeCustomerId String? @unique @map("stripe_customer_id")
-  stripeSubscriptionId String? @unique @map("stripe_subscription_id")
-  
   // Legacy tracking fields (for backwards compatibility)
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
@@ -53,11 +46,13 @@ model User {
   sessions    Session[]
   watchlists  Watchlist[]
   watchlistItems WatchlistItem[] // Temporary during migration, will be removed
+  
+  // Subscription relations
+  subscription      Subscription?
+  paymentHistory    PaymentHistory[]
 
   @@index([email])
   @@index([googleId])
-  @@index([subscriptionTier])
-  @@index([subscriptionStatus])
   @@map("users")
 }
 
@@ -257,4 +252,90 @@ model ErrorLog {
   @@index([endpoint, errorCode, lastSeen(sort: Desc)]) // Endpoint-specific errors
   @@index([ticker, errorCode, lastSeen(sort: Desc)]) // Ticker-specific errors
   @@map("error_logs")
+}
+
+// ============================================
+// Subscription Management
+// ============================================
+
+model Subscription {
+  id                    String   @id @default(cuid())
+  userId                String   @unique @map("user_id")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Subscription details
+  status                SubscriptionStatus @default(TRIALING)
+  
+  // Stripe integration (migrated from User model)
+  stripeCustomerId      String?  @unique @map("stripe_customer_id")
+  stripeSubscriptionId  String?  @unique @map("stripe_subscription_id")
+  stripePriceId         String?  @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
+  
+  // Trial management
+  trialStartsAt         DateTime @map("trial_starts_at")
+  trialEndsAt           DateTime @map("trial_ends_at")
+  isInTrial             Boolean  @default(true) @map("is_in_trial")
+  
+  // Billing
+  currentPeriodStart    DateTime? @map("current_period_start")
+  currentPeriodEnd      DateTime? @map("current_period_end")
+  cancelAtPeriodEnd     Boolean  @default(false) @map("cancel_at_period_end")
+  canceledAt            DateTime? @map("canceled_at")
+  
+  // Timestamps
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model PaymentHistory {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Payment details
+  amount            Int      // Amount in cents (1900 = $19.00)
+  currency          String   @default("usd")
+  status            PaymentStatus
+  
+  // Stripe integration
+  stripePaymentIntentId String? @unique @map("stripe_payment_intent_id")
+  stripeInvoiceId       String? @unique @map("stripe_invoice_id")
+  
+  // Metadata
+  description       String?
+  failureReason     String?  @map("failure_reason")
+  receiptUrl        String?  @map("receipt_url")
+  
+  // Timestamps
+  createdAt         DateTime @default(now()) @map("created_at")
+  paidAt            DateTime? @map("paid_at")
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_history")
+}
+
+enum SubscriptionStatus {
+  TRIALING          // In 30-day trial
+  ACTIVE            // Paid and active
+  PAST_DUE          // Payment failed, in grace period
+  CANCELED          // User canceled
+  INCOMPLETE        // Checkout not completed
+  INCOMPLETE_EXPIRED // Checkout expired
+  UNPAID            // Payment failed, no grace period left
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
 }

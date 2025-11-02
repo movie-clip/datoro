@@ -4,10 +4,22 @@
  */
 
 import type { Request, Response } from 'express'
+import type { User } from '@prisma/client'
 
 // ============================================
 // Base Types
 // ============================================
+
+// Authenticated user type with subscription data
+export type AuthenticatedUser = Partial<User> & { 
+  id: string
+  subscription?: {
+    status: string
+    isInTrial: boolean
+    trialEndsAt: Date | null
+    cancelAtPeriodEnd: boolean
+  } | null
+}
 
 export interface ErrorResponse {
   error: string | {
@@ -100,7 +112,12 @@ export interface AuthUser {
   id: string
   email: string
   name?: string
-  subscriptionTier: 'free' | 'premium' | 'enterprise'
+  subscription?: {
+    status: string
+    isInTrial: boolean
+    trialEndsAt: Date | null
+    cancelAtPeriodEnd: boolean
+  } | null
   avatarUrl?: string
   emailVerified: boolean
   createdAt: Date
@@ -286,8 +303,6 @@ export interface ClearCacheResponse {
 // ============================================
 // Extended Request Types (with user auth)
 // ============================================
-
-import type { User } from '@prisma/client'
 
 // Note: user property is provided by Express namespace augmentation in express.d.ts
 // These interfaces just ensure proper typing for route-specific properties

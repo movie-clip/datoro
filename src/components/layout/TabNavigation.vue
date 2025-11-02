@@ -4,11 +4,12 @@
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        :class="['tab-button', { active: modelValue === tab.id }]"
+        :class="['tab-button', { active: modelValue === tab.id, disabled: tab.disabled }]"
         :aria-selected="modelValue === tab.id"
         :aria-controls="`panel-${tab.id}`"
+        :disabled="tab.disabled"
         role="tab"
-        @click="$emit('update:modelValue', tab.id)"
+        @click="!tab.disabled && $emit('update:modelValue', tab.id)"
       >
         <span class="tab-icon">
           <!-- Support component, image path, or emoji/string icons -->
@@ -40,6 +41,7 @@ interface Tab {
   label: string
   icon?: string | Component
   badge?: string | number | null
+  disabled?: boolean
 }
 
 interface Props {
@@ -115,6 +117,18 @@ defineEmits<Emits>()
   background: rgba(0, 89, 76, 0.1);
   color: #E5E5E5;
   border-color: rgba(0, 89, 76, 0.3);
+}
+
+.tab-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.tab-button.disabled:hover {
+  background: transparent;
+  color: #9E9E9E;
+  border-color: transparent;
 }
 
 .tab-button.active {

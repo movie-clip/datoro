@@ -82,8 +82,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 export function generateToken(user: Partial<User>): string {
   const payload = {
     userId: user.id,
-    email: user.email,
-    subscriptionTier: user.subscriptionTier
+    email: user.email
   }
   
   return jwt.sign(payload, JWT_SECRET as string, {
@@ -182,8 +181,15 @@ export async function verifyEmailToken(token: string): Promise<{
         name: true,
         avatarUrl: true,
         emailVerified: true,
-        subscriptionTier: true,
-        createdAt: true
+        createdAt: true,
+        subscription: {
+          select: {
+            status: true,
+            isInTrial: true,
+            trialEndsAt: true,
+            cancelAtPeriodEnd: true
+          }
+        }
       }
     })
 
@@ -338,7 +344,12 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
   const verificationToken = generateVerificationToken()
   const verificationTokenExpiry = getVerificationTokenExpiry()
   
-  // Create user (NOT verified yet)
+  // Calculate trial period (30 days from now)
+  const trialStart = new Date()
+  const trialEnd = new Date()
+  trialEnd.setDate(trialEnd.getDate() + 30)
+  
+  // Create user with subscription (NOT verified yet)
   const user = await prisma.user.create({
     data: {
       email: email.toLowerCase(),
@@ -348,18 +359,31 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
       verificationToken,
       verificationTokenExpiry,
       emailVerificationSentAt: new Date(),
-      subscriptionTier: 'free',
-      subscriptionStatus: 'active'
+      // Create subscription with 30-day trial
+      subscription: {
+        create: {
+          status: 'TRIALING',
+          isInTrial: true,
+          trialStartsAt: trialStart,
+          trialEndsAt: trialEnd
+        }
+      }
     },
     select: {
       id: true,
       email: true,
       name: true,
       avatarUrl: true,
-      subscriptionTier: true,
-      subscriptionStatus: true,
       emailVerified: true,
-      createdAt: true
+      createdAt: true,
+      subscription: {
+        select: {
+          status: true,
+          isInTrial: true,
+          trialEndsAt: true,
+          cancelAtPeriodEnd: true
+        }
+      }
     }
   })
   
@@ -403,7 +427,7 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
 export async function loginUser(data: LoginData, ipAddress: string | null = null, userAgent: string | null = null): Promise<AuthResult> {
   const { email, password } = data
   
-  // Find user by email
+  // Find user by email (include subscription for frontend)
   const user = await prisma.user.findUnique({
     where: { email: email.toLowerCase() }
   })
@@ -426,10 +450,13 @@ export async function loginUser(data: LoginData, ipAddress: string | null = null
   // Note: Email verification is optional - users can login without verifying
   // This improves UX by not blocking access, while still encouraging verification
   
-  // Update last login
-  await prisma.user.update({
+  // Update last login and fetch user with subscription
+  const updatedUser = await prisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: new Date() }
+    data: { lastLoginAt: new Date() },
+    include: {
+      subscription: true
+    }
   })
   
   // Generate token
@@ -441,7 +468,7 @@ export async function loginUser(data: LoginData, ipAddress: string | null = null
   console.log(`[Auth] User logged in: ${user.email}`)
   
   // Return user without password
-  const { password: _, ...userWithoutPassword } = user
+  const { password: _, ...userWithoutPassword } = updatedUser
   return { user: userWithoutPassword, token }
 }
 
@@ -477,13 +504,19 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
     
     // Find or create user
     let user = await prisma.user.findUnique({
-      where: { googleId }
+      where: { googleId },
+      include: {
+        subscription: true
+      }
     })
     
     if (!user) {
       // Check if email already exists (link accounts)
       user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() }
+        where: { email: email.toLowerCase() },
+        include: {
+          subscription: true
+        }
       })
       
       if (user) {
@@ -495,10 +528,17 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
             avatarUrl,
             emailVerified: emailVerified || user.emailVerified,
             lastLoginAt: new Date()
+          },
+          include: {
+            subscription: true
           }
         })
       } else {
-        // Create new user
+        // Create new user with trial subscription
+        const trialStart = new Date()
+        const trialEnd = new Date()
+        trialEnd.setDate(trialEnd.getDate() + 30)
+        
         user = await prisma.user.create({
           data: {
             email: email.toLowerCase(),
@@ -506,9 +546,19 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
             name,
             avatarUrl,
             emailVerified: emailVerified || false,
-            subscriptionTier: 'free',
-            subscriptionStatus: 'active',
-            lastLoginAt: new Date()
+            lastLoginAt: new Date(),
+            // Create subscription with 30-day trial
+            subscription: {
+              create: {
+                status: 'TRIALING',
+                isInTrial: true,
+                trialStartsAt: trialStart,
+                trialEndsAt: trialEnd
+              }
+            }
+          },
+          include: {
+            subscription: true
           }
         })
       }
@@ -522,6 +572,9 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
           name: name || user.name,
           avatarUrl: avatarUrl || user.avatarUrl,
           lastLoginAt: new Date()
+        },
+        include: {
+          subscription: true
         }
       })
       
@@ -602,7 +655,20 @@ export async function verifySession(token: string): Promise<Partial<User> | null
   // Find session in database
   const session = await prisma.session.findUnique({
     where: { token: hashedToken },
-    include: { user: true }
+    include: {
+      user: {
+        include: {
+          subscription: {
+            select: {
+              status: true,
+              isInTrial: true,
+              trialEndsAt: true,
+              cancelAtPeriodEnd: true
+            }
+          }
+        }
+      }
+    }
   })
   
   if (!session) {

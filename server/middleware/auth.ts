@@ -95,10 +95,10 @@ export function authenticate(requireAuth = true) {
 }
 
 /**
- * Middleware to check user subscription tier
- * @param {string[]} allowedTiers - Array of allowed tiers ['free', 'premium', 'enterprise']
+ * Middleware: Require active subscription (trial or paid)
+ * Blocks access for users without an active subscription
  */
-export function requireSubscription(allowedTiers: string[] = ['premium', 'enterprise']) {
+export function requireActiveSubscription() {
   return (req: Request, res: Response, next: NextFunction) => {
     // User must be authenticated first
     if (!req.user) {
@@ -109,29 +109,53 @@ export function requireSubscription(allowedTiers: string[] = ['premium', 'enterp
       })
     }
     
-    // Check if user's tier is allowed
-    if (!allowedTiers.includes(req.user.subscriptionTier!)) {
+    // Check if user has a subscription
+    if (!req.user.subscription) {
       return res.status(403).json({
         success: false,
-        error: 'Subscription upgrade required',
-        code: 'INSUFFICIENT_SUBSCRIPTION',
-        requiredTiers: allowedTiers,
-        currentTier: req.user.subscriptionTier
+        error: 'Subscription required',
+        code: 'NO_SUBSCRIPTION',
+        subscribeUrl: '/pricing'
       })
     }
     
-    // Check if subscription is active
-    if (req.user.subscriptionStatus !== 'active') {
+    // Check if trial is active
+    if (req.user.subscription.isInTrial) {
+      const trialEndsAt = new Date(req.user.subscription.trialEndsAt!)
+      if (new Date() > trialEndsAt) {
+        return res.status(403).json({
+          success: false,
+          error: 'Trial expired - please subscribe',
+          code: 'TRIAL_EXPIRED',
+          subscribeUrl: '/pricing'
+        })
+      }
+      return next() // Trial active, allow access
+    }
+    
+    // Check if paid subscription is active
+    if (req.user.subscription.status !== 'ACTIVE') {
       return res.status(403).json({
         success: false,
-        error: 'Subscription expired or canceled',
+        error: 'Subscription inactive',
         code: 'INACTIVE_SUBSCRIPTION',
-        status: req.user.subscriptionStatus
+        status: req.user.subscription.status,
+        manageUrl: '/subscription/manage'
       })
     }
     
-    next()
+    next() // Paid and active, allow access
   }
+}
+
+/**
+ * DEPRECATED: Old multi-tier subscription check
+ * Use requireActiveSubscription() instead
+ * @param {string[]} allowedTiers - Array of allowed tiers ['free', 'premium', 'enterprise']
+ */
+export function requireSubscription(allowedTiers: string[] = ['premium', 'enterprise']) {
+  // Redirect to new single-tier middleware
+  return requireActiveSubscription()
 }
 
 /**

@@ -7,11 +7,24 @@ import type { Ref, ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
 import { trackSignup, trackLogin, setUserId } from '../services/analytics/gaService'
 
+interface Subscription {
+  status: string
+  isInTrial: boolean
+  trialEndsAt: Date | null
+  trialStartsAt: Date | null
+  cancelAtPeriodEnd: boolean
+  canceledAt: Date | null
+  currentPeriodEnd: Date | null
+  currentPeriodStart: Date | null
+  stripeCustomerId?: string | null
+  stripeSubscriptionId?: string | null
+}
+
 interface User {
   id: string
   email: string
   name?: string
-  subscriptionTier: 'free' | 'premium' | 'enterprise'
+  subscription?: Subscription | null
   avatarUrl?: string
   emailVerified?: boolean
 }
@@ -39,8 +52,16 @@ export const useAuthStore = defineStore('auth', () => {
   
   // Computed
   const isAuthenticated: ComputedRef<boolean> = computed(() => !!user.value && !!token.value)
-  const isPremium: ComputedRef<boolean> = computed(() => user.value?.subscriptionTier === 'premium' || user.value?.subscriptionTier === 'enterprise')
-  const isEnterprise: ComputedRef<boolean> = computed(() => user.value?.subscriptionTier === 'enterprise')
+  const hasActiveSubscription: ComputedRef<boolean> = computed(() => {
+    if (!user.value?.subscription) return false
+    const sub = user.value.subscription
+    // Active if in trial (not expired) OR paid subscription is active
+    if (sub.isInTrial && sub.trialEndsAt) {
+      return new Date() < new Date(sub.trialEndsAt)
+    }
+    return sub.status === 'ACTIVE'
+  })
+  const isInTrial: ComputedRef<boolean> = computed(() => user.value?.subscription?.isInTrial || false)
   
   // ============================================
   // Initialization
@@ -367,8 +388,8 @@ export const useAuthStore = defineStore('auth', () => {
     
     // Computed
     isAuthenticated,
-    isPremium,
-    isEnterprise,
+    hasActiveSubscription,
+    isInTrial,
     
     // Actions
     init,
