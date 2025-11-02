@@ -565,7 +565,8 @@ const createOption = (isLarge = false): EChartsOption => {
       yFormat: props.yFormat,
       rightAxisType: props.rightAxisType as any,
       isLarge,
-      isMobile: isMobile.value
+      isMobile: isMobile.value,
+      chartTitle: props.title
     }),
   }
 

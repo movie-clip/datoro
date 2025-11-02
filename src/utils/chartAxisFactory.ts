@@ -76,7 +76,7 @@ export function createXAxisConfig(kind: ChartKind, options: XAxisOptions = {}) {
     boundaryGap: kind === 'bar' ? true : false,
     axisLabel: { 
       color: '#ddd', 
-      fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
+      fontSize: isMobile ? 9 : (isLarge ? 13 : 10),
       rotate: kind === 'bar' ? 45 : 0, // Rotate bar chart labels in both compact and expanded modes
       hideOverlap: false,
       showMinLabel: true,
@@ -115,9 +115,9 @@ export function createSingleYAxisConfig(options: YAxisOptions = {}) {
     scale: true,
     splitNumber: 4, // Limit to 4 intervals (5 lines total) for cleaner axis
     min: (v: MinMaxValue) => {
-      // Special handling for Shares Outstanding: min is 15% below lowest value (reduced from 20% for more visual difference)
+      // Special handling for Shares Outstanding: min is 10% below lowest value for better visual difference
       if (isSharesChart) {
-        return v.min * 0.85
+        return v.min * 0.50
       }
       
       const r = v.max - v.min
@@ -133,9 +133,9 @@ export function createSingleYAxisConfig(options: YAxisOptions = {}) {
       return calculated
     },
     max: (v: MinMaxValue) => {
-      // Special handling for Shares Outstanding: max is 5% above highest value for better visual range
+      // Special handling for Shares Outstanding: max is 2% above highest value for better scale
       if (isSharesChart) {
-        return v.max * 1.05
+        return v.max * 1.02
       }
       
       const r = v.max - v.min
@@ -147,7 +147,7 @@ export function createSingleYAxisConfig(options: YAxisOptions = {}) {
     },
     axisLabel: { 
       color: '#ddd', 
-      fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
+      fontSize: isMobile ? 9 : (isLarge ? 13 : 10),
       formatter: (val: number) => yFormatter(val, yFormat) 
     },
     axisLine: { lineStyle: { color: '#aaa' } },
@@ -198,7 +198,7 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
       },
       axisLabel: { 
         color: '#ddd', 
-        fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
+        fontSize: isMobile ? 9 : (isLarge ? 11 : 10),
         formatter: (val: number) => yFormatter(val, yFormat) 
       },
       axisLine: { lineStyle: { color: '#aaa' } },
@@ -226,7 +226,7 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
       splitNumber: 4, // Force 4 split lines for better centering
       axisLabel: { 
         color: '#ddd', 
-        fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
+        fontSize: isMobile ? 9 : (isLarge ? 13 : 10),
         formatter: (val: number) => {
           if (rightAxisType === 'percentage') {
             return val.toFixed(1) + '%'

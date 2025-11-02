@@ -149,7 +149,7 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
       },
       axisLabel: {
         color: '#999',
-        fontSize: 11,
+        fontSize: 10,
         formatter: (value: number) => {
           const date = new Date(value)
           return date.toLocaleDateString('en-US', {
@@ -167,7 +167,7 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
       name: yAxisLabel,
       nameTextStyle: {
         color: '#999',
-        fontSize: 11,
+        fontSize: 10,
         padding: [0, 0, 0, 0]
       },
       axisLine: {
@@ -178,7 +178,7 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
       },
       axisLabel: {
         color: '#999',
-        fontSize: 11,
+        fontSize: 10,
         formatter: valueFormatter
       },
       splitLine: {
