@@ -145,11 +145,11 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     
     // Financial statements (Priority 1 - Most charts need these)
     incomeAnnual: `/api/v3/income-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
-    incomeQuarter: `/api/v3/income-statement/${t}?period=quarter&limit=20&apikey=${fmpApiKey}`,
+    incomeQuarter: `/api/v3/income-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     balanceAnnual: `/api/v3/balance-sheet-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
-    balanceQuarter: `/api/v3/balance-sheet-statement/${t}?period=quarter&limit=20&apikey=${fmpApiKey}`,
+    balanceQuarter: `/api/v3/balance-sheet-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     cashflowAnnual: `/api/v3/cash-flow-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
-    cashflowQuarter: `/api/v3/cash-flow-statement/${t}?period=quarter&limit=20&apikey=${fmpApiKey}`,
+    cashflowQuarter: `/api/v3/cash-flow-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     
     // TTM data for DCF (Priority 1 - More accurate current metrics)
     ratiosTTM: `/api/v3/ratios-ttm/${t}?apikey=${fmpApiKey}`,
