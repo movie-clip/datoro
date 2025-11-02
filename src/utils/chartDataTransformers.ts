@@ -3,7 +3,9 @@
  * Functions for converting and transforming chart data formats
  */
 
-type TimeSeriesPoint = [number, number]
+// [timestamp, value] for annual data
+// [timestamp, value, fiscalPeriod, fiscalYear] for quarterly data
+type TimeSeriesPoint = [number, number] | [number, number, string, string]
 
 interface SeriesObject {
   name: string
@@ -48,7 +50,7 @@ export function convertToCategoryData(timeSeriesData: TimeSeriesPoint[], categor
   }
 
   // Check if categoryYears contains timestamps (large numbers > year 9999)
-  const isTimestampMode = categoryYears.length > 0 && categoryYears[0] > 10000
+  const isTimestampMode = categoryYears.length > 0 && (categoryYears[0] ?? 0) > 10000
 
   if (isTimestampMode) {
     // Timestamp mode: direct timestamp matching for quarterly data

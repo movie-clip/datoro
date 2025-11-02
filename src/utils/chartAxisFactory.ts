@@ -54,15 +54,15 @@ export function createXAxisConfig(kind: ChartKind, options: XAxisOptions = {}) {
     isQuarterly = false
   } = options
 
-  // For quarterly data in compact mode, only show Q1 labels
+  // For quarterly data in compact mode, show every other year (Q4 of every 2nd year)
   let axisLabelFormatter: ((value: string, index: number) => string) | undefined
   let axisLabelInterval: number | 'auto' | ((index: number, value: string) => boolean) = 'auto'
 
   if (kind === 'bar' && isQuarterly && !isLarge) {
-    // In compact mode with quarterly data, only show Q1 labels
-    // Use interval function to control which labels are shown
+    // In compact mode with quarterly data, show labels for Q4 of each year for readability
+    // This prevents overlapping while still showing year progression
     axisLabelInterval = (index: number, value: string) => {
-      // Only show labels that start with 'Q1 '
+      // Show Q4 labels (end of year markers)
       return value.startsWith('Q4')
     }
   } else if (kind === 'bar' && isLarge) {
@@ -77,7 +77,7 @@ export function createXAxisConfig(kind: ChartKind, options: XAxisOptions = {}) {
     axisLabel: { 
       color: '#ddd', 
       fontSize: isMobile ? 10 : (isLarge ? 14 : 12),
-      rotate: (kind === 'bar' && isLarge) ? 45 : 0,
+      rotate: kind === 'bar' ? 45 : 0, // Rotate bar chart labels in both compact and expanded modes
       hideOverlap: false,
       showMinLabel: true,
       showMaxLabel: true,

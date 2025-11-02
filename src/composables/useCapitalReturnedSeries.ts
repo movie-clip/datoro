@@ -2,10 +2,13 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getCapitalReturnedSeriesFromBatch } from '../services/financials/batchChartService'
+import { toDataPoint, type FiscalQuarterData } from '../utils/fiscalQuarterUtils'
+
+type DataPoint = [number, number] | [number, number, string, string]
 
 interface SeriesItem {
   name: string
-  data: [number, number][]
+  data: DataPoint[]
   itemStyle: { color: string }
   stack: string
 }
@@ -55,7 +58,7 @@ export function useCapitalReturnedSeries(): UseCapitalReturnedSeriesReturn {
     if (selectedSegments.value.includes('dividends')) {
       chartSeries.push({
         name: 'Dividends',
-        data: rawData.value.map(row => [row.date, row.dividends]),
+        data: rawData.value.map(row => toDataPoint(row.date, row.dividends, row as FiscalQuarterData)),
         itemStyle: { color: '#60a5fa' }, // Blue
         stack: 'total'
       })
@@ -65,7 +68,7 @@ export function useCapitalReturnedSeries(): UseCapitalReturnedSeriesReturn {
     if (selectedSegments.value.includes('buybacks')) {
       chartSeries.push({
         name: 'Share Buybacks',
-        data: rawData.value.map(row => [row.date, row.buybacks]),
+        data: rawData.value.map(row => toDataPoint(row.date, row.buybacks, row as FiscalQuarterData)),
         itemStyle: { color: '#34d399' }, // Green
         stack: 'total'
       })

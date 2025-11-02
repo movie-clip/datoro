@@ -2,21 +2,23 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getFcfSeriesFromBatch } from '../services/financials/batchChartService'
+import { toDataPoint, type FiscalQuarterData } from '../utils/fiscalQuarterUtils'
 
 type Period = 'annual' | 'quarterly'
 type ViewMode = 'fcfPerShare' | 'fcfAndSbc' | 'fcf'
 type YFormat = 'short' | 'decimal'
+type DataPoint = [number, number] | [number, number, string, string]
 
 interface SeriesItem {
   name: string
-  data: [number, number][]
+  data: DataPoint[]
 }
 
 export interface UseFcfSeriesReturn {
   period: ComputedRef<Period>
   viewMode: Ref<ViewMode>
   yFormat: ComputedRef<YFormat>
-  series: ComputedRef<[number, number][] | SeriesItem[]>
+  series: ComputedRef<DataPoint[] | SeriesItem[]>
   compactSeries: ComputedRef<SeriesItem[]>
   title: Ref<string>
   message: Ref<string>
@@ -60,8 +62,16 @@ export function useFcfSeries(): UseFcfSeriesReturn {
     return viewMode.value === 'fcfPerShare' ? 'decimal' : 'short'
   })
 
+  // Helper function to create FCF & SBC dual series
+  const createFcfSbcSeries = (data: typeof rawData.value): SeriesItem[] => {
+    return [
+      { name: 'FCF', data: data.map(d => toDataPoint(d.date, d.fcf, d as FiscalQuarterData)) },
+      { name: 'SBC', data: data.map(d => toDataPoint(d.date, d.sbc, d as FiscalQuarterData)) }
+    ]
+  }
+
   // Transform data based on view mode
-  const series = computed<[number, number][] | SeriesItem[]>(() => {
+  const series = computed<DataPoint[] | SeriesItem[]>(() => {
     if (!rawData.value.length) return []
     
     switch (viewMode.value) {
@@ -69,27 +79,20 @@ export function useFcfSeries(): UseFcfSeriesReturn {
         // Filter out zero/null values for FCF Per Share
         return rawData.value
           .filter(d => d.fcfPerShare && d.fcfPerShare !== 0)
-          .map(d => [d.date, d.fcfPerShare])
+          .map(d => toDataPoint(d.date, d.fcfPerShare, d as FiscalQuarterData))
       case 'fcfAndSbc':
         // Return array of series for multi-bar chart
-        return [
-          { name: 'FCF', data: rawData.value.map(d => [d.date, d.fcf]) },
-          { name: 'SBC', data: rawData.value.map(d => [d.date, d.sbc]) }
-        ]
+        return createFcfSbcSeries(rawData.value)
       case 'fcf':
       default:
-        return rawData.value.map(d => [d.date, d.fcf])
+        return rawData.value.map(d => toDataPoint(d.date, d.fcf, d as FiscalQuarterData))
     }
   })
   
-  // Compact series for default view - always show FCF & SBC
+  // Compact series for default view - reuses FCF & SBC dual series creation
   const compactSeries = computed<SeriesItem[]>(() => {
     if (!rawData.value.length) return []
-    
-    return [
-      { name: 'FCF', data: rawData.value.map(d => [d.date, d.fcf]) },
-      { name: 'SBC', data: rawData.value.map(d => [d.date, d.sbc]) }
-    ]
+    return createFcfSbcSeries(rawData.value)
   })
 
   // Update title based on ticker

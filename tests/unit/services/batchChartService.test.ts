@@ -322,7 +322,9 @@ describe('Batch Chart Service', () => {
       const result = getEpsSeriesFromBatch(mockBatchData, 'quarterly');
       
       expect(result).toHaveLength(4);
-      expect(result[0]).toEqual([Date.parse('2023-12-30'), 2.18]);
+      // Quarterly data returns 4-element arrays: [timestamp, value, period, fiscalYear]
+      // If period/fiscalYear are missing from mock data, they will be empty strings
+      expect(result[0]).toEqual([Date.parse('2023-12-30'), 2.18, '', '']);
       expect(result[1][1]).toBe(1.46);
     });
 

@@ -2,15 +2,26 @@
 // Optimized chart data functions using batch endpoint data
 // Eliminates 15-20 API calls by extracting data from single batch endpoint
 
-import type { BatchData } from '@/types'
+import type { BatchData, FMPKeyMetrics } from '@/types'
 
-type SeriesPoint = [number, number]
+// src/services/financials/batchChartService.ts
+/**
+ * Chart Data Extraction Service
+ * Extracts time-series data for charts from batch endpoint responses
+ * Maps FMP batch data to ECharts series format
+ */
+
+// [timestamp, value] for annual data
+// [timestamp, value, fiscalPeriod, fiscalYear] for quarterly data (preserves FMP fiscal quarters)
+type SeriesPoint = [number, number] | [number, number, string, string]
 
 interface FcfDataPoint {
   date: number
   fcf: number
   fcfPerShare: number
   sbc: number
+  period?: string  // Fiscal period (e.g., "Q4")
+  fiscalYear?: string  // Fiscal year (e.g., "2025")
 }
 
 interface EbitdaDataPoint {
@@ -22,12 +33,16 @@ interface EbitdaDataPoint {
   operatingIncome: number
   depreciationAndAmortization: number
   ebitda: number
+  period?: string
+  fiscalYear?: string
 }
 
 interface CashDebtDataPoint {
   date: number
   cash: number
   debt: number
+  period?: string
+  fiscalYear?: string
 }
 
 interface CapitalReturnedDataPoint {
@@ -35,6 +50,8 @@ interface CapitalReturnedDataPoint {
   dividends: number
   buybacks: number
   total: number
+  period?: string
+  fiscalYear?: string
 }
 
 interface ExpensesDataPoint {
@@ -43,6 +60,8 @@ interface ExpensesDataPoint {
   operatingExpenses: number
   researchAndDevelopment: number
   sellingGeneralAdmin: number
+  period?: string
+  fiscalYear?: string
 }
 
 interface RevenueSegmentsResult {
@@ -97,8 +116,8 @@ class LRUCache<T = any> {
 const cache = new LRUCache(100)
 
 // Memoize wrapper: ticker + args only (no timestamp = no cache misses on refetch)
-const memoize = <T extends (...args: unknown[]) => any>(fn: T): T => {
-  return function (this: any, ...args: unknown[]): ReturnType<T> {
+const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
+  return function (this: any, ...args: any[]): ReturnType<T> {
     // Handle null/undefined batchData
     if (!args[0]) return fn.apply(this, args)
 
@@ -130,6 +149,17 @@ export function getRevenueSeriesFromBatch(batchData: BatchData | null, period: P
       return []
     }
 
+    // For quarterly data, include fiscal period from FMP to preserve fiscal quarters
+    if (period === 'quarterly') {
+      return statements.map(row => [
+        Date.parse(row.date),
+        Number(row.revenue) || 0,
+        row.period || '',  // FMP's fiscal period (e.g., "Q4")
+        row.calendarYear || ''  // FMP's fiscal year (e.g., "2023")
+      ] as SeriesPoint)
+    }
+    
+    // For annual data, keep simple format
     return statements.map(row => [
       Date.parse(row.date),
       Number(row.revenue) || 0
@@ -141,13 +171,21 @@ export function getRevenueSeriesFromBatch(batchData: BatchData | null, period: P
 }
 
 /**
+ * Revenue segment row structure from FMP API
+ */
+interface RevenueSegmentRow {
+  date: string
+  data?: Record<string, number | string>
+}
+
+/**
  * Get revenue segments from batch data
  * Used by: RevenueChart (segment breakdown)
  * Replaces: /api/v4/revenue-product-segmentation (1 call)
  */
 export function getRevenueSegmentsFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
   try {
-    const segmentData = batchData?.data?.revenueSegments
+    const segmentData = batchData?.data?.revenueSegments as RevenueSegmentRow[] | undefined
 
     if (!segmentData || !Array.isArray(segmentData) || segmentData.length === 0) {
       return { segments: [], series: {} }
@@ -225,15 +263,15 @@ export function getFcfSeriesFromBatch(batchData: BatchData | null, period: Perio
 
     // Use the correct key metrics based on period
     const keyMetrics = period === 'quarterly'
-      ? batchData?.data?.keyMetricsQuarter
-      : batchData?.data?.keyMetrics
+      ? batchData?.data?.keyMetricsQuarter as FMPKeyMetrics[] | undefined
+      : batchData?.data?.keyMetrics as FMPKeyMetrics[] | undefined
 
     if (!cashflow || !Array.isArray(cashflow)) {
       return []
     }
 
     // Create key metrics map by date
-    const kmMap = new Map<string, any>()
+    const kmMap = new Map<string, FMPKeyMetrics>()
     if (keyMetrics && Array.isArray(keyMetrics)) {
       keyMetrics.forEach(km => {
         if (km.date) kmMap.set(km.date, km)
@@ -241,6 +279,21 @@ export function getFcfSeriesFromBatch(batchData: BatchData | null, period: Perio
     }
 
     // Return enhanced data with FCF, FCF per share, and SBC
+    // Include fiscal quarter info for quarterly data
+    if (period === 'quarterly') {
+      return cashflow.map(row => {
+        const metrics = kmMap.get(row.date)
+        return {
+          date: Date.parse(row.date),
+          fcf: Number(row.freeCashFlow) || 0,
+          fcfPerShare: Number(metrics?.freeCashFlowPerShare) || 0,
+          sbc: Number(row.stockBasedCompensation) || 0,
+          period: row.period || '',
+          fiscalYear: row.calendarYear || ''
+        }
+      })
+    }
+    
     return cashflow.map(row => {
       const metrics = kmMap.get(row.date)
       return {
@@ -271,6 +324,15 @@ export function getNetIncomeSeriesFromBatch(batchData: BatchData | null, period:
       return []
     }
 
+    if (period === 'quarterly') {
+      return statements.map(row => [
+        Date.parse(row.date),
+        Number(row.netIncome) || 0,
+        row.period || '',
+        row.calendarYear || ''
+      ] as SeriesPoint)
+    }
+
     return statements.map(row => [
       Date.parse(row.date),
       Number(row.netIncome) || 0
@@ -292,8 +354,17 @@ export function getEpsSeriesFromBatch(batchData: BatchData | null, period: Perio
       ? batchData?.data?.incomeQuarter
       : batchData?.data?.incomeAnnual
 
-    if (!statements || !Array.isArray(statements) || statements.length === 0) {
+    if (!statements || !Array.isArray(statements)) {
       return []
+    }
+
+    if (period === 'quarterly') {
+      return statements.map(row => [
+        Date.parse(row.date),
+        Number(row.eps) || 0,
+        row.period || '',
+        row.calendarYear || ''
+      ] as SeriesPoint)
     }
 
     return statements.map(row => [
@@ -322,6 +393,22 @@ export function getEbitdaSeriesFromBatch(batchData: BatchData | null, period: Pe
     }
 
     // Return EBITDA data with bridge components
+    // Include fiscal quarter info for quarterly data
+    if (period === 'quarterly') {
+      return statements.map(row => ({
+        date: Date.parse(row.date),
+        revenue: Number(row.revenue) || 0,
+        costOfRevenue: Number(row.costOfRevenue) || 0,
+        grossProfit: Number(row.grossProfit) || 0,
+        operatingExpenses: Number(row.operatingExpenses) || 0,
+        operatingIncome: Number(row.operatingIncome) || 0,
+        depreciationAndAmortization: Number(row.depreciationAndAmortization) || 0,
+        ebitda: Number(row.ebitda) || 0,
+        period: row.period || '',
+        fiscalYear: row.calendarYear || ''
+      }))
+    }
+    
     return statements.map(row => ({
       date: Date.parse(row.date),
       revenue: Number(row.revenue) || 0,
@@ -351,6 +438,23 @@ export function getCashDebtSeriesFromBatch(batchData: BatchData | null, period: 
 
     if (!balance || !Array.isArray(balance)) {
       return []
+    }
+
+    if (period === 'quarterly') {
+      return balance.map(row => {
+        const cashEquiv = Number(row.cashAndCashEquivalents) || 0
+        const shortTermInv = Number(row.shortTermInvestments) || 0
+        const totalCash = cashEquiv + shortTermInv
+        const totalDebt = Number(row.totalDebt) || 0
+
+        return {
+          date: Date.parse(row.date),
+          cash: totalCash,
+          debt: totalDebt,
+          period: row.period || '',
+          fiscalYear: row.calendarYear || ''
+        }
+      })
     }
 
     return balance.map(row => {
@@ -387,6 +491,23 @@ export function getCapitalReturnedSeriesFromBatch(batchData: BatchData | null, p
     }
 
     // FMP returns these as negative numbers (cash outflows)
+    if (period === 'quarterly') {
+      return cashflow.map(row => {
+        const dividends = Math.abs(Number(row.dividendsPaid) || 0)
+        const buybacks = Math.abs(Number(row.commonStockRepurchased) || 0)
+        const total = dividends + buybacks
+
+        return {
+          date: Date.parse(row.date),
+          dividends,
+          buybacks,
+          total,
+          period: row.period || '',
+          fiscalYear: row.calendarYear || ''
+        }
+      })
+    }
+    
     return cashflow.map(row => {
       const dividends = Math.abs(Number(row.dividendsPaid) || 0)
       const buybacks = Math.abs(Number(row.commonStockRepurchased) || 0)
@@ -420,6 +541,15 @@ export function getSharesSeriesFromBatch(batchData: BatchData | null, period: Pe
       return []
     }
 
+    if (period === 'quarterly') {
+      return statements.map(row => [
+        Date.parse(row.date),
+        Number(row.weightedAverageShsOut) || 0,
+        row.period || '',
+        row.calendarYear || ''
+      ] as SeriesPoint)
+    }
+
     return statements.map(row => [
       Date.parse(row.date),
       Number(row.weightedAverageShsOut) || 0
@@ -443,6 +573,18 @@ export function getExpensesSeriesFromBatch(batchData: BatchData | null, period: 
 
     if (!statements || !Array.isArray(statements) || statements.length === 0) {
       return []
+    }
+
+    if (period === 'quarterly') {
+      return statements.map(row => ({
+        date: Date.parse(row.date),
+        costOfRevenue: Number(row.costOfRevenue) || 0,
+        operatingExpenses: Number(row.operatingExpenses) || 0,
+        researchAndDevelopment: Number(row.researchAndDevelopmentExpenses) || 0,
+        sellingGeneralAdmin: Number(row.sellingGeneralAndAdministrativeExpenses) || 0,
+        period: row.period || '',
+        fiscalYear: row.calendarYear || ''
+      }))
     }
 
     return statements.map(row => ({
@@ -493,7 +635,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
     })
 
     // Group dividends by year or quarter, tracking dates for price lookup
-    const grouped: Record<string, { date: number; totalDividend: number; dividendDates: string[]; count: number }> = {}
+    const grouped: Record<string, { date: number; totalDividend: number; dividendDates: string[]; count: number; latestDivDate: string }> = {}
 
     if (dividendHistory.historical) {
       dividendHistory.historical.forEach(div => {
@@ -508,17 +650,24 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
         if (!grouped[key]) {
           grouped[key] = {
             date: period === 'quarterly'
-              ? new Date(year, quarter * 3, 1).getTime()
+              ? Date.parse(div.date)  // Use actual dividend date instead of synthetic quarter start
               : new Date(year, 0, 1).getTime(),
             totalDividend: 0,
             dividendDates: [],
-            count: 0
+            count: 0,
+            latestDivDate: div.date
           }
         }
 
         grouped[key].totalDividend += Number(div.dividend) || Number(div.adjDividend) || 0
         grouped[key].dividendDates.push(div.date)
         grouped[key].count++
+        
+        // Track the latest dividend date in this period (for better timestamp representation)
+        if (Date.parse(div.date) > Date.parse(grouped[key].latestDivDate)) {
+          grouped[key].latestDivDate = div.date
+          grouped[key].date = Date.parse(div.date)
+        }
       })
     }
 

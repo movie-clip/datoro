@@ -2,13 +2,17 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getEbitdaSeriesFromBatch } from '../services/financials/batchChartService'
+import { toDataPoint, type FiscalQuarterData } from '../utils/fiscalQuarterUtils'
 
 type Period = 'annual' | 'quarterly'
 type ChartView = 'bridge' | 'margin'
 
+// Support both simple and fiscal quarter-aware data points
+type DataPoint = [number, number] | [number, number, string, string]
+
 interface SeriesItem {
   name: string
-  data: [number, number][]
+  data: DataPoint[]
 }
 
 interface ViewModeOption {
@@ -27,8 +31,8 @@ interface SegmentData {
 }
 
 export interface UseEbitdaSeriesReturn {
-  series: ComputedRef<[number, number][] | SeriesItem[]>
-  compactSeries: ComputedRef<[number, number][]>
+  series: ComputedRef<DataPoint[] | SeriesItem[]>
+  compactSeries: ComputedRef<DataPoint[]>
   marginData: ComputedRef<[number, number][]>
   title: Ref<string>
   message: Ref<string>
@@ -85,13 +89,18 @@ export function useEbitdaSeries(): UseEbitdaSeriesReturn {
     depreciationAndAmortization: { label: 'D&A', sign: 1 }
   }
 
+  // Helper function to create EBITDA data points with fiscal quarter info
+  const createEbitdaDataPoints = (data: typeof rawData.value): DataPoint[] => {
+    return data.map(d => toDataPoint(d.date, d.ebitda, d as FiscalQuarterData))
+  }
+
   // Computed series based on selected view and segments
-  const series = computed<[number, number][] | SeriesItem[]>(() => {
+  const series = computed<DataPoint[] | SeriesItem[]>(() => {
     if (!rawData.value.length) return []
     
     if (chartView.value === 'margin') {
       // EBITDA with Margin view - return simple EBITDA bars (margin will be added by chart component)
-      return rawData.value.map(d => [d.date, d.ebitda])
+      return createEbitdaDataPoints(rawData.value)
     }
     
     // Bridge view - show selected components
@@ -101,19 +110,19 @@ export function useEbitdaSeries(): UseEbitdaSeriesReturn {
         const config = segmentConfig[segmentKey]
         result.push({
           name: config.label,
-          data: rawData.value.map((d: any) => [d.date, d[segmentKey] * config.sign])
+          data: rawData.value.map((d: any) => 
+            toDataPoint(d.date, d[segmentKey] * config.sign, d as FiscalQuarterData)
+          )
         })
       }
     })
     return result
   })
   
-  // Compact series for default view - show EBITDA with margin
-  const compactSeries = computed<[number, number][]>(() => {
+  // Compact series for default view - reuses EBITDA data point creation
+  const compactSeries = computed<DataPoint[]>(() => {
     if (!rawData.value.length) return []
-    
-    // Return simple EBITDA bars for compact view (margin overlay handled by chart)
-    return rawData.value.map(d => [d.date, d.ebitda])
+    return createEbitdaDataPoints(rawData.value)
   })
   
   // EBITDA margin data for overlay

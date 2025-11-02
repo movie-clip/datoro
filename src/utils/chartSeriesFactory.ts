@@ -40,7 +40,7 @@ interface SeriesConfigOptions extends MultiSeriesOptions {
   title?: string
 }
 
-interface SeriesDataObject {
+export interface SeriesDataObject {
   name: string
   data: [number, number][]
   stack?: string
@@ -176,7 +176,7 @@ export function createMultiSeries(dataSource: SeriesDataObject[], kind: ChartKin
  * @returns Array of ECharts series configurations
  */
 export function createSeriesConfig(
-  dataSource: [number, number][] | SeriesDataObject[] | Record<string, unknown>, 
+  dataSource: [number, number][] | [number, number, string, string][] | SeriesDataObject[] | Record<string, unknown>, 
   kind: ChartKind, 
   options: SeriesConfigOptions = {}
 ) {

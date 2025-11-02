@@ -2,10 +2,13 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getCashDebtSeriesFromBatch } from '../services/financials/batchChartService'
+import { toDataPoint, type FiscalQuarterData } from '../utils/fiscalQuarterUtils'
+
+type DataPoint = [number, number] | [number, number, string, string]
 
 interface SeriesItem {
   name: string
-  data: [number, number][]
+  data: DataPoint[]
   itemStyle?: { color: string }
 }
 
@@ -36,11 +39,11 @@ export function useCashDebtSeries(): UseCashDebtSeriesReturn {
     return [
       {
         name: 'Cash',
-        data: rawData.value.map(d => [d.date, d.cash])
+        data: rawData.value.map(d => toDataPoint(d.date, d.cash, d as FiscalQuarterData))
       },
       {
         name: 'Debt',
-        data: rawData.value.map(d => [d.date, d.debt]),
+        data: rawData.value.map(d => toDataPoint(d.date, d.debt, d as FiscalQuarterData)),
         itemStyle: { color: '#ff6b6b' }
       }
     ]

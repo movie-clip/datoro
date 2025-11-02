@@ -2,12 +2,14 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getExpensesSeriesFromBatch } from '../services/financials/batchChartService'
+import { toDataPoint, type FiscalQuarterData } from '../utils/fiscalQuarterUtils'
 
 type Period = 'annual' | 'quarterly'
+type DataPoint = [number, number] | [number, number, string, string]
 
 interface SeriesItem {
   name: string
-  data: [number, number][]
+  data: DataPoint[]
   stack: string
   itemStyle: { color: string }
 }
@@ -66,16 +68,48 @@ export function useExpensesSeries(): UseExpensesSeriesReturn {
     return null
   })
 
+  // Segment colors configuration
+  const segmentColors: Record<SegmentKey, string> = {
+    costOfRevenue: '#ef4444',        // Red
+    researchAndDevelopment: '#3b82f6', // Blue
+    sellingGeneralAdmin: '#10b981'    // Green
+  }
+
+  // Helper function to create stacked series for specified segments
+  const createStackedSeries = (data: typeof rawData.value, segments: SegmentKey[]): SeriesItem[] => {
+    if (!data.length) return []
+    
+    // Collect all dates with their fiscal quarter data
+    const allDates = [...new Set(data.map(d => d.date))].sort((a, b) => a - b)
+    
+    return segments.map(segment => {
+      // Align all data to common dates, preserving fiscal quarter info
+      const alignedData = allDates.map(date => {
+        const dataPoint = data.find(d => d.date === date)
+        if (!dataPoint) return [date, 0] as DataPoint
+        return toDataPoint(date, dataPoint[segment], dataPoint as FiscalQuarterData)
+      })
+      
+      return {
+        name: segmentLabels[segment],
+        data: alignedData,
+        stack: 'expenses',
+        itemStyle: { color: segmentColors[segment] }
+      }
+    })
+  }
+
   // Compute series based on selected segments
   const series = computed<SeriesItem[]>(() => {
     if (!rawData.value.length) return []
     
     // If only total is selected, compute total from all segments
     if (selectedSegments.value.length === 1 && selectedSegments.value[0] === 'total') {
-      const totalData = rawData.value.map(d => [
+      const totalData = rawData.value.map(d => toDataPoint(
         d.date, 
-        d.costOfRevenue + d.researchAndDevelopment + d.sellingGeneralAdmin
-      ] as [number, number])
+        d.costOfRevenue + d.researchAndDevelopment + d.sellingGeneralAdmin,
+        d as FiscalQuarterData
+      ))
       
       return [{
         name: 'Total Expenses',
@@ -89,62 +123,13 @@ export function useExpensesSeries(): UseExpensesSeriesReturn {
     const segments = selectedSegments.value.filter(s => s !== 'total') as SegmentKey[]
     if (!segments.length) return []
     
-    // Collect all dates
-    const allDates = [...new Set(rawData.value.map(d => d.date))].sort((a, b) => a - b)
-    
-    // Create multi-series with stacking and colors
-    const segmentColors: Record<SegmentKey, string> = {
-      costOfRevenue: '#ef4444',        // Red
-      researchAndDevelopment: '#3b82f6', // Blue
-      sellingGeneralAdmin: '#10b981'    // Green
-    }
-    
-    return segments.map(segment => {
-      // Align all data to common dates
-      const alignedData = allDates.map(date => {
-        const dataPoint = rawData.value.find(d => d.date === date)
-        return [date, dataPoint ? dataPoint[segment] : 0] as [number, number]
-      })
-      
-      return {
-        name: segmentLabels[segment],
-        data: alignedData,
-        stack: 'expenses',
-        itemStyle: { color: segmentColors[segment] }
-      }
-    })
+    return createStackedSeries(rawData.value, segments)
   })
 
   // Compact series always shows all three segments stacked
   const compactSeries = computed<SeriesItem[]>(() => {
-    if (!rawData.value.length) return []
-    
-    // Collect all dates
-    const allDates = [...new Set(rawData.value.map(d => d.date))].sort((a, b) => a - b)
-    
-    // Create stacked series for all three segments
-    const segmentColors: Record<SegmentKey, string> = {
-      costOfRevenue: '#ef4444',        // Red
-      researchAndDevelopment: '#3b82f6', // Blue
-      sellingGeneralAdmin: '#10b981'    // Green
-    }
-    
     const segments: SegmentKey[] = ['costOfRevenue', 'researchAndDevelopment', 'sellingGeneralAdmin']
-    
-    return segments.map(segment => {
-      // Align all data to common dates
-      const alignedData = allDates.map(date => {
-        const dataPoint = rawData.value.find(d => d.date === date)
-        return [date, dataPoint ? dataPoint[segment] : 0] as [number, number]
-      })
-      
-      return {
-        name: segmentLabels[segment],
-        data: alignedData,
-        stack: 'expenses',
-        itemStyle: { color: segmentColors[segment] }
-      }
-    })
+    return createStackedSeries(rawData.value, segments)
   })
 
   const viewModeOptions = computed<ViewModeOption[]>(() => [
