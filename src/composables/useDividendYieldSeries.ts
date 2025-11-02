@@ -4,10 +4,11 @@ import { useTickerStore } from '../stores/tickerStore'
 import { getDividendYieldSeriesFromBatch } from '../services/financials/batchChartService'
 
 type Period = 'annual' | 'quarterly'
+type SeriesPoint = [number, number] | [number, number, string, string]
 
 export interface UseDividendYieldSeriesReturn {
   period: ComputedRef<Period>
-  series: ComputedRef<[number, number][]>
+  series: ComputedRef<SeriesPoint[]>
   title: Ref<string>
   message: Ref<string>
   loading: Ref<boolean>
@@ -30,10 +31,13 @@ export function useDividendYieldSeries(): UseDividendYieldSeriesReturn {
   // Memoized raw data - single source of truth
   const rawData = computed(() => getDividendYieldSeriesFromBatch(batchData.value, period.value))
 
-  // Check if data is legitimately empty (company doesn't pay dividends)
+  // Check if company doesn't pay dividends (all yields are 0 or no data)
   const hasNoDividends = computed(() => {
     if (!currentTicker.value || loading.value || batchError.value) return false
-    return rawData.value.length === 0
+    if (rawData.value.length === 0) return true
+    
+    // Check if all dividend yields are 0 (company doesn't pay dividends)
+    return rawData.value.every(point => point[1] === 0)
   })
 
   const error = computed<string | null>(() => {
@@ -42,7 +46,7 @@ export function useDividendYieldSeries(): UseDividendYieldSeriesReturn {
     return null
   })
 
-  const series = computed<[number, number][]>(() => {
+  const series = computed<SeriesPoint[]>(() => {
     if (!rawData.value.length) return []
     return rawData.value
   })
