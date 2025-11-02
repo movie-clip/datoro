@@ -36,10 +36,13 @@ export function useCapitalReturnedSeries(): UseCapitalReturnedSeriesReturn {
   // Memoized raw data - single source of truth
   const rawData = computed(() => getCapitalReturnedSeriesFromBatch(batchData.value, timeframe.value))
 
-  // Check if data is legitimately empty (company doesn't return capital)
+  // Check if company doesn't return capital (all dividends and buybacks are 0)
   const hasNoCapitalReturns = computed(() => {
     if (!currentTicker.value || loading.value || batchError.value) return false
-    return rawData.value.length === 0
+    if (rawData.value.length === 0) return true
+    
+    // Check if all capital returns are 0 (no dividends AND no buybacks)
+    return rawData.value.every(row => row.dividends === 0 && row.buybacks === 0)
   })
 
   const error = computed<string | null>(() => {
@@ -51,6 +54,9 @@ export function useCapitalReturnedSeries(): UseCapitalReturnedSeriesReturn {
   // Transform raw data into chart series based on selected segments
   const series = computed<SeriesItem[]>(() => {
     if (!rawData.value.length) return []
+    
+    // If company doesn't return any capital, return empty series to show empty message
+    if (hasNoCapitalReturns.value) return []
     
     const chartSeries: SeriesItem[] = []
     
@@ -103,7 +109,7 @@ export function useCapitalReturnedSeries(): UseCapitalReturnedSeriesReturn {
   const emptyDataMessage = computed<string | null>(() => {
     if (!hasNoCapitalReturns.value) return null
     const ticker = currentTicker.value?.toUpperCase() || 'this company'
-    return `${ticker} does not currently return capital to shareholders through dividends or buybacks`
+    return `${ticker} doesn’t return capital via dividends or buybacks`
   })
 
   return { 

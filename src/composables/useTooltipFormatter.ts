@@ -85,6 +85,9 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
       // Check if this is shares data (shares outstanding, diluted shares, etc.)
       // Exclude "Share Buybacks" which is a dollar amount, not share count
       const isSharesData = (lname.includes('shares') || lname.includes('outstanding')) && !lname.includes('buyback')
+      
+      // Special case: Insider Sells are shown as negative values, but tooltip should show absolute value
+      const isInsiderSells = name === 'Insider Sells'
 
       if (dualAxis) {
         // Dual axis specific formatting
@@ -101,6 +104,9 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
           formatted = abs >= 1000
             ? `${sign}${(value / 1000).toFixed(1)}K shares`
             : `${sign}${value.toFixed(0)} shares`
+        } else if (isInsiderSells) {
+          // Show absolute value for insider sells (they're negated for display)
+          formatted = yFormatter(Math.abs(value), 'currency')
         } else {
           // For dual axis non-price values, use currency format
           formatted = yFormatter(value, 'currency')

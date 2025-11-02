@@ -3,17 +3,20 @@ import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getInsiderTradingFromBatch, getPriceSeriesFromBatch } from '../services/financials/batchChartService'
 
+type SeriesPoint = [number, number] | [number, number, string, string]
+
 interface SeriesItem {
   name: string
   type: string
-  data: [number, number][]
+  data: SeriesPoint[]
   yAxisIndex: number
   smooth?: boolean
   lineStyle?: { width: number }
   showSymbol?: boolean
   itemStyle?: {
-    color: (params: { value: [number, number] }) => string
+    color: (params: { value: SeriesPoint }) => string
   }
+  tooltip?: { show: boolean }
 }
 
 export interface UseInsiderTradingSeriesReturn {
@@ -45,7 +48,7 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
     
     const result: SeriesItem[] = []
     
-    // Price series (line)
+    // Price series (line) - hide from tooltip
     if (priceData.value.length) {
       result.push({
         name: 'Price',
@@ -54,19 +57,33 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
         yAxisIndex: 0,
         smooth: true,
         lineStyle: { width: 2 },
-        showSymbol: false
+        showSymbol: false,
+        tooltip: { show: false } as any // Hide price from tooltip
       })
     }
     
-    // Insider net shares (bar)
-    if (insiderData.value.net?.length) {
+    // Insider buys (bar) - positive values, green bars going up
+    if (insiderData.value.buys?.length) {
       result.push({
-        name: 'Net Insider Shares',
+        name: 'Insider Buys',
         type: 'bar',
-        data: insiderData.value.net,
+        data: insiderData.value.buys,
         yAxisIndex: 1,
         itemStyle: {
-          color: (params) => params.value[1] >= 0 ? '#4caf50' : '#f44336'
+          color: () => '#4caf50' // Green for buys
+        }
+      })
+    }
+    
+    // Insider sells (bar) - NEGATIVE values, red bars going down
+    if (insiderData.value.sells?.length) {
+      result.push({
+        name: 'Insider Sells',
+        type: 'bar',
+        data: insiderData.value.sells.map(point => [point[0], -point[1]]), // Negate to make bars go down
+        yAxisIndex: 1,
+        itemStyle: {
+          color: () => '#f44336' // Red for sells
         }
       })
     }

@@ -56,6 +56,6 @@ export const TF_ORDER: readonly TimeframeKey[] = ['5D', '1M', '6M', 'YTD', '5Y',
 
 /**
  * Default Timeframe
- * Year-To-Date for price chart
+ * 5 years for price chart
  */
-export const DEFAULT_TF: TimeframeKey = 'YTD'
+export const DEFAULT_TF: TimeframeKey = '5Y'
