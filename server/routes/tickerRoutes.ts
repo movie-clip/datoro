@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 // server/routes/tickerRoutes.ts
 // Ticker data endpoints - batch data fetching from FMP
 
@@ -75,10 +76,10 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
   const cacheKey = cache.generateKey('batch', t, mode, API_VERSION)
   
   // Check cache first (7-day TTL for batch data)
-  console.log(`[Batch] ${t} (${mode}) → Checking cache (key: ${cacheKey})`)
+  logger.info(`[Batch] ${t} (${mode}) → Checking cache (key: ${cacheKey})`)
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    console.log(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
+    logger.info(`[Batch] ${t} (${mode}) → CACHE HIT (${cached.source})`)
     
     // Decrement global FMP counter for cache hits (not actual API calls)
     if (req.fmpCallTracked) {
@@ -107,7 +108,7 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
     // Check if client has same version (ETag match with version prefix)
     const clientEtag = req.headers['if-none-match']
     if (clientEtag === etag) {
-      console.log(`[Batch] ${t} (${mode}) → 304 Not Modified (ETag match, version ${API_VERSION})`)
+      logger.info(`[Batch] ${t} (${mode}) → 304 Not Modified (ETag match, version ${API_VERSION})`)
       res.setHeader('ETag', etag)
       res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
       res.setHeader('X-API-Version', API_VERSION)
@@ -118,7 +119,7 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
     if (isDatabaseAvailable) {
       setImmediate(() => {
         trackSearch(req.ip!, t, req.headers['user-agent'] || '', 'batch').catch((err: any) => {
-          console.error('[Database] Search tracking error:', err.message)
+          logger.error('[Database] Search tracking error:', err.message)
         })
       })
     }
@@ -130,7 +131,7 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
     return res.json(responseData as TickerDataResponse | ErrorResponse)
   }
   
-  console.log(`[Batch] ${t} (${mode}) → CACHE MISS - Fetching from FMP...`)
+  logger.info(`[Batch] ${t} (${mode}) → CACHE MISS - Fetching from FMP...`)
   
   // Import batch service
   const { fetchTickerBatch, fetchTickerPriority } = await import('../services/batchDataService.js')
@@ -142,22 +143,22 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
   
   // Cache the result
   await cache.set(cacheKey, result, CacheTTL.COMPANY_PROFILE) // 7 days
-  console.log(`[Batch] ${t} (${mode}) → Cached with key: ${cacheKey}, TTL: ${CacheTTL.COMPANY_PROFILE}s`)
+  logger.info(`[Batch] ${t} (${mode}) → Cached with key: ${cacheKey}, TTL: ${CacheTTL.COMPANY_PROFILE}s`)
   res.setHeader('X-Cache', 'miss')
   
-  console.log(`[Batch] ${t} (${mode}) → Fetched in ${result.fetchDuration}ms`)
+  logger.info(`[Batch] ${t} (${mode}) → Fetched in ${result.fetchDuration}ms`)
   
   // Track in database (truly async - use setImmediate to not block response)
   if (isDatabaseAvailable) {
     setImmediate(() => {
       trackSearch(req.ip!, t, req.headers['user-agent'] || '', 'batch').catch((err: any) => {
-        console.error('[Database] Search tracking error:', err.message)
+        logger.error('[Database] Search tracking error:', err.message)
       })
       
       // Update company name if available
       if (result.data.profile && Array.isArray(result.data.profile) && result.data.profile[0]?.companyName) {
         updateTickerCompanyName(t, result.data.profile[0].companyName).catch((err: any) => {
-          console.error('[Database] Company name update error:', err.message)
+          logger.error('[Database] Company name update error:', err.message)
         })
       }
       
@@ -170,7 +171,7 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
         cached: false,
         ipAddress: req.ip!
       }).catch((err: any) => {
-        console.error('[Database] API tracking error:', err.message)
+        logger.error('[Database] API tracking error:', err.message)
       })
     })
   }
@@ -187,3 +188,5 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
 }))
 
 export default router
+
+

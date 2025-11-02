@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 /**
  * Macro Economic Data Routes
  * Endpoints for fetching macro economic indicators
@@ -39,7 +40,7 @@ function initMacroRoutes(deps: { apiVersion?: string; fmpApiKey: string; isDatab
    */
   async function fetchWithDeduplication<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
     if (inFlightRequests.has(key)) {
-      console.log(`[Macro] Dedup: Waiting for in-flight request: ${key}`)
+      logger.info(`[Macro] Dedup: Waiting for in-flight request: ${key}`)
       return await inFlightRequests.get(key) as T
     }
     
@@ -96,12 +97,12 @@ router.get('/treasury', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
     if ((req as any).fmpCallTracked) {
       decrementGlobalFmpCounter()
     }
-    console.log(`[Macro] Treasury → CACHE HIT (${cached.source})`)
+    logger.info(`[Macro] Treasury → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
     return res.json(cached.data)
   }
   
-  console.log(`[Macro] Treasury → Fetching from FMP API`)
+  logger.info(`[Macro] Treasury → Fetching from FMP API`)
   
   // Use request deduplication
   const data = await fetchWithDeduplication(cacheKey, async () => {
@@ -143,12 +144,12 @@ router.get('/economic', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
     if ((req as any).fmpCallTracked) {
       decrementGlobalFmpCounter()
     }
-    console.log(`[Macro] Economic/${name} → CACHE HIT (${cached.source})`)
+    logger.info(`[Macro] Economic/${name} → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
     return res.json(cached.data)
   }
   
-  console.log(`[Macro] Economic/${name} → Fetching from FMP API`)
+  logger.info(`[Macro] Economic/${name} → Fetching from FMP API`)
   
   const data = await fetchWithDeduplication(cacheKey, async () => {
     const url = `${FMP_BASE_URL}/api/v4/economic?name=${name}&apikey=${FMP_API_KEY}`
@@ -189,12 +190,12 @@ router.get('/spx', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Reques
     if ((req as any).fmpCallTracked) {
       decrementGlobalFmpCounter()
     }
-    console.log(`[Macro] SPX → CACHE HIT (${cached.source})`)
+    logger.info(`[Macro] SPX → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
     return res.json(cached.data)
   }
   
-  console.log(`[Macro] SPX → Fetching from FMP API`)
+  logger.info(`[Macro] SPX → Fetching from FMP API`)
   
   const historical = await fetchWithDeduplication(cacheKey, async () => {
     const url = `${FMP_BASE_URL}/api/v3/historical-price-full/%5EGSPC?from=${from}&to=${to}&apikey=${FMP_API_KEY}`
@@ -231,12 +232,12 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
     if ((req as any).fmpCallTracked) {
       decrementGlobalFmpCounter()
     }
-    console.log(`[Macro] Index Stats → CACHE HIT (${cached.source})`)
+    logger.info(`[Macro] Index Stats → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
     return res.json(cached.data)
   }
   
-  console.log(`[Macro] Index Stats → Fetching from FMP API`)
+  logger.info(`[Macro] Index Stats → Fetching from FMP API`)
   
   const validData = await fetchWithDeduplication(cacheKey, async () => {
     const symbols = ['%5EGSPC', '%5EDJI', '%5ERUT', '%5EHSI', '%5EGDAXI'] // S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX (URL encoded ^)
@@ -250,7 +251,7 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
     )
     
     if (!response.ok) {
-      console.error(`[Macro] Index stats API error: ${response.statusText}`)
+      logger.error(`[Macro] Index stats API error: ${response.statusText}`)
       throw new Error(`FMP API error: ${response.statusText}`)
     }
     
@@ -258,7 +259,7 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
     
     // Check for FMP API error messages
     if (json && typeof json === 'object' && 'Error Message' in json) {
-      console.error('[Macro] FMP API Error:', json['Error Message'])
+      logger.error('[Macro] FMP API Error:', json['Error Message'])
       throw new Error(json['Error Message'] as string)
     }
     
@@ -283,16 +284,16 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
           max: 0
         }
       }
-      console.warn('[Macro] Invalid index stats response:', quote)
+      logger.warn('[Macro] Invalid index stats response:', quote)
       return null
     }).filter((d: any) => d !== null)
     
     if (data.length === 0) {
-      console.error('[Macro] No valid index stats data received')
+      logger.error('[Macro] No valid index stats data received')
       return []
     }
     
-    console.log(`[Macro] Index Stats → Successfully fetched ${data.length} indices in single batch call`)
+    logger.info(`[Macro] Index Stats → Successfully fetched ${data.length} indices in single batch call`)
     return data
   })
   
@@ -318,12 +319,12 @@ router.get('/sectors', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
     if ((req as any).fmpCallTracked) {
       decrementGlobalFmpCounter()
     }
-    console.log(`[Macro] Sectors → CACHE HIT (${cached.source})`)
+    logger.info(`[Macro] Sectors → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
     return res.json(cached.data)
   }
   
-  console.log(`[Macro] Sectors → Fetching from FMP API`)
+  logger.info(`[Macro] Sectors → Fetching from FMP API`)
   
   const data = await fetchWithDeduplication(cacheKey, async () => {
     const url = `${FMP_BASE_URL}/api/v3/sector-performance?apikey=${FMP_API_KEY}`
@@ -358,12 +359,12 @@ router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (re
     if ((req as any).fmpCallTracked) {
       decrementGlobalFmpCounter()
     }
-    console.log(`[Macro] Risk Premium → CACHE HIT (${cached.source})`)
+    logger.info(`[Macro] Risk Premium → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
     return res.json(cached.data)
   }
   
-  console.log(`[Macro] Risk Premium → Fetching from FMP API`)
+  logger.info(`[Macro] Risk Premium → Fetching from FMP API`)
   
   const data = await fetchWithDeduplication(cacheKey, async () => {
     const url = `${FMP_BASE_URL}/stable/market-risk-premium?apikey=${FMP_API_KEY}`
@@ -378,7 +379,7 @@ router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (re
   
   // Validate data structure
   if (!Array.isArray(data) || data.length === 0) {
-    console.warn('[Macro] Risk premium returned empty or invalid data')
+    logger.warn('[Macro] Risk premium returned empty or invalid data')
     res.setHeader('X-Cache', 'miss')
     return res.json([])
   }
@@ -411,12 +412,12 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
     if ((req as any).fmpCallTracked) {
       decrementGlobalFmpCounter()
     }
-    console.log(`[Macro] Batch → CACHE HIT (${cached.source})`)
+    logger.info(`[Macro] Batch → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
     return res.json(cached.data)
   }
   
-  console.log(`[Macro] Batch → Fetching all data from FMP API`)
+  logger.info(`[Macro] Batch → Fetching all data from FMP API`)
   const startTime = Date.now()
   
   // Fetch all data in parallel
@@ -513,14 +514,14 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
     // Housing Starts
     if (housingStartsRes.status === 'fulfilled' && housingStartsRes.value.ok) {
       const housingData = await housingStartsRes.value.json()
-      console.log('[Macro] Housing Starts response type:', typeof housingData, 'IsArray:', Array.isArray(housingData), 'Count:', Array.isArray(housingData) ? housingData.length : 0)
+      logger.info('[Macro] Housing Starts response type:', typeof housingData, 'IsArray:', Array.isArray(housingData), 'Count:', Array.isArray(housingData) ? housingData.length : 0)
       // Stable endpoint returns array with 'name' field: [{name, date, value}, ...]
       // Transform to match EconomicIndicator interface: [{date, value}, ...]
       batchData.housingStarts = Array.isArray(housingData) 
         ? housingData.map((item: any) => ({ date: item.date, value: item.value }))
         : []
     } else {
-      console.log('[Macro] Housing Starts fetch failed. Status:', housingStartsRes.status, 
+      logger.info('[Macro] Housing Starts fetch failed. Status:', housingStartsRes.status, 
         housingStartsRes.status === 'rejected' ? housingStartsRes.reason : 
         (housingStartsRes.status === 'fulfilled' ? 'Response not OK' : 'Unknown'))
     }
@@ -529,8 +530,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   })
   
   const duration = Date.now() - startTime
-  console.log(`[Macro] Batch → Fetched all data in ${duration}ms (8 FMP API calls - removed SPX, sectors, risk premium)`)
-  console.log(`[Macro] Batch → housingStarts array length: ${data.housingStarts?.length || 0}`)
+  logger.info(`[Macro] Batch → Fetched all data in ${duration}ms (8 FMP API calls - removed SPX, sectors, risk premium)`)
+  logger.info(`[Macro] Batch → housingStarts array length: ${data.housingStarts?.length || 0}`)
   
   // Cache for 15 minutes (balanced between freshness and performance)
   await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
@@ -556,3 +557,5 @@ function getTodayDate(): string {
 // Export both router and initialization function for consistency with other routes
 export { initMacroRoutes }
 export default router
+
+

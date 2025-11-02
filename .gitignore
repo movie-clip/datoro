@@ -51,3 +51,10 @@ public/ai-insights/
 /ai-insights-tool/venv/
 /ai-insights-tool/*.log
 /ai-insights-tool/output/*.json
+
+# Backup and temporary files
+*.backup
+*.bak
+*.old
+*.tmp
+*~

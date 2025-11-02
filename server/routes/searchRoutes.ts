@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 // server/routes/searchRoutes.ts
 // Search and discovery endpoints
 
@@ -69,7 +70,7 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   
   if (cached && cached.data) {
     const duration = Date.now() - startTime
-    console.log(`[Search] Cache hit (${cached.source}) for "${searchQuery}" in ${duration}ms`)
+    logger.info(`[Search] Cache hit (${cached.source}) for "${searchQuery}" in ${duration}ms`)
     
     // Set cache headers for client-side caching
     res.set({
@@ -142,7 +143,7 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   await cache.set(cacheKey, finalResults, 7 * 24 * 60 * 60) // 7 days
   
   const duration = Date.now() - startTime
-  console.log(`[Search] API call for "${searchQuery}" → ${finalResults.length} results in ${duration}ms`)
+  logger.info(`[Search] API call for "${searchQuery}" → ${finalResults.length} results in ${duration}ms`)
   
   // Set cache headers
   res.set({
@@ -198,19 +199,19 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
   const cacheKey = cache.generateKey('deep-finder', tickerKey, API_VERSION)
   
   // Check cache first (5-minute TTL for Deep Finder)
-  console.log(`[DeepFinder] Checking cache for ${stockList.length} tickers (key: ${cacheKey})`)
+  logger.info(`[DeepFinder] Checking cache for ${stockList.length} tickers (key: ${cacheKey})`)
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    console.log(`[DeepFinder] CACHE HIT (${cached.source})`)
+    logger.info(`[DeepFinder] CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'unknown')
     res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
     return res.json(cached.data)
   }
   
-  console.log(`[DeepFinder] CACHE MISS - Fetching from FMP...`)
+  logger.info(`[DeepFinder] CACHE MISS - Fetching from FMP...`)
   
   if (!FMP_API_KEY) {
-    console.error('[DeepFinder] API key not configured')
+    logger.error('[DeepFinder] API key not configured')
     return res.status(500).json({ error: 'FMP_API_KEY is not set on the server' })
   }
   
@@ -230,10 +231,10 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
           quotesMap.set(quote.symbol, quote)
         }
       })
-      console.log(`[DeepFinder] Fetched ${quotesMap.size} quotes in batch`)
+      logger.info(`[DeepFinder] Fetched ${quotesMap.size} quotes in batch`)
     }
   } catch (_error: any) {
-    console.warn(`[DeepFinder] Batch quotes failed:`, _error.message)
+    logger.warn(`[DeepFinder] Batch quotes failed:`, _error.message)
   }
   
   // Fetch historical data for each stock (can't be batched)
@@ -243,7 +244,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
         // Get quote from batch fetch
         const quote = quotesMap.get(ticker)
         if (!quote || !quote.price) {
-          console.warn(`[DeepFinder] No price data for ${ticker}`)
+          logger.warn(`[DeepFinder] No price data for ${ticker}`)
           return null
         }
         
@@ -253,7 +254,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
         const historyUrl = `${baseUrl}/api/v3/historical-price-full/${ticker}?from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`
         const historyRes = await fetch(historyUrl)
         if (!historyRes.ok) {
-          console.warn(`[DeepFinder] History failed for ${ticker}: ${historyRes.status}`)
+          logger.warn(`[DeepFinder] History failed for ${ticker}: ${historyRes.status}`)
           return null
         }
         const historyData = await historyRes.json() as any
@@ -261,7 +262,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
         // Calculate MA200 from historical data
         const historical = historyData.historical || []
         if (historical.length < 200) {
-          console.warn(`[DeepFinder] Insufficient data for ${ticker}: ${historical.length} days`)
+          logger.warn(`[DeepFinder] Insufficient data for ${ticker}: ${historical.length} days`)
           return null
         }
         
@@ -281,7 +282,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
           change: quote.changesPercentage || 0
         }
       } catch (_error: any) {
-        console.warn(`[DeepFinder] Error processing ${ticker}:`, _error.message)
+        logger.warn(`[DeepFinder] Error processing ${ticker}:`, _error.message)
         return null
       }
     })
@@ -302,7 +303,7 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
   
   // Cache for 5 minutes
   await cache.set(cacheKey, responseData, 5 * 60) // 5 minutes
-  console.log(`[DeepFinder] Cached ${validStocks.length} stocks`)
+  logger.info(`[DeepFinder] Cached ${validStocks.length} stocks`)
   
   res.setHeader('X-Cache', 'MISS')
   res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
@@ -310,3 +311,5 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
 }))
 
 export default router
+
+

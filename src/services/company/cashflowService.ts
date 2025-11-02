@@ -4,6 +4,7 @@
 //   AdjFCF   = FCF_TTM - sum_4q(Stock-Based Compensation)
 
 import { handleServiceError, type ServiceResponse } from '../shared'
+import { formatNumber } from '@/utils/formatters'
 
 /**
  * Cash flow facts result
@@ -11,20 +12,6 @@ import { handleServiceError, type ServiceResponse } from '../shared'
 export interface CashFlowFacts {
   fcf: string
   adjFcf: string
-}
-
-/**
- * Format number with K/M/B/T suffix
- */
-function fmtNumber(n: number): string {
-  if (!Number.isFinite(n)) return '—'
-  const s = Math.sign(n) < 0 ? '-' : ''
-  const a = Math.abs(n)
-  if (a >= 1e12) return s + (a / 1e12).toFixed(3) + 'T'
-  if (a >= 1e9 ) return s + (a / 1e9 ).toFixed(3) + 'B'
-  if (a >= 1e6 ) return s + (a / 1e6 ).toFixed(3) + 'M'
-  if (a >= 1e3 ) return s + (a / 1e3 ).toFixed(2) + 'K'
-  return s + a.toFixed(0)
 }
 
 /**
@@ -109,11 +96,11 @@ export async function fetchCashFlowFacts(ticker: string): Promise<ServiceRespons
     const adjFcfTTM =
       Number.isFinite(fcfTTM) && Number.isFinite(sbcTTM) ? (fcfTTM - sbcTTM) : NaN
 
-    if (Number.isFinite(fcfTTM))   out.fcf = fmtNumber(fcfTTM)
-    if (Number.isFinite(adjFcfTTM)) out.adjFcf = fmtNumber(adjFcfTTM)
+    if (Number.isFinite(fcfTTM))   out.fcf = formatNumber(fcfTTM, { currency: false, decimals: 3 })
+    if (Number.isFinite(adjFcfTTM)) out.adjFcf = formatNumber(adjFcfTTM, { currency: false, decimals: 3 })
     
     return { data: out, error: null }
   } catch (_error) {
-    return handleServiceError(error, 'fetchCashFlowFacts', out)
+    return handleServiceError(_error, 'fetchCashFlowFacts', out)
   }
 }

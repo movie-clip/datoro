@@ -288,15 +288,15 @@ export async function sendVerificationEmail(
     
     // Development: Log to console
     if (isDevelopment && !EMAIL_CONFIG.smtp.auth.user) {
-      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      console.log('📧 VERIFICATION EMAIL (Development Mode)')
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      console.log(`To: ${email}`)
-      console.log(`Subject: ${mailOptions.subject}`)
-      console.log(`\nVerification URL:`)
-      console.log(`${verificationUrl}`)
-      console.log('\nCopy the URL above and paste it into your browser to verify your email.')
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
+      logger.info('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      logger.info('📧 VERIFICATION EMAIL (Development Mode)')
+      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      logger.info(`To: ${email}`)
+      logger.info(`Subject: ${mailOptions.subject}`)
+      logger.info(`\nVerification URL:`)
+      logger.info(`${verificationUrl}`)
+      logger.info('\nCopy the URL above and paste it into your browser to verify your email.')
+      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
       
       return {
         success: true,

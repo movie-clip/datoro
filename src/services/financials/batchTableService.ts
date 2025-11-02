@@ -3,6 +3,7 @@
 // Instead of 12+ API calls, uses data from single batch endpoint
 
 import type { BatchData } from '@/types'
+import { formatNumber, formatPercent } from '@/utils/formatters'
 
 interface ValuationMetrics {
   marketCap: string
@@ -36,19 +37,6 @@ interface BalanceMetrics {
 }
 
 /**
- * Format number with T/B/M/K suffix - consistent 2 decimals
- */
-function fmtNumber(num: number | null | undefined): string {
-  if (!num || isNaN(num)) return '—'
-  const n = Number(num)
-  if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(2)}T`
-  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)}B`
-  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(2)}M`
-  if (Math.abs(n) >= 1e3) return `$${(n / 1e3).toFixed(2)}K`
-  return `$${n.toFixed(2)}`
-}
-
-/**
  * Get valuation metrics from batch data
  * Replaces 5-6 API calls with data from batch endpoint
  */
@@ -62,7 +50,7 @@ export function getValuationFromBatch(batchData: BatchData | null): ValuationMet
     
     // Market Cap from profile
     if (profile && Array.isArray(profile) && profile[0]?.mktCap) {
-      out.marketCap = fmtNumber(profile[0].mktCap)
+      out.marketCap = formatNumber(profile[0].mktCap)
     }
     
     // Get most recent ratios
@@ -163,20 +151,20 @@ export function getCashFlowFactsFromBatch(batchData: BatchData | null): CashFlow
       const adjFcfTTM = fcfTTM - sbcTTM
       const fcfYieldAdjSBCValue = (adjFcfTTM / marketCap) * 100
       
-      out.fcfYield = fcfYieldValue.toFixed(2) + '%'
-      out.fcfYieldAdjSBC = fcfYieldAdjSBCValue.toFixed(2) + '%'
+      out.fcfYield = formatPercent(fcfYieldValue / 100, 2)
+      out.fcfYieldAdjSBC = formatPercent(fcfYieldAdjSBCValue / 100, 2)
       out.fcfYieldAdjSBCRaw = fcfYieldAdjSBCValue  // Store raw numeric value for color coding
       
       // Calculate SBC Impact as percentage difference
       if (fcfYieldValue !== 0) {
         const sbcImpactValue = ((fcfYieldValue - fcfYieldAdjSBCValue) / Math.abs(fcfYieldValue)) * 100
-        out.sbcImpact = sbcImpactValue.toFixed(2) + '%'
+        out.sbcImpact = formatPercent(sbcImpactValue / 100, 2)
       }
     } else if (keyMetrics && Array.isArray(keyMetrics) && keyMetrics.length > 0) {
       const metrics = keyMetrics[0] as any
       if (metrics.freeCashFlowYield) {
         // Fallback to key metrics
-        out.fcfYield = (Number(metrics.freeCashFlowYield) * 100).toFixed(2) + '%'
+        out.fcfYield = formatPercent(Number(metrics.freeCashFlowYield), 2)
       }
     }
     
@@ -206,10 +194,10 @@ export function getMarginsGrowthFromBatch(batchData: BatchData | null): MarginsG
       const ratios = ratiosAnnual[0] as any
       
       if (ratios.netProfitMargin) {
-        out.profitMargin = (Number(ratios.netProfitMargin) * 100).toFixed(2) + '%'
+        out.profitMargin = formatPercent(Number(ratios.netProfitMargin), 2)
       }
       if (ratios.operatingProfitMargin) {
-        out.operatingMargin = (Number(ratios.operatingProfitMargin) * 100).toFixed(2) + '%'
+        out.operatingMargin = formatPercent(Number(ratios.operatingProfitMargin), 2)
       }
     }
     
@@ -224,16 +212,16 @@ export function getMarginsGrowthFromBatch(batchData: BatchData | null): MarginsG
         const currentEarnings = Number(currentQ.netIncome) || 0
         const yearAgoEarnings = Number(yearAgoQ.netIncome) || 0
         if (yearAgoEarnings !== 0) {
-          const earningsGrowth = ((currentEarnings - yearAgoEarnings) / Math.abs(yearAgoEarnings)) * 100
-          out.earningsYoY = earningsGrowth.toFixed(2) + '%'
+          const earningsGrowth = (currentEarnings - yearAgoEarnings) / Math.abs(yearAgoEarnings)
+          out.earningsYoY = formatPercent(earningsGrowth, 2)
         }
         
         // Quarterly Revenue YoY growth
         const currentRevenue = Number(currentQ.revenue) || 0
         const yearAgoRevenue = Number(yearAgoQ.revenue) || 0
         if (yearAgoRevenue !== 0) {
-          const revenueGrowth = ((currentRevenue - yearAgoRevenue) / yearAgoRevenue) * 100
-          out.revenueYoY = revenueGrowth.toFixed(2) + '%'
+          const revenueGrowth = (currentRevenue - yearAgoRevenue) / yearAgoRevenue
+          out.revenueYoY = formatPercent(revenueGrowth, 2)
         }
       }
     }
@@ -274,9 +262,9 @@ export function getBalanceFromBatch(batchData: BatchData | null): BalanceMetrics
     const totalDebt = Number(balance.totalDebt) || 0
     const netDebt = totalCash - totalDebt
     
-    out.cash = fmtNumber(totalCash)
-    out.debt = fmtNumber(totalDebt)
-    out.net = fmtNumber(netDebt)
+    out.cash = formatNumber(totalCash)
+    out.debt = formatNumber(totalDebt)
+    out.net = formatNumber(netDebt)
     
     // Process Altman Z-Score from financialScores
     if (financialScores && Array.isArray(financialScores) && financialScores.length > 0) {

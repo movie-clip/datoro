@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 import rateLimit from 'express-rate-limit'
 import slowDown from 'express-slow-down'
 import type { Request, Response, NextFunction } from 'express'
@@ -59,7 +60,7 @@ export const fmpLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false, // Count all requests
   handler: (req: Request, res: Response) => {
-    console.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (${RATE_LIMIT.FMP_PER_IP_MAX} req/min)`);
+    logger.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (${RATE_LIMIT.FMP_PER_IP_MAX} req/min)`);
     res.status(429).json({
       error: 'Rate limit exceeded',
       message: 'You are making too many requests to the financial data API. Please slow down.',
@@ -88,7 +89,7 @@ export function globalFmpLimiter(req: Request, res: Response, next: NextFunction
   // Check global limit
   if (globalFmpCounter >= RATE_LIMIT.FMP_GLOBAL_MAX) {
     const timeUntilReset = Math.ceil((RATE_LIMIT.WINDOW_MS - (now - globalFmpWindowStart)) / 1000);
-    console.warn(`[RateLimit] Global FMP limit reached (${RATE_LIMIT.FMP_GLOBAL_MAX}/min). Blocking request from ${req.ip}`);
+    logger.warn(`[RateLimit] Global FMP limit reached (${RATE_LIMIT.FMP_GLOBAL_MAX}/min). Blocking request from ${req.ip}`);
     
     return res.status(503).json({
       error: 'Service temporarily unavailable',
@@ -123,7 +124,7 @@ export const adminLimiter = rateLimit({
   legacyHeaders: false,
   skipFailedRequests: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`[RateLimit] IP ${req.ip} exceeded admin rate limit`);
+    logger.warn(`[RateLimit] IP ${req.ip} exceeded admin rate limit`);
     res.status(429).json({
       error: 'Rate limit exceeded',
       message: 'Too many requests to this endpoint.',
@@ -153,7 +154,7 @@ export const aiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`[RateLimit] IP ${req.ip} exceeded AI rate limit`);
+    logger.warn(`[RateLimit] IP ${req.ip} exceeded AI rate limit`);
     res.status(429).json({
       error: 'Rate limit exceeded',
       message: 'AI analysis is resource-intensive. Please wait before making another request.',
@@ -167,11 +168,11 @@ export const aiLimiter = rateLimit({
 // Create a custom store that uses Redis if available
 export function createRedisStore(redisClient: any) {
   if (!redisClient) {
-    console.log('[RateLimit] Using memory store (single server only)');
+    logger.info('[RateLimit] Using memory store (single server only)');
     return undefined; // Use default memory store
   }
 
-  console.log('[RateLimit] Using Redis store (distributed)');
+  logger.info('[RateLimit] Using Redis store (distributed)');
   
   return {
     async increment(key: string) {

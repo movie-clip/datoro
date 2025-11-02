@@ -1,4 +1,5 @@
 import { handleServiceError, type ServiceResponse } from '../shared'
+import { formatPercent } from '@/utils/formatters'
 
 /**
  * Margins and growth metrics
@@ -8,13 +9,6 @@ export interface MarginsGrowth {
   operatingMargin: string
   earningsYoY: string
   revenueYoY: string
-}
-
-/**
- * Format value as percentage
- */
-function pct(v: number): string {
-  return Number.isFinite(v) ? (v * 100).toFixed(2) + '%' : '—'
 }
 
 /**
@@ -48,11 +42,11 @@ export async function fetchMarginsGrowth(ticker: string): Promise<ServiceRespons
     const pm = Number(m.netProfitMarginTTM ?? m.profitMarginTTM)
     const om = Number(m.operatingMarginTTM ?? m.operatingMargin)
     
-    if (Number.isFinite(pm)) out.profitMargin = pct(pm / 100)   // Finnhub % often in absolute percent; divide by 100 -> frac
-    if (Number.isFinite(om)) out.operatingMargin = pct(om / 100)
+    if (Number.isFinite(pm)) out.profitMargin = formatPercent(pm / 100, 2)   // Finnhub % often in absolute percent; divide by 100 -> frac
+    if (Number.isFinite(om)) out.operatingMargin = formatPercent(om / 100, 2)
 
     // 2) Quarterly YoY (income statement)
-    const ic = await j(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=ic&freq=quarterly`)
+    const ic = await j(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&statement=ic&freq=quarterly`)
     const rows = Array.isArray(ic?.data) ? ic.data : []
     
     if (rows.length >= 5) {
@@ -72,15 +66,15 @@ export async function fetchMarginsGrowth(ticker: string): Promise<ServiceRespons
       const rv1 = Number(prev?.revenue)
 
       if (Number.isFinite(ni0) && Number.isFinite(ni1) && Math.abs(ni1) > 1e-9) {
-        out.earningsYoY = (((ni0 - ni1) / Math.abs(ni1)) * 100).toFixed(2) + '%'
+        out.earningsYoY = formatPercent((ni0 - ni1) / Math.abs(ni1), 2)
       }
       if (Number.isFinite(rv0) && Number.isFinite(rv1) && Math.abs(rv1) > 1e-9) {
-        out.revenueYoY = (((rv0 - rv1) / Math.abs(rv1)) * 100).toFixed(2) + '%'
+        out.revenueYoY = formatPercent((rv0 - rv1) / Math.abs(rv1), 2)
       }
     }
 
     return { data: out, error: null }
   } catch (_error) {
-    return handleServiceError(error, 'fetchMarginsGrowth', out)
+    return handleServiceError(_error, 'fetchMarginsGrowth', out)
   }
 }

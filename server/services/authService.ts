@@ -8,6 +8,7 @@ import { OAuth2Client } from 'google-auth-library'
 import { getPrismaClient } from './databaseService.js'
 import type { User } from '@prisma/client'
 import { CACHE_TTL } from '../config/constants.js'
+import logger from './logger.js'
 
 const prisma = getPrismaClient()
 
@@ -33,8 +34,8 @@ interface AuthResult {
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
   const errorMsg = '[Auth] CRITICAL: JWT_SECRET environment variable is required. Server cannot start without it.'
-  console.error(errorMsg)
-  console.error('[Auth] Generate a secure secret with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"')
+  logger.error(errorMsg)
+  logger.error('[Auth] Generate a secure secret with: node -e "logger.info(require(\'crypto\').randomBytes(64).toString(\'hex\'))"')
   throw new Error('JWT_SECRET environment variable is required')
 }
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
@@ -104,7 +105,7 @@ export function verifyToken(token: string): any | null {
       audience: 'datoro-users'
     })
   } catch (_error: any) {
-    console.error('[Auth] Token verification failed:', _error.message)
+    logger.error('[Auth] Token verification failed:', _error.message)
     return null
   }
 }
@@ -193,14 +194,14 @@ export async function verifyEmailToken(token: string): Promise<{
       }
     })
 
-    console.log(`[Auth] Email verified for user: ${verifiedUser.email}`)
+    logger.info(`[Auth] Email verified for user: ${verifiedUser.email}`)
 
     return {
       success: true,
       user: verifiedUser
     }
   } catch (error: any) {
-    console.error('[Auth] Email verification error:', error)
+    logger.error('[Auth] Email verification error:', error)
     return {
       success: false,
       error: 'Failed to verify email'
@@ -280,13 +281,13 @@ export async function resendVerificationEmail(email: string): Promise<{
       }
     }
 
-    console.log(`[Auth] Verification email resent to: ${user.email}`)
+    logger.info(`[Auth] Verification email resent to: ${user.email}`)
 
     return {
       success: true
     }
   } catch (error: any) {
-    console.error('[Auth] Resend verification error:', error)
+    logger.error('[Auth] Resend verification error:', error)
     return {
       success: false,
       error: 'Failed to resend verification email'
@@ -396,9 +397,9 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
   )
   
   if (!emailResult.success) {
-    console.warn(`[Auth] Failed to send verification email to ${user.email}:`, emailResult.error)
+    logger.warn(`[Auth] Failed to send verification email to ${user.email}:`, emailResult.error)
   } else {
-    console.log(`[Auth] Verification email sent to: ${user.email}`)
+    logger.info(`[Auth] Verification email sent to: ${user.email}`)
   }
   
   // Generate token for auto-login after registration (even unverified)
@@ -408,7 +409,7 @@ export async function registerUser(data: RegisterData, ipAddress: string | null 
   // Create session with IP and user agent tracking
   await createSession(user.id, token, ipAddress, userAgent)
   
-  console.log(`[Auth] User registered: ${user.email} (email verification pending)`)
+  logger.info(`[Auth] User registered: ${user.email} (email verification pending)`)
   
   return { user, token }
 }
@@ -465,7 +466,7 @@ export async function loginUser(data: LoginData, ipAddress: string | null = null
   // Create session with IP and user agent tracking
   await createSession(user.id, token, ipAddress, userAgent)
   
-  console.log(`[Auth] User logged in: ${user.email}`)
+  logger.info(`[Auth] User logged in: ${user.email}`)
   
   // Return user without password
   const { password: _, ...userWithoutPassword } = updatedUser
@@ -563,7 +564,7 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
         })
       }
       
-      console.log(`[Auth] New Google user: ${user.email}`)
+      logger.info(`[Auth] New Google user: ${user.email}`)
     } else {
       // Update existing user
       user = await prisma.user.update({
@@ -578,7 +579,7 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
         }
       })
       
-      console.log(`[Auth] Google user logged in: ${user.email}`)
+      logger.info(`[Auth] Google user logged in: ${user.email}`)
     }
     
     // Generate token
@@ -592,7 +593,7 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
     return { user: userWithoutPassword, token }
     
   } catch (_error: any) {
-    console.error('[Auth] Google OAuth error:', _error.message);
+    logger.error('[Auth] Google OAuth error:', _error.message);
     throw new Error('Google authentication failed');
   }
 }
@@ -714,7 +715,7 @@ export async function logoutUser(token: string): Promise<void> {
   // Clear from cache
   sessionCache.delete(hashedToken)
   
-  console.log('[Auth] User logged out')
+  logger.info('[Auth] User logged out')
 }
 
 /**
@@ -730,7 +731,7 @@ export async function logoutAllSessions(userId: string): Promise<void> {
   // Clear all cached sessions for this user (brute force: clear entire cache)
   sessionCache.clear()
   
-  console.log(`[Auth] All sessions deleted for user: ${userId}`)
+  logger.info(`[Auth] All sessions deleted for user: ${userId}`)
 }
 
 // ============================================
@@ -750,6 +751,7 @@ export async function cleanupExpiredSessions(): Promise<number> {
     }
   })
   
-  console.log(`[Auth] Deleted ${result.count} expired sessions`)
+  logger.info(`[Auth] Deleted ${result.count} expired sessions`)
   return result.count
 }
+

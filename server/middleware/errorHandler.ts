@@ -5,6 +5,7 @@
  */
 
 import type { Request, Response, NextFunction, ErrorRequestHandler } from 'express'
+import logger from '../services/logger.js'
 
 declare global {
   namespace Express {
@@ -113,7 +114,7 @@ export function errorHandler(monitoringService: MonitoringService | null = null)
     };
 
     if (statusCode >= 500) {
-      console.error('[ERROR]', {
+      logger.error('[ERROR]', {
         ...logData,
         stack: err.stack
       });
@@ -123,7 +124,7 @@ export function errorHandler(monitoringService: MonitoringService | null = null)
         global.Sentry.setTag('request_id', req.id);
       }
     } else {
-      console.warn('[WARN]', logData);
+      logger.warn('[WARN]', logData);
     }
 
     // Don't leak error details in production for non-operational errors
@@ -215,11 +216,11 @@ export function requestLogger(monitoringService: MonitoringService | null = null
       }
 
       if (logLevel === 'error') {
-        console.error('[REQUEST]', logData);
+        logger.error('[REQUEST]', logData);
       } else if (logLevel === 'warn') {
-        console.warn('[REQUEST]', logData);
+        logger.warn('[REQUEST]', logData);
       } else {
-        console.log('[REQUEST]', logData);
+        logger.info('[REQUEST]', logData);
       }
     });
 

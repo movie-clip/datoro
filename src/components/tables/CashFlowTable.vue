@@ -31,6 +31,7 @@ import ChartModal from '../common/ChartModal.vue'
 import { calculateGrowthRates } from '../../utils/growthCalculator'
 import { COLORS, getFCFYieldColor } from '../../utils/colors'
 import type { Component } from 'vue'
+import { formatNumber } from '@/utils/formatters'
 
 // Import chart components
 import RevenueChart from '../charts/RevenueChart.vue'
@@ -83,33 +84,21 @@ const getLatestRevenue = (batchData: BatchData | null): string => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
   if (latest?.revenue === undefined || latest?.revenue === null) return 'N/A'
-  const revenue = latest.revenue
-  // Handle negative values (rare for revenue, but consistent handling)
-  const absRevenue = Math.abs(revenue)
-  const sign = revenue < 0 ? '-' : ''
-  if (absRevenue >= 1e9) return `${sign}$${(absRevenue / 1e9).toFixed(2)}B`
-  if (absRevenue >= 1e6) return `${sign}$${(absRevenue / 1e6).toFixed(2)}M`
-  return `${sign}$${(absRevenue / 1e3).toFixed(2)}K`
+  return formatNumber(latest.revenue, { currency: true, decimals: 2 })
 }
 
 const getLatestNetIncome = (batchData: BatchData | null): string => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
   if (latest?.netIncome === undefined || latest?.netIncome === null) return 'N/A'
-  const netIncome = latest.netIncome
-  // Handle negative values
-  const absNetIncome = Math.abs(netIncome)
-  const sign = netIncome < 0 ? '-' : ''
-  if (absNetIncome >= 1e9) return `${sign}$${(absNetIncome / 1e9).toFixed(2)}B`
-  if (absNetIncome >= 1e6) return `${sign}$${(absNetIncome / 1e6).toFixed(2)}M`
-  return `${sign}$${(absNetIncome / 1e3).toFixed(2)}K`
+  return formatNumber(latest.netIncome, { currency: true, decimals: 2 })
 }
 
 const getLatestEPS = (batchData: BatchData | null): string => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
   if (!latest?.eps) return 'N/A'
-  return `$${latest.eps.toFixed(2)}`
+  return formatNumber(latest.eps, { currency: true, decimals: 2 })
 }
 
 const getLatestFCF = (batchData: BatchData | null): string => {
@@ -117,12 +106,7 @@ const getLatestFCF = (batchData: BatchData | null): string => {
   if (batchData?.data?.cashflowAnnual && Array.isArray(batchData.data.cashflowAnnual) && batchData.data.cashflowAnnual.length > 0) {
     const latest = batchData.data.cashflowAnnual[0]
     if (latest?.freeCashFlow !== undefined && latest?.freeCashFlow !== null) {
-      const fcf = latest.freeCashFlow
-      const absFcf = Math.abs(fcf)
-      const sign = fcf < 0 ? '-' : ''
-      if (absFcf >= 1e9) return `${sign}$${(absFcf / 1e9).toFixed(2)}B`
-      if (absFcf >= 1e6) return `${sign}$${(absFcf / 1e6).toFixed(2)}M`
-      return `${sign}$${(absFcf / 1e3).toFixed(2)}K`
+      return formatNumber(latest.freeCashFlow, { currency: true, decimals: 2 })
     }
   }
   

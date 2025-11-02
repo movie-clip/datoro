@@ -30,6 +30,7 @@ import { useTickerStore, type BatchData } from '../../stores/tickerStore'
 import BaseTable from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 import type { Component } from 'vue'
+import { formatNumber } from '@/utils/formatters'
 
 // Import all chart components
 import RevenueChart from '../charts/RevenueChart.vue'
@@ -179,15 +180,7 @@ const metricsDefinitions: MetricDefinition[] = [
 
 // Format value for display
 const formatValue = (value: number | null): string => {
-  if (value === null || value === undefined) return '—'
-  
-  const abs = Math.abs(value)
-  if (abs >= 1e12) return `$${(value / 1e12).toFixed(2)}T`
-  if (abs >= 1e9) return `$${(value / 1e9).toFixed(2)}B`
-  if (abs >= 1e6) return `$${(value / 1e6).toFixed(2)}M`
-  if (abs >= 1e3) return `$${(value / 1e3).toFixed(2)}K`
-  if (abs >= 1) return `$${value.toFixed(2)}`
-  return value.toFixed(4)
+  return formatNumber(value, { currency: true, decimals: 2 })
 }
 
 interface MetricRow {

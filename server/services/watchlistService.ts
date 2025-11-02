@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 /**
  * Watchlist Service (Prisma Implementation)
  * 
@@ -129,7 +130,7 @@ class WatchlistService {
       
       return true
     } catch (_error) {
-      console.error('Error deleting watchlist:', _error)
+      logger.error('Error deleting watchlist:', _error)
       return false
     }
   }

@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 import type { Request, Response } from 'express'
 
 /**
@@ -124,14 +125,14 @@ class MonitoringService {
    */
   start(): void {
     if (this.metricsInterval) {
-      console.warn('[MonitoringService] Already started')
+      logger.warn('[MonitoringService] Already started')
       return
     }
     
     // Update metrics every 10 seconds
     this.metricsInterval = setInterval(() => this.updateSystemMetrics(), 10000)
     this.updateSystemMetrics()
-    console.log('[MonitoringService] Started')
+    logger.info('[MonitoringService] Started')
   }
 
   /**
@@ -141,7 +142,7 @@ class MonitoringService {
     if (this.metricsInterval) {
       clearInterval(this.metricsInterval)
       this.metricsInterval = null
-      console.log('[MonitoringService] Stopped')
+      logger.info('[MonitoringService] Stopped')
     }
   }
 

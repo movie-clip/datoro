@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 import * as Sentry from '@sentry/node'
 import type { Request, Response, NextFunction, ErrorRequestHandler } from 'express'
 
@@ -42,8 +43,8 @@ export function initSentry(): void {
   const environment = process.env.NODE_ENV || 'development'
 
   if (!dsn) {
-    console.log('[Sentry] Not configured (SENTRY_DSN not set)')
-    console.log('[Sentry] To enable: Sign up at https://sentry.io and add SENTRY_DSN to .env.local')
+    logger.info('[Sentry] Not configured (SENTRY_DSN not set)')
+    logger.info('[Sentry] To enable: Sign up at https://sentry.io and add SENTRY_DSN to .env.local')
     return
   }
 
@@ -101,11 +102,11 @@ export function initSentry(): void {
     })
 
     initialized = true
-    console.log(`[Sentry] Initialized for ${environment}`)
-    console.log(`[Sentry] Tracing: ${tracesSampleRate * 100}%`)
+    logger.info(`[Sentry] Initialized for ${environment}`)
+    logger.info(`[Sentry] Tracing: ${tracesSampleRate * 100}%`)
     
   } catch (_error) {
-    console.error('[Sentry] Failed to initialize:', (_error as Error).message)
+    logger.error('[Sentry] Failed to initialize:', (_error as Error).message)
     initialized = false
   }
 }

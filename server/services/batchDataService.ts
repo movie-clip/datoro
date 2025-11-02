@@ -2,6 +2,7 @@
 // Batch data fetcher - fetches all ticker data in one optimized request
 
 import { z } from 'zod'
+import logger from './logger.js'
 
 interface FetchOptions {
   headers?: Record<string, string>
@@ -99,7 +100,7 @@ function validateResponse(dataKey: string, data: any): { valid: boolean; error?:
     return { valid: true }
   } catch (error: any) {
     const errorMsg = error.errors?.[0]?.message || error.message
-    console.warn(`[BatchData] Validation failed for ${dataKey}:`, errorMsg)
+    logger.warn(`[BatchData] Validation failed for ${dataKey}:`, errorMsg)
     return { valid: false, error: errorMsg }
   }
 }
@@ -205,23 +206,23 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           endpointTimings[key] = duration;
           
           if (!res.ok) {
-            console.warn(`[BatchData] ${key} failed: ${res.status} (${duration}ms)`);
+            logger.warn(`[BatchData] ${key} failed: ${res.status} (${duration}ms)`);
             if (key === 'advancedDcf') {
-              console.error(`[BatchData] advancedDcf endpoint failed: ${baseUrl}${endpoint}`);
-              console.error(`[BatchData] advancedDcf status: ${res.status}, statusText: ${res.statusText}`);
+              logger.error(`[BatchData] advancedDcf endpoint failed: ${baseUrl}${endpoint}`);
+              logger.error(`[BatchData] advancedDcf status: ${res.status}, statusText: ${res.statusText}`);
             }
             return [key, null];
           }
           
           const data = await res.json();
           if (key === 'advancedDcf') {
-            console.log(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+            logger.info(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
           }
           return [key, data];
         } catch (_error: any) {
           const duration = Date.now() - endpointStart;
           endpointTimings[key] = duration;
-          console.warn(`[BatchData] ${key} error: ${_error.message} (${duration}ms)`);
+          logger.warn(`[BatchData] ${key} error: ${_error.message} (${duration}ms)`);
           return [key, null];
         }
       })
@@ -245,7 +246,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
         if (data) {
           const validation = validateResponse(dataKey, data)
           if (!validation.valid) {
-            console.warn(`[BatchData] ${dataKey} validation failed: ${validation.error}`)
+            logger.warn(`[BatchData] ${dataKey} validation failed: ${validation.error}`)
             // Still include data but log warning
           }
         }
@@ -261,7 +262,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           result.failures!.push(key);
         }
       } else {
-        console.error(`[BatchData] ${key} error:`, __response.reason);
+        logger.error(`[BatchData] ${key} error:`, __response.reason);
         result.data[key] = null;
         result.failures!.push(key);
       }
@@ -273,13 +274,13 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
       .sort((a, b) => b[1] - a[1]);
     
     if (slowEndpoints.length > 0) {
-      console.log(`[Batch] ${t} - Slow endpoints (>500ms):`, 
+      logger.info(`[Batch] ${t} - Slow endpoints (>500ms):`, 
         slowEndpoints.map(([key, duration]) => `${key}:${duration}ms`).join(', '));
     }
 
     return result;
   } catch (_error) {
-    console.error('[BatchData] Fatal error:', _error);
+    logger.error('[BatchData] Fatal error:', _error);
     throw _error;
   }
 }
@@ -315,7 +316,7 @@ export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Pr
         const data = await res.json();
         return [key, data];
       } catch (_error: any) {
-        console.warn(`[BatchData Priority] ${key} error:`, _error.message);
+        logger.warn(`[BatchData Priority] ${key} error:`, _error.message);
         return [key, null];
       }
     })
@@ -347,3 +348,4 @@ function getDateMonthsAgo(months: number): string {
   date.setMonth(date.getMonth() - months);
   return date.toISOString().split('T')[0];
 }
+

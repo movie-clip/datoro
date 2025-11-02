@@ -2,6 +2,7 @@
 // Cash Flow + Margins & Growth KPIs via Finnhub (server proxy: /api/finnhub/*)
 
 import { type ServiceResponse } from '../shared'
+import { formatPercent } from '@/utils/formatters'
 
 /**
  * Cash flow KPIs
@@ -19,16 +20,6 @@ export interface MarginsGrowthKpis {
   operatingMargin: string
   qEarningsYoY: string
   qRevenueYoY: string
-}
-
-/**
- * Format value as percentage
- */
-function fmtPct(n: number): string {
-  if (n == null || !Number.isFinite(n)) return '—'
-  const v = n * 100
-  if (Math.abs(v) >= 100) return v.toFixed(0) + '%'
-  return v.toFixed(2) + '%'
 }
 
 /**
@@ -162,8 +153,8 @@ export async function fetchCashFlowKpis(ticker: string): Promise<CashFlowKpis> {
   const adjFcfPerShare = (Number.isFinite(adjFcf) && Number.isFinite(shares) && shares > 0) ? (adjFcf / shares) : NaN
   const adjFcfYield = (Number.isFinite(adjFcfPerShare) && Number.isFinite(price) && price > 0) ? (adjFcfPerShare / price) : NaN
 
-  out.fcfYield = Number.isFinite(fcfYield) ? fmtPct(fcfYield) : '—'
-  out.adjFcfYield = Number.isFinite(adjFcfYield) ? fmtPct(adjFcfYield) : '—'
+  out.fcfYield = Number.isFinite(fcfYield) ? formatPercent(fcfYield) : '—'
+  out.adjFcfYield = Number.isFinite(adjFcfYield) ? formatPercent(adjFcfYield) : '—'
   return out
 }
 
@@ -235,14 +226,14 @@ export async function fetchMarginsGrowth(ticker: string): Promise<MarginsGrowthK
     const niOld = pick(prevYear || {}, ['netIncome', 'netIncomeCommonStockholders'])
 
     if (Number.isFinite(revNow) && Number.isFinite(revOld) && revOld !== 0) {
-      out.qRevenueYoY = fmtPct((revNow - revOld) / Math.abs(revOld))
+      out.qRevenueYoY = formatPercent((revNow - revOld) / Math.abs(revOld))
     }
     if (Number.isFinite(niNow) && Number.isFinite(niOld) && niOld !== 0) {
-      out.qEarningsYoY = fmtPct((niNow - niOld) / Math.abs(niOld))
+      out.qEarningsYoY = formatPercent((niNow - niOld) / Math.abs(niOld))
     }
   } catch {}
 
-  out.profitMargin = Number.isFinite(pm) ? fmtPct(pm) : '—'
-  out.operatingMargin = Number.isFinite(om) ? fmtPct(om) : '—'
+  out.profitMargin = Number.isFinite(pm) ? formatPercent(pm) : '—'
+  out.operatingMargin = Number.isFinite(om) ? formatPercent(om) : '—'
   return out
 }

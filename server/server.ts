@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { getCacheService, CacheTTL } from './services/cacheService.js'
 import { getMonitoringService } from './services/monitoringService.js'
+import logger, { log } from './services/logger.js'
 import * as sentryService from './services/sentryService.js'
 import authRoutes from './routes/authRoutes.js'
 import watchlistRoutes from './routes/watchlist.js'
@@ -89,17 +90,17 @@ const FMP_API_KEY = process.env.FMP_API_KEY || ''
 
 // Validate FMP API key on startup
 if (!FMP_API_KEY) {
-  console.error('[FMP] CRITICAL: FMP_API_KEY environment variable is required')
-  console.error('[FMP] Server cannot start without FMP API key')
-  console.error('[FMP] Please add FMP_API_KEY to your .env file')
+  logger.error('[FMP] CRITICAL: FMP_API_KEY environment variable is required')
+  logger.error('[FMP] Server cannot start without FMP API key')
+  logger.error('[FMP] Please add FMP_API_KEY to your .env file')
   throw new Error('FMP_API_KEY environment variable is required')
 }
 
 // Validate FMP key format (32 hexadecimal characters)
 if (!/^[a-f0-9]{32}$/i.test(FMP_API_KEY)) {
-  console.warn('[FMP] WARNING: FMP_API_KEY format looks invalid (expected 32 hex characters)')
-  console.warn('[FMP] Key length:', FMP_API_KEY.length, 'chars')
-  console.warn('[FMP] API requests may fail. Please verify your FMP API key.')
+  logger.warn('[FMP] WARNING: FMP_API_KEY format looks invalid (expected 32 hex characters)')
+  logger.warn(`[FMP] Key length: ${FMP_API_KEY.length} chars`)
+  logger.warn('[FMP] API requests may fail. Please verify your FMP API key.')
 }
 
 const app: Express = express()
@@ -154,7 +155,7 @@ app.use(cors({
     
     // In development, allow any origin (localhost, local network IPs, etc.)
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[CORS] Allowing development origin: ${origin}`);
+      logger.debug(`[CORS] Allowing development origin: ${origin}`);
       return callback(null, true);
     }
     
@@ -162,8 +163,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn(`[CORS] Blocked request from origin: ${origin}`);
-      console.warn(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`);
+      logger.warn(`[CORS] Blocked request from origin: ${origin}`, { allowedOrigins });
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -198,7 +198,7 @@ const inFlightRequests = new Map<string, Promise<unknown>>()
 async function fetchWithDeduplication<T = any>(key: string, fetchFn: () => Promise<T>): Promise<T> {
   // If request is already in-flight, wait for it
   if (inFlightRequests.has(key)) {
-    console.log(`[Dedup] Waiting for in-flight request: ${key}`)
+    logger.info(`[Dedup] Waiting for in-flight request: ${key}`)
     return await inFlightRequests.get(key)! as T
   }
   
@@ -321,7 +321,7 @@ app.get('/api/company-icon/:ticker', async (req: Request, res: Response) => {
     res.send(buffer)
     
   } catch (_error: any) {
-    console.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, _error.message)
+    logger.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, _error.message)
     res.status(500).json({ error: 'Failed to fetch company icon' })
   }
 })
@@ -333,7 +333,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
   
   try {
     if (!FMP_API_KEY) {
-      console.error('[FMP] API key not configured')
+      logger.error('[FMP] API key not configured')
       return res.status(500).json({ error: 'FMP_API_KEY is not set on the server' })
     }
     // Remove /api/fmp prefix and parse query params
@@ -528,7 +528,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     } catch (_validationError: any) {
       // Joi validation error
       if (_validationError.isJoi) {
-        console.error('[FMP] Validation error:', _validationError.details)
+        logger.error('[FMP] Validation error:', _validationError.details)
         return res.status(400).json({
           error: {
             message: 'Validation failed',
@@ -569,20 +569,20 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     if (req.method === 'GET') {
       const cached = await cache.get(cacheKey)
       if (cached.data) {
-        console.log(`[FMP] ${subpath} → CACHE HIT (${cached.source})`)
+        logger.info(`[FMP] ${subpath} → CACHE HIT (${cached.source})`)
         res.setHeader('X-Cache', cached.source || 'unknown')
         
         // Track search in database (in background) - skip if database offline
         if (isDatabaseAvailable && ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
           trackSearch(req.ip!, ticker, req.headers['user-agent'] || '', 'direct').catch((err: any) => {
-            console.error('[Database] Search tracking error:', err.message)
+            logger.error('[Database] Search tracking error:', err.message)
             isDatabaseAvailable = false // Disable if database is down
           })
           
           // Update company name if this is a profile request
           if (path.includes('/profile') && Array.isArray(cached.data) && cached.data[0]?.companyName) {
             updateTickerCompanyName(ticker, cached.data[0].companyName).catch((err: any) => {
-              console.error('[Database] Company name update error:', err.message)
+              logger.error('[Database] Company name update error:', err.message)
               isDatabaseAvailable = false // Disable if database is down
             })
           }
@@ -598,7 +598,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
             cached: true,
             ipAddress: req.ip!
           }).catch((err: any) => {
-            console.error('[Database] API tracking error:', err.message)
+            logger.error('[Database] API tracking error:', err.message)
             isDatabaseAvailable = false // Disable if database is down
           })
         }
@@ -611,7 +611,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     params.set('apikey', FMP_API_KEY)
     const upstream = `https://financialmodelingprep.com${path}?${params.toString()}`
     
-    console.log(`[FMP] ${req.method} ${subpath} → ${upstream}`)
+    logger.info(`[FMP] ${req.method} ${subpath} → ${upstream}`)
     
     // Forward all headers except host
     const headers = { ...req.headers as any, host: 'financialmodelingprep.com', 'user-agent': UA }
@@ -629,11 +629,11 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       : await fetch(upstream, options)
     const contentType = fmpRes.headers.get('content-type') || 'application/json'
     
-    console.log(`[FMP] Response: ${fmpRes.status} ${contentType}`)
+    logger.info(`[FMP] Response: ${fmpRes.status} ${contentType}`)
     
     // Handle rate limit errors (HTTP 429)
     if (fmpRes.status === 429) {
-      console.error('[FMP] Rate limit exceeded (HTTP 429)')
+      logger.error('[FMP] Rate limit exceeded (HTTP 429)')
       return res.status(429).json({
         error: {
           message: 'FMP API rate limit exceeded (300 requests/minute). Data is cached for 7 days to reduce API calls.',
@@ -651,7 +651,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     
     // Handle empty responses
     if (!bufferString || bufferString.trim() === '') {
-      console.warn(`[FMP] Empty response for ${path}`)
+      logger.warn(`[FMP] Empty response for ${path}`)
       return res.status(fmpRes.status).json([])
     }
     
@@ -660,8 +660,8 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     try {
       data = JSON.parse(bufferString)
     } catch (_parseError: any) {
-      console.error(`[FMP] JSON parse error for ${path}:`, _parseError.message)
-      console.error(`[FMP] Response (first 200 chars): ${bufferString.substring(0, 200)}`)
+      logger.error(`[FMP] JSON parse error for ${path}:`, _parseError.message)
+      logger.error(`[FMP] Response (first 200 chars): ${bufferString.substring(0, 200)}`)
       return res.status(500).json({ 
         error: 'Failed to parse FMP API response',
         details: _parseError.message 
@@ -676,14 +676,14 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       // Track search in database (in background) - skip if database offline
       if (isDatabaseAvailable && ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
         trackSearch(req.ip!, ticker, req.headers['user-agent'] || '', 'direct').catch((err: any) => {
-          console.error('[Database] Search tracking error:', err.message)
+          logger.error('[Database] Search tracking error:', err.message)
           isDatabaseAvailable = false // Disable if database is down
         })
         
         // Update company name if this is a profile request
         if (path.includes('/profile') && Array.isArray(data) && data[0]?.companyName) {
           updateTickerCompanyName(ticker, data[0].companyName).catch((err: any) => {
-            console.error('[Database] Company name update error:', err.message)
+            logger.error('[Database] Company name update error:', err.message)
             isDatabaseAvailable = false // Disable if database is down
           })
         }
@@ -699,7 +699,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
           cached: false,
           ipAddress: req.ip!
         }).catch((err: any) => {
-          console.error('[Database] API tracking error:', err.message)
+          logger.error('[Database] API tracking error:', err.message)
           isDatabaseAvailable = false // Disable if database is down
         })
       }
@@ -707,7 +707,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     
     res.send(data)
   } catch (_e: any) {
-    console.error('[FMP] Error:', _e)
+    logger.error('[FMP] Error:', _e)
     
     // Track failed API request in database (in background) - skip if database offline
     if (isDatabaseAvailable) {
@@ -720,7 +720,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         errorCode: 'E005',
         ipAddress: req.ip!
       }).catch((err: any) => {
-        console.error('[Database] API tracking error:', err.message)
+        logger.error('[Database] API tracking error:', err.message)
         isDatabaseAvailable = false // Disable if database is down
       })
     }
@@ -780,30 +780,30 @@ app.use(sentryService.errorHandler())
 app.use(errorHandler(monitoring))
 
 const server = app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`FMP Proxy Server listening on http://0.0.0.0:${PORT}`)
-  console.log(`Access from network: http://<your-pc-ip>:${PORT}`)
-  console.log(`CORS allowed origin: ${DEV_ORIGIN}`)
-  console.log(`FMP API: ${FMP_API_KEY ? 'ENABLED' : 'DISABLED (set FMP_API_KEY)'}`)
+  logger.info(`FMP Proxy Server listening on http://0.0.0.0:${PORT}`)
+  logger.info(`Access from network: http://<your-pc-ip>:${PORT}`)
+  logger.info(`CORS allowed origin: ${DEV_ORIGIN}`)
+  logger.info(`FMP API: ${FMP_API_KEY ? 'ENABLED' : 'DISABLED (set FMP_API_KEY)'}`)
   
   // Connect to Redis
   await cache.connect()
   
   // Warm up database connection pool to prevent cold start delays
   // This prevents the first auth request from timing out after server restart
-  console.log('[Database] Warming up connection pool...')
+  logger.info('[Database] Warming up connection pool...')
   try {
     const prisma = getPrismaClient()
     // Simple query to establish connection
     await prisma.$queryRaw`SELECT 1`
-    console.log('[Database] ✓ Connection pool warmed up')
+    logger.info('[Database] ✓ Connection pool warmed up')
   } catch (_error: any) {
-    console.warn('[Database] ✗ Failed to warm up connection:', _error.message)
-    console.warn('[Database] First requests may be slower than usual')
+    logger.warn('[Database] ✗ Failed to warm up connection:', _error.message)
+    logger.warn('[Database] First requests may be slower than usual')
   }
   
   // Schedule daily session cleanup (only on worker 0 or if not using PM2)
   if (!process.env.pm_id || process.env.pm_id === '0') {
-    console.log('[Auth] Scheduling daily session cleanup...')
+    logger.info('[Auth] Scheduling daily session cleanup...')
     
     // Import cleanupExpiredSessions
     const { cleanupExpiredSessions } = await import('./services/authService.js')
@@ -821,27 +821,27 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
       const msUntilNextRun = nextRun.getTime() - now.getTime()
       
       setTimeout(async () => {
-        console.log('[Auth] Running scheduled session cleanup...')
+        logger.info('[Auth] Running scheduled session cleanup...')
         try {
           const count = await cleanupExpiredSessions()
-          console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
+          logger.info(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
         } catch (_error: any) {
-          console.error('[Auth] ✗ Cleanup failed:', _error.message)
+          logger.error('[Auth] ✗ Cleanup failed:', _error.message)
         }
         
         // Schedule next run (24 hours)
         setInterval(async () => {
-          console.log('[Auth] Running scheduled session cleanup...')
+          logger.info('[Auth] Running scheduled session cleanup...')
           try {
             const count = await cleanupExpiredSessions()
-            console.log(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
+            logger.info(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
           } catch (_error: any) {
-            console.error('[Auth] ✗ Cleanup failed:', _error.message)
+            logger.error('[Auth] ✗ Cleanup failed:', _error.message)
           }
         }, 24 * 60 * 60 * 1000) // 24 hours
       }, msUntilNextRun)
       
-      console.log(`[Auth] Next cleanup scheduled for: ${nextRun.toLocaleString()}`)
+      logger.info(`[Auth] Next cleanup scheduled for: ${nextRun.toLocaleString()}`)
     }
     
     runCleanup()
@@ -849,42 +849,42 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
 })
 
 server.on('error', (err: any) => {
-  console.error('[SERVER] Error:', err)
+  logger.error('[SERVER] Error:', err)
   process.exit(1)
 })
 
 // Graceful shutdown handler
 async function gracefulShutdown(signal: string): Promise<void> {
-  console.log(`\n[SERVER] Received ${signal}, shutting down gracefully...`)
+  logger.info(`\n[SERVER] Received ${signal}, shutting down gracefully...`)
   
   try {
     // Stop monitoring service (clear intervals)
     monitoring.stop()
-    console.log('[SERVER] ✓ Monitoring service stopped')
+    logger.info('[SERVER] ✓ Monitoring service stopped')
     
     // Disconnect from Redis cache
     await cache.disconnect()
-    console.log('[SERVER] ✓ Redis cache disconnected')
+    logger.info('[SERVER] ✓ Redis cache disconnected')
     
     // Close database connections (Prisma)
     // Note: Prisma auto-disconnects, but we could add explicit cleanup here
-    console.log('[SERVER] ✓ Database connections closed')
+    logger.info('[SERVER] ✓ Database connections closed')
     
     // Close HTTP server (stop accepting new requests)
     server.close(() => {
-      console.log('[SERVER] ✓ HTTP server closed')
-      console.log('[SERVER] Shutdown complete')
+      logger.info('[SERVER] ✓ HTTP server closed')
+      logger.info('[SERVER] Shutdown complete')
       process.exit(0)
     })
     
     // Force exit after 10 seconds if graceful shutdown hangs
     setTimeout(() => {
-      console.error('[SERVER] ✗ Forced shutdown after timeout')
+      logger.error('[SERVER] ✗ Forced shutdown after timeout')
       process.exit(1)
     }, 10000)
     
   } catch (_error: any) {
-    console.error('[SERVER] Error during shutdown:', _error)
+    logger.error('[SERVER] Error during shutdown:', _error)
     process.exit(1)
   }
 }
@@ -893,3 +893,4 @@ async function gracefulShutdown(signal: string): Promise<void> {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'))   // Ctrl+C
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM')) // PM2 stop/restart
 process.on('SIGHUP', () => gracefulShutdown('SIGHUP'))   // Terminal closed
+

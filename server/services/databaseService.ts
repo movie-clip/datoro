@@ -1,8 +1,6 @@
 import { PrismaClient, type User, type PopularTicker } from '@prisma/client';
-
-// Re-export PrismaClient type for proper type inference in other files
-export type { PrismaClient } from '@prisma/client';
 import { buildDatabaseUrl, getPoolConfig } from '../config/database.config.js';
+import logger from './logger.js'
 
 interface ApiRequestData {
   endpoint: string
@@ -97,24 +95,24 @@ export function getPrismaClient(): PrismaClient {
 
     // Monitor connection pool health
     if (process.env.NODE_ENV === 'development') {
-      console.log('[Database] Prisma client initialized');
-      console.log(`[Database] Worker PID: ${process.pid}`);
+      logger.info('[Database] Prisma client initialized');
+      logger.info(`[Database] Worker PID: ${process.pid}`);
       
       const poolConfig = getPoolConfig() as any
-      console.log('[Database] Connection pool:')
-      console.log(`  - Provider: ${poolConfig.provider}`)
-      console.log(`  - Per worker: ${poolConfig.connectionsPerWorker}`)
-      console.log(`  - Total: ${poolConfig.totalConnections} (${poolConfig.utilization} utilization)`)
+      logger.info('[Database] Connection pool:')
+      logger.info(`  - Provider: ${poolConfig.provider}`)
+      logger.info(`  - Per worker: ${poolConfig.connectionsPerWorker}`)
+      logger.info(`  - Total: ${poolConfig.totalConnections} (${poolConfig.utilization} utilization)`)
     }
 
     // Handle graceful shutdown
     const gracefulShutdown = async (signal: string) => {
-      console.log(`[Database] ${signal} received. Disconnecting Prisma...`);
+      logger.info(`[Database] ${signal} received. Disconnecting Prisma...`);
       try {
         await prisma!.$disconnect();
-        console.log('[Database] Disconnected successfully');
+        logger.info('[Database] Disconnected successfully');
       } catch (_err) {
-        console.error('[Database] Error during disconnect:', _err);
+        logger.error('[Database] Error during disconnect:', _err);
       }
     };
 
@@ -160,7 +158,7 @@ async function _executeWithTimeout(queryFn: (db: PrismaClient) => Promise<unknow
     return await queryFn(db);
   } catch (_error: any) {
     if (_error.message?.includes('statement timeout')) {
-      console.error(`[Database] Query timeout after ${timeoutMs}ms:`, _error.message);
+      logger.error(`[Database] Query timeout after ${timeoutMs}ms:`, _error.message);
       throw new Error(`Database query exceeded ${timeoutMs}ms timeout. Try optimizing the query or adding indexes.`);
     }
     throw _error;
@@ -248,7 +246,7 @@ export async function findOrCreateUser(ipAddress: string, userAgent: string | nu
     
     return user;
   } catch (_error: any) {
-    console.error('[Database] Error finding/creating user:', _error.message);
+    logger.error('[Database] Error finding/creating user:', _error.message);
     throw _error;
   }
 }
@@ -283,7 +281,7 @@ export async function trackSearch(
     let userId;
     if (authenticatedUserId) {
       userId = authenticatedUserId;
-      console.log(`[Database] Tracking search for authenticated user: ${authenticatedUserId}`);
+      logger.info(`[Database] Tracking search for authenticated user: ${authenticatedUserId}`);
     } else {
       const user = await findOrCreateUser(ipAddress, userAgent);
       userId = user.id;
@@ -315,9 +313,9 @@ export async function trackSearch(
       }
     });
     
-    console.log(`[Database] Tracked search: ${normalizedTicker} from ${authenticatedUserId ? 'authenticated user' : ipAddress}`);
+    logger.info(`[Database] Tracked search: ${normalizedTicker} from ${authenticatedUserId ? 'authenticated user' : ipAddress}`);
   } catch (_error: any) {
-    console.error('[Database] Error tracking search:', _error.message);
+    logger.error('[Database] Error tracking search:', _error.message);
     // Don't throw - tracking failures shouldn't break app
   }
 }
@@ -356,7 +354,7 @@ export async function getUserSearchHistory(ipAddress: string, limit = 10): Promi
     
     return user?.searches || [];
   } catch (_error: any) {
-    console.error('[Database] Error fetching search history:', _error.message);
+    logger.error('[Database] Error fetching search history:', _error.message);
     return [];
   }
 }
@@ -395,7 +393,7 @@ export async function getPopularTickers(limit = 10, daysAgo = 30): Promise<unkno
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error fetching popular tickers:', _error.message);
+    logger.error('[Database] Error fetching popular tickers:', _error.message);
     return [];
   }
 }
@@ -421,7 +419,7 @@ export async function updateTickerCompanyName(ticker: string, companyName: strin
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error updating company name:', _error.message);
+    logger.error('[Database] Error updating company name:', _error.message);
   }
 }
 
@@ -476,7 +474,7 @@ export async function trackApiRequest(data: ApiRequestData): Promise<void> {
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error tracking API request:', _error.message);
+    logger.error('[Database] Error tracking API request:', _error.message);
     // Don't throw - tracking failures shouldn't break app
   }
 }
@@ -527,7 +525,7 @@ export async function getApiRequestStats(hours = 24): Promise<unknown> {
       avgResponseTime: avgResponseTime + 'ms'
     };
   } catch (_error: any) {
-    console.error('[Database] Error fetching API stats:', _error.message);
+    logger.error('[Database] Error fetching API stats:', _error.message);
     return null;
   }
 }
@@ -632,9 +630,9 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
       }
     });
     
-    console.log(`[Database] Updated daily analytics for ${startOfDay.toDateString()}`);
+    logger.info(`[Database] Updated daily analytics for ${startOfDay.toDateString()}`);
   } catch (_error: any) {
-    console.error('[Database] Error updating daily analytics:', _error.message);
+    logger.error('[Database] Error updating daily analytics:', _error.message);
   }
 }
 
@@ -659,7 +657,7 @@ export async function getDailyAnalytics(days = 30): Promise<any[]> {
       orderBy: { date: 'desc' }
     });
   } catch (_error: any) {
-    console.error('[Database] Error fetching daily analytics:', _error.message);
+    logger.error('[Database] Error fetching daily analytics:', _error.message);
     return [];
   }
 }
@@ -720,7 +718,7 @@ export async function logError(data: ErrorLogData): Promise<void> {
       });
     }
   } catch (_error: any) {
-    console.error('[Database] Error logging error:', _error.message);
+    logger.error('[Database] Error logging error:', _error.message);
     // Don't throw - error logging failures shouldn't break app
   }
 }
@@ -751,7 +749,7 @@ export async function getRecentErrors(limit = 20, unresolvedOnly = true): Promis
       }
     });
   } catch (_error: any) {
-    console.error('[Database] Error fetching recent errors:', _error.message);
+    logger.error('[Database] Error fetching recent errors:', _error.message);
     return [];
   }
 }
@@ -781,9 +779,9 @@ export async function resolveError(errorCode: string, endpoint: string | null = 
       }
     });
     
-    console.log(`[Database] Resolved error: ${errorCode}`);
+    logger.info(`[Database] Resolved error: ${errorCode}`);
   } catch (_error: any) {
-    console.error('[Database] Error tracking search:', _error.message);
+    logger.error('[Database] Error tracking search:', _error.message);
   }
 }
 
@@ -805,7 +803,7 @@ export async function checkDatabaseHealth(): Promise<unknown> {
     const latency = Date.now() - start
     return { status: 'healthy', latency };
   } catch (_error: any) {
-    console.error('[Database] Health check failed:', _error.message);
+    logger.error('[Database] Health check failed:', _error.message);
     return { status: 'unhealthy', latency: 0, error: _error.message };
   }
 }
@@ -854,7 +852,7 @@ export async function cleanupOldData(daysToKeep = 90): Promise<unknown> {
       }
     });
     
-    console.log(`[Database] Cleanup completed:
+    logger.info(`[Database] Cleanup completed:
       - Deleted ${deletedRequests.count} old API requests
       - Deleted ${deletedSearches.count} old searches
       - Deleted ${deletedErrors.count} resolved errors`);
@@ -865,7 +863,7 @@ export async function cleanupOldData(daysToKeep = 90): Promise<unknown> {
       errors: deletedErrors.count
     };
   } catch (_error: any) {
-    console.error('[Database] Error during cleanup:', _error.message);
+    logger.error('[Database] Error during cleanup:', _error.message);
     return { searchHistory: 0, apiRequests: 0, errors: 0 };
   }
 }

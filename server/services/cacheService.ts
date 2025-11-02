@@ -2,6 +2,7 @@ import Redis from 'ioredis'
 import { LRUCache } from 'lru-cache'
 import crypto from 'crypto'
 import { MEMORY_LIMITS, CACHE_TTL, REDIS_TTL } from '../config/constants'
+import logger from './logger.js'
 
 interface CacheServiceOptions {
   redisUrl?: string | null
@@ -115,7 +116,7 @@ class CacheService {
       skippedWrites: 0,
     }
 
-    console.log(`[CacheService] Initialized with Redis ${this.redisEnabled ? 'ENABLED' : 'DISABLED'}`)
+    logger.debug(`[CacheService] Initialized with Redis ${this.redisEnabled ? 'ENABLED' : 'DISABLED'}`)
   }
 
   /**
@@ -123,7 +124,7 @@ class CacheService {
    */
   async connect(): Promise<void> {
     if (!this.redisEnabled) {
-      console.log('[CacheService] Running without Redis (memory-only mode)')
+      logger.debug('[CacheService] Running without Redis (memory-only mode)')
       return
     }
 
@@ -132,7 +133,7 @@ class CacheService {
         maxRetriesPerRequest: 3,
         retryStrategy: (times: number) => {
           if (times > 3) {
-            console.error('[CacheService] Redis connection failed after 3 retries')
+            logger.error('[CacheService] Redis connection failed after 3 retries')
             return null // Stop retrying
           }
           return Math.min(times * 200, 2000) // Exponential backoff
@@ -142,25 +143,25 @@ class CacheService {
 
       // Event handlers
       this.redis.on('connect', () => {
-        console.log('[CacheService] Connected to Redis')
+        logger.debug('[CacheService] Connected to Redis')
         this.connected = true
       })
 
       this.redis.on('error', (err: Error) => {
-        console.error('[CacheService] Redis error:', err.message)
+        logger.error('[CacheService] Redis error:', err.message)
         this.stats.errors++
       })
 
       this.redis.on('close', () => {
-        console.log('[CacheService] Redis connection closed')
+        logger.debug('[CacheService] Redis connection closed')
         this.connected = false
       })
 
       // Connect
       await this.redis.connect()
     } catch (_error) {
-      console.error('[CacheService] Failed to connect to Redis:', (_error as Error).message)
-      console.log('[CacheService] Falling back to memory-only mode')
+      logger.error('[CacheService] Failed to connect to Redis:', (_error as Error).message)
+      logger.debug('[CacheService] Falling back to memory-only mode')
       this.redisEnabled = false
       this.redis = null
     }
@@ -211,7 +212,7 @@ class CacheService {
           return { data: parsed, source: 'redis' }
         }
       } catch (_error) {
-        console.error('[CacheService] Redis GET error:', (_error as Error).message)
+        logger.error('[CacheService] Redis GET error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -251,7 +252,7 @@ class CacheService {
           await this.redis.set(key, serialized)
         }
       } catch (_error) {
-        console.error('[CacheService] Redis SET error:', (_error as Error).message)
+        logger.error('[CacheService] Redis SET error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -278,7 +279,7 @@ class CacheService {
     // Check if there's already a pending fetch for this key (request coalescing)
     const pendingFetch = this.pendingFetches.get(key)
     if (pendingFetch) {
-      console.log(`[CacheService] Coalescing request for key: ${key}`)
+      logger.debug(`[CacheService] Coalescing request for key: ${key}`)
       return pendingFetch
     }
     
@@ -290,7 +291,7 @@ class CacheService {
       if (ttlSeconds > 3600) {
         const shouldEarlyRefresh = Math.random() < 0.05 // 5% chance
         if (shouldEarlyRefresh) {
-          console.log(`[CacheService] Probabilistic early refresh for key: ${key}`)
+          logger.debug(`[CacheService] Probabilistic early refresh for key: ${key}`)
           // Trigger background refresh (don't await)
           this.refreshInBackground(key, fetchFn, ttlSeconds)
         }
@@ -331,7 +332,7 @@ class CacheService {
         await this.set(key, freshData, ttlSeconds)
       }
     } catch (error) {
-      console.error(`[CacheService] Background refresh failed for key ${key}:`, error)
+      logger.error(`[CacheService] Background refresh failed for key ${key}:`, error)
     }
   }
 
@@ -345,7 +346,7 @@ class CacheService {
       try {
         await this.redis.del(key)
       } catch (_error) {
-        console.error('[CacheService] Redis DEL error:', (_error as Error).message)
+        logger.error('[CacheService] Redis DEL error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -356,7 +357,7 @@ class CacheService {
    */
   async deletePattern(pattern: string): Promise<number> {
     if (!this.redisEnabled || !this.connected || !this.redis) {
-      console.warn('[CacheService] Pattern delete requires Redis')
+      logger.warn('[CacheService] Pattern delete requires Redis')
       return 0
     }
 
@@ -364,12 +365,12 @@ class CacheService {
       const keys = await this.redis.keys(pattern)
       if (keys.length > 0) {
         const deleted = await this.redis.del(...keys)
-        console.log(`[CacheService] Deleted ${deleted} keys matching pattern: ${pattern}`)
+        logger.debug(`[CacheService] Deleted ${deleted} keys matching pattern: ${pattern}`)
         return deleted
       }
       return 0
     } catch (_error) {
-      console.error('[CacheService] Redis pattern delete error:', (_error as Error).message)
+      logger.error('[CacheService] Redis pattern delete error:', (_error as Error).message)
       this.stats.errors++
       return 0
     }
@@ -384,9 +385,9 @@ class CacheService {
     if (this.redisEnabled && this.connected && this.redis) {
       try {
         await this.redis.flushdb()
-        console.log('[CacheService] Cleared Redis cache')
+        logger.debug('[CacheService] Cleared Redis cache')
       } catch (_error) {
-        console.error('[CacheService] Redis FLUSHDB error:', (_error as Error).message)
+        logger.error('[CacheService] Redis FLUSHDB error:', (_error as Error).message)
         this.stats.errors++
       }
     }
@@ -431,7 +432,7 @@ class CacheService {
   async disconnect(): Promise<void> {
     if (this.redis && this.connected) {
       await this.redis.quit()
-      console.log('[CacheService] Disconnected from Redis')
+      logger.debug('[CacheService] Disconnected from Redis')
     }
   }
 
@@ -446,7 +447,7 @@ class CacheService {
       const result = await this.redis.ping()
       return result === 'PONG'
     } catch (_error) {
-      console.error('[CacheService] Ping failed:', (_error as Error).message)
+      logger.error('[CacheService] Ping failed:', (_error as Error).message)
       return false
     }
   }
@@ -473,3 +474,4 @@ export function getCacheService(): CacheService {
 }
 
 export default CacheService
+

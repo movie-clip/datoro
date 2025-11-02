@@ -639,8 +639,8 @@ describe('Batch Table Service', () => {
       };
       
       const result = getBalanceFromBatch(zeroDebt);
-      // fmtNumber returns '—' for zero values
-      expect(result.debt).toBe('—');
+      // formatNumber returns '$0.00' for zero values
+      expect(result.debt).toBe('$0.00');
       expect(result.net).toBe('$150.00B'); // All cash, no debt
     });
 
@@ -849,11 +849,12 @@ describe('Batch Table Service', () => {
       const valuation = getValuationFromBatch(zeroData);
       const balance = getBalanceFromBatch(zeroData);
       
-      // fmtNumber returns '—' for zero/falsy values
+      // Zero market cap is treated as "not available" by the truthiness check
       expect(valuation.marketCap).toBe('—');
-      expect(balance.cash).toBe('—');
-      expect(balance.debt).toBe('—');
-      expect(balance.net).toBe('—');
+      // But balance fields with explicit 0 will be formatted as $0.00
+      expect(balance.cash).toBe('$0.00');
+      expect(balance.debt).toBe('$0.00');
+      expect(balance.net).toBe('$0.00');
     });
 
     it('should handle NaN values', () => {

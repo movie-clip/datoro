@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 // @ts-ignore - vite-plugin-compression types
 import viteCompression from 'vite-plugin-compression'
 import type { Plugin, ProxyOptions } from 'vite'
+import path from 'path'
 
 /**
  * Custom plugin to add aggressive caching headers for static assets in dev
@@ -42,6 +43,12 @@ export default defineConfig(({ mode }) => {
   const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:7071'
 
   return {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src')
+      }
+    },
+    
     plugins: [
       staticAssetCachingPlugin(), // Add caching headers for static assets
       vue({

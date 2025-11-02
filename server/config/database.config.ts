@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 /**
  * Database Configuration
  * 
@@ -85,7 +86,7 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
   const provider = (CONNECTION_POOL_CONFIG.providers as any)[providerKey]
   
   if (!provider) {
-    console.warn(`[Database] Unknown provider: ${providerKey}, using defaults`)
+    logger.warn(`[Database] Unknown provider: ${providerKey}, using defaults`)
     return baseUrl
   }
   
@@ -132,11 +133,11 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
   
   // Log configuration (but not the password!)
   const safeUrl = finalUrl.replace(/:[^:@]+@/, ':****@')
-  console.log('[Database] Connection pool configured:')
-  console.log(`  Provider: ${providerKey}`)
-  console.log(`  Connections per worker: ${config.connection_limit}`)
-  console.log(`  Total connections: ${(config.connection_limit || 0) * CONNECTION_POOL_CONFIG.workers}`)
-  console.log(`  URL: ${safeUrl}`)
+  logger.info('[Database] Connection pool configured:')
+  logger.info(`  Provider: ${providerKey}`)
+  logger.info(`  Connections per worker: ${config.connection_limit}`)
+  logger.info(`  Total connections: ${(config.connection_limit || 0) * CONNECTION_POOL_CONFIG.workers}`)
+  logger.info(`  URL: ${safeUrl}`)
   
   return finalUrl
 }
@@ -176,8 +177,8 @@ export function validateDatabaseUrl(url: string): boolean {
   }
   
   if (missingParams.length > 0) {
-    console.warn('[Database] Missing connection pool parameters:', missingParams.join(', '))
-    console.warn('[Database] Run buildDatabaseUrl() to add optimal parameters')
+    logger.warn('[Database] Missing connection pool parameters:', missingParams.join(', '))
+    logger.warn('[Database] Run buildDatabaseUrl() to add optimal parameters')
     return false
   }
   

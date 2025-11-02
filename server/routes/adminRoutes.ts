@@ -6,6 +6,7 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import { adminLimiter } from '../middleware/rateLimiter.js'
 import { getCacheService } from '../services/cacheService.js'
 import { getMonitoringService } from '../services/monitoringService.js'
+import logger from '../services/logger.js'
 
 const router = express.Router()
 const cache = getCacheService()
@@ -46,7 +47,7 @@ router.get('/readiness', asyncHandler(async (_req: Request, res: Response) => {
       checks.database = 'connected'
     } catch (_dbError: any) {
       checks.database = 'disconnected'
-      console.warn('[Health] Database check failed:', _dbError.message)
+            logger.warn('[Health] Database check failed:', _dbError.message)
     }
   } else {
     checks.database = 'disabled'
@@ -58,7 +59,7 @@ router.get('/readiness', asyncHandler(async (_req: Request, res: Response) => {
     checks.redis = isConnected ? 'connected' : 'disconnected'
   } catch (_redisError: any) {
     checks.redis = cache.isMemoryOnly() ? 'memory-fallback' : 'disconnected'
-    console.warn('[Health] Redis check failed:', _redisError.message)
+        logger.warn('[Health] Redis check failed:', _redisError.message)
   }
 
   // Overall health status
@@ -89,7 +90,7 @@ router.get('/cache/stats', adminLimiter, (_req: Request, res: Response) => {
 router.post('/cache/clear', adminLimiter, asyncHandler(async (_req: Request, res: Response) => {
   await cache.clear()
   cache.resetStats()
-  console.log('[Cache] Manual cache flush requested')
+    logger.info('[Cache] Manual cache flush requested')
   res.json({ 
     ok: true, 
     message: 'Cache cleared successfully',

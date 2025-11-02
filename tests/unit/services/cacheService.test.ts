@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import RedisMock from 'ioredis-mock';
 import CacheService, { getCacheService, CacheTTL } from '../../../server/services/cacheService.js';
+import logger from '../../../server/services/logger.js';
 
 // Mock ioredis with ioredis-mock
 vi.mock('ioredis', () => {
@@ -8,6 +9,16 @@ vi.mock('ioredis', () => {
     default: RedisMock,
   };
 });
+
+// Mock logger
+vi.mock('../../../server/services/logger.js', () => ({
+  default: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  }
+}));
 
 describe('Cache Service', () => {
   let cache: any; // Type as 'any' to allow testing of private properties
@@ -463,14 +474,12 @@ describe('Cache Service', () => {
 
     it('should warn when pattern delete is used without Redis', async () => {
       const memoryOnlyCache = new CacheService({ redisUrl: undefined });
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.clearAllMocks(); // Clear any previous logger calls
 
       const deleted = await memoryOnlyCache.deletePattern('test:*');
 
       expect(deleted).toBe(0);
-      expect(consoleSpy).toHaveBeenCalledWith('[CacheService] Pattern delete requires Redis');
-      
-      consoleSpy.mockRestore();
+      expect(logger.warn).toHaveBeenCalledWith('[CacheService] Pattern delete requires Redis');
     });
   });
 

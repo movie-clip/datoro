@@ -30,6 +30,7 @@ import BaseTable, { type TableRow } from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 import { COLORS } from '../../utils/colors'
 import type { Component } from 'vue'
+import { formatNumber } from '@/utils/formatters'
 
 // Import chart components
 import CashDebtChart from '../charts/CashDebtChart.vue'
@@ -82,14 +83,7 @@ const getCashAndDebt = (batchData: BatchData | null): string => {
   const debt = latest.totalDebt || 0
   const net = cash - debt
   
-  const formatValue = (val: number): string => {
-    const abs = Math.abs(val)
-    if (abs >= 1e9) return `$${(val / 1e9).toFixed(2)}B`
-    if (abs >= 1e6) return `$${(val / 1e6).toFixed(2)}M`
-    return `$${(val / 1e3).toFixed(2)}K`
-  }
-  
-  return `${formatValue(cash)} / ${formatValue(debt)} (Net: ${formatValue(net)})`
+  return `${formatNumber(cash)} / ${formatNumber(debt)} (Net: ${formatNumber(net)})`
 }
 
 const rows = computed<TableRow[]>(() => {

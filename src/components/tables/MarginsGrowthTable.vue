@@ -30,6 +30,7 @@ import BaseTable, { type TableRow } from '../common/BaseTable.vue'
 import ChartModal from '../common/ChartModal.vue'
 import type { Component } from 'vue'
 import type { BatchData } from '../../stores/tickerStore'
+import { formatNumber } from '@/utils/formatters'
 
 // Import chart components
 import NetIncomeChart from '../charts/NetIncomeChart.vue'
@@ -79,10 +80,7 @@ const getLatestOperatingExpenses = (batchData: BatchData | null): string => {
   if (!batchData?.data?.incomeQuarter) return 'N/A'
   const latest = batchData.data.incomeQuarter[0]
   if (!latest?.operatingExpenses) return 'N/A'
-  const expenses = latest.operatingExpenses
-  if (expenses >= 1e9) return `$${(expenses / 1e9).toFixed(2)}B`
-  if (expenses >= 1e6) return `$${(expenses / 1e6).toFixed(2)}M`
-  return `$${(expenses / 1e3).toFixed(2)}K`
+  return formatNumber(latest.operatingExpenses, { currency: true, decimals: 2 })
 }
 
 const rows = computed<TableRow[]>(() => [

@@ -14,6 +14,7 @@ import type { Request, Response } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { body, validationResult } from 'express-validator'
 import rateLimit from 'express-rate-limit'
+import logger from '../services/logger.js'
 
 const router = express.Router()
 
@@ -71,7 +72,7 @@ router.post('/',
     
     const { name, email, message, category = 'general', url } = req.body
     
-    console.log('[Feedback] New submission from:', email)
+    logger.info('[Feedback] New submission from:', email)
     
     // Prepare email content
     const emailSubject = `Datoro Feedback: ${category.toUpperCase()}`
@@ -112,11 +113,11 @@ IP: ${req.ip}
           text: emailBody
         })
         
-        console.log('[Feedback] Email sent successfully')
+        logger.info('[Feedback] Email sent successfully')
       } else {
         // Fallback: Log to console if email not configured
-        console.log('[Feedback] Email service not configured. Logging to console:')
-        console.log(emailBody)
+        logger.info('[Feedback] Email service not configured. Logging to console:')
+        logger.info(emailBody)
       }
       
       // Optional: Save to database
@@ -130,7 +131,7 @@ IP: ${req.ip}
       })
       
     } catch (error: any) {
-      console.error('[Feedback] Failed to send email:', error)
+      logger.error('[Feedback] Failed to send email:', error)
       
       // Still return success to user (don't expose email errors)
       // Log the feedback for manual review

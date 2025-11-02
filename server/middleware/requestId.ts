@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 // server/middleware/requestId.ts
 // Request ID middleware for tracing requests across logs and services
 
@@ -26,7 +27,7 @@ declare global {
  *   app.use(requestId())
  * 
  * In route handlers:
- *   console.log(`[${req.id}] Processing request...`)
+ *   logger.info(`[${req.id}] Processing request...`)
  */
 export function requestId() {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -52,7 +53,7 @@ export function requestId() {
  */
 export function logWithId(req: Request, message: string, ...args: unknown[]): void {
   const prefix = req.id ? `[${req.id}]` : ''
-  console.log(`${prefix} ${message}`, ...args)
+  logger.info(`${prefix} ${message}`, ...args)
 }
 
 export default requestId

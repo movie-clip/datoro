@@ -300,11 +300,13 @@ function createEmptyChartOptions(title: string): EChartsOption {
   }
 }
 
+import { formatNumber, formatPercent } from './formatters'
+
 /**
  * Percentage formatter helper
  */
 export function percentFormatter(value: number): string {
-  return `${value.toFixed(2)}%`
+  return formatPercent(value / 100, 2) // value is already in percentage form
 }
 
 /**
@@ -312,12 +314,5 @@ export function percentFormatter(value: number): string {
  * Uses consistent 2 decimal places like Revenue, Dividend Yield charts
  */
 export function largeNumberFormatter(value: number): string {
-  const absValue = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  
-  if (absValue >= 1e12) return `${sign}${(absValue / 1e12).toFixed(2)}T`
-  if (absValue >= 1e9) return `${sign}${(absValue / 1e9).toFixed(2)}B`
-  if (absValue >= 1e6) return `${sign}${(absValue / 1e6).toFixed(2)}M`
-  if (absValue >= 1e3) return `${sign}${(absValue / 1e3).toFixed(2)}K`
-  return `${sign}${absValue.toFixed(2)}`
+  return formatNumber(value, { currency: false, decimals: 2 })
 }

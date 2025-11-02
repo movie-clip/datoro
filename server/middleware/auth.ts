@@ -6,6 +6,7 @@
 import { verifySession } from '../services/authService.js'
 import type { Request, Response, NextFunction } from 'express'
 import type { User } from '@prisma/client'
+import logger from '../services/logger.js'
 
 /**
  * Middleware to verify JWT token and attach user to request
@@ -21,18 +22,18 @@ export function authenticate(requireAuth = true) {
       const authHeader = req.headers.authorization
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7)
-        console.log('[Auth Middleware] Token from header')
+        logger.debug('[Auth Middleware] Token from header')
       }
       
       // Check cookie if no header token
       if (!token && req.cookies && req.cookies.authToken) {
         token = req.cookies.authToken
-        console.log('[Auth Middleware] Token from cookie')
+        logger.debug('[Auth Middleware] Token from cookie')
       }
       
       // Debug logging
       if (!token) {
-        console.log('[Auth Middleware] No token found. Cookies:', Object.keys(req.cookies || {}))
+        logger.debug('[Auth Middleware] No token found. Cookies:', Object.keys(req.cookies || {}))
       }
       
       // If no token and auth required, reject
@@ -78,7 +79,7 @@ export function authenticate(requireAuth = true) {
       next()
       
     } catch (_error: any) {
-      console.error('[Auth Middleware] Error:', _error)
+      logger.error('[Auth Middleware] Error:', _error)
       
       if (requireAuth) {
         return res.status(500).json({

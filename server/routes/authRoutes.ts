@@ -25,6 +25,7 @@ import {
 } from '../services/authService.js'
 import { authenticate } from '../middleware/auth.js'
 import { speedLimiter } from '../middleware/rateLimiter.js'
+import logger from '../services/logger.js'
 
 const router = express.Router()
 
@@ -73,7 +74,7 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Register error:', _error)
+      logger.error('[Auth API] Register error:', _error)
       res.status(400).json({
         success: false,
         error: _error.message
@@ -118,17 +119,17 @@ router.post(
         // Don't set domain - let browser use the exact domain the cookie is set from
       }
       
-      console.log('[Auth] Setting cookie with options:', cookieOptions)
+      logger.info('[Auth] Setting cookie with options:', cookieOptions)
       res.cookie('authToken', token, cookieOptions)
       
-      console.log('[Auth] Cookie set, sending response')
+      logger.info('[Auth] Cookie set, sending response')
       res.json({
         success: true,
         data: { user: user as AuthUser, token }
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Login error:', _error)
+      logger.error('[Auth API] Login error:', _error)
       
       // Handle email not verified error
       if (_error.code === 'EMAIL_NOT_VERIFIED') {
@@ -187,7 +188,7 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Google login error:', _error)
+      logger.error('[Auth API] Google login error:', _error)
       res.status(401).json({
         success: false,
         error: _error.message
@@ -242,7 +243,7 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Logout error:', _error)
+      logger.error('[Auth API] Logout error:', _error)
       res.status(500).json({
         success: false,
         error: 'Logout failed'
@@ -271,7 +272,7 @@ router.post(
       })
       
     } catch (_error: any) {
-      console.error('[Auth API] Logout all error:', _error)
+      logger.error('[Auth API] Logout all error:', _error)
       res.status(500).json({
         success: false,
         error: 'Logout failed'
@@ -317,7 +318,7 @@ router.get(
         sendWelcomeEmail(
           result.user.email,
           result.user.name || 'there'
-        ).catch(err => console.error('[Auth] Welcome email failed:', err))
+        ).catch(err => logger.error('[Auth] Welcome email failed:', err))
       }
 
       res.json({
@@ -327,7 +328,7 @@ router.get(
       })
 
     } catch (_error: any) {
-      console.error('[Auth API] Verify email error:', _error)
+      logger.error('[Auth API] Verify email error:', _error)
       res.status(500).json({
         success: false,
         error: 'Verification failed'
@@ -381,7 +382,7 @@ router.post(
       })
 
     } catch (_error: any) {
-      console.error('[Auth API] Resend verification error:', _error)
+      logger.error('[Auth API] Resend verification error:', _error)
       res.status(500).json({
         success: false,
         error: 'Failed to resend verification email'

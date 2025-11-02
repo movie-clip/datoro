@@ -1,3 +1,4 @@
+import logger from '../services/logger.js'
 /**
  * Watchlist Routes
  * Endpoints for managing user watchlists (add/remove/fetch tickers)
@@ -77,7 +78,7 @@ router.get('/watchlist', generalLimiter, authenticate(), requireAuth, async (req
 
     res.json({ tickers: watchlistItems })
   } catch (_error) {
-    console.error('Error fetching watchlist:', _error)
+    logger.error('Error fetching watchlist:', _error)
     res.status(500).json({ error: 'Failed to fetch watchlist' })
   }
 })
@@ -123,7 +124,7 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, as
 
     res.json({ success: true })
   } catch (_error: any) {
-    console.error('Error reordering watchlist:', _error)
+    logger.error('Error reordering watchlist:', _error)
     res.status(500).json({ error: _error.message || 'Failed to reorder watchlist' })
   }
 })
@@ -166,7 +167,7 @@ router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, a
       return res.status(409).json({ error: 'Ticker already in watchlist' })
     }
 
-    console.error('Error adding to watchlist:', _error)
+    logger.error('Error adding to watchlist:', _error)
     res.status(500).json({ error: 'Failed to add ticker to watchlist' })
   }
 })
@@ -190,9 +191,11 @@ router.delete('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth,
 
     res.json({ success: true, ticker })
   } catch (_error) {
-    console.error('Error removing from watchlist:', _error)
+    logger.error('Error removing from watchlist:', _error)
     res.status(500).json({ error: 'Failed to remove ticker from watchlist' })
   }
 })
 
 export default router
+
+

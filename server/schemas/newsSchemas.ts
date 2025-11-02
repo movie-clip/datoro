@@ -2,6 +2,7 @@
 // Zod schemas for validating FMP news API responses
 
 import { z } from 'zod'
+import logger from '../services/logger.js'
 
 /**
  * Schema for a single news item from FMP API
@@ -38,7 +39,7 @@ export function validateNewsResponse(data: unknown): ValidatedNewsItem[] | null 
   try {
     return newsArraySchema.parse(data)
   } catch (error) {
-    console.error('[newsSchemas] Validation error:', error)
+    logger.error('[newsSchemas] Validation error:', error)
     return null
   }
 }
