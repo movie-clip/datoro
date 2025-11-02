@@ -120,7 +120,8 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
             formatted = `${Math.round(value).toLocaleString()} shares`
           }
         } else if (yFormat === 'percent') {
-          formatted = `${value.toFixed(1)}%`
+          // Use 2 decimal places for percentages (important for small values like dividend yield)
+          formatted = `${value.toFixed(2)}%`
         } else if (yFormat === 'price') {
           // Format as price with 2 decimal places
           formatted = `$${value.toFixed(2)}`
