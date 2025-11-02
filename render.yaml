@@ -65,6 +65,21 @@ services:
       - key: SENTRY_DSN
         sync: false
       
+      # Stripe Subscription System
+      # REQUIRED: Set manually in Render dashboard
+      # Get from: https://dashboard.stripe.com/apikeys
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      
+      - key: STRIPE_PRICE_ID
+        sync: false
+      
       # CORS: Allow frontend domain(s)
       # For multiple origins: https://domain1.com,https://domain2.com
       - key: ALLOWED_ORIGINS
@@ -148,22 +163,30 @@ databases:
 #
 # 1. Set required secrets in Render dashboard:
 #    - FMP_API_KEY (get from financialmodelingprep.com)
+#    - JWT_SECRET (generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 #
-# 2. Optional: Set monitoring if using Sentry:
+# 2. Set Stripe keys (REQUIRED for subscription features):
+#    - STRIPE_SECRET_KEY (from https://dashboard.stripe.com/apikeys)
+#    - STRIPE_PUBLISHABLE_KEY (from https://dashboard.stripe.com/apikeys)
+#    - STRIPE_PRICE_ID (your subscription price ID, e.g., price_1XXXXX)
+#    - STRIPE_WEBHOOK_SECRET (from https://dashboard.stripe.com/webhooks)
+#      * Create webhook endpoint: https://datoro-api.onrender.com/api/webhooks/stripe
+#      * Select events: checkout.session.completed, customer.subscription.*, invoice.payment_*
+#
+# 3. Optional: Set monitoring if using Sentry:
 #    - SENTRY_DSN (for error tracking)
 #
-# 3. Update ALLOWED_ORIGINS if using custom domain:
+# 4. Update ALLOWED_ORIGINS if using custom domain:
 #    - Add your production domain(s)
 #    - Add www subdomain if needed
 #
-# 4. Update frontend VITE_API_BASE_URL:
+# 5. Update frontend VITE_API_BASE_URL:
 #    - Change to your custom backend domain if not using default
 #
-# 5. Update CSP header in frontend headers:
+# 6. Update CSP header in frontend headers:
 #    - Update connect-src with your backend domain
 #
 # Note: AI insights are pre-generated and served as static JSON files
 #       No API keys needed for AI features in production
 #
 # For detailed deployment guide, see: DEPLOYMENT_CHECKLIST.md
-
