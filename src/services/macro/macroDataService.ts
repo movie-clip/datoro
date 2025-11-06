@@ -229,6 +229,7 @@ export async function fetchAllEUMacroData(): Promise<EUMacroData> {
       buildingPermits: [],
       consumerConfidence: [],
       retailSales: [],
+      indexStats: [],  // Include indexStats in fallback
       timestamp: new Date().toISOString()
     }
   }

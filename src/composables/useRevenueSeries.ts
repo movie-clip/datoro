@@ -50,9 +50,14 @@ export function useRevenueSeries(): UseRevenueSeriesReturn {
     getRevenueSeriesFromBatch(batchData.value, period.value)
   )
 
-  const segmentData = computed(() => 
-    getRevenueSegmentsFromBatch(batchData.value)
-  )
+  const segmentData = computed(() => {
+    const result = getRevenueSegmentsFromBatch(batchData.value)
+    // Defensive check: ensure we always return a valid object
+    if (!result || typeof result !== 'object' || !('segments' in result)) {
+      return { segments: [], series: {} }
+    }
+    return result
+  })
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
@@ -67,7 +72,7 @@ export function useRevenueSeries(): UseRevenueSeriesReturn {
 
   // Computed series - return stacked multi-series based on selectedSegments
   const series = computed<[number, number][] | SeriesDataPoint[]>(() => {
-    if (segmentData.value.segments.length === 0) {
+    if (!segmentData.value || !segmentData.value.segments || segmentData.value.segments.length === 0) {
       // No segments available, return total revenue as simple array
       return totalRevenue.value || []
     }
@@ -132,7 +137,7 @@ export function useRevenueSeries(): UseRevenueSeriesReturn {
 
   // Computed view mode options for the chart (used by BaseChart to show legend)
   const viewModeOptions = computed<ViewModeOption[]>(() => {
-    if (segmentData.value.segments.length === 0) {
+    if (!segmentData.value || !segmentData.value.segments || segmentData.value.segments.length === 0) {
       return [] // No segments = no legend
     }
     

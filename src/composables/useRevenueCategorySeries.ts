@@ -50,13 +50,23 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
     getRevenueSeriesFromBatch(batchData.value, period.value)
   )
 
-  const productCategories = computed(() => 
-    getProductCategoriesFromBatch(batchData.value)
-  )
+  const productCategories = computed(() => {
+    const result = getProductCategoriesFromBatch(batchData.value)
+    // Defensive check: ensure we always return a valid object
+    if (!result || typeof result !== 'object' || !('segments' in result)) {
+      return { segments: [], series: {} }
+    }
+    return result
+  })
 
-  const geographicCategories = computed(() => 
-    getGeographicCategoriesFromBatch(batchData.value)
-  )
+  const geographicCategories = computed(() => {
+    const result = getGeographicCategoriesFromBatch(batchData.value)
+    // Defensive check: ensure we always return a valid object
+    if (!result || typeof result !== 'object' || !('segments' in result)) {
+      return { segments: [], series: {} }
+    }
+    return result
+  })
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
@@ -89,7 +99,7 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
     switch (viewMode.value) {
       case 'product': {
         const categories = productCategories.value
-        if (!categories || categories.segments.length === 0) {
+        if (!categories || !categories.segments || categories.segments.length === 0) {
           // No product data, fallback to total
           return totalRevenue.value || []
         }
@@ -110,7 +120,7 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
       
       case 'geographic': {
         const regions = geographicCategories.value
-        if (!regions || regions.segments.length === 0) {
+        if (!regions || !regions.segments || regions.segments.length === 0) {
           // No geographic data, fallback to total
           return totalRevenue.value || []
         }
@@ -162,13 +172,13 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
       let fallbackMessage = ''
       
       if (mode === 'product') {
-        hasData = product.segments.length > 0
+        hasData = product && product.segments && product.segments.length > 0
         modeName = 'Product'
         fallbackMessage = hasData 
           ? '' 
           : `${ticker.toUpperCase()} does not report product revenue breakdown. Showing total revenue instead.`
       } else if (mode === 'geographic') {
-        hasData = geo.segments.length > 0
+        hasData = geo && geo.segments && geo.segments.length > 0
         modeName = 'Geographic'
         fallbackMessage = hasData 
           ? '' 
