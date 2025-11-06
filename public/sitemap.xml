@@ -9,59 +9,513 @@
   <!-- Homepage -->
   <url>
     <loc>https://datoro.onrender.com/</loc>
-    <lastmod>2025-10-28</lastmod>
+    <lastmod>2025-11-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   
-  <!-- Popular stock pages (examples - add more as needed) -->
+  <!-- AAPL -->
   <url>
     <loc>https://datoro.onrender.com/?ticker=AAPL</loc>
-    <lastmod>2025-10-28</lastmod>
+    <lastmod>2025-11-06</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   
+  <!-- SPGI -->
   <url>
-    <loc>https://datoro.onrender.com/?ticker=MSFT</loc>
-    <lastmod>2025-10-28</lastmod>
+    <loc>https://datoro.onrender.com/?ticker=SPGI</loc>
+    <lastmod>2025-11-06</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   
-  <url>
-    <loc>https://datoro.onrender.com/?ticker=GOOGL</loc>
-    <lastmod>2025-10-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://datoro.onrender.com/?ticker=TSLA</loc>
-    <lastmod>2025-10-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://datoro.onrender.com/?ticker=NVDA</loc>
-    <lastmod>2025-10-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://datoro.onrender.com/?ticker=META</loc>
-    <lastmod>2025-10-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
+  <!-- AMZN -->
   <url>
     <loc>https://datoro.onrender.com/?ticker=AMZN</loc>
-    <lastmod>2025-10-28</lastmod>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- MSFT -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=MSFT</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- GOOGL -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=GOOGL</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- NVDA -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=NVDA</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- META -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=META</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- TSLA -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=TSLA</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- BRK.B -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=BRK.B</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- UNH -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=UNH</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- JNJ -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=JNJ</loc>
+    <lastmod>2025-11-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
+  </url>
+  
+  <!-- V -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=V</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- WMT -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=WMT</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- JPM -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=JPM</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- PG -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=PG</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- XOM -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=XOM</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- MA -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=MA</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- HD -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=HD</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- CVX -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=CVX</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- MRK -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=MRK</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- ABBV -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=ABBV</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- PFE -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=PFE</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- KO -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=KO</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- PEP -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=PEP</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- COST -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=COST</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- TMO -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=TMO</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- AVGO -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=AVGO</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- MCD -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=MCD</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- CSCO -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=CSCO</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- ABT -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=ABT</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- ACN -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=ACN</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- DHR -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=DHR</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- NKE -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=NKE</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- VZ -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=VZ</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- CMCSA -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=CMCSA</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- ADBE -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=ADBE</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- NFLX -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=NFLX</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- TXN -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=TXN</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- CRM -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=CRM</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- INTC -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=INTC</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- AMD -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=AMD</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- QCOM -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=QCOM</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- BMY -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=BMY</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- PM -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=PM</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- UNP -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=UNP</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- HON -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=HON</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- RTX -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=RTX</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- NEE -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=NEE</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- LOW -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=LOW</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- ORCL -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=ORCL</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- IBM -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=IBM</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- BA -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=BA</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- CAT -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=CAT</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- GS -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=GS</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- SBUX -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=SBUX</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- GILD -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=GILD</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- AMT -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=AMT</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- INTU -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=INTU</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- AXP -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=AXP</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- DE -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=DE</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- BLK -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=BLK</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- MMM -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=MMM</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- MDT -->
+  <url>
+    <loc>https://datoro.onrender.com/?ticker=MDT</loc>
+    <lastmod>2025-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
   </url>
   
 </urlset>

@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, nextTick, defineAsyncComponent } from 
 import { useTickerStore } from './stores/tickerStore'
 import { useAuthStore } from './stores/authStore'
 import { useWatchlists } from './composables/useWatchlists'
+import { useMetaTags } from './composables/useMetaTags'
 import { STORAGE_KEYS } from './config/storage'
 import BRAND from './config/brand'
 import { trackTabView } from './services/analytics/gaService'
@@ -97,6 +98,9 @@ const RevenueByCategoryChart = defineAsyncComponent(() =>
 const tickerStore = useTickerStore()
 const authStore = useAuthStore()
 
+// SEO: Dynamic meta tags
+const { watchTickerMetaTags } = useMetaTags()
+
 // Cast user to proper type (authStore not fully typed yet)
 const user = computed(() => authStore.user as AuthUser | null)
 
@@ -159,6 +163,18 @@ onMounted(async () => {
     activeTab.value = savedTab
   }
 })
+
+// SEO: Watch ticker changes and update meta tags dynamically
+const currentPrice = computed(() => tickerStore.quote?.price)
+const currentChange = computed(() => tickerStore.quote?.changesPercentage)
+const currentCompanyName = computed(() => tickerStore.profile?.companyName)
+
+watchTickerMetaTags(
+  computed(() => tickerStore.currentTicker),
+  currentCompanyName,
+  currentPrice,
+  currentChange
+)
 
 // Watch for authentication changes to reinitialize watchlist
 watch(() => authStore.isAuthenticated, (isAuth) => {

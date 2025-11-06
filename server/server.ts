@@ -184,6 +184,11 @@ app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 app.use(cookieParser()) // Parse cookies for session management
 
+// URL normalization middleware (SEO - prevents duplicate content)
+import { urlNormalization, addCanonicalHeader } from './middleware/urlNormalization.js'
+app.use(urlNormalization)
+app.use(addCanonicalHeader)
+
 // Speed limiter (slows down heavy users)
 app.use(speedLimiter)
 

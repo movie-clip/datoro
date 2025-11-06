@@ -1,34 +1,74 @@
+# Datoro - Robots.txt for SEO Optimization
+# Last updated: 2025-11-06
+
+# Allow all bots to crawl everything (except admin/private areas)
 User-agent: *
 Allow: /
 
-# Disallow tracking scripts from being indexed
+# Disallow source code and build artifacts (not useful for indexing)
 Disallow: /src/
 Disallow: /_vite/
+Disallow: /node_modules/
 
-# Allow all static assets
-Allow: /icons/
-Allow: /ai-insights/
+# Allow all static assets (CSS, JS, images) - needed for page rendering
 Allow: /*.css
 Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.svg
+Allow: /*.webp
+Allow: /icons/
+Allow: /ai-insights/
 
-# Sitemap location
+# Sitemap location (helps crawlers discover all pages)
 Sitemap: https://datoro.onrender.com/sitemap.xml
 
-# Crawl-delay (be nice to servers)
+# Crawl-delay to prevent server overload (be nice)
 Crawl-delay: 1
 
-# Specific bot rules
+# Specific bot rules (major search engines)
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 0
 
 User-agent: Googlebot-Image
 Allow: /
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+# Yahoo/Bing
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
 
 User-agent: facebookexternalhit
+# Facebook link previews
 Allow: /
 
 User-agent: Twitterbot
+# Twitter/X card previews
 Allow: /
+
+User-agent: LinkedInBot
+# LinkedIn previews
+Allow: /
+
+User-agent: PinterestBot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# Block AI scrapers if needed (optional - uncomment to block)
+# User-agent: GPTBot
+# Disallow: /
+# User-agent: CCBot
+# Disallow: /
+

@@ -16,10 +16,10 @@
     
     <!-- Open Graph / Facebook / Instagram / LinkedIn -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://Datoro.onrender.com/" />
+    <meta property="og:url" content="https://datoro.onrender.com/" />
     <meta property="og:title" content="Datoro - Free Stock Analysis with AI Insights" />
     <meta property="og:description" content="Professional stock analysis with real-time data, AI insights, and interactive charts. 100% free. No signup required. 10,000+ stocks covered." />
-    <meta property="og:image" content="https://Datoro.onrender.com/og-image.png" />
+    <meta property="og:image" content="https://datoro.onrender.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="Datoro" />
@@ -27,10 +27,10 @@
     
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://Datoro.onrender.com/" />
+    <meta name="twitter:url" content="https://datoro.onrender.com/" />
     <meta name="twitter:title" content="Datoro - Free Stock Analysis with AI Insights" />
     <meta name="twitter:description" content="Real-time financial data + AI-powered insights for 10,000+ stocks. Completely free. No signup. Try it now! 📊" />
-    <meta name="twitter:image" content="https://Datoro.onrender.com/twitter-card.png" />
+    <meta name="twitter:image" content="https://datoro.onrender.com/twitter-card.png" />
     <meta name="twitter:creator" content="@Datoro" />
     <meta name="twitter:site" content="@Datoro" />
     
@@ -44,8 +44,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Datoro" />
     
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://Datoro.onrender.com/" />
+    <!-- Canonical URL (will be updated dynamically by useMetaTags composable) -->
+    <link rel="canonical" href="https://datoro.onrender.com/" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -106,7 +106,7 @@
       "@type": "WebApplication",
       "name": "Datoro",
       "description": "Professional stock analysis dashboard with real-time financial data, AI-powered insights, interactive charts, and comprehensive metrics. Completely free. No signup required.",
-      "url": "https://Datoro.onrender.com",
+      "url": "https://datoro.onrender.com",
       "applicationCategory": "FinanceApplication",
       "operatingSystem": "Any",
       "offers": {
@@ -126,7 +126,7 @@
         "DCF Calculator",
         "Deep Finder stock screener"
       ],
-      "screenshot": "https://Datoro.onrender.com/logo.png",
+      "screenshot": "https://datoro.onrender.com/logo.png",
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": "4.8",
@@ -137,7 +137,7 @@
       "author": {
         "@type": "Organization",
         "name": "Datoro",
-        "url": "https://Datoro.onrender.com"
+        "url": "https://datoro.onrender.com"
       }
     }
     </script>
@@ -148,11 +148,29 @@
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "Datoro",
-      "url": "https://Datoro.onrender.com",
-      "logo": "https://Datoro.onrender.com/logo.png",
+      "url": "https://datoro.onrender.com",
+      "logo": "https://datoro.onrender.com/logo.png",
       "description": "Professional stock analysis platform providing real-time financial data and AI insights for investors",
       "foundingDate": "2025",
       "sameAs": []
+    }
+    </script>
+    
+    <!-- WebSite Schema with SearchAction (enables Google Search box) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Datoro",
+      "url": "https://datoro.onrender.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://datoro.onrender.com/?ticker={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
     }
     </script>
     
@@ -199,6 +217,35 @@
     </script>
   </head>
   <body>
+    <!-- Noscript fallback for search engine crawlers (SEO) -->
+    <noscript>
+      <div style="min-height: 100vh; background: #1a1a1d; color: white; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <h1 style="text-align: center; font-size: 32px; margin-bottom: 16px;">Datoro - Free Stock Analysis</h1>
+        <p style="text-align: center; color: #9e9e9e; max-width: 600px; margin: 0 auto 32px;">
+          Professional stock analysis dashboard with real-time financial data, AI-powered insights, and interactive charts. 
+          Completely free. No signup required. Analyze revenue, P/E ratios, cash flow, and more for 10,000+ stocks.
+        </p>
+        <div style="text-align: center; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; max-width: 600px; margin: 0 auto;">
+          <p style="color: #ff4976; margin-bottom: 12px;">⚠️ JavaScript Required</p>
+          <p style="color: #9e9e9e; font-size: 14px;">
+            This application requires JavaScript to run. Please enable JavaScript in your browser to access Datoro's stock analysis tools.
+          </p>
+        </div>
+        <div style="max-width: 800px; margin: 48px auto;">
+          <h2 style="font-size: 24px; margin-bottom: 16px;">Featured Stocks</h2>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 12px;"><a href="/?ticker=AAPL" style="color: #00a88e; text-decoration: none;">Apple Inc. (AAPL)</a> - Technology leader</li>
+            <li style="margin-bottom: 12px;"><a href="/?ticker=MSFT" style="color: #00a88e; text-decoration: none;">Microsoft Corporation (MSFT)</a> - Cloud computing & software</li>
+            <li style="margin-bottom: 12px;"><a href="/?ticker=GOOGL" style="color: #00a88e; text-decoration: none;">Alphabet Inc. (GOOGL)</a> - Search & advertising</li>
+            <li style="margin-bottom: 12px;"><a href="/?ticker=AMZN" style="color: #00a88e; text-decoration: none;">Amazon.com Inc. (AMZN)</a> - E-commerce & cloud</li>
+            <li style="margin-bottom: 12px;"><a href="/?ticker=NVDA" style="color: #00a88e; text-decoration: none;">NVIDIA Corporation (NVDA)</a> - AI & GPUs</li>
+            <li style="margin-bottom: 12px;"><a href="/?ticker=META" style="color: #00a88e; text-decoration: none;">Meta Platforms Inc. (META)</a> - Social media</li>
+            <li style="margin-bottom: 12px;"><a href="/?ticker=TSLA" style="color: #00a88e; text-decoration: none;">Tesla Inc. (TSLA)</a> - Electric vehicles</li>
+          </ul>
+        </div>
+      </div>
+    </noscript>
+    
     <div id="app">
       <!-- App Shell - Shows immediately while JS loads -->
       <div id="app-shell" style="

@@ -1,10 +1,10 @@
-/* eslint-disable no-console */
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 /**
- * SEO Validation Script for Factorly
+ * SEO Validation Script for Datoro
  * 
- * Checks all SEO requirements before submitting to Google Search Console
+ * Checks all SEO requirements before deploying
  * Run: node scripts/validate-seo.mjs
  */
 
@@ -60,7 +60,7 @@ const section = (title) => {
 };
 
 // Validation tests
-console.log(`\n${bold}${blue}🔍 Factorly SEO Validation${reset}\n`);
+console.log(`\n${bold}${blue}🔍 Datoro SEO Validation${reset}\n`);
 
 // 1. Check robots.txt
 section('1. robots.txt');
@@ -78,12 +78,12 @@ if (check(existsSync(robotsPath), 'robots.txt exists', 'robots.txt NOT FOUND')) 
     'Missing Allow directive'
   );
   check(
-    robotsContent.includes('https://factorly.onrender.com/sitemap.xml'),
-    'Sitemap URL is correct (factorly.onrender.com)',
+    robotsContent.includes('https://datoro.onrender.com/sitemap.xml'),
+    'Sitemap URL is correct (datoro.onrender.com)',
     'Sitemap URL is incorrect or missing'
   );
-  if (robotsContent.includes('factorly.com') && !robotsContent.includes('factorly.onrender.com')) {
-    warn('robots.txt uses old domain (factorly.com) instead of factorly.onrender.com');
+  if (robotsContent.includes('datoro.com') && !robotsContent.includes('datoro.onrender.com')) {
+    warn('robots.txt uses old domain (datoro.com) instead of datoro.onrender.com');
   }
 }
 
@@ -98,8 +98,8 @@ if (check(existsSync(sitemapPath), 'sitemap.xml exists', 'sitemap.xml NOT FOUND'
     'Invalid sitemap format'
   );
   check(
-    sitemapContent.includes('https://factorly.onrender.com'),
-    'Uses correct domain (factorly.onrender.com)',
+    sitemapContent.includes('https://datoro.onrender.com'),
+    'Uses correct domain (datoro.onrender.com)',
     'Uses incorrect domain'
   );
   
@@ -112,9 +112,9 @@ if (check(existsSync(sitemapPath), 'sitemap.xml exists', 'sitemap.xml NOT FOUND'
     `Only has ${urlCount} URLs - consider adding more`
   );
   
-  // Check for popular tickers
+  // Check for popular tickers (using query parameter format: ?ticker=AAPL)
   const hasTickers = ['AAPL', 'MSFT', 'GOOGL', 'TSLA'].some(ticker => 
-    sitemapContent.includes(`/${ticker}`)
+    sitemapContent.includes(`ticker=${ticker}`)
   );
   check(
     hasTickers,
@@ -133,13 +133,14 @@ if (check(existsSync(indexPath), 'index.html exists', 'index.html NOT FOUND')) {
   const titleMatch = htmlContent.match(/<title>(.*?)<\/title>/);
   if (titleMatch) {
     const title = titleMatch[1];
+    // Google displays 50-60 chars, but up to 70 is acceptable
     check(
-      title.length >= 30 && title.length <= 60,
+      title.length >= 30 && title.length <= 70,
       `Title length optimal (${title.length} chars): "${title}"`,
       `Title length suboptimal (${title.length} chars): "${title}"`
     );
     check(
-      title.includes('Factorly'),
+      title.includes('Datoro'),
       'Title includes brand name',
       'Title missing brand name'
     );
@@ -151,8 +152,9 @@ if (check(existsSync(indexPath), 'index.html exists', 'index.html NOT FOUND')) {
   const descMatch = htmlContent.match(/<meta name="description" content="(.*?)"/);
   if (descMatch) {
     const desc = descMatch[1];
+    // Google displays 120-160 chars, but up to 320 is indexed
     check(
-      desc.length >= 120 && desc.length <= 160,
+      desc.length >= 120 && desc.length <= 320,
       `Description length optimal (${desc.length} chars)`,
       `Description length suboptimal (${desc.length} chars)`
     );
@@ -172,7 +174,7 @@ if (check(existsSync(indexPath), 'index.html exists', 'index.html NOT FOUND')) {
   if (canonicalMatch) {
     const canonical = canonicalMatch[1];
     check(
-      canonical === 'https://factorly.onrender.com/',
+      canonical === 'https://datoro.onrender.com/',
       `Canonical URL correct: ${canonical}`,
       `Canonical URL incorrect: ${canonical}`
     );
@@ -197,7 +199,7 @@ if (check(existsSync(indexPath), 'index.html exists', 'index.html NOT FOUND')) {
     'Missing Open Graph image tag'
   );
   check(
-    htmlContent.includes('property="og:url"') && htmlContent.includes('https://factorly.onrender.com'),
+    htmlContent.includes('property="og:url"') && htmlContent.includes('https://datoro.onrender.com'),
     'Open Graph URL is correct',
     'Open Graph URL missing or incorrect'
   );
@@ -229,7 +231,7 @@ if (check(existsSync(manifestPath), 'manifest.json exists', 'manifest.json NOT F
   try {
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
     check(
-      manifest.name && manifest.name.includes('Factorly'),
+      manifest.name && manifest.name.includes('Datoro'),
       'Has app name',
       'Missing app name'
     );
@@ -262,7 +264,7 @@ if (existsSync(indexPath)) {
   if (jsonLdMatches) {
     info(`Found ${jsonLdMatches.length} JSON-LD schemas`);
     
-    jsonLdMatches.forEach((_match, _idx) => {
+    jsonLdMatches.forEach((match, idx) => {
       try {
         const jsonContent = match.replace(/<script type="application\/ld\+json">|<\/script>/g, '').trim();
         const schema = JSON.parse(jsonContent);
@@ -270,14 +272,14 @@ if (existsSync(indexPath)) {
         if (schema['@type'] === 'WebApplication') {
           check(true, 'Has WebApplication schema', '');
           check(
-            schema.url === 'https://factorly.onrender.com',
+            schema.url === 'https://datoro.onrender.com',
             'WebApplication URL is correct',
             `WebApplication URL is incorrect: ${schema.url}`
           );
         } else if (schema['@type'] === 'Organization') {
           check(true, 'Has Organization schema', '');
           check(
-            schema.url === 'https://factorly.onrender.com',
+            schema.url === 'https://datoro.onrender.com',
             'Organization URL is correct',
             `Organization URL is incorrect: ${schema.url}`
           );

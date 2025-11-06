@@ -20,6 +20,12 @@ npm run type-check
 npm run type-check:server
 ```
 
+**Run validation scripts:**
+```powershell
+node scripts/validate-seo.mjs
+```
+
+
 **Verify database migrations:**
 ```powershell
 node scripts/verify-migration.mjs
