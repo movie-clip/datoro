@@ -9,7 +9,7 @@
     <div class="chart-container">
       <v-chart 
         v-if="chartOptions" 
-        :key="chartKey"
+        :key="selectedModel"
         :option="chartOptions" 
         :autoresize="true"
         class="chart"
@@ -132,6 +132,11 @@ const chartOptions = computed((): EChartsOption | null => {
 
   return {
     backgroundColor: 'transparent',
+    animation: true,
+    animationDuration: 400,
+    animationEasing: 'cubicOut',
+    animationDurationUpdate: 400,  // Smooth transition for data updates
+    animationEasingUpdate: 'cubicInOut',
     grid: {
       top: 40,
       right: 20,

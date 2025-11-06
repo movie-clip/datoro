@@ -5,7 +5,7 @@
         v-if="modelValue"
         class="modal-overlay"
         @mousedown="handleOverlayMouseDown"
-        @click="handleOverlayClick"
+        @mouseup="handleOverlayMouseUp"
         @keydown.esc="handleClose"
         tabindex="0"
         ref="overlayRef"
@@ -40,7 +40,7 @@
                   <div class="index-name">Loading...</div>
                   <div class="index-change">--</div>
                 </div>
-                <div v-for="(index, i) in indexData" :key="i" class="index-card">
+                <div v-for="(index, i) in indexData" :key="`index-${index.name}-${i}`" class="index-card">
                   <div class="index-name">{{ index.name }}</div>
                   <div class="index-change" :class="{ positive: index.change >= 0, negative: index.change < 0 }">
                     {{ index.change >= 0 ? '+' : '' }}{{ index.change.toFixed(2) }}%
@@ -163,38 +163,48 @@ const emit = defineEmits<Emits>()
 
 const overlayRef = ref<HTMLDivElement | null>(null)
 const macroData = ref<MacroData | EUMacroData | null>(null)
+const indexData = ref<Array<{ name: string; change: number }>>([]) // Separate state for indices
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selectedRegion = ref<Region>('US')
 
-// Index data computed property (only for US)
-const indexData = computed(() => {
-  if (selectedRegion.value === 'EU') return []
-  if (!macroData.value || !('indexStats' in macroData.value)) return []
-  if (!macroData.value.indexStats) return []
-  
-  const indexNames: Record<string, string> = {
-    '^GSPC': 'S&P 500',
-    '^DJI': 'Dow Jones',
-    '^RUT': 'Russell 2000'
-  }
-  
-  return macroData.value.indexStats
-    .filter(stat => stat.symbol && typeof stat['1D'] === 'number')
-    .map(stat => ({
-      name: indexNames[stat.symbol] || stat.symbol,
-      change: stat['1D']
-    }))
-})
-
-// Load data
-async function loadData() {
+// Load index data once on mount - completely independent from region selection
+async function loadIndexData() {
   try {
+    console.log('[MacroModal] Loading index data (ONCE)...')
+    const usData = await fetchAllMacroData('US') as MacroData
+    if (usData && 'indexStats' in usData && usData.indexStats) {
+      const indexNames: Record<string, string> = {
+        '^GSPC': 'S&P 500',
+        '^DJI': 'Dow Jones',
+        '^RUT': 'Russell 2000'
+      }
+      
+      indexData.value = usData.indexStats
+        .filter(stat => stat.symbol && typeof stat['1D'] === 'number')
+        .map(stat => ({
+          name: indexNames[stat.symbol] || stat.symbol,
+          change: stat['1D']
+        }))
+      
+      console.log('[MacroModal] Index data loaded:', indexData.value)
+    }
+  } catch (err) {
+    console.error('[Macro] Failed to load index data:', err)
+    // Keep indexData as empty array on error
+  }
+}
+
+// Load macro data based on selected region
+async function loadMacroData() {
+  try {
+    console.log('[MacroModal] Loading macro data for region:', selectedRegion.value)
     loading.value = true
     error.value = null
     macroData.value = await fetchAllMacroData(selectedRegion.value)
+    console.log('[MacroModal] Macro data loaded for:', selectedRegion.value)
   } catch (err: any) {
-    console.error('[Macro] Failed to load data:', err)
+    console.error('[Macro] Failed to load macro data:', err)
     error.value = err.message || 'Failed to load macro data'
   } finally {
     loading.value = false
@@ -203,25 +213,34 @@ async function loadData() {
 
 // Handle region change
 function handleRegionChange() {
-  loadData()
+  loadMacroData()
 }
 
 function retry() {
-  loadData()
+  loadMacroData()
 }
 
 // Modal handling
 let isMouseDownOnOverlay = false
 
 function handleOverlayMouseDown(event: MouseEvent) {
+  // Only set flag if mousedown happens directly on overlay (not on children)
   isMouseDownOnOverlay = event.target === overlayRef.value
 }
 
-function handleOverlayClick(event: MouseEvent) {
+function handleOverlayMouseUp(event: MouseEvent) {
+  // Only close if BOTH mousedown AND mouseup happened on overlay
+  // This prevents closing when user drags from chart to outside
   if (event.target === overlayRef.value && isMouseDownOnOverlay) {
     handleClose()
   }
+  // Always reset flag after mouseup
   isMouseDownOnOverlay = false
+}
+
+function handleOverlayClick(event: MouseEvent) {
+  // Deprecated - keeping for backwards compatibility
+  // The mouseup handler is now doing the work
 }
 
 function handleClose() {
@@ -559,15 +578,30 @@ const riskPremiumChartOption = computed((): EChartsOption => {
 // Load data when modal opens
 watch(() => props.modelValue, (newValue) => {
   if (newValue) {
-    loadData()
+    // Load index data once (won't reload if already loaded)
+    if (indexData.value.length === 0) {
+      loadIndexData()
+    }
+    // Load macro data for selected region
+    loadMacroData()
     overlayRef.value?.focus()
   }
 })
 
+// Debug watcher - detect if indexData changes unexpectedly
+watch(indexData, (newVal) => {
+  console.log('[MacroModal] ⚠️ Index data changed:', newVal)
+}, { deep: true })
+
 onMounted(() => {
   document.addEventListener('keydown', handleEscape)
   if (props.modelValue) {
-    loadData()
+    // Load index data once
+    if (indexData.value.length === 0) {
+      loadIndexData()
+    }
+    // Load macro data for selected region
+    loadMacroData()
   }
 })
 

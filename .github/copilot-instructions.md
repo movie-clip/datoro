@@ -9,7 +9,8 @@
 - **Frontend (Vue 3 + TypeScript):**
   - Vue SFCs in `src/components/` organized by feature (charts/, tables/, layout/, common/).
   - State management via composables in `src/composables/` (e.g., `useTickerData.ts` - shared batch data).
-  - Chart rendering via ECharts (`vue-echarts`) - no Chart.js.
+- **Chart rendering via ECharts (`vue-echarts`) - no Chart.js.
+  - **Chart Performance:** Progressive rendering, LTTB sampling, large dataset mode (>1000 points).
   - **Type Safety:** All components use strict TypeScript types from `src/types/`.
   - Styling: `src/styles/globals.css` and component-scoped styles.
   
@@ -109,6 +110,34 @@
   ```
 - **Health indicators:** Use `healthIndicatorService.ts` for consistent health calculations.
 - **Time series format:** ECharts expects `[[timestamp, value], ...]` arrays.
+- **Chart Performance Best Practices:**
+  - Use progressive rendering for datasets >1000 points (400 points/frame).
+  - Enable LTTB sampling (`sampling: 'lttb'`) for large datasets.
+  - Set `large: true` and `largeThreshold: 1000` for datasets >1000 points.
+  - Use `animationDurationUpdate` for smooth data transitions (don't force chart re-renders with `:key`).
+  - Example: `src/composables/usePriceSeries.ts` (30-year price history optimizations).
+- **Chart Animations:**
+  - For data updates (e.g., DCF calculator): Use `animationDurationUpdate: 400` with `:key` based on model type only.
+  - Don't use data-dependent `:key` props - let ECharts handle smooth transitions.
+  - Smooth line transitions without flickering: Only axes/grid on initial render, lines animate on update.
+- **Modal Click-Outside Behavior:**
+  - Use `@mousedown` + `@mouseup` pattern (not `@click`) to track complete click gesture.
+  - Only close modal if **both** mousedown and mouseup happen on overlay (prevents drag-to-close bug).
+  - Example: `src/components/modals/MacroModal.vue`.
+- **Dropdown Components:**
+  - Use `BaseDropdown.vue` for all dropdown/select components to maintain consistent style and behavior.
+  - Component exports `DropdownOption` interface: `{ label: string; value: string }`.
+  - Supports v-model binding, disabled state, optional icon slot, and click-outside-to-close.
+  - Examples: Macro window region selector, Deep Finder filters, Watchlist selector.
+  - For complex dropdowns with actions (like WatchlistDropdown), extend the base pattern.
+  - Usage:
+    ```vue
+    <BaseDropdown
+      v-model="selectedValue"
+      :options="dropdownOptions"
+      :disabled="loading"
+    />
+    ```
 
 ### Database Patterns (Prisma)
 - **Models:** User, PopularTicker, SearchHistory, ApiRequest, ErrorLog, Session.
@@ -141,9 +170,10 @@
   - `/api/v3/cash-flow-statement/{ticker}` - Cash flow statements.
   - `/api/v4/score?symbol={ticker}` - **IMPORTANT:** Financial scores (Altman Z-Score, Piotroski).
     - **Note:** Use `/api/v4/score` NOT `/stable/financial-scores` for international tickers.
-  - `/api/v3/historical-price-full/{ticker}` - Price history.
+  - `/api/v3/historical-price-full/{ticker}?from={date}` - Price history (30 years with `from` param).
   - `/api/v4/advanced_levered_dcf?symbol={ticker}` - Advanced DCF valuation.
 - **Batch fetching:** All 24 endpoints fetched in parallel via `Promise.allSettled()`.
+- **Historical data:** Price history uses `from=${getDateMonthsAgo(360)}` to fetch 30 years of data.
 - **Error handling:** Individual endpoint failures don't break entire batch.
 
 ### Formatting & Display
@@ -185,6 +215,15 @@
 - **Test helpers:** Reusable test utilities in `tests/e2e/helpers.ts`.
 - **Coverage:** Run `npm run test:coverage` for coverage report.
 - **Mocking:** Prisma mocked via `tests/__mocks__/prisma.ts`.
+- **Server testing:** When tests require a running server, start it in a separate terminal:
+  ```powershell
+  # Start server in separate window (won't be interrupted)
+  Start-Process powershell -ArgumentList "-NoExit", "-Command", 
+    "cd D:\projects\datoro; npm run server:dev" -WindowStyle Normal
+  
+  # Wait for server to start
+  Start-Sleep -Seconds 5
+  ```
 
 ## Common Tasks & Examples
 
@@ -272,7 +311,7 @@ Get-Process -Name node | Stop-Process -Force
 
 # Start server in new window (won't be interrupted by other commands)
 Start-Process powershell -ArgumentList "-NoExit", "-Command", 
-  "cd D:\projects\Vue\Datoro; npm run server" -WindowStyle Normal
+  "cd D:\projects\datoro; npm run server:dev" -WindowStyle Normal
 
 # Wait for server to start
 Start-Sleep -Seconds 8

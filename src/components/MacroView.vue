@@ -127,6 +127,9 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const macroData = ref<MacroData | EUMacroData | null>(null)
 
+// Index data - separate from region-based macroData, always shows US indices
+const indexData = ref<Array<{ name: string; change: number }>>([])
+
 // Initialize charts using composable
 const charts = chartConfigs.map(config => 
   useMacroChart({ id: config.id, syncedByDefault: true })
@@ -237,29 +240,36 @@ function hasChartData(config: ChartConfig): boolean {
  * Index Cards Data (S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX)
  * Shows the same global market indices for both US and EU regions
  */
-const indexData = computed(() => {
-  if (!macroData.value) return []
-  
-  const indexNames: Record<string, string> = {
-    '^GSPC': 'S&P 500',
-    '^DJI': 'Dow Jones',
-    '^RUT': 'Russell 2000',
-    '^HSI': 'Hang Seng',
-    '^GDAXI': 'DAX'
+/**
+ * Load US index data once (independent of region selection)
+ */
+async function loadIndexData() {
+  try {
+    console.log('[MacroView] Loading US index data (once)...')
+    const usData = await fetchAllMacroData('US') as MacroData
+    
+    if (usData && 'indexStats' in usData && usData.indexStats) {
+      const indexNames: Record<string, string> = {
+        '^GSPC': 'S&P 500',
+        '^DJI': 'Dow Jones',
+        '^RUT': 'Russell 2000',
+        '^HSI': 'Hang Seng',
+        '^GDAXI': 'DAX'
+      }
+      
+      indexData.value = usData.indexStats
+        .filter((stat: any) => stat && stat.symbol && typeof stat['1D'] === 'number')
+        .map((stat: any) => ({
+          name: indexNames[stat.symbol] || stat.symbol,
+          change: stat['1D'] || 0
+        }))
+      
+      console.log('[MacroView] US index data loaded:', indexData.value)
+    }
+  } catch (err) {
+    console.error('[MacroView] Failed to load index data:', err)
   }
-  
-  const data = macroData.value as (MacroData | EUMacroData)
-  if (!data?.indexStats || data.indexStats.length === 0) {
-    return []
-  }
-  
-  return data.indexStats
-    .filter((stat: any) => stat && stat.symbol && typeof stat['1D'] === 'number')
-    .map((stat: any) => ({
-      name: indexNames[stat.symbol] || stat.symbol,
-      change: stat['1D'] || 0
-    }))
-})
+}
 
 /**
  * Handle region change
@@ -310,6 +320,10 @@ const retry = () => {
  * Setup chart synchronization on mount
  */
 onMounted(async () => {
+  // Load US index data once (independent of region)
+  loadIndexData()
+  
+  // Load region-specific macro data
   await loadData()
   
   // Setup sync for all charts
