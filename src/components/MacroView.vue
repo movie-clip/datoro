@@ -3,9 +3,12 @@
     <!-- Fixed Header -->
     <div class="macro-header-wrapper">
       <MacroHeader 
-        :index-data="indexData" 
+        :index-data="indexData"
+        :index-loading="indexLoading"
+        :index-error="indexError ?? undefined"
         :selected-region="selectedRegion"
         @region-change="handleRegionChange"
+        @retry-index="loadIndexData"
       />
     </div>
 
@@ -48,7 +51,7 @@ import {
   ToolboxComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { fetchAllMacroData, type MacroData, type EUMacroData, type EconomicIndicator, type Region } from '../services/macro/macroDataService'
+import { fetchAllMacroData, fetchIndexStats, type MacroData, type EUMacroData, type EconomicIndicator, type Region, type IndexStats } from '../services/macro/macroDataService'
 import { useMacroChart } from '../composables/useMacroChart'
 import { useChartSync } from '../composables/useChartSync'
 import { createChartOptions, DEFAULT_SLIDER_CONFIG } from '../utils/chartConfigFactory'
@@ -123,8 +126,11 @@ function setCachedData(data: MacroData | EUMacroData, region: Region): void {
 const selectedRegion = ref<Region>('US')
 
 // Data state
-const loading = ref(true)
+const indexLoading = ref(true)
+const macroLoading = ref(true)
+const loading = computed(() => indexLoading.value || macroLoading.value)
 const error = ref<string | null>(null)
+const indexError = ref<string | null>(null)
 const macroData = ref<MacroData | EUMacroData | null>(null)
 
 // Index data - separate from region-based macroData, always shows US indices
@@ -245,10 +251,12 @@ function hasChartData(config: ChartConfig): boolean {
  */
 async function loadIndexData() {
   try {
-    console.log('[MacroView] Loading US index data (once)...')
-    const usData = await fetchAllMacroData('US') as MacroData
+    indexLoading.value = true
+    indexError.value = null
+    console.log('[MacroView] Loading US index data (optimized endpoint)...')
+    const indexStats = await fetchIndexStats()
     
-    if (usData && 'indexStats' in usData && usData.indexStats) {
+    if (indexStats && indexStats.length > 0) {
       const indexNames: Record<string, string> = {
         '^GSPC': 'S&P 500',
         '^DJI': 'Dow Jones',
@@ -257,17 +265,20 @@ async function loadIndexData() {
         '^GDAXI': 'DAX'
       }
       
-      indexData.value = usData.indexStats
-        .filter((stat: any) => stat && stat.symbol && typeof stat['1D'] === 'number')
-        .map((stat: any) => ({
+      indexData.value = indexStats
+        .filter((stat: IndexStats) => stat && stat.symbol && typeof stat['1D'] === 'number')
+        .map((stat: IndexStats) => ({
           name: indexNames[stat.symbol] || stat.symbol,
           change: stat['1D'] || 0
         }))
       
       console.log('[MacroView] US index data loaded:', indexData.value)
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('[MacroView] Failed to load index data:', err)
+    indexError.value = err.message || 'Failed to load market indices'
+  } finally {
+    indexLoading.value = false
   }
 }
 
@@ -284,14 +295,14 @@ function handleRegionChange(newRegion: Region) {
  */
 const loadData = async () => {
   try {
-    loading.value = true
+    macroLoading.value = true
     error.value = null
     
     // Check cache first
     const cached = getCachedData(selectedRegion.value)
     if (cached) {
       macroData.value = cached
-      loading.value = false
+      macroLoading.value = false
       return
     }
     
@@ -305,7 +316,7 @@ const loadData = async () => {
     console.error('[Macro] Failed to load data:', err)
     error.value = err.message || 'Failed to load macro data'
   } finally {
-    loading.value = false
+    macroLoading.value = false
   }
 }
 
