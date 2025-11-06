@@ -14,6 +14,7 @@
     :force-expanded="forceExpanded"
     :show-growth-labels="true"
     :custom-growth-data="growthData ?? undefined"
+    :enable-zoom="true"
   />
 </template>
 

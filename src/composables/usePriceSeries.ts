@@ -25,6 +25,8 @@ interface PriceSeries {
   smooth: number
   showSymbol: boolean
   emphasis: { disabled: boolean }
+  sampling: string
+  animation: boolean
   lineStyle: { width: number; color: string }
   areaStyle: {
     origin: string
@@ -105,9 +107,11 @@ export function usePriceSeries(): UsePriceSeriesReturn {
           type: 'line',
           name: 'Price',
           data: filtered,
-          smooth: 0.15,
+          smooth: 0.1, // Subtle smoothing - good balance between performance and aesthetics
           showSymbol: false,
           emphasis: { disabled: true },
+          sampling: 'lttb', // Enable downsampling for better performance with large datasets
+          animation: false, // Disable animation for Price chart to improve zoom/pan performance
           lineStyle: { 
             width: 2,
             color: isUp ? '#00A88E' : '#ef4444'
@@ -157,9 +161,11 @@ export function usePriceSeries(): UsePriceSeriesReturn {
         type: 'line',
         name: 'Price',
         data: rawPrices,
-        smooth: 0.15,
+        smooth: 0.1, // Subtle smoothing - good balance between performance and aesthetics
         showSymbol: false,
         emphasis: { disabled: true },
+        sampling: 'lttb', // Enable downsampling for better performance with large datasets
+        animation: false, // Disable animation for Price chart to improve zoom/pan performance
         lineStyle: { 
           width: 2,
           color: isUp ? '#00A88E' : '#ef4444'

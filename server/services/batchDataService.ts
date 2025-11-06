@@ -161,8 +161,10 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     keyMetrics: `/api/v3/key-metrics/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
     keyMetricsQuarter: `/api/v3/key-metrics/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     
-    // Price data (Priority 1)
-    priceHistory: `/api/v3/historical-price-full/${t}?apikey=${fmpApiKey}`,
+    // Price data (Priority 1) - Fetch all available history from 30 years ago
+    // Note: FMP historical-price-full endpoint may only return last 5 years by default,
+    // so we explicitly use 'from' parameter to get full history (30 years should cover all stocks)
+    priceHistory: `/api/v3/historical-price-full/${t}?from=${getDateMonthsAgo(360)}&apikey=${fmpApiKey}`,
     
     // Valuation (Priority 1 - DCF from FMP)
     fmpDcf: `/api/v3/discounted-cash-flow/${t}?apikey=${fmpApiKey}`,

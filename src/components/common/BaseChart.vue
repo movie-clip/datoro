@@ -241,6 +241,7 @@ interface Props {
   message?: string | null
   emptyDataMessage?: string | null
   timeframe?: 'annual' | 'quarterly'
+  enableZoom?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -270,7 +271,8 @@ const props = withDefaults(defineProps<Props>(), {
   error: null,
   message: null,
   emptyDataMessage: null,
-  timeframe: 'annual'
+  timeframe: 'annual',
+  enableZoom: false
 })
 
 const showModal = ref(false)
@@ -512,6 +514,20 @@ const createOption = (isLarge = false): EChartsOption => {
       top: 0,
       textStyle: { color: '#fff', fontSize: 14 } 
     },
+    // Add dataZoom for interactive zooming and panning (for line charts when enabled or in modal view)
+    // Only use 'inside' type (mouse wheel + drag) without visible slider
+    dataZoom: props.kind === 'line' && (isLarge || props.enableZoom) ? [
+      {
+        type: 'inside', // Mouse wheel zoom + drag to pan
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false,
+        throttle: 100 // Performance: throttle zoom updates (ms)
+      }
+    ] : undefined,
+    // Toolbox removed - cleaner UI without top-right buttons
     // Legend configuration
     legend: showLegendAtTop ? {
       // Modal view with useLegend (single-select)
