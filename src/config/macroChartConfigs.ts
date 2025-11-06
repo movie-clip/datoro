@@ -21,11 +21,12 @@ export const MACRO_CHART_CONFIGS: ChartConfig[] = [
   },
   {
     id: 'inflation',
-    title: 'Inflation',
+    title: 'Inflation Rate',
     dataKey: 'inflation',
     color: COLORS.chart.orange,
     valueFormatter: percentFormatter,
-    tooltipFormatter: percentFormatter
+    tooltipFormatter: percentFormatter,
+    yAxisLabel: '%'
   },
   {
     id: 'fedFunds',

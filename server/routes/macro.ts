@@ -511,7 +511,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=federalFunds&apikey=${FMP_API_KEY}`, {}, 10000),
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=consumerSentiment&apikey=${FMP_API_KEY}`, {}, 10000),
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=retailSales&apikey=${FMP_API_KEY}`, {}, 10000),
-      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=inflation&apikey=${FMP_API_KEY}`, {}, 10000),
+      fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=inflation&apikey=${FMP_API_KEY}`, {}, 10000),  // Annual inflation rate (8% for 2022)
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=unemploymentRate&apikey=${FMP_API_KEY}`, {}, 10000),
       // Index quotes - batch call for all 5 indices (optimized: 5 calls → 1 call)
       fetchWithTimeout(`${FMP_BASE_URL}/api/v3/quote/${symbols.join(',')}?apikey=${FMP_API_KEY}`, {}, 10000),
@@ -623,6 +623,37 @@ function getDateMonthsAgo(months: number): string {
 
 function getTodayDate(): string {
   return new Date().toISOString().split('T')[0] || ''
+}
+
+/**
+ * Calculate inflation rate (YoY % change) from CPI index values
+ * CPI is the index level (e.g., 324.36), inflation is % change from 12 months ago
+ */
+function calculateInflationFromCPI(cpiData: Array<{ date: string; value: number }>): Array<{ date: string; value: number }> {
+  if (!Array.isArray(cpiData) || cpiData.length < 13) {
+    return []
+  }
+
+  // Sort by date (oldest first) to ensure correct calculation
+  const sorted = [...cpiData].sort((a, b) => a.date.localeCompare(b.date))
+  
+  const inflationData: Array<{ date: string; value: number }> = []
+  
+  // Calculate YoY change for each month (starting from month 13 since we need 12 months prior)
+  for (let i = 12; i < sorted.length; i++) {
+    const current = sorted[i]
+    const yearAgo = sorted[i - 12]
+    
+    if (current && yearAgo && current.value && yearAgo.value) {
+      const inflationRate = ((current.value - yearAgo.value) / yearAgo.value) * 100
+      inflationData.push({
+        date: current.date,
+        value: inflationRate
+      })
+    }
+  }
+  
+  return inflationData
 }
 
 // Export both router and initialization function for consistency with other routes

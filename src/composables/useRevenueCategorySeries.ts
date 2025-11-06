@@ -149,13 +149,13 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
   watch([currentTicker, viewMode, productCategories, geographicCategories, loading], 
     ([ticker, mode, product, geo, isLoading]) => {
       if (!ticker) {
-        title.value = 'Revenue — Empty'
+        title.value = 'Revenue'
         message.value = 'Enter a ticker to view revenue breakdown'
         return
       }
 
       if (isLoading) {
-        title.value = 'Revenue — Loading...'
+        title.value = 'Revenue'
         message.value = ''
         return
       }

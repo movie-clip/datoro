@@ -193,18 +193,23 @@ export async function fetchEUGDP(): Promise<EurostatDataPoint[]> {
 /**
  * 5. EU Building Permits
  * Dataset: sts_cobp_m (Construction - building permits)
- * Simplified to get any available data
+ * Note: This dataset often has no data available for EU27_2020 aggregate
+ * Returns empty array if no data available
  */
 export async function fetchEUBuildingPermits(): Promise<EurostatDataPoint[]> {
-  return fetchEurostatDataset('sts_cobp_m', {
-    geo: 'EU27_2020',
-    indic_bt: 'BPRM',    // Building permits
-    unit: 'I15',         // Index 2015=100
-    nace_r2: 'F',        // Construction
-    s_adj: 'NSA',        // Not seasonally adjusted
-    format: 'JSON',
-    lang: 'EN'
-  })
+  try {
+    return await fetchEurostatDataset('sts_cobp_m', {
+      geo: 'EU27_2020',
+      indic_bt: 'BPRM',    // Building permits
+      unit: 'I15',         // Index 2015=100
+      s_adj: 'NSA',        // Not seasonally adjusted
+      format: 'JSON',
+      lang: 'EN'
+    })
+  } catch (error) {
+    logger.warn('[Eurostat] Building permits data not available for EU27_2020, returning empty array')
+    return []
+  }
 }
 
 /**
