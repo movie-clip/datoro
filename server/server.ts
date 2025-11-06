@@ -96,9 +96,9 @@ if (!FMP_API_KEY) {
   throw new Error('FMP_API_KEY environment variable is required')
 }
 
-// Validate FMP key format (32 hexadecimal characters)
-if (!/^[a-f0-9]{32}$/i.test(FMP_API_KEY)) {
-  logger.warn('[FMP] WARNING: FMP_API_KEY format looks invalid (expected 32 hex characters)')
+// Validate FMP key format (32 alphanumeric characters)
+if (!/^[a-zA-Z0-9]{32}$/.test(FMP_API_KEY)) {
+  logger.warn('[FMP] WARNING: FMP_API_KEY format looks invalid (expected 32 alphanumeric characters)')
   logger.warn(`[FMP] Key length: ${FMP_API_KEY.length} chars`)
   logger.warn('[FMP] API requests may fail. Please verify your FMP API key.')
 }
