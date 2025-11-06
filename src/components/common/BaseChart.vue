@@ -513,6 +513,11 @@ const createOption = (isLarge = false): EChartsOption => {
       duration: 300, // Quick animations
       easing: 'cubicOut'
     } : true, // Default animations for other charts
+    // Smooth animations when data updates (Y-axis scale changes)
+    animationDuration: 400,
+    animationEasing: 'cubicOut',
+    animationDurationUpdate: 400, // Animate Y-axis scale changes when data updates
+    animationEasingUpdate: 'cubicInOut',
     // Only show title in non-modal view (in modal, it's shown as HTML element)
     title: isLarge ? undefined : {
       text: props.title, 
