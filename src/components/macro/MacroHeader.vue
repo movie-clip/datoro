@@ -3,14 +3,13 @@
     <div class="header-content">
       <div class="title-region-wrapper">
         <h2>Macro Economic Dashboard</h2>
-        <select 
-          :value="selectedRegion" 
-          @change="$emit('region-change', ($event.target as HTMLSelectElement).value as Region)" 
-          class="region-selector"
-        >
-          <option value="US">US</option>
-          <option value="EU">EU</option>
-        </select>
+        <div class="region-dropdown-wrapper">
+          <BaseDropdown
+            :model-value="selectedRegion"
+            :options="regionOptions"
+            @update:model-value="(value: string) => $emit('region-change', value as Region)"
+          />
+        </div>
       </div>
       
       <div v-if="indexData.length > 0" class="index-cards">
@@ -26,9 +25,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PropType } from 'vue'
 import type { IndexData } from '../../types/macro.types'
 import type { Region } from '../../services/macro/macroDataService'
+import BaseDropdown, { type DropdownOption } from '../common/BaseDropdown.vue'
 
 defineProps({
   indexData: {
@@ -44,6 +45,11 @@ defineProps({
 defineEmits<{
   'region-change': [region: Region]
 }>()
+
+const regionOptions: DropdownOption[] = [
+  { label: 'US', value: 'US' },
+  { label: 'EU', value: 'EU' }
+]
 </script>
 
 <style scoped>
@@ -74,36 +80,8 @@ defineEmits<{
   gap: 16px;
 }
 
-.region-selector {
-  padding: 8px 14px;
-  background: linear-gradient(135deg, #00594C 0%, #004438 100%);
-  border: 2px solid #00594C;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 100px;
-  text-align: center;
-  outline: none;
-}
-
-.region-selector:hover {
-  background: linear-gradient(135deg, #00755F 0%, #00594C 100%);
-  border-color: #00755F;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 89, 76, 0.3);
-}
-
-.region-selector:focus {
-  border-color: #00755F;
-  box-shadow: 0 0 0 3px rgba(0, 89, 76, 0.3);
-}
-
-.region-selector option {
-  background: #1A1A1D;
-  color: #fff;
+.region-dropdown-wrapper {
+  width: 120px;
 }
 
 .index-cards {
