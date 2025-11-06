@@ -681,7 +681,7 @@ const modalOption = computed(() => {
    ============================================ */
 .echart {
   width: 100%; 
-  height: 340px;
+  height: 340px; /* Default height for all charts */
   display: block; 
   margin: 0;
 }

@@ -1,8 +1,8 @@
 <template>
   <div class="deep-finder-chart">
-    <div v-if="loading" class="loading">
+    <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading stock screener data...</p>
+      <p>Loading data...</p>
     </div>
     
     <div v-else-if="error" class="error">

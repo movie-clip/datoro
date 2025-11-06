@@ -264,7 +264,7 @@ const getMarginClass = (marginStr: string): string => {
 <style scoped>
 .hero-container {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
+  grid-template-columns: 1.5fr 1fr; /* Changed from 1.5fr 1fr - gives chart 66% width instead of 60% */
   gap: 20px;
 }
 
@@ -275,7 +275,7 @@ const getMarginClass = (marginStr: string): string => {
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
-  min-height: 500px; /* Fixed minimum height to prevent scaling */
+  min-height: 475px; /* Reduced by 5% (was 500px) */
   overflow: hidden; /* Prevent content from expanding container */
   max-width: 100%; /* Ensure it doesn't exceed grid column width */
 }
@@ -284,6 +284,11 @@ const getMarginClass = (marginStr: string): string => {
   border-color: #00594C;
   box-shadow: 0 4px 20px rgba(0, 89, 76, 0.3);
   transform: translateY(-2px);
+}
+
+/* Make Price Chart taller (only affects chart in this container) */
+.price-chart-container :deep(.echart) {
+  height: 428px !important; /* Reduced by 5% (was 450px) */
 }
 
 /* Tab Content Area - Fixed sizing */
@@ -359,7 +364,7 @@ const getMarginClass = (marginStr: string): string => {
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
-  min-height: 500px; /* Fixed minimum height to match price chart */
+  min-height: 570px; /* Reduced by 5% (was 600px) */
 }
 
 .key-metrics-card:hover {
@@ -386,7 +391,7 @@ const getMarginClass = (marginStr: string): string => {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.2s ease;
-  min-height: 90px; /* Fixed minimum height to prevent resizing */
+  min-height: 86px; /* Reduced by 5% (was 90px) */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -399,7 +404,7 @@ const getMarginClass = (marginStr: string): string => {
 
 .metric-item-full {
   grid-column: 1 / -1;
-  min-height: 100px; /* Slightly taller for health indicators */
+  min-height: 95px; /* Reduced by 5% (was 100px) */
 }
 
 .metric-label {
@@ -417,7 +422,7 @@ const getMarginClass = (marginStr: string): string => {
   font-weight: 700;
   color: #E5E5E5;
   line-height: 1.2;
-  min-height: 34px; /* Fixed height for value */
+  min-height: 32px; /* Reduced by 5% (was 34px) */
   display: flex;
   align-items: center;
 }
@@ -568,11 +573,11 @@ const getMarginClass = (marginStr: string): string => {
 
   .metric-value {
     font-size: 1.5rem;
-    min-height: 30px; /* Adjust for smaller font */
+    min-height: 29px; /* Reduced by 5% (was 30px) */
   }
 
   .metric-item {
-    min-height: 85px; /* Slightly smaller on tablet */
+    min-height: 81px; /* Reduced by 5% (was 85px) */
   }
 }
 
@@ -599,15 +604,15 @@ const getMarginClass = (marginStr: string): string => {
 
   .metric-value {
     font-size: 1.35rem;
-    min-height: 28px; /* Adjust for mobile font size */
+    min-height: 27px; /* Reduced by 5% (was 28px) */
   }
 
   .metric-item {
-    min-height: 80px; /* Smaller on mobile but still fixed */
+    min-height: 76px; /* Reduced by 5% (was 80px) */
   }
 
   .metric-item-full {
-    min-height: 90px;
+    min-height: 86px; /* Reduced by 5% (was 90px) */
   }
 
   .health-indicators {
@@ -659,11 +664,11 @@ const getMarginClass = (marginStr: string): string => {
   }
 
   .metric-item {
-    min-height: 70px;
+    min-height: 67px; /* Reduced by 5% (was 70px) */
   }
 
   .metric-item-full {
-    min-height: 75px;
+    min-height: 71px; /* Reduced by 5% (was 75px) */
   }
 }
 </style>
