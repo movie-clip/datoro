@@ -71,6 +71,20 @@ export interface MacroData {
   timestamp: string
 }
 
+export interface EUMacroData {
+  inflation: EconomicIndicator[]
+  unemploymentRate: EconomicIndicator[]
+  interestRate: EconomicIndicator[]  // ECB rate instead of Fed Funds
+  gdp: EconomicIndicator[]
+  buildingPermits: EconomicIndicator[]  // Housing equivalent
+  consumerConfidence: EconomicIndicator[]  // Consumer sentiment equivalent
+  retailSales: EconomicIndicator[]
+  indexStats: IndexStats[]  // European market indices (STOXX 50, DAX, CAC 40, FTSE 100)
+  timestamp: string
+}
+
+export type Region = 'US' | 'EU'
+
 /**
  * Fetch Treasury Rates (yield curve)
  */
@@ -154,7 +168,11 @@ export async function fetchRiskPremium(): Promise<RiskPremium[]> {
 /**
  * Fetch all macro data in one batch request (OPTIMIZED - 1 request instead of 10+)
  */
-export async function fetchAllMacroData(): Promise<MacroData> {
+export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroData | EUMacroData> {
+  if (region === 'EU') {
+    return fetchAllEUMacroData()
+  }
+  
   const from = getDateMonthsAgo(24) // 2 years of data
   const to = getTodayDate()
   
@@ -177,6 +195,42 @@ export async function fetchAllMacroData(): Promise<MacroData> {
   } catch (error) {
     console.error('[Macro] Batch fetch failed, falling back to individual requests:', error)
     return fetchAllMacroDataLegacy()
+  }
+}
+
+/**
+ * Fetch all EU macro data from Eurostat
+ */
+export async function fetchAllEUMacroData(): Promise<EUMacroData> {
+  console.log('[Macro] Fetching all EU macro data via Eurostat batch endpoint...')
+  const startTime = performance.now()
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/macro/eu-batch`)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch EU macro data: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    
+    const duration = performance.now() - startTime
+    console.log(`[Macro] Fetched all EU data in ${duration.toFixed(0)}ms (1 request)`)
+    
+    return data
+  } catch (error) {
+    console.error('[Macro] EU batch fetch failed:', error)
+    // Return empty data structure on failure
+    return {
+      inflation: [],
+      unemploymentRate: [],
+      interestRate: [],
+      gdp: [],
+      buildingPermits: [],
+      consumerConfidence: [],
+      retailSales: [],
+      timestamp: new Date().toISOString()
+    }
   }
 }
 

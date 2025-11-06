@@ -31,6 +31,11 @@
               </h2>
               
               <div class="index-cards">
+                <select v-model="selectedRegion" class="region-selector" @change="handleRegionChange">
+                  <option value="US">US</option>
+                  <option value="EU">EU</option>
+                </select>
+                
                 <div v-if="indexData.length === 0" class="index-card">
                   <div class="index-name">Loading...</div>
                   <div class="index-change">--</div>
@@ -73,15 +78,15 @@
 
               <!-- Retail Sales -->
               <div class="macro-card">
-                <h3>Retail Sales</h3>
+                <h3>Retail Sales{{ selectedRegion === 'EU' ? ' (Volume Index)' : '' }}</h3>
                 <div class="chart-container">
                   <v-chart :option="retailSalesChartOption" autoresize />
                 </div>
               </div>
 
-              <!-- Consumer Sentiment -->
+              <!-- Consumer Sentiment / Confidence -->
               <div class="macro-card">
-                <h3>Consumer Sentiment</h3>
+                <h3>{{ selectedRegion === 'EU' ? 'Consumer Confidence' : 'Consumer Sentiment' }}</h3>
                 <div class="chart-container">
                   <v-chart :option="consumerSentimentChartOption" autoresize />
                 </div>
@@ -89,22 +94,22 @@
 
               <!-- Inflation -->
               <div class="macro-card">
-                <h3>Inflation</h3>
+                <h3>{{ selectedRegion === 'EU' ? 'Inflation (HICP)' : 'Inflation' }}</h3>
                 <div class="chart-container">
                   <v-chart :option="inflationChartOption" autoresize />
                 </div>
               </div>
 
-              <!-- Federal Funds Rate -->
+              <!-- Interest Rate (Fed Funds / ECB) -->
               <div class="macro-card">
-                <h3>Federal Funds Rate</h3>
+                <h3>{{ selectedRegion === 'EU' ? 'ECB Interest Rate' : 'Federal Funds Rate' }}</h3>
                 <div class="chart-container">
                   <v-chart :option="fedFundsChartOption" autoresize />
                 </div>
               </div>
 
-              <!-- Market Risk Premium (Global) -->
-              <div class="macro-card">
+              <!-- Market Risk Premium (Global) - Only for US -->
+              <div v-if="selectedRegion === 'US'" class="macro-card">
                 <h3>Market Risk Premium (Global)</h3>
                 <div class="chart-container">
                   <v-chart :option="riskPremiumChartOption" autoresize />
@@ -130,7 +135,7 @@ import {
   GridComponent,
   LegendComponent
 } from 'echarts/components'
-import { fetchAllMacroData, type MacroData } from '../../services/macro/macroDataService'
+import { fetchAllMacroData, type MacroData, type EUMacroData, type Region } from '../../services/macro/macroDataService'
 import type { EChartsOption } from 'echarts'
 
 // Register ECharts components
@@ -157,13 +162,16 @@ interface Emits {
 const emit = defineEmits<Emits>()
 
 const overlayRef = ref<HTMLDivElement | null>(null)
-const macroData = ref<MacroData | null>(null)
+const macroData = ref<MacroData | EUMacroData | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const selectedRegion = ref<Region>('US')
 
-// Index data computed property
+// Index data computed property (only for US)
 const indexData = computed(() => {
-  if (!macroData.value?.indexStats) return []
+  if (selectedRegion.value === 'EU') return []
+  if (!macroData.value || !('indexStats' in macroData.value)) return []
+  if (!macroData.value.indexStats) return []
   
   const indexNames: Record<string, string> = {
     '^GSPC': 'S&P 500',
@@ -184,13 +192,18 @@ async function loadData() {
   try {
     loading.value = true
     error.value = null
-    macroData.value = await fetchAllMacroData()
+    macroData.value = await fetchAllMacroData(selectedRegion.value)
   } catch (err: any) {
     console.error('[Macro] Failed to load data:', err)
     error.value = err.message || 'Failed to load macro data'
   } finally {
     loading.value = false
   }
+}
+
+// Handle region change
+function handleRegionChange() {
+  loadData()
 }
 
 function retry() {
@@ -223,7 +236,8 @@ function handleEscape(event: KeyboardEvent) {
 
 // Chart options (same as MacroView.vue)
 const unemploymentChartOption = computed((): EChartsOption => {
-  if (!macroData.value?.unemploymentRate) return {}
+  const data = getUnemploymentData()
+  if (data.length === 0) return {}
   
   return {
     tooltip: {
@@ -239,7 +253,7 @@ const unemploymentChartOption = computed((): EChartsOption => {
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: macroData.value.unemploymentRate.map(d => d.date.substring(0, 7)),
+      data: data.map(d => d.date.substring(0, 7)),
       axisLabel: { color: '#999', rotate: 45 }
     },
     yAxis: {
@@ -249,7 +263,7 @@ const unemploymentChartOption = computed((): EChartsOption => {
     series: [{
       name: 'Unemployment Rate',
       type: 'line',
-      data: macroData.value.unemploymentRate.map(d => d.value),
+      data: data.map(d => d.value),
       smooth: true,
       lineStyle: { color: '#FF6B6B', width: 2 },
       itemStyle: { color: '#FF6B6B' },
@@ -268,7 +282,17 @@ const unemploymentChartOption = computed((): EChartsOption => {
 })
 
 const retailSalesChartOption = computed((): EChartsOption => {
-  if (!macroData.value?.retailSales) return {}
+  const data = getRetailSalesData()
+  if (data.length === 0) return {}
+  
+  const isEU = selectedRegion.value === 'EU'
+  const formatter = isEU ? 'Index: {value}' : '${value}B'
+  const tooltipFormatter = (params: any) => {
+    const point = params[0]
+    return isEU 
+      ? `${point.name}<br/>${point.seriesName}: ${point.value} (Index 2021=100)`
+      : `${point.name}<br/>${point.seriesName}: $${point.value}B`
+  }
   
   return {
     tooltip: {
@@ -276,25 +300,22 @@ const retailSalesChartOption = computed((): EChartsOption => {
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       borderColor: '#333',
       textStyle: { color: '#fff' },
-      formatter: (params: any) => {
-        const point = params[0]
-        return `${point.name}<br/>${point.seriesName}: $${point.value}B`
-      }
+      formatter: tooltipFormatter
     },
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: macroData.value.retailSales.map(d => d.date.substring(0, 7)),
+      data: data.map(d => d.date.substring(0, 7)),
       axisLabel: { color: '#999', rotate: 45 }
     },
     yAxis: {
       type: 'value',
-      axisLabel: { color: '#999', formatter: '${value}B' }
+      axisLabel: { color: '#999', formatter }
     },
     series: [{
       name: 'Retail Sales',
       type: 'bar',
-      data: macroData.value.retailSales.map(d => d.value),
+      data: data.map(d => d.value),
       itemStyle: {
         color: {
           type: 'linear',
@@ -309,8 +330,43 @@ const retailSalesChartOption = computed((): EChartsOption => {
   }
 })
 
+// Helper functions to get data based on region
+function getConsumerSentimentData() {
+  if (!macroData.value) return []
+  if (selectedRegion.value === 'EU') {
+    return 'consumerConfidence' in macroData.value ? macroData.value.consumerConfidence : []
+  }
+  return 'consumerSentiment' in macroData.value ? macroData.value.consumerSentiment : []
+}
+
+function getInterestRateData() {
+  if (!macroData.value) return []
+  if (selectedRegion.value === 'EU') {
+    return 'interestRate' in macroData.value ? macroData.value.interestRate : []
+  }
+  return 'federalFunds' in macroData.value ? macroData.value.federalFunds : []
+}
+
+function getRetailSalesData() {
+  if (!macroData.value) return []
+  return macroData.value.retailSales || []
+}
+
+function getUnemploymentData() {
+  if (!macroData.value) return []
+  return macroData.value.unemploymentRate || []
+}
+
+function getInflationData() {
+  if (!macroData.value) return []
+  return macroData.value.inflation || []
+}
+
 const consumerSentimentChartOption = computed((): EChartsOption => {
-  if (!macroData.value?.consumerSentiment) return {}
+  const data = getConsumerSentimentData()
+  if (data.length === 0) return {}
+  
+  const title = selectedRegion.value === 'EU' ? 'Consumer Confidence' : 'Consumer Sentiment'
   
   return {
     tooltip: {
@@ -322,7 +378,7 @@ const consumerSentimentChartOption = computed((): EChartsOption => {
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: macroData.value.consumerSentiment.map(d => d.date.substring(0, 7)),
+      data: data.map(d => d.date.substring(0, 7)),
       axisLabel: { color: '#999', rotate: 45 }
     },
     yAxis: {
@@ -330,9 +386,9 @@ const consumerSentimentChartOption = computed((): EChartsOption => {
       axisLabel: { color: '#999' }
     },
     series: [{
-      name: 'Consumer Sentiment',
+      name: title,
       type: 'line',
-      data: macroData.value.consumerSentiment.map(d => d.value),
+      data: data.map(d => d.value),
       smooth: true,
       lineStyle: { color: '#4ECDC4', width: 2 },
       itemStyle: { color: '#4ECDC4' },
@@ -351,7 +407,10 @@ const consumerSentimentChartOption = computed((): EChartsOption => {
 })
 
 const inflationChartOption = computed((): EChartsOption => {
-  if (!macroData.value?.inflation) return {}
+  const data = getInflationData()
+  if (data.length === 0) return {}
+  
+  const title = selectedRegion.value === 'EU' ? 'Inflation (HICP)' : 'Inflation'
   
   return {
     tooltip: {
@@ -367,7 +426,7 @@ const inflationChartOption = computed((): EChartsOption => {
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: macroData.value.inflation.map(d => d.date.substring(0, 7)),
+      data: data.map(d => d.date.substring(0, 7)),
       axisLabel: { color: '#999', rotate: 45 }
     },
     yAxis: {
@@ -375,9 +434,9 @@ const inflationChartOption = computed((): EChartsOption => {
       axisLabel: { color: '#999', formatter: '{value}%' }
     },
     series: [{
-      name: 'Inflation',
+      name: title,
       type: 'line',
-      data: macroData.value.inflation.map(d => d.value),
+      data: data.map(d => d.value),
       smooth: true,
       lineStyle: { color: '#FFD93D', width: 2 },
       itemStyle: { color: '#FFD93D' },
@@ -396,7 +455,10 @@ const inflationChartOption = computed((): EChartsOption => {
 })
 
 const fedFundsChartOption = computed((): EChartsOption => {
-  if (!macroData.value?.federalFunds) return {}
+  const data = getInterestRateData()
+  if (data.length === 0) return {}
+  
+  const title = selectedRegion.value === 'EU' ? 'ECB Interest Rate' : 'Federal Funds Rate'
   
   return {
     tooltip: {
@@ -412,7 +474,7 @@ const fedFundsChartOption = computed((): EChartsOption => {
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: macroData.value.federalFunds.map(d => d.date.substring(0, 7)),
+      data: data.map(d => d.date.substring(0, 7)),
       axisLabel: { color: '#999', rotate: 45 }
     },
     yAxis: {
@@ -420,9 +482,9 @@ const fedFundsChartOption = computed((): EChartsOption => {
       axisLabel: { color: '#999', formatter: '{value}%' }
     },
     series: [{
-      name: 'Federal Funds Rate',
+      name: title,
       type: 'line',
-      data: macroData.value.federalFunds.map(d => d.value),
+      data: data.map(d => d.value),
       smooth: true,
       lineStyle: { color: '#A78BFA', width: 2 },
       itemStyle: { color: '#A78BFA' },
@@ -553,14 +615,16 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 20px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 }
 
 .header-content {
   display: flex;
-  align-items: center;
-  gap: 24px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
   flex: 1;
 }
 
@@ -568,10 +632,45 @@ onUnmounted(() => {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.region-selector {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #00C087 0%, #00805A 100%);
+  border: 2px solid #00C087;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 110px;
+  text-align: center;
+  height: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.region-selector:hover {
+  background: linear-gradient(135deg, rgba(0, 192, 135, 0.25) 0%, rgba(0, 192, 135, 0.15) 100%);
+  border-color: rgba(0, 192, 135, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 192, 135, 0.2);
+}
+
+.region-selector:focus {
+  outline: none;
+  border-color: #00C087;
+  box-shadow: 0 0 0 3px rgba(0, 192, 135, 0.3);
+}
+
+.region-selector option {
+  background: #1A1A1D;
+  color: #fff;
 }
 
 .header-icon {

@@ -1,13 +1,19 @@
 <template>
   <div class="macro-header">
     <div class="header-content">
-      <h2>Macro Economic Dashboard</h2>
+      <div class="title-region-wrapper">
+        <h2>Macro Economic Dashboard</h2>
+        <select 
+          :value="selectedRegion" 
+          @change="$emit('region-change', ($event.target as HTMLSelectElement).value as Region)" 
+          class="region-selector"
+        >
+          <option value="US">US</option>
+          <option value="EU">EU</option>
+        </select>
+      </div>
       
-      <div class="index-cards">
-        <div v-if="indexData.length === 0" class="index-card">
-          <div class="index-name">Loading...</div>
-          <div class="index-change">--</div>
-        </div>
+      <div v-if="indexData.length > 0" class="index-cards">
         <div v-for="(index, i) in indexData" :key="i" class="index-card">
           <div class="index-name">{{ index.name }}</div>
           <div class="index-change" :class="{ positive: index.change >= 0, negative: index.change < 0 }">
@@ -22,13 +28,22 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import type { IndexData } from '../../types/macro.types'
+import type { Region } from '../../services/macro/macroDataService'
 
 defineProps({
   indexData: {
     type: Array as PropType<IndexData[]>,
     default: () => []
+  },
+  selectedRegion: {
+    type: String as PropType<Region>,
+    default: 'US'
   }
 })
+
+defineEmits<{
+  'region-change': [region: Region]
+}>()
 </script>
 
 <style scoped>
@@ -51,6 +66,44 @@ defineProps({
   font-weight: 600;
   margin: 0;
   color: #999;
+}
+
+.title-region-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.region-selector {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #00594C 0%, #004438 100%);
+  border: 2px solid #00594C;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 100px;
+  text-align: center;
+  outline: none;
+}
+
+.region-selector:hover {
+  background: linear-gradient(135deg, #00755F 0%, #00594C 100%);
+  border-color: #00755F;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 89, 76, 0.3);
+}
+
+.region-selector:focus {
+  border-color: #00755F;
+  box-shadow: 0 0 0 3px rgba(0, 89, 76, 0.3);
+}
+
+.region-selector option {
+  background: #1A1A1D;
+  color: #fff;
 }
 
 .index-cards {

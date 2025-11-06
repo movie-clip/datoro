@@ -392,6 +392,77 @@ router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (re
 }))
 
 /**
+ * GET /api/macro/eu-batch
+ * Fetch ALL EU macro data from Eurostat in a single request
+ * Cache: 1 day (Eurostat updates twice daily)
+ * 
+ * No API key required - Eurostat is free and public
+ */
+router.get('/eu-batch', asyncHandler(async (req: Request, res: Response) => {
+  // Import Eurostat service dynamically to avoid circular dependencies
+  const { fetchAllEUMacroData } = await import('../services/eurostatService.js')
+  
+  // Generate cache key
+  const cacheKey = cache.generateKey('macro', 'eu-batch')
+  
+  // Check cache first (1 day TTL for Eurostat data)
+  const cached = await cache.get(cacheKey)
+  if (cached.data) {
+    logger.info(`[Macro] EU Batch → CACHE HIT (${cached.source})`)
+    res.setHeader('X-Cache', cached.source || 'hit')
+    return res.json(cached.data)
+  }
+  
+  logger.info(`[Macro] EU Batch → Fetching all data from Eurostat API`)
+  const startTime = Date.now()
+  
+  // Fetch all EU data in parallel (no rate limiting needed - free API)
+  const data = await fetchWithDeduplication(cacheKey, async () => {
+    // Fetch Eurostat data
+    const euData = await fetchAllEUMacroData()
+    
+    // Use the same global market indices as US region (S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX)
+    const globalIndices = ['^GSPC', '^DJI', '^RUT', '^HSI', '^GDAXI']
+    const indexStatsPromises = globalIndices.map(async (symbol) => {
+      try {
+        const response = await fetch(
+          `${FMP_BASE_URL}/api/v3/stock-price-change/${symbol}?apikey=${FMP_API_KEY}`
+        )
+        if (!response.ok) return null
+        const indexData = await response.json() as any[]
+        return indexData[0] || null
+      } catch (error) {
+        logger.error(`[Macro] Failed to fetch index stats for ${symbol}:`, error)
+        return null
+      }
+    })
+    
+    const indexStats = (await Promise.all(indexStatsPromises)).filter(Boolean)
+    
+    return {
+      inflation: euData.inflation,
+      unemploymentRate: euData.unemploymentRate,
+      interestRate: euData.interestRate,  // ECB rate instead of Fed Funds
+      gdp: euData.gdp,
+      buildingPermits: euData.buildingPermits,  // Housing equivalent
+      consumerConfidence: euData.consumerConfidence,  // Consumer sentiment equivalent
+      retailSales: euData.retailSales,
+      indexStats: indexStats,  // Same global indices as US region (S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX)
+      timestamp: new Date().toISOString()
+    }
+  })
+  
+  const duration = Date.now() - startTime
+  logger.info(`[Macro] EU Batch → Fetched all data in ${duration}ms (7 Eurostat + ${data.indexStats?.length || 0} global index calls)`)
+  
+  // Cache for 1 day (86400 seconds)
+  await cache.set(cacheKey, data, 86400)
+  
+  res.setHeader('X-Cache', 'miss')
+  res.json(data)
+}))
+
+/**
  * GET /api/macro/batch
  * Fetch ALL macro data in a single request (optimized)
  * Cache: 5 minutes (real-time data updates frequently)

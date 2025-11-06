@@ -2,7 +2,11 @@
   <div class="macro-dashboard">
     <!-- Fixed Header -->
     <div class="macro-header-wrapper">
-      <MacroHeader :index-data="indexData" />
+      <MacroHeader 
+        :index-data="indexData" 
+        :selected-region="selectedRegion"
+        @region-change="handleRegionChange"
+      />
     </div>
 
     <!-- Scrollable Body -->
@@ -19,7 +23,7 @@
         <MacroChart
           v-for="(config, index) in chartConfigs"
           :key="config.id"
-          :title="config.title"
+          :title="getChartTitle(config)"
           :chart="charts[index]!"
           :chart-option="getChartOption(config).value"
           :loading="loading"
@@ -44,7 +48,7 @@ import {
   ToolboxComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { fetchAllMacroData, type MacroData, type EconomicIndicator } from '../services/macro/macroDataService'
+import { fetchAllMacroData, type MacroData, type EUMacroData, type EconomicIndicator, type Region } from '../services/macro/macroDataService'
 import { useMacroChart } from '../composables/useMacroChart'
 import { useChartSync } from '../composables/useChartSync'
 import { createChartOptions, DEFAULT_SLIDER_CONFIG } from '../utils/chartConfigFactory'
@@ -74,17 +78,19 @@ const chartConfigs = MACRO_CHART_CONFIGS
 
 // Frontend cache for macro data
 interface CachedMacroData {
-  data: MacroData
+  data: MacroData | EUMacroData
   timestamp: number
+  region: Region
 }
 
 let macroDataCache: CachedMacroData | null = null
 
 /**
- * Check if cache is valid (not expired)
+ * Check if cache is valid (not expired) and region matches
  */
-function isCacheValid(): boolean {
+function isCacheValid(region: Region): boolean {
   if (!macroDataCache) return false
+  if (macroDataCache.region !== region) return false
   const now = Date.now()
   const age = now - macroDataCache.timestamp
   return age < CACHE_TTL.MACRO_DATA
@@ -93,8 +99,8 @@ function isCacheValid(): boolean {
 /**
  * Get cached data if valid
  */
-function getCachedData(): MacroData | null {
-  if (isCacheValid()) {
+function getCachedData(region: Region): MacroData | EUMacroData | null {
+  if (isCacheValid(region)) {
     console.log('[Macro] Using cached data (age:', Math.floor((Date.now() - macroDataCache!.timestamp) / 1000), 's)')
     return macroDataCache!.data
   }
@@ -104,18 +110,22 @@ function getCachedData(): MacroData | null {
 /**
  * Store data in cache
  */
-function setCachedData(data: MacroData): void {
+function setCachedData(data: MacroData | EUMacroData, region: Region): void {
   macroDataCache = {
     data,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    region
   }
-  console.log('[Macro] Data cached for', CACHE_TTL.MACRO_DATA / 1000, 'seconds')
+  console.log('[Macro] Data cached for', CACHE_TTL.MACRO_DATA / 1000, 'seconds, region:', region)
 }
+
+// Region state
+const selectedRegion = ref<Region>('US')
 
 // Data state
 const loading = ref(true)
 const error = ref<string | null>(null)
-const macroData = ref<MacroData | null>(null)
+const macroData = ref<MacroData | EUMacroData | null>(null)
 
 // Initialize charts using composable
 const charts = chartConfigs.map(config => 
@@ -130,10 +140,50 @@ const { setupChartSync } = useChartSync()
  */
 function convertToChartData(data: EconomicIndicator[] | undefined): [number, number][] {
   if (!data || data.length === 0) return []
-  return data.map(item => [
-    new Date(item.date).getTime(),
-    item.value
-  ])
+  return data.map(item => {
+    // Handle both YYYY-MM-DD and YYYY-MM formats (Eurostat uses YYYY-MM)
+    let dateStr = item.date
+    if (/^\d{4}-\d{2}$/.test(dateStr)) {
+      // If format is YYYY-MM, append -01 to make it YYYY-MM-DD
+      dateStr = `${dateStr}-01`
+    }
+    return [
+      new Date(dateStr).getTime(),
+      item.value
+    ]
+  })
+}
+
+/**
+ * Map chart data key to the correct key based on region
+ */
+function getDataKeyForRegion(chartDataKey: string): string {
+  if (selectedRegion.value === 'EU') {
+    // Map US keys to EU keys
+    const keyMap: Record<string, string> = {
+      'federalFunds': 'interestRate',       // Fed Funds → ECB Interest Rate
+      'consumerSentiment': 'consumerConfidence',  // Consumer Sentiment → Consumer Confidence
+      'housingStarts': 'buildingPermits'    // Housing Starts → Building Permits
+    }
+    return keyMap[chartDataKey] || chartDataKey
+  }
+  return chartDataKey
+}
+
+/**
+ * Get chart title based on region
+ */
+function getChartTitle(config: ChartConfig): string {
+  if (selectedRegion.value === 'EU') {
+    const titleMap: Record<string, string> = {
+      'Federal Funds Rate': 'ECB Interest Rate',
+      'Consumer Sentiment': 'Consumer Confidence',
+      'Housing Starts': 'Building Permits',
+      'Retail Sales': 'Retail Sales (Volume Index)'
+    }
+    return titleMap[config.title] || config.title
+  }
+  return config.title
 }
 
 /**
@@ -141,13 +191,26 @@ function convertToChartData(data: EconomicIndicator[] | undefined): [number, num
  */
 function getChartOption(config: ChartConfig) {
   return computed(() => {
-    const dataKey = config.dataKey as keyof MacroData
-    const rawData = macroData.value?.[dataKey] as EconomicIndicator[] | undefined
+    if (!macroData.value) {
+      return createChartOptions({
+        data: null,
+        title: getChartTitle(config),
+        color: config.color,
+        yAxisLabel: config.yAxisLabel,
+        sliderConfig: DEFAULT_SLIDER_CONFIG,
+        valueFormatter: config.valueFormatter,
+        tooltipFormatter: config.tooltipFormatter,
+        showAverage: false
+      })
+    }
+
+    const dataKey = getDataKeyForRegion(config.dataKey) as keyof (MacroData & EUMacroData)
+    const rawData = (macroData.value as any)[dataKey] as EconomicIndicator[] | undefined
     const chartData = convertToChartData(rawData)
 
     return createChartOptions({
       data: chartData.length > 0 ? chartData : null,
-      title: config.title,
+      title: getChartTitle(config),
       color: config.color,
       yAxisLabel: config.yAxisLabel,
       sliderConfig: DEFAULT_SLIDER_CONFIG,
@@ -159,12 +222,23 @@ function getChartOption(config: ChartConfig) {
 }
 
 /**
+ * Check if a chart has data to display
+ */
+function hasChartData(config: ChartConfig): boolean {
+  if (!macroData.value) return false
+  
+  const dataKey = getDataKeyForRegion(config.dataKey) as keyof (MacroData & EUMacroData)
+  const rawData = (macroData.value as any)[dataKey] as EconomicIndicator[] | undefined
+  
+  return rawData !== undefined && rawData !== null && rawData.length > 0
+}
+
+/**
  * Index Cards Data (S&P 500, Dow Jones, Russell 2000, Hang Seng, DAX)
+ * Shows the same global market indices for both US and EU regions
  */
 const indexData = computed(() => {
-  if (!macroData.value?.indexStats || macroData.value.indexStats.length === 0) {
-    return []
-  }
+  if (!macroData.value) return []
   
   const indexNames: Record<string, string> = {
     '^GSPC': 'S&P 500',
@@ -174,13 +248,26 @@ const indexData = computed(() => {
     '^GDAXI': 'DAX'
   }
   
-  return macroData.value.indexStats
-    .filter(stat => stat && stat.symbol && typeof stat['1D'] === 'number')
-    .map(stat => ({
+  const data = macroData.value as (MacroData | EUMacroData)
+  if (!data?.indexStats || data.indexStats.length === 0) {
+    return []
+  }
+  
+  return data.indexStats
+    .filter((stat: any) => stat && stat.symbol && typeof stat['1D'] === 'number')
+    .map((stat: any) => ({
       name: indexNames[stat.symbol] || stat.symbol,
       change: stat['1D'] || 0
     }))
 })
+
+/**
+ * Handle region change
+ */
+function handleRegionChange(newRegion: Region) {
+  selectedRegion.value = newRegion
+  loadData()
+}
 
 /**
  * Load macro economic data with caching
@@ -191,7 +278,7 @@ const loadData = async () => {
     error.value = null
     
     // Check cache first
-    const cached = getCachedData()
+    const cached = getCachedData(selectedRegion.value)
     if (cached) {
       macroData.value = cached
       loading.value = false
@@ -199,11 +286,11 @@ const loadData = async () => {
     }
     
     // Fetch fresh data
-    const freshData = await fetchAllMacroData()
+    const freshData = await fetchAllMacroData(selectedRegion.value)
     macroData.value = freshData
     
     // Store in cache
-    setCachedData(freshData)
+    setCachedData(freshData, selectedRegion.value)
   } catch (err: any) {
     console.error('[Macro] Failed to load data:', err)
     error.value = err.message || 'Failed to load macro data'
@@ -310,6 +397,24 @@ onMounted(async () => {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
+}
+
+/* ============================================
+   INFO MESSAGE
+   ============================================ */
+.info-message {
+  background: rgba(0, 89, 76, 0.1);
+  border: 1px solid rgba(0, 89, 76, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.info-message p {
+  margin: 0;
+  color: #00B59A;
+  font-size: 14px;
 }
 
 .retry-btn:hover {
