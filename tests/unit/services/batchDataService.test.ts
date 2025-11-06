@@ -424,7 +424,7 @@ describe('Batch Data Service', () => {
         
       nock(FMP_BASE_URL)
         .get(`/api/v3/historical-price-full/${TEST_TICKER}`)
-        .query({ apikey: TEST_API_KEY })
+        .query(true)  // Match any query parameters (includes from, apikey)
         .reply(200, mockPriceHistory)
         
       nock(FMP_BASE_URL)

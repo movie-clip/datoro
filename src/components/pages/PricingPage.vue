@@ -4,17 +4,41 @@
       <div
         v-if="isOpen"
         class="modal-overlay"
-        @click="emit('close')"
         tabindex="0"
+        @click="emit('close')"
       >
-        <div class="modal-container" @click.stop>
+        <div
+          class="modal-container"
+          @click.stop
+        >
           <!-- Header -->
           <div class="modal-header">
             <h2>Choose Your Plan</h2>
-            <button class="close-button" @click="emit('close')" aria-label="Close">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="close-button"
+              aria-label="Close"
+              @click="emit('close')"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
           </div>
@@ -22,13 +46,15 @@
           <!-- Content -->
           <div class="modal-body">
             <div class="pricing-intro">
-              <p class="subtitle">Start your 30-day free trial today</p>
+              <p class="subtitle">
+                Start your 30-day free trial today
+              </p>
             </div>
 
             <div class="pricing-grid">
               <PricingCard 
                 :price="19"
-                :trialDays="30"
+                :trial-days="30"
                 :features="premiumFeatures"
               />
             </div>

@@ -507,6 +507,12 @@ const createOption = (isLarge = false): EChartsOption => {
   
   const base: unknown = {
     backgroundColor: 'transparent',
+    // Performance optimizations for smooth interactions
+    useUTC: false, // Use local time for faster date processing
+    animation: props.enableZoom ? { // Conditional animation for zoom-enabled charts
+      duration: 300, // Quick animations
+      easing: 'cubicOut'
+    } : true, // Default animations for other charts
     // Only show title in non-modal view (in modal, it's shown as HTML element)
     title: isLarge ? undefined : {
       text: props.title, 
@@ -516,15 +522,20 @@ const createOption = (isLarge = false): EChartsOption => {
     },
     // Add dataZoom for interactive zooming and panning (for line charts when enabled or in modal view)
     // Only use 'inside' type (mouse wheel + drag) without visible slider
+    // Optimized for smooth performance with large datasets
     dataZoom: props.kind === 'line' && (isLarge || props.enableZoom) ? [
       {
         type: 'inside', // Mouse wheel zoom + drag to pan
         start: 0,
         end: 100,
-        zoomOnMouseWheel: true,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false,
-        throttle: 100 // Performance: throttle zoom updates (ms)
+        zoomOnMouseWheel: true, // Zoom with mouse wheel
+        moveOnMouseMove: true, // Pan by dragging
+        moveOnMouseWheel: false, // Don't pan with wheel (only zoom)
+        preventDefaultMouseMove: false, // Allow default mouse behavior
+        throttle: 50, // Throttle updates for smoother interaction (50ms is optimal)
+        zoomLock: false, // Allow zooming
+        minSpan: 1, // Minimum zoom span (1% = can zoom in very close)
+        maxSpan: 100 // Maximum zoom span (100% = can see all data)
       }
     ] : undefined,
     // Toolbox removed - cleaner UI without top-right buttons

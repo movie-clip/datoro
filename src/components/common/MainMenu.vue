@@ -1,6 +1,14 @@
 <template>
-  <div class="main-menu-overlay" :class="{ 'is-open': isOpen }" @click="emit('close')">
-    <div class="main-menu" :class="{ 'is-open': isOpen }" @click.stop>
+  <div
+    class="main-menu-overlay"
+    :class="{ 'is-open': isOpen }"
+    @click="emit('close')"
+  >
+    <div
+      class="main-menu"
+      :class="{ 'is-open': isOpen }"
+      @click.stop
+    >
       <!-- Header -->
       <div class="menu-header">
         <div class="menu-title-section">
@@ -8,11 +16,18 @@
           <button 
             v-if="currentView === 'watchlist'" 
             class="back-button" 
-            @click="currentView = 'menu'"
             title="Back to menu"
+            @click="currentView = 'menu'"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
           
@@ -31,15 +46,26 @@
       <div class="menu-content-container">
         <!-- Menu Content (Main View) -->
         <Transition name="slide-left">
-          <div v-if="currentView === 'menu'" key="menu" class="menu-content">
+          <div
+            v-if="currentView === 'menu'"
+            key="menu"
+            class="menu-content"
+          >
             <!-- Watchlist Button -->
             <button 
               v-if="isAuthenticated"
               class="menu-item" 
               @click="showWatchlist"
             >
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              <svg
+                class="menu-item-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
               <span>Watchlist</span>
             </button>
@@ -82,10 +108,32 @@
               :disabled="!hasActiveSubscription"
               @click="showMacro"
             >
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="20" x2="12" y2="10"/>
-                <line x1="18" y1="20" x2="18" y2="4"/>
-                <line x1="6" y1="20" x2="6" y2="16"/>
+              <svg
+                class="menu-item-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="12"
+                  y1="20"
+                  x2="12"
+                  y2="10"
+                />
+                <line
+                  x1="18"
+                  y1="20"
+                  x2="18"
+                  y2="4"
+                />
+                <line
+                  x1="6"
+                  y1="20"
+                  x2="6"
+                  y2="16"
+                />
               </svg>
               <span>Macro Dashboard</span>
             </button>
@@ -96,9 +144,20 @@
               class="menu-item" 
               @click="showAccountSettings"
             >
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+              <svg
+                class="menu-item-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle
+                  cx="12"
+                  cy="7"
+                  r="4"
+                />
               </svg>
               <span>Account</span>
             </button>
@@ -108,107 +167,176 @@
               class="menu-item" 
               @click="showFeedback"
             >
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              <svg
+                class="menu-item-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
               <span>Send Feedback</span>
             </button>
 
             <!-- Placeholder for future menu items -->
-            <div class="menu-section-divider"></div>
+            <div class="menu-section-divider" />
             
             <!-- Coming Soon items (examples) -->
             <div class="menu-item disabled">
-              <svg class="menu-item-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
+              <svg
+                class="menu-item-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect
+                  x="3"
+                  y="3"
+                  width="7"
+                  height="7"
+                />
+                <rect
+                  x="14"
+                  y="3"
+                  width="7"
+                  height="7"
+                />
+                <rect
+                  x="14"
+                  y="14"
+                  width="7"
+                  height="7"
+                />
+                <rect
+                  x="3"
+                  y="14"
+                  width="7"
+                  height="7"
+                />
               </svg>
               <span>Macro</span>
               <span class="coming-soon-badge">Soon</span>
             </div>
-            
           </div>
         </Transition>
 
         <!-- Watchlist Content View -->
         <Transition name="slide-right">
-          <div v-if="currentView === 'watchlist'" key="watchlist" class="menu-content watchlist-content">
+          <div
+            v-if="currentView === 'watchlist'"
+            key="watchlist"
+            class="menu-content watchlist-content"
+          >
             <!-- Watchlist Dropdown Selector -->
-            <div v-if="isAuthenticated" class="watchlist-dropdown-container">
+            <div
+              v-if="isAuthenticated"
+              class="watchlist-dropdown-container"
+            >
               <WatchlistDropdown />
             </div>
 
             <!-- Loading state -->
-            <div v-if="loading" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading watchlist...</p>
-        </div>
-        
-        <!-- Error state -->
-        <div v-else-if="error" class="error-state">
-          <p>{{ error }}</p>
-        </div>
-        
-        <!-- Empty state -->
-        <div v-else-if="!watchlistItems.length" class="empty-state">
-          <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          <p>Your watchlist is empty</p>
-          <p class="empty-subtitle">Click the star icon next to any ticker to add it to your watchlist</p>
-        </div>
-        
-        <!-- Watchlist items -->
-        <div v-else class="watchlist-items">
-          <TransitionGroup name="watchlist-item">
-            <div 
-              v-for="(item, index) in watchlistItems" 
-              :key="item.ticker"
-              class="watchlist-item"
-              :class="{ 'drag-over': dragOverIndex === index }"
-              draggable="true"
-              @dragstart="handleDragStart($event, index)"
-              @dragend="handleDragEnd"
-              @dragover="handleDragOver($event, index)"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, index)"
-              @click="goToTicker(item.ticker)"
+            <div
+              v-if="loading"
+              class="loading-state"
             >
-              <!-- Drag handle icon -->
-              <div class="drag-handle">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm4-16h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
-                </svg>
-              </div>
-              
-              <div class="ticker-info">
-                <img 
-                  :src="getIconUrl(item.ticker)"
-                  :alt="`${item.ticker} logo`"
-                  class="company-icon"
-                  loading="lazy"
-                  decoding="async"
-                  @error="handleImageError"
-                >
-              <div class="ticker-text">
-                <span class="ticker-symbol">{{ item.ticker }}</span>
-                <span class="ticker-date">{{ formatDate(item.addedAt) }}</span>
-              </div>
+              <div class="spinner" />
+              <p>Loading watchlist...</p>
             </div>
-            <button 
-              class="remove-btn"
-              @click.stop="handleRemove(item.ticker)"
-              title="Remove from watchlist"
+        
+            <!-- Error state -->
+            <div
+              v-else-if="error"
+              class="error-state"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              <p>{{ error }}</p>
+            </div>
+        
+            <!-- Empty state -->
+            <div
+              v-else-if="!watchlistItems.length"
+              class="empty-state"
+            >
+              <svg
+                class="empty-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
-            </button>
-          </div>
-          </TransitionGroup>
-        </div>
+              <p>Your watchlist is empty</p>
+              <p class="empty-subtitle">
+                Click the star icon next to any ticker to add it to your watchlist
+              </p>
+            </div>
+        
+            <!-- Watchlist items -->
+            <div
+              v-else
+              class="watchlist-items"
+            >
+              <TransitionGroup name="watchlist-item">
+                <div 
+                  v-for="(item, index) in watchlistItems" 
+                  :key="item.ticker"
+                  class="watchlist-item"
+                  :class="{ 'drag-over': dragOverIndex === index }"
+                  draggable="true"
+                  @dragstart="handleDragStart($event, index)"
+                  @dragend="handleDragEnd"
+                  @dragover="handleDragOver($event, index)"
+                  @dragleave="handleDragLeave"
+                  @drop="handleDrop($event, index)"
+                  @click="goToTicker(item.ticker)"
+                >
+                  <!-- Drag handle icon -->
+                  <div class="drag-handle">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm4-16h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z" />
+                    </svg>
+                  </div>
+              
+                  <div class="ticker-info">
+                    <img 
+                      :src="getIconUrl(item.ticker)"
+                      :alt="`${item.ticker} logo`"
+                      class="company-icon"
+                      loading="lazy"
+                      decoding="async"
+                      @error="handleImageError"
+                    >
+                    <div class="ticker-text">
+                      <span class="ticker-symbol">{{ item.ticker }}</span>
+                      <span class="ticker-date">{{ formatDate(item.addedAt) }}</span>
+                    </div>
+                  </div>
+                  <button 
+                    class="remove-btn"
+                    title="Remove from watchlist"
+                    @click.stop="handleRemove(item.ticker)"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </button>
+                </div>
+              </TransitionGroup>
+            </div>
           </div>
         </Transition>
       </div>
@@ -220,7 +348,7 @@
     <!-- Account Settings Modal -->
     <AccountSettings 
       v-if="isAccountSettingsOpen"
-      :isOpen="isAccountSettingsOpen"
+      :is-open="isAccountSettingsOpen"
       @close="isAccountSettingsOpen = false"
     />
   </div>

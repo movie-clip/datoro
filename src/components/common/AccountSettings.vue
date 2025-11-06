@@ -4,17 +4,41 @@
       <div
         v-if="isOpen"
         class="modal-overlay"
-        @click="emit('close')"
         tabindex="0"
+        @click="emit('close')"
       >
-        <div class="modal-container" @click.stop>
+        <div
+          class="modal-container"
+          @click.stop
+        >
           <!-- Header -->
           <div class="modal-header">
             <h2>Account Settings</h2>
-            <button class="close-button" @click="emit('close')" aria-label="Close">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="close-button"
+              aria-label="Close"
+              @click="emit('close')"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
           </div>
@@ -25,19 +49,38 @@
             <section class="settings-section">
               <h3>Profile</h3>
               <div class="profile-info">
-                <div v-if="user?.avatarUrl" class="avatar">
-                  <img :src="user.avatarUrl" :alt="user.name || 'User'" />
+                <div
+                  v-if="user?.avatarUrl"
+                  class="avatar"
+                >
+                  <img
+                    :src="user.avatarUrl"
+                    :alt="user.name || 'User'"
+                  >
                 </div>
-                <div v-else class="avatar avatar-placeholder">
+                <div
+                  v-else
+                  class="avatar avatar-placeholder"
+                >
                   {{ userInitials }}
                 </div>
                 <div class="user-details">
-                  <p class="user-name">{{ user?.name || 'User' }}</p>
-                  <p class="user-email">{{ user?.email }}</p>
-                  <p v-if="user?.emailVerified" class="email-verified">
+                  <p class="user-name">
+                    {{ user?.name || 'User' }}
+                  </p>
+                  <p class="user-email">
+                    {{ user?.email }}
+                  </p>
+                  <p
+                    v-if="user?.emailVerified"
+                    class="email-verified"
+                  >
                     ✓ Email verified
                   </p>
-                  <p v-else class="email-not-verified">
+                  <p
+                    v-else
+                    class="email-not-verified"
+                  >
                     ⚠️ Email not verified
                   </p>
                 </div>
@@ -54,7 +97,11 @@
             <section class="settings-section">
               <h3>Account</h3>
               <div class="action-buttons">
-                <button @click="handleLogout" class="btn-logout" :disabled="loggingOut">
+                <button
+                  class="btn-logout"
+                  :disabled="loggingOut"
+                  @click="handleLogout"
+                >
                   {{ loggingOut ? 'Signing out...' : 'Sign Out' }}
                 </button>
               </div>

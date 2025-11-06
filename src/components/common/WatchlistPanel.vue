@@ -79,47 +79,85 @@ const formatDate = (dateString) => {
 </script>
 
 <template>
-  <div class="watchlist-overlay" :class="{ 'is-open': isOpen }" @click="emit('close')">
-    <div class="watchlist-panel" :class="{ 'is-open': isOpen }" @click.stop>
+  <div
+    class="watchlist-overlay"
+    :class="{ 'is-open': isOpen }"
+    @click="emit('close')"
+  >
+    <div
+      class="watchlist-panel"
+      :class="{ 'is-open': isOpen }"
+      @click.stop
+    >
       <!-- Header -->
       <div class="panel-header">
         <h2>⭐ Watchlist</h2>
-        <button class="close-btn" @click="emit('close')" title="Close">×</button>
+        <button
+          class="close-btn"
+          title="Close"
+          @click="emit('close')"
+        >
+          ×
+        </button>
       </div>
       
       <!-- Content -->
       <div class="panel-content">
         <!-- Loading state -->
-        <div v-if="loading" class="loading-state">
-          <div class="spinner"></div>
+        <div
+          v-if="loading"
+          class="loading-state"
+        >
+          <div class="spinner" />
           <p>Loading watchlist...</p>
         </div>
         
         <!-- Error state -->
-        <div v-else-if="error" class="error-state">
+        <div
+          v-else-if="error"
+          class="error-state"
+        >
           <p>{{ error }}</p>
-          <button v-if="error.includes('log in')" @click="emit('close')">
+          <button
+            v-if="error.includes('log in')"
+            @click="emit('close')"
+          >
             Close
           </button>
         </div>
         
         <!-- Empty state -->
-        <div v-else-if="watchlist.length === 0" class="empty-state">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        <div
+          v-else-if="watchlist.length === 0"
+          class="empty-state"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
           <h3>No tickers in watchlist</h3>
           <p>Click the star icon next to any ticker to add it to your watchlist</p>
         </div>
         
         <!-- Watchlist items -->
-        <div v-else class="watchlist-items">
+        <div
+          v-else
+          class="watchlist-items"
+        >
           <div 
             v-for="item in watchlist" 
             :key="item.ticker"
             class="watchlist-item"
           >
-            <div class="item-main" @click="goToTicker(item.ticker)">
+            <div
+              class="item-main"
+              @click="goToTicker(item.ticker)"
+            >
               <div class="item-info">
                 <span class="item-ticker">{{ item.ticker }}</span>
                 <span class="item-date">{{ formatDate(item.addedAt) }}</span>
