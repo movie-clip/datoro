@@ -148,6 +148,22 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : [DEV_ORIGIN];
 
+// Production safety check: Prevent silent CORS failures
+if (process.env.NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
+  logger.error('[CORS] CRITICAL: ALLOWED_ORIGINS not set in production!')
+  logger.error('[CORS] This will block all production requests.')
+  logger.error('[CORS] Check Render dashboard environment variables.')
+  logger.error(`[CORS] Currently falling back to DEV_ORIGIN: ${DEV_ORIGIN}`)
+  // In production without ALLOWED_ORIGINS, use a sensible default
+  if (!allowedOrigins.includes('https://datoro.onrender.com')) {
+    allowedOrigins.push('https://datoro.onrender.com')
+    logger.warn('[CORS] Auto-adding https://datoro.onrender.com as emergency fallback')
+  }
+}
+
+logger.info(`[CORS] Allowed origins: ${JSON.stringify(allowedOrigins)}`)
+logger.info(`[CORS] NODE_ENV: ${process.env.NODE_ENV}`)
+
 app.use(cors({ 
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, Postman, curl)
