@@ -6,6 +6,7 @@ import { getSegmentColors } from '../utils/segmentColors'
 
 type Period = 'annual' | 'quarterly'
 type ViewMode = 'total' | 'product' | 'geographic'
+type SeriesPoint = [number, number] | [number, number, string, string]
 
 interface ViewModeOption {
   label: string
@@ -25,7 +26,8 @@ export interface UseRevenueCategorySeriesReturn {
   period: ComputedRef<Period>
   viewMode: Ref<ViewMode>
   viewModeOptions: ViewModeOption[]
-  series: ComputedRef<[number, number][] | SeriesDataPoint[]>
+  series: ComputedRef<SeriesPoint[] | SeriesDataPoint[]>
+  compactSeries: ComputedRef<SeriesPoint[]>
   title: Ref<string>
   message: Ref<string>
   loading: Ref<boolean>
@@ -90,7 +92,7 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
   ]
 
   // Series based on current view mode
-  const series = computed<[number, number][] | SeriesDataPoint[]>(() => {
+  const series = computed<SeriesPoint[] | SeriesDataPoint[]>(() => {
     // Safety check: don't process if data isn't loaded yet
     if (!batchData.value) {
       return []
@@ -210,11 +212,15 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
       .trim()
   }
 
+  // Compact series always shows total revenue
+  const compactSeries = computed(() => totalRevenue.value)
+
   return {
     period,
     viewMode,
     viewModeOptions,
     series,
+    compactSeries,
     title,
     message,
     loading,

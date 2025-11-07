@@ -4,6 +4,7 @@
     v-model:view-mode="viewMode"
     :title="title"
     :series="series"
+    :compact-series="compactSeries"
     kind="bar"
     y-format="short"
     :loading="loading"
@@ -12,7 +13,7 @@
     aria-label="Revenue by Category chart"
     :view-mode-options="viewModeOptions"
     :stacked="viewMode !== 'total'"
-    :show-growth-labels="viewMode === 'total'"
+    :show-growth-labels="true"
     :ticker="ticker"
     :data-type="dataType"
     :force-expanded="forceExpanded"
@@ -40,7 +41,7 @@ const tickerStore = useTickerStore()
 const { timeframe } = storeToRefs(tickerStore)
 
 // Use composable for all data
-const { viewMode, viewModeOptions, series, title, message, loading, error, ticker, dataType } = useRevenueCategorySeries()
+const { viewMode, viewModeOptions, series, compactSeries, title, message, loading, error, ticker, dataType } = useRevenueCategorySeries()
 
 const resetViewMode = (): void => {
   viewMode.value = 'total'
