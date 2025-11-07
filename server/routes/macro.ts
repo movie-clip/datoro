@@ -474,8 +474,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   const fromDate = from || getDateMonthsAgo(12)
   const toDate = to || getTodayDate()
   
-  // Generate cache key
-  const cacheKey = cache.generateKey('macro', 'batch', fromDate as string, toDate as string)
+  // Generate cache key with version (v2 includes Housing Starts added 2025-01-07)
+  const cacheKey = cache.generateKey('macro', 'batch', 'v2', fromDate as string, toDate as string)
   
   // Check cache first
   const cached = await cache.get(cacheKey)
