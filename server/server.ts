@@ -78,7 +78,7 @@ const monitoring = getMonitoringService()
 
 // API Version - increment when FMP endpoints change to auto-invalidate caches
 // v2.3 - Added fmpDcf endpoint to batch data service
-const API_VERSION = 'v2.9' // Incremented for News feature improvements (security, validation, UI)
+const API_VERSION = 'v2.10' // Price history fix - cache invalidation
 const API_UPDATED = '2025-11-07T22:00:00Z'
 
 // Database health flag (disabled if offline to prevent 5s timeouts)
@@ -282,6 +282,18 @@ app.use('/api', adminRoutes)
 app.use('/api/macro', macroRoutes)
 app.use('/api/feedback', feedbackRoutes)
 app.use('/api/news', newsRoutes)
+
+// ============================================
+// Root endpoint (for Render health checks)
+// ============================================
+app.get('/', (_req: Request, res: Response) => {
+  res.json({
+    service: 'Datoro API',
+    status: 'healthy',
+    version: API_VERSION,
+    timestamp: new Date().toISOString()
+  })
+})
 
 // ============================================
 // API Version Endpoint

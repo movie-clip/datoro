@@ -55,7 +55,8 @@ export function urlNormalization(req: Request, res: Response, next: NextFunction
     }
     
     // 3. Enforce HTTPS in production (HTTP → HTTPS)
-    if (!shouldRedirect && IS_PRODUCTION && protocol !== 'https') {
+    // Exception: Allow HTTP for root health check endpoint
+    if (!shouldRedirect && IS_PRODUCTION && protocol !== 'https' && path !== '/') {
       redirectUrl = `https://${host}${req.originalUrl}`
       shouldRedirect = true
       
