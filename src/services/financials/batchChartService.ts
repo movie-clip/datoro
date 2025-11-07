@@ -115,16 +115,18 @@ class LRUCache<T = any> {
 
 const cache = new LRUCache(100)
 
-// Memoize wrapper: ticker + args only (no timestamp = no cache misses on refetch)
+// Memoize wrapper: ticker + timestamp to ensure cache invalidation on new data
 const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
   return function (this: any, ...args: any[]): ReturnType<T> {
     // Handle null/undefined batchData
     if (!args[0]) return fn.apply(this, args)
 
     const ticker = args[0]?.ticker
+    const timestamp = args[0]?.timestamp
     if (!ticker) return fn.apply(this, args)
 
-    const key = `${fn.name}:${ticker}:${args.slice(1).join(':')}`
+    // Include timestamp in cache key to invalidate when data refreshes
+    const key = `${fn.name}:${ticker}:${timestamp}:${args.slice(1).join(':')}`
     const cached = cache.get(key)
     if (cached !== undefined) return cached
 
