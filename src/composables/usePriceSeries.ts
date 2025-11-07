@@ -74,16 +74,7 @@ export function usePriceSeries(): UsePriceSeriesReturn {
     const cfg = TIMEFRAMES[tfKey.value] || TIMEFRAMES['YTD']
     const rawPrices = getPriceSeriesFromBatch(batchData.value)
     
-    // Debug logging
-    if (!rawPrices.length) {
-      console.log('[usePriceSeries] No price data:', {
-        ticker: t,
-        hasBatchData: !!batchData.value,
-        priceHistory: batchData.value?.data?.priceHistory,
-        historicalLength: batchData.value?.data?.priceHistory?.historical?.length
-      })
-      return []
-    }
+    if (!rawPrices.length) return []
     
     // Filter by timeframe
     const maxDays = mapTimeframeToMaxDays(cfg.range)

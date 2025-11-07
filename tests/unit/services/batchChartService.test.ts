@@ -844,4 +844,306 @@ describe('Batch Chart Service', () => {
       expect(incomeResult[0][1]).toBe(0);
     });
   });
+
+  // =====================================================
+  // PRICE HISTORY INTEGRITY TESTS
+  // These tests catch the bug where priceHistory is null
+  // =====================================================
+  describe('getPriceSeriesFromBatch - Data Integrity', () => {
+    it('should return empty array when batchData is null', () => {
+      const result = getPriceSeriesFromBatch(null)
+      expect(result).toEqual([])
+    })
+
+    it('should return empty array when priceHistory is null (BUG CASE)', () => {
+      const batchDataWithNullPrice = {
+        ticker: 'AAPL',
+        data: {
+          profile: [{ symbol: 'AAPL' }],
+          priceHistory: null  // THIS IS THE BUG WE'RE CATCHING
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(batchDataWithNullPrice)
+      expect(result).toEqual([])
+    })
+
+    it('should return empty array when priceHistory is undefined', () => {
+      const batchDataWithUndefinedPrice = {
+        ticker: 'AAPL',
+        data: {
+          profile: [{ symbol: 'AAPL' }]
+          // priceHistory is undefined
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(batchDataWithUndefinedPrice)
+      expect(result).toEqual([])
+    })
+
+    it('should return empty array when historical array is empty', () => {
+      const batchDataWithEmptyHistory = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: []  // Empty array
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(batchDataWithEmptyHistory)
+      expect(result).toEqual([])
+    })
+
+    it('should extract valid price data with adjClose', () => {
+      const validBatchData = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: [
+              {
+                date: '2024-01-01',
+                close: 184.0,
+                adjClose: 183.5
+              },
+              {
+                date: '2024-01-02',
+                close: 185.0,
+                adjClose: 184.8
+              }
+            ]
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(validBatchData)
+      
+      expect(result).toHaveLength(2)
+      expect(result[0][1]).toBe(183.5)  // Uses adjClose
+      expect(result[1][1]).toBe(184.8)
+    })
+
+    it('should fallback to close when adjClose is missing', () => {
+      const batchDataNoAdjClose = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: [
+              {
+                date: '2024-01-01',
+                close: 184.0
+                // No adjClose
+              }
+            ]
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(batchDataNoAdjClose)
+      
+      expect(result).toHaveLength(1)
+      expect(result[0][1]).toBe(184.0)  // Fallback to close
+    })
+
+    it('should filter out entries with invalid dates', () => {
+      const batchDataInvalidDates = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: [
+              {
+                date: '2024-01-01',
+                close: 184.0
+              },
+              {
+                date: 'invalid-date',
+                close: 185.0
+              },
+              {
+                date: null,
+                close: 186.0
+              },
+              {
+                // Missing date entirely
+                close: 187.0
+              }
+            ]
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(batchDataInvalidDates)
+      
+      // Should only include the valid entry
+      expect(result).toHaveLength(1)
+      expect(result[0][1]).toBe(184.0)
+    })
+
+    it('should filter out entries with invalid prices', () => {
+      const batchDataInvalidPrices = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: [
+              {
+                date: '2024-01-01',
+                close: 184.0
+              },
+              {
+                date: '2024-01-02',
+                close: null
+              },
+              {
+                date: '2024-01-03',
+                close: NaN
+              },
+              {
+                date: '2024-01-04'
+                // Missing close entirely
+              }
+            ]
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(batchDataInvalidPrices)
+      
+      // Should only include the valid entry
+      expect(result).toHaveLength(1)
+      expect(result[0][1]).toBe(184.0)
+    })
+
+    it('should sort data by timestamp ascending', () => {
+      const unsortedBatchData = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: [
+              {
+                date: '2024-01-03',
+                close: 186.0
+              },
+              {
+                date: '2024-01-01',
+                close: 184.0
+              },
+              {
+                date: '2024-01-02',
+                close: 185.0
+              }
+            ]
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(unsortedBatchData)
+      
+      // Should be sorted oldest to newest
+      expect(result).toHaveLength(3)
+      expect(result[0][1]).toBe(184.0)  // 2024-01-01
+      expect(result[1][1]).toBe(185.0)  // 2024-01-02
+      expect(result[2][1]).toBe(186.0)  // 2024-01-03
+    })
+
+    it('should handle maxDays parameter to limit data range', () => {
+      const now = Date.now()
+      const oneDayMs = 24 * 60 * 60 * 1000
+      
+      const batchDataManyDays = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: [
+              {
+                date: new Date(now - 30 * oneDayMs).toISOString().split('T')[0],
+                close: 180.0
+              },
+              {
+                date: new Date(now - 10 * oneDayMs).toISOString().split('T')[0],
+                close: 185.0
+              },
+              {
+                date: new Date(now - 1 * oneDayMs).toISOString().split('T')[0],
+                close: 190.0
+              }
+            ]
+          }
+        }
+      }
+
+      // Get last 15 days only
+      const result = getPriceSeriesFromBatch(batchDataManyDays, 15)
+      
+      // Should exclude data older than 15 days
+      expect(result.length).toBeLessThanOrEqual(2)
+    })
+
+    it('should handle real FMP response structure', () => {
+      const realFMPStructure = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: [
+              {
+                date: '2024-11-06',
+                open: 189.5,
+                high: 191.2,
+                low: 188.8,
+                close: 190.5,
+                adjClose: 190.5,
+                volume: 52000000,
+                unadjustedVolume: 52000000,
+                change: 1.0,
+                changePercent: 0.53,
+                vwap: 190.0,
+                label: 'November 06, 24',
+                changeOverTime: 0.0053
+              }
+            ]
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(realFMPStructure)
+      
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual([
+        new Date('2024-11-06').getTime(),
+        190.5
+      ])
+    })
+
+    it('should return valid data when priceHistory exists with large dataset', () => {
+      // Simulate 30 years of data (7500+ entries)
+      const largePriceHistory = {
+        ticker: 'AAPL',
+        data: {
+          priceHistory: {
+            symbol: 'AAPL',
+            historical: Array.from({ length: 7500 }, (_, i) => ({
+              date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              close: 100 + Math.random() * 100,
+              adjClose: 100 + Math.random() * 100
+            }))
+          }
+        }
+      }
+
+      const result = getPriceSeriesFromBatch(largePriceHistory)
+      
+      expect(result.length).toBeGreaterThan(7000)
+      expect(result[0]).toHaveLength(2)  // [timestamp, price]
+      expect(typeof result[0][0]).toBe('number')
+      expect(typeof result[0][1]).toBe('number')
+    })
+  })
 });
+
