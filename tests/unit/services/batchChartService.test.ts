@@ -79,8 +79,7 @@ const mockBatchData = {
     ],
     revenueSegments: [
       { 
-        date: '2023-09-30', 
-        data: { 
+        '2023-09-30': { 
           'iPhone': 200583000000, 
           'Mac': 29357000000, 
           'iPad': 28300000000,
@@ -89,8 +88,7 @@ const mockBatchData = {
         }
       },
       { 
-        date: '2022-09-24', 
-        data: { 
+        '2022-09-24': { 
           'iPhone': 205489000000, 
           'Mac': 40177000000, 
           'iPad': 29292000000,
@@ -239,8 +237,7 @@ describe('Batch Chart Service', () => {
       const dataWithZeros = {
         data: {
           revenueSegments: [{
-            date: '2023-09-30',
-            data: {
+            '2023-09-30': {
               'Active': 1000000,
               'Legacy': 0,
               'Discontinued': -500

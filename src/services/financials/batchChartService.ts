@@ -185,7 +185,7 @@ interface RevenueSegmentRow {
  */
 export function getRevenueSegmentsFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
   try {
-    const segmentData = batchData?.data?.revenueSegments as RevenueSegmentRow[] | undefined
+    const segmentData = batchData?.data?.revenueSegments as any[] | undefined
 
     if (!segmentData || !Array.isArray(segmentData) || segmentData.length === 0) {
       return { segments: [], series: {} }
@@ -194,39 +194,36 @@ export function getRevenueSegmentsFromBatch(batchData: BatchData | null): Revenu
     const allSegments = new Set<string>()
     const segmentSeries: Record<string, SeriesPoint[]> = {}
 
-    // Process only last 5 years to avoid old/deprecated segment names
-    const recentData = segmentData.slice(0, 5)
-
-    recentData.forEach(row => {
-      const date = Date.parse(row.date)
-
-      if (row.data && typeof row.data === 'object') {
-        Object.keys(row.data).forEach(segmentName => {
-          const value = Number(row.data![segmentName])
-          if (value > 0) {
-            allSegments.add(segmentName)
-            if (!segmentSeries[segmentName]) segmentSeries[segmentName] = []
-            segmentSeries[segmentName].push([date, value])
-          }
-        })
+    // FMP API structure: each entry is { "2025-09-27": { "Mac": 33708000000, "iPhone": 209586000000, ... } }
+    // NOT { date: "2025-09-27", data: {...} }
+    segmentData.forEach(entry => {
+      if (!entry || typeof entry !== 'object') {
+        return
       }
-    })
+      
+      // Get the date key (first property of the object)
+      const entryObj = entry as Record<string, unknown>
+      const dateKey = Object.keys(entryObj)[0]
+      if (!dateKey) {
+        return
+      }
 
-    // Fetch full historical data for identified segments
-    segmentData.forEach(row => {
-      const date = Date.parse(row.date)
+      const date = Date.parse(dateKey)
+      if (isNaN(date)) {
+        return
+      }
 
-      if (row.data && typeof row.data === 'object') {
-        Object.keys(row.data).forEach(segmentName => {
-          if (allSegments.has(segmentName)) {
-            const value = Number(row.data![segmentName])
-            if (value > 0) {
-              const existingIdx = segmentSeries[segmentName]?.findIndex(point => point[0] === date)
-              if (existingIdx === -1 || existingIdx === undefined) {
-                if (!segmentSeries[segmentName]) segmentSeries[segmentName] = []
-                segmentSeries[segmentName].push([date, value])
-              }
+      const segments = entryObj[dateKey]
+
+      if (segments && typeof segments === 'object') {
+        Object.entries(segments).forEach(([segmentName, value]) => {
+          const numValue = Number(value)
+          if (!isNaN(numValue) && numValue > 0) {
+            allSegments.add(segmentName)
+            if (!segmentSeries[segmentName]) {
+              segmentSeries[segmentName] = []
             }
+            segmentSeries[segmentName].push([date, numValue])
           }
         })
       }
