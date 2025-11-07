@@ -110,12 +110,12 @@
       
       <ChartModal
         :is-open="showModal"
+        :title="title"
+        :ticker="ticker || ''"
+        :company-icon="companyIcon"
         @close="closeModal"
       >
-        <h2 class="modal-title">
-          {{ title }}
-        </h2>
-        <!-- Show toggle buttons - support both single-select (viewMode) and multi-select (selectedSegments) -->
+        <!-- Toggle buttons -->
         <div
           v-if="viewModeOptions.length > 0 && !useLegend"
           class="view-mode-buttons"
@@ -136,6 +136,7 @@
             {{ option.label }}
           </button>
         </div>
+        <!-- Chart -->
         <VChart
           class="echart-modal"
           :option="modalOption"
@@ -155,6 +156,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import VChart from 'vue-echarts'
 import type { EChartsOption } from 'echarts'
 import ChartModal from './ChartModal.vue'
@@ -170,6 +172,7 @@ import { createSeriesConfig, type SeriesDataObject } from '../../utils/chartSeri
 import { createXAxisConfig, createYAxisConfig } from '../../utils/chartAxisFactory.js'
 import { useIsMobile } from '../../composables/useIsMobile.js'
 import { buildFiscalQuarterMap, formatFiscalQuarter, calculateCalendarQuarter } from '../../utils/fiscalQuarterUtils.js'
+import { useTickerStore } from '../../stores/tickerStore'
 
 // Track if component is mounted AND ECharts is ready
 const isMounted = ref(false)
@@ -178,6 +181,13 @@ const echartsReady = ref(false)
 // Chart instance refs for proper cleanup
 const chartRef = ref<InstanceType<typeof VChart> | null>(null)
 const modalChartRef = ref<InstanceType<typeof VChart> | null>(null)
+
+// Get company profile for modal header
+const tickerStore = useTickerStore()
+const { profile } = storeToRefs(tickerStore)
+
+// Compute company icon URL
+const companyIcon = computed(() => profile.value?.image || '')
 
 // Ensure ECharts is registered before rendering
 onMounted(async () => {
@@ -697,8 +707,8 @@ const modalOption = computed(() => {
 
 .echart-modal {
   width: 100%;
-  height: 70vh;
-  min-height: 500px;
+  height: 63vh;
+  min-height: 475px;
   overflow: hidden; /* Disable chart scrolling */
 }
 
@@ -772,18 +782,6 @@ const modalOption = computed(() => {
   color: #B8B8B8;
   line-height: 1.6;
   margin: 0;
-}
-
-/* ============================================
-   MODAL ELEMENTS
-   ============================================ */
-.modal-title {
-  text-align: center;
-  color: #E5E5E5;
-  font-size: 22px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  padding: 0;
 }
 
 /* ============================================
@@ -887,9 +885,9 @@ const modalOption = computed(() => {
   }
 
   .echart-modal {
-    height: 55vh;
-    min-height: 300px;
-    max-height: 500px;
+    height: 52vh;
+    min-height: 285px;
+    max-height: 475px;
   }
 
   .modal-title {
@@ -918,8 +916,8 @@ const modalOption = computed(() => {
   }
 
   .echart-modal {
-    height: 50vh;
-    max-height: 450px;
+    height: 47vh;
+    max-height: 428px;
     padding: 16px;
   }
   
@@ -954,12 +952,8 @@ const modalOption = computed(() => {
   }
 
   .echart-modal {
-    height: 65vh;
+    height: 62vh;
     max-height: none;
-  }
-
-  .modal-title {
-    font-size: 15px;
   }
 
   .view-mode-buttons {
