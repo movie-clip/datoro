@@ -19,7 +19,8 @@ const cache = getCacheService()
 let isDatabaseAvailable = true
 
 // API Version (injected from server.mjs)
-let API_VERSION = 'v2.6'
+// v2.7: Cache invalidation for price history fix (Nov 2025 - ensures 30-year data in production)
+let API_VERSION = 'v2.7'
 let FMP_API_KEY = ''
 
 /**

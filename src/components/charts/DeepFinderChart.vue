@@ -302,7 +302,7 @@ onUnmounted(() => {
 /* ============================================ */
 /* LOADING STATE */
 /* ============================================ */
-.loading {
+.loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
