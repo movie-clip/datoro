@@ -267,11 +267,11 @@ const formatMarketCap = (mktCap: number | null | undefined): string => {
 }
 
 .price-change.positive {
-  color: #00A88E;
+  color: var(--color-success);
 }
 
 .price-change.negative {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .earnings-info {

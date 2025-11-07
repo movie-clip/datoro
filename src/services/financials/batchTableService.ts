@@ -292,3 +292,86 @@ export function getBalanceFromBatch(batchData: BatchData | null): BalanceMetrics
   
   return out
 }
+
+/**
+ * Earnings report data for display
+ */
+export interface EarningsReport {
+  fiscalQuarter: string // e.g., "Q4 2024"
+  reportDate: string // e.g., "Jan 30, 2025"
+  epsActual: number | null
+  epsEstimate: number | null
+  epsBeat: boolean | null // True if beat, false if miss, null if no data
+  revenueActual: number | null // In billions
+  revenueEstimate: number | null // In billions
+  revenueBeat: boolean | null
+  fiscalDateEnding: string // Original date for sorting
+}
+
+/**
+ * Get earnings reports from batch data
+ * Filters to current year and formats for display
+ */
+export function getEarningsFromBatch(batchData: BatchData | null): EarningsReport[] {
+  if (!batchData?.data?.earningsCalendar) return []
+  
+  try {
+    const currentYear = new Date().getFullYear()
+    
+    return batchData.data.earningsCalendar
+      // Filter to current year and only entries with actual data (eps not null)
+      .filter(e => {
+        if (!e.fiscalDateEnding || e.eps === null) return false
+        const fiscalYear = new Date(e.fiscalDateEnding).getFullYear()
+        return fiscalYear === currentYear
+      })
+      // Sort by fiscal date (oldest first)
+      .sort((a, b) => new Date(a.fiscalDateEnding).getTime() - new Date(b.fiscalDateEnding).getTime())
+      // Transform to display format
+      .map(e => {
+        const fiscalDate = new Date(e.fiscalDateEnding)
+        const reportDate = new Date(e.date)
+        
+        // Calculate quarter from fiscal date
+        const month = fiscalDate.getMonth() + 1
+        let quarter = Math.ceil(month / 3)
+        const fiscalQuarter = `Q${quarter} ${fiscalDate.getFullYear()}`
+        
+        // Format report date
+        const reportDateStr = reportDate.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        })
+        
+        // Calculate beats/misses
+        const epsBeat = (e.eps !== null && e.epsEstimated !== null) 
+          ? e.eps > e.epsEstimated 
+          : null
+        
+        const revenueBeat = (e.revenue !== null && e.revenueEstimated !== null)
+          ? e.revenue > e.revenueEstimated
+          : null
+        
+        // Convert revenue to billions
+        const revenueActual = e.revenue !== null ? e.revenue / 1_000_000_000 : null
+        const revenueEstimate = e.revenueEstimated !== null ? e.revenueEstimated / 1_000_000_000 : null
+        
+        return {
+          fiscalQuarter,
+          reportDate: reportDateStr,
+          epsActual: e.eps,
+          epsEstimate: e.epsEstimated,
+          epsBeat,
+          revenueActual,
+          revenueEstimate,
+          revenueBeat,
+          fiscalDateEnding: e.fiscalDateEnding
+        }
+      })
+  } catch (error) {
+    console.error('[BatchTableService] getEarningsFromBatch error:', error)
+    return []
+  }
+}
+

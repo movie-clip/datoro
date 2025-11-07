@@ -16,7 +16,8 @@ import type {
   FMPDividend,
   FMPHistoricalPrice,
   FMPPriceTarget,
-  FMPDCF
+  FMPDCF,
+  FMPEarnings
 } from './fmp.types'
 
 /**
@@ -87,8 +88,8 @@ export interface BatchData {
     /** Stock split history */
     stockSplit?: { symbol: string; historical: FMPStockSplit[] }
     
-    /** Earnings calendar */
-    earningsCalendar?: unknown[]
+    /** Historical earnings calendar with actual vs estimated EPS and revenue */
+    earningsCalendar?: FMPEarnings[]
     
     /** Financial scores (Altman Z, Piotroski, etc.) */
     financialScores?: unknown[]

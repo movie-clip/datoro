@@ -513,3 +513,19 @@ export interface FMPDCF {
   'Stock Price'?: number
   [key: string]: any
 }
+
+/**
+ * Historical Earnings Calendar
+ * Endpoint: /historical/earning_calendar/{symbol}
+ */
+export interface FMPEarnings {
+  date: string // Report date (when earnings were announced)
+  symbol: string
+  eps: number | null // Actual EPS reported
+  epsEstimated: number | null // Analyst estimated EPS
+  time: string // 'amc' (after market close) or 'bmo' (before market open)
+  revenue: number | null // Actual revenue reported
+  revenueEstimated: number | null // Analyst estimated revenue
+  updatedFromDate: string // When this data was last updated
+  fiscalDateEnding: string // Fiscal quarter end date (e.g., "2024-09-28")
+}

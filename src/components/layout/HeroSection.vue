@@ -77,6 +77,11 @@
           <p>{{ newsError || 'No recent news available' }}</p>
         </div>
       </div>
+
+      <!-- Earnings Tab -->
+      <div v-show="activeTab === 'earnings'" class="tab-content">
+        <EarningsTab :batch-data="batchData" :loading="loading" />
+      </div>
       
       <!-- Price Chart -->
       <PriceChart />
@@ -170,6 +175,7 @@ import SkeletonLoader from '../common/SkeletonLoader.vue'
 import TabNavigation, { type Tab } from '../common/TabNavigation.vue'
 import NewsCard from '../news/NewsCard.vue'
 import CollapsibleContent from '../common/CollapsibleContent.vue'
+import EarningsTab from '../hero/EarningsTab.vue'
 
 const tickerStore = useTickerStore()
 const { batchData, loading, error, currentTicker } = storeToRefs(tickerStore)
@@ -178,7 +184,8 @@ const { batchData, loading, error, currentTicker } = storeToRefs(tickerStore)
 const activeTab = ref<string>('about')
 const tabs: Tab[] = [
   { id: 'about', label: 'About' },
-  { id: 'news', label: 'News' }
+  { id: 'news', label: 'News' },
+  { id: 'earnings', label: 'Earnings' }
 ]
 
 // Reset to About tab when ticker changes
@@ -428,15 +435,15 @@ const getMarginClass = (marginStr: string): string => {
 }
 
 .metric-value.positive {
-  color: #00C087;
+  color: var(--color-success);
 }
 
 .metric-value.negative {
-  color: #FF4976;
+  color: var(--color-danger);
 }
 
 .metric-value.neutral {
-  color: #FFB800;
+  color: var(--color-warning);
 }
 
 .health-indicators {
@@ -469,18 +476,18 @@ const getMarginClass = (marginStr: string): string => {
 }
 
 .health-good .health-dot {
-  background: #00C087;
+  background: var(--color-success);
   box-shadow: 0 0 8px rgba(0, 192, 135, 0.5);
 }
 
 .health-neutral .health-dot {
-  background: #FFB800;
+  background: var(--color-warning);
   box-shadow: 0 0 8px rgba(255, 184, 0, 0.5);
 }
 
 .health-warning .health-dot {
-  background: #FF4976;
-  box-shadow: 0 0 8px rgba(255, 73, 118, 0.5);
+  background: var(--color-danger);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
 }
 
 .health-good {
@@ -492,7 +499,7 @@ const getMarginClass = (marginStr: string): string => {
 }
 
 .health-warning {
-  border-color: rgba(255, 73, 118, 0.3);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .health-label {

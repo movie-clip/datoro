@@ -5,10 +5,10 @@
   --color-brand-primary-dark: #00594C;
   --color-brand-primary-light: #00755F;
   
-  /* Status colors */
-  --color-success: #00A88E;
-  --color-warning: #F59E0B;
-  --color-danger: #ef4444;
+  /* Status colors - Positive/Negative metrics */
+  --color-success: #00C087;  /* Green for beats/positive metrics (from Key Metrics) */
+  --color-warning: #FFB800;  /* Yellow/orange for neutral */
+  --color-danger: #ef4444;   /* Red for misses/negative metrics (from Key Metrics) */
   
   /* Neutral colors */
   --color-grey: #aaa;
