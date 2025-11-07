@@ -385,7 +385,10 @@ const growthData = computed((): GrowthRates | null => {
         const dateMap = new Map<number, number>()
         props.series.forEach((s: any) => {
           if (s.data && Array.isArray(s.data)) {
-            s.data.forEach(([date, value]: [number, number]) => {
+            s.data.forEach((point: any) => {
+              // Handle both [date, value] and [date, value, period, year] formats
+              const date = Array.isArray(point) ? point[0] : point
+              const value = Array.isArray(point) ? point[1] : 0
               dateMap.set(date, (dateMap.get(date) || 0) + value)
             })
           }
@@ -393,7 +396,14 @@ const growthData = computed((): GrowthRates | null => {
         dataToAnalyze = Array.from(dateMap.entries()).sort((a, b) => a[0] - b[0])
       } else {
         // Use first series
-        dataToAnalyze = (props.series[0] as any).data || []
+        const firstSeries = (props.series[0] as any).data || []
+        // Handle both [date, value] and [date, value, period, year] formats
+        dataToAnalyze = firstSeries.map((point: any) => {
+          if (Array.isArray(point)) {
+            return [point[0], point[1]] as [number, number]
+          }
+          return point
+        })
       }
     }
   }

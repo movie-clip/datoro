@@ -118,7 +118,7 @@ watch(() => props.isOpen, (isOpen) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 10px 24px;
   border-bottom: 1px solid #2A2A2E;
   background: rgba(21, 21, 24, 0.6);
   flex-shrink: 0;
