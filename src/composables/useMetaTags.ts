@@ -96,7 +96,7 @@ export function useMetaTags() {
       title = DEFAULT_TITLE,
       description = DEFAULT_DESCRIPTION,
       keywords,
-      canonicalUrl,
+      canonicalUrl = BASE_URL, // Default to base URL if not specified
       ogImage = DEFAULT_OG_IMAGE,
       ogType = 'website',
       twitterCard = 'summary_large_image'
@@ -112,10 +112,8 @@ export function useMetaTags() {
       setMetaTag('meta[name="keywords"]', keywords)
     }
     
-    // Canonical URL
-    if (canonicalUrl) {
-      setCanonicalUrl(canonicalUrl)
-    }
+    // Always set canonical URL (defaults to BASE_URL)
+    setCanonicalUrl(canonicalUrl)
     
     // Open Graph / Facebook / Instagram / LinkedIn
     setMetaTag('meta[property="og:title"]', title)
@@ -152,7 +150,10 @@ export function useMetaTags() {
     
     const keywords = `${ticker} stock, ${companyName || ticker} analysis, ${ticker} P/E ratio, ${ticker} revenue, ${ticker} earnings, ${ticker} financial data, stock analysis ${ticker}`
     
-    const canonicalUrl = `${BASE_URL}/?ticker=${ticker}`
+    // IMPORTANT: For SPAs, all ticker URLs should canonicalize to the base URL
+    // This prevents Google from treating ?ticker=AAPL as a separate page
+    // The SPA dynamically loads content, so the canonical should always be the homepage
+    const canonicalUrl = BASE_URL
     
     return {
       title,

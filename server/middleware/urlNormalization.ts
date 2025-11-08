@@ -82,16 +82,18 @@ export function urlNormalization(req: Request, res: Response, next: NextFunction
 /**
  * Add canonical link header to all responses
  * Helps search engines identify the preferred URL version
+ * 
+ * For SPAs: All pages canonicalize to the base URL (without query params)
+ * This prevents Google from treating ?ticker=AAPL as separate pages
  */
 export function addCanonicalHeader(req: Request, res: Response, next: NextFunction): void {
   try {
     const protocol = IS_PRODUCTION ? 'https' : req.protocol
     const host = req.hostname.replace(/^www\./, '') // Remove www prefix
-    const path = req.path
-    const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''
     
-    // Build canonical URL (always non-www, https in production)
-    const canonicalUrl = `${protocol}://${host}${path}${queryString}`
+    // For SPAs, always canonicalize to base URL (no query params)
+    // This tells Google: "All ticker pages are variations of the homepage"
+    const canonicalUrl = `${protocol}://${host}/`
     
     // Add Link header for programmatic canonical detection
     res.setHeader('Link', `<${canonicalUrl}>; rel="canonical"`)
