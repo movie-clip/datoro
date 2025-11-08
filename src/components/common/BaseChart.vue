@@ -838,7 +838,6 @@ const modalOption = computed(() => {
   background: linear-gradient(135deg, rgba(35, 35, 39, 0.9) 0%, rgba(30, 30, 34, 0.9) 100%);
   color: rgba(229, 229, 229, 0.85);
   border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 

@@ -1,7 +1,7 @@
 import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
-import { getRevenueSeriesFromBatch, getProductCategoriesFromBatch, getGeographicCategoriesFromBatch } from '../services/financials/batchChartService'
+import { getRevenueSeriesFromBatch, getProductCategoriesFromBatch, getGeographicCategoriesFromBatch, type RevenueSegmentsResult } from '../services/financials/batchChartService'
 import { getSegmentColors } from '../utils/segmentColors'
 
 type Period = 'annual' | 'quarterly'
@@ -47,28 +47,40 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
   
   const period = computed<Period>(() => timeframe.value)
 
-  // Extract data from batch
-  const totalRevenue = computed(() => 
-    getRevenueSeriesFromBatch(batchData.value, period.value)
-  )
-
-  const productCategories = computed(() => {
-    const result = getProductCategoriesFromBatch(batchData.value)
-    // Defensive check: ensure we always return a valid object
-    if (!result || typeof result !== 'object' || !('segments' in result)) {
-      return { segments: [], series: {} }
+  // CRITICAL: Single source of truth for all revenue data
+  // Extract all data once and cache it - similar to useFcfSeries pattern
+  const rawRevenueData = computed(() => {
+    const data = batchData.value
+    if (!data) {
+      return {
+        total: [] as SeriesPoint[],
+        product: { segments: [], series: {} } as RevenueSegmentsResult,
+        geographic: { segments: [], series: {} } as RevenueSegmentsResult
+      }
     }
-    return result
+
+    // Extract total revenue
+    const total = getRevenueSeriesFromBatch(data, period.value)
+    
+    // Extract product categories
+    let product: RevenueSegmentsResult = { segments: [], series: {} }
+    if (data.data?.revenueSegments) {
+      product = getProductCategoriesFromBatch(data)
+    }
+    
+    // Extract geographic categories
+    let geographic: RevenueSegmentsResult = { segments: [], series: {} }
+    if (data.data?.revenueGeographicSegments) {
+      geographic = getGeographicCategoriesFromBatch(data)
+    }
+
+    return { total, product, geographic }
   })
 
-  const geographicCategories = computed(() => {
-    const result = getGeographicCategoriesFromBatch(batchData.value)
-    // Defensive check: ensure we always return a valid object
-    if (!result || typeof result !== 'object' || !('segments' in result)) {
-      return { segments: [], series: {} }
-    }
-    return result
-  })
+  // Convenience accessors (for backward compatibility with watch)
+  const totalRevenue = computed(() => rawRevenueData.value.total)
+  const productCategories = computed(() => rawRevenueData.value.product)
+  const geographicCategories = computed(() => rawRevenueData.value.geographic)
 
   const error = computed(() => {
     if (batchError.value) return batchError.value
@@ -98,9 +110,12 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
       return []
     }
 
-    switch (viewMode.value) {
+    const mode = viewMode.value
+
+    switch (mode) {
       case 'product': {
         const categories = productCategories.value
+        
         if (!categories || !categories.segments || categories.segments.length === 0) {
           // No product data, fallback to total
           return totalRevenue.value || []
@@ -110,7 +125,7 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
         const colors = getSegmentColors(categories.segments, 'product')
         
         // Create stacked series for all product categories
-        return categories.segments.map((category, index) => ({
+        const result = categories.segments.map((category: string, index: number) => ({
           name: formatCategoryLabel(category),
           data: categories.series[category] || [],
           stack: 'revenue',
@@ -118,10 +133,13 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
             color: colors[index] || '#5470C6'
           }
         })) as SeriesDataPoint[]
+        
+        return result
       }
       
       case 'geographic': {
         const regions = geographicCategories.value
+        
         if (!regions || !regions.segments || regions.segments.length === 0) {
           // No geographic data, fallback to total
           return totalRevenue.value || []
@@ -131,7 +149,7 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
         const colors = getSegmentColors(regions.segments, 'geographic')
         
         // Create stacked series for all geographic regions
-        return regions.segments.map((region, index) => ({
+        const result = regions.segments.map((region: string, index: number) => ({
           name: formatCategoryLabel(region),
           data: regions.series[region] || [],
           stack: 'revenue',
@@ -139,6 +157,8 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
             color: colors[index] || '#5470C6'
           }
         })) as SeriesDataPoint[]
+        
+        return result
       }
       
       case 'total':

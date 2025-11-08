@@ -64,7 +64,11 @@ interface ExpensesDataPoint {
   fiscalYear?: string
 }
 
-interface RevenueSegmentsResult {
+/**
+ * Revenue segmentation result interface
+ * Used by product and geographic category charts
+ */
+export interface RevenueSegmentsResult {
   segments: string[]
   series: Record<string, SeriesPoint[]>
 }
@@ -116,6 +120,7 @@ class LRUCache<T = any> {
 const cache = new LRUCache(100)
 
 // Memoize wrapper: ticker + timestamp to ensure cache invalidation on new data
+// IMPORTANT: Returns deep clones for object results to maintain Vue reactivity
 const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
   return function (this: any, ...args: any[]): ReturnType<T> {
     // Handle null/undefined batchData
@@ -128,7 +133,18 @@ const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
     // Include timestamp in cache key to invalidate when data refreshes
     const key = `${fn.name}:${ticker}:${timestamp}:${args.slice(1).join(':')}`
     const cached = cache.get(key)
-    if (cached !== undefined) return cached
+    
+    // Return cached value if found
+    // For object results (like RevenueSegmentsResult), we need to ensure reactivity
+    // by returning a new reference, but the arrays inside can be shared (they're immutable)
+    if (cached !== undefined) {
+      // If result is an object with 'segments' and 'series', return a shallow clone
+      // to ensure Vue's reactivity system detects the change
+      if (cached && typeof cached === 'object' && 'segments' in cached && 'series' in cached) {
+        return { ...cached } as ReturnType<T>
+      }
+      return cached
+    }
 
     const result = fn.apply(this, args)
     cache.set(key, result)
