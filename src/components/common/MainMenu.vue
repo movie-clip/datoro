@@ -138,6 +138,27 @@
               <span>Macro Dashboard</span>
             </button>
 
+            <!-- Market Performance Button -->
+            <button 
+              class="menu-item" 
+              @click="showMarketPerformance"
+            >
+              <svg
+                class="menu-item-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              <span>Market Performance</span>
+            </button>
+
             <!-- Account Settings Button -->
             <button 
               v-if="isAuthenticated"
@@ -345,6 +366,9 @@
     <!-- DCF Calculator Modal -->
     <DcfCalculatorModal v-model="isDcfModalOpen" />
 
+    <!-- Market Performance Modal -->
+    <MarketPerformanceModal v-model="isMarketPerformanceOpen" />
+
     <!-- Account Settings Modal -->
     <AccountSettings 
       v-if="isAccountSettingsOpen"
@@ -360,6 +384,7 @@ import { useWatchlists } from '../../composables/useWatchlists'
 import { useAuthStore } from '../../stores/authStore'
 import WatchlistDropdown from './WatchlistDropdown.vue'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
+import MarketPerformanceModal from '../modals/MarketPerformanceModal.vue'
 import AccountSettings from './AccountSettings.vue'
 // import PricingPage from '../pages/PricingPage.vue' // Removed - pricing disabled
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
@@ -387,6 +412,7 @@ const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker', 'show-de
 const currentView = ref('menu') // 'menu' or 'watchlist'
 const isDcfModalOpen = ref(false)
 const isAccountSettingsOpen = ref(false)
+const isMarketPerformanceOpen = ref(false)
 // const isPricingPageOpen = ref(false) // Removed - pricing disabled
 
 // Check subscription status
@@ -466,6 +492,11 @@ function showMacro() {
   
   // Track Macro Dashboard opening
   trackMacroOpen()
+}
+
+function showMarketPerformance() {
+  isMarketPerformanceOpen.value = true
+  emit('close') // Close the main menu
 }
 
 function showFeedback() {

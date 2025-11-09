@@ -529,3 +529,45 @@ export interface FMPEarnings {
   updatedFromDate: string // When this data was last updated
   fiscalDateEnding: string // Fiscal quarter end date (e.g., "2024-09-28")
 }
+
+/**
+ * Sector Performance
+ * Endpoint: /api/v3/sector-performance
+ */
+export interface FMPSectorPerformance {
+  sector: string
+  changesPercentage: string // e.g., "1.23%"
+}
+
+/**
+ * Historical Sector Performance
+ * Endpoint: /stable/historical-sector-performance
+ */
+export interface FMPHistoricalSectorPerformance {
+  date: string
+  sector: string
+  exchange: string
+  averageChange: number
+}
+
+/**
+ * Stock Screener Result
+ * Endpoint: /api/v3/stock-screener
+ */
+export interface FMPStockScreener {
+  symbol: string
+  companyName: string
+  marketCap: number
+  sector: string
+  industry: string
+  beta: number
+  price: number
+  lastAnnualDividend: number
+  volume: number
+  exchange: string
+  exchangeShortName: string
+  country: string
+  isEtf: boolean
+  isFund: boolean
+  isActivelyTrading: boolean
+}

@@ -81,6 +81,20 @@
 
 ## Key Conventions & Patterns
 
+### Logging & Debugging
+- **NEVER use console.log in production code** - Use the logger service instead.
+- **Server-side logging:** Import from `server/services/logger.ts`:
+  ```typescript
+  import { logger } from '../services/logger'
+  logger.info('Message', { context: 'optional metadata' })
+  logger.error('Error message', { error, stack: error.stack })
+  logger.warn('Warning message')
+  logger.debug('Debug message') // Only shows in development
+  ```
+- **Client-side logging:** For development debugging only, remove before committing.
+- **Error tracking:** Production errors automatically sent to Sentry via `sentryService.ts`.
+- **Monitoring:** Use `monitoringService.ts` for performance metrics and analytics.
+
 ### API Endpoints & Routing
 - **Base URL:** `http://localhost:7071/api` (development), `https://Datoro.onrender.com/api` (production).
 - **Main endpoints:**

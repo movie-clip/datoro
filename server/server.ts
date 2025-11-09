@@ -29,6 +29,7 @@ import adminRoutes, { initAdminRoutes } from './routes/adminRoutes.js'
 import macroRoutes, { initMacroRoutes } from './routes/macro.js'
 import feedbackRoutes, { initFeedbackRoutes } from './routes/feedback.js'
 import newsRoutes, { initNewsRoutes } from './routes/newsRoutes.js'
+import marketPerformanceRoutes from './routes/marketPerformance.js'
 import { 
   validate,
   validateProfile,
@@ -282,6 +283,7 @@ app.use('/api', adminRoutes)
 app.use('/api/macro', macroRoutes)
 app.use('/api/feedback', feedbackRoutes)
 app.use('/api/news', newsRoutes)
+app.use('/api/market', marketPerformanceRoutes)
 
 // ============================================
 // Root endpoint (for Render health checks)
