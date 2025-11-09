@@ -246,8 +246,8 @@ function formatDate(dateStr: string): string {
 const chartOption = computed<EChartsOption>(() => ({
   backgroundColor: 'transparent',
   grid: {
-    left: '3%',
-    right: '3%',
+    left: '2%',
+    right: '8%', // More space for Y-axis labels
     top: '8%',
     bottom: '25%',
     containLabel: true
@@ -289,15 +289,25 @@ const chartOption = computed<EChartsOption>(() => ({
   yAxis: {
     type: 'value',
     position: 'right',
+    scale: true, // Enable smart scaling
     axisLine: { show: false },
+    axisTick: { show: false },
     axisLabel: { 
       color: 'rgba(229, 229, 229, 0.6)',
       fontSize: 11,
-      formatter: (value: number) => `$${value.toFixed(0)}`
+      formatter: (value: number) => {
+        // Format with commas for readability
+        if (value >= 1000) {
+          return `$${(value / 1000).toFixed(1)}K`
+        }
+        return `$${value.toFixed(0)}`
+      }
     },
     splitLine: {
       lineStyle: { color: 'rgba(42, 42, 46, 0.3)', type: 'dashed' }
-    }
+    },
+    splitNumber: 6, // Control number of grid lines
+    minInterval: 100 // Minimum interval between ticks
   },
   dataZoom: [
     {
