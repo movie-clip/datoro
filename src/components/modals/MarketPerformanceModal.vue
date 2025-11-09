@@ -42,22 +42,6 @@
 
           <div class="modal-body">
             <div class="body-layout">
-              <!-- Left Sidebar - Index Selector -->
-              <div class="sidebar">
-                <h3 class="sidebar-title">Market Index</h3>
-                <div class="index-buttons">
-                  <button
-                    v-for="index in marketIndices"
-                    :key="index.value"
-                    :class="['index-button', { active: selectedIndex === index.value }]"
-                    :disabled="loading"
-                    @click="handleIndexChange(index.value)"
-                  >
-                    <span class="index-label">{{ index.label }}</span>
-                  </button>
-                </div>
-              </div>
-
               <!-- Main Content Area -->
               <div class="main-content">
             <!-- Error Message -->
@@ -70,22 +54,24 @@
               <span>{{ error }}</span>
             </div>
 
-            <!-- Index Price Chart -->
+            <!-- S&P 500 Price Chart -->
             <!-- Chart shows 20 years of historical data with interactive scrollbar -->
             <SP500PriceChart 
-              :period="'20Y'"
-              :index="selectedIndex"
               @range-change="handleCustomRangeChange"
             />
 
             <!-- Heatmap Chart Component -->
-            <!-- Note: Sector data currently only available for S&P 500 -->
-            <!-- Future: Add sector breakdowns for NASDAQ/Russell if API provides them -->
-            <MarketHeatmapChart 
-              :data="heatmapData"
-              :sp500="sp500Data"
-              :loading="loading"
-            />
+            <div class="heatmap-section">
+              <div class="heatmap-header">
+                <h4>S&P 500 Sector Performance</h4>
+                <span class="heatmap-note">Drag chart scrollbar to view sector performance for custom time ranges</span>
+              </div>
+              <MarketHeatmapChart 
+                :data="heatmapData"
+                :sp500="sp500Data"
+                :loading="loading"
+              />
+            </div>
               </div>
             </div>
           </div>
@@ -117,20 +103,6 @@ const emit = defineEmits<Emits>()
 const overlayRef = ref<HTMLDivElement | null>(null)
 const mouseDownOnOverlay = ref(false)
 
-// Market index options
-interface MarketIndex {
-  label: string
-  value: string
-  symbol: string
-}
-
-const marketIndices: MarketIndex[] = [
-  { label: 'S&P 500', value: 'SPX', symbol: '^GSPC' },
-  { label: 'NASDAQ', value: 'NASDAQ', symbol: '^IXIC' },
-  { label: 'Russell 2000', value: 'RUSSELL', symbol: '^RUT' }
-]
-
-const selectedIndex = ref('SPX')
 let customRangeAbortController: AbortController | null = null
 
 // Use market performance composable
@@ -146,13 +118,6 @@ const {
   fetchData,
   updateWithCustomRange
 } = useMarketPerformance()
-
-// Handle index change
-function handleIndexChange(index: string) {
-  selectedIndex.value = index
-  console.log(`[Market Performance Modal] Index changed to: ${index}`)
-  // TODO: Implement index-specific data fetching
-}
 
 // Handle modal close
 function handleClose() {
@@ -288,12 +253,8 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
 // Focus overlay when modal opens
 watch(() => props.modelValue, (newValue) => {
   if (newValue) {
-    // Fetch data when modal opens (default to 1D performance)
-    if (heatmapData.value.length === 0) {
-      fetchData(false, '1D')
-    }
-    
     // Focus overlay for keyboard events
+    // Note: Heatmap data will be loaded when chart emits initial range-change event
     setTimeout(() => {
       overlayRef.value?.focus()
     }, 100)
@@ -436,79 +397,12 @@ function handleEscapeKey(event: KeyboardEvent) {
 }
 
 /* ============================================ */
-/* BODY LAYOUT (Sidebar + Main Content) */
+/* BODY LAYOUT */
 /* ============================================ */
 .body-layout {
   display: flex;
-  gap: 24px;
-  height: 100%;
-}
-
-/* ============================================ */
-/* SIDEBAR - Index Selector */
-/* ============================================ */
-.sidebar {
-  flex-shrink: 0;
-  width: 220px;
-  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid #2A2A2E;
-}
-
-.sidebar-title {
-  margin: 0 0 16px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #E5E5E5;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.index-buttons {
-  display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.index-button {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid #2A2A2E;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 14px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  font-weight: 500;
-  text-align: left;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.index-button:hover:not(:disabled) {
-  background: rgba(0, 168, 142, 0.1);
-  border-color: rgba(0, 168, 142, 0.3);
-  color: #00A88E;
-  transform: translateX(4px);
-}
-
-.index-button.active {
-  background: linear-gradient(135deg, rgba(0, 168, 142, 0.15) 0%, rgba(0, 117, 95, 0.15) 100%);
-  border-color: #00A88E;
-  color: #00A88E;
-  font-weight: 600;
-}
-
-.index-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.index-label {
-  display: block;
+  height: 100%;
 }
 
 /* ============================================ */
@@ -530,6 +424,35 @@ function handleEscapeKey(event: KeyboardEvent) {
 .red-text {
   color: #ef4444;
   font-weight: 600;
+}
+
+/* ============================================ */
+/* HEATMAP SECTION */
+/* ============================================ */
+.heatmap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.heatmap-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(229, 229, 229, 0.9);
+}
+
+.heatmap-note {
+  font-size: 12px;
+  color: rgba(229, 229, 229, 0.5);
+  font-style: italic;
 }
 
 /* ============================================ */
@@ -572,26 +495,6 @@ function handleEscapeKey(event: KeyboardEvent) {
 /* ============================================ */
 /* RESPONSIVE DESIGN */
 /* ============================================ */
-@media (max-width: 1024px) {
-  .body-layout {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-  }
-
-  .index-buttons {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .index-button {
-    flex: 1;
-    min-width: 150px;
-  }
-}
-
 @media (max-width: 768px) {
   .modal-container {
     width: 100%;

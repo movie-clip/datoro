@@ -437,24 +437,21 @@ router.get('/sp500', asyncHandler(async (req: Request, res: Response) => {
 
 /**
  * GET /api/market/sp500/historical
- * Get S&P 500 historical price data for charting
- * Query params:
- *   - period: 1D, 1W, 1M, YTD, 3Y, 5Y, 10Y, 20Y (default: YTD)
+ * Get S&P 500 historical price data for charting (20 years of data)
+ * User controls time window via chart scrollbar
  */
 router.get('/sp500/historical', asyncHandler(async (req: Request, res: Response) => {
-  const period = (req.query.period as string) || 'YTD'
-  const cacheKey = `market:sp500:historical:${period}`
+  const cacheKey = `market:sp500:historical:20y`
   
   // Try cache first
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    logger.debug(`Serving S&P 500 historical data (${period}) from cache`)
+    logger.debug(`Serving S&P 500 historical data from cache`)
     res.setHeader('X-Cache', 'HIT')
     return res.json(cached.data)
   }
   
-  // Fetch full historical data from FMP
-  // Add 'from' parameter to get maximum historical data (20 years)
+  // Fetch 20 years of historical data from FMP
   const date20YearsAgo = new Date()
   date20YearsAgo.setFullYear(date20YearsAgo.getFullYear() - 20)
   const fromDate = date20YearsAgo.toISOString().split('T')[0] // YYYY-MM-DD format
@@ -474,194 +471,30 @@ router.get('/sp500/historical', asyncHandler(async (req: Request, res: Response)
       throw new Error('No S&P 500 historical data received')
     }
     
-    // Filter data based on period
-    const now = new Date()
-    let startDate: Date
-    
-    switch (period) {
-      case '1D':
-        // For 1D, just show the last trading day (most recent data point)
-        const result1D = {
-          symbol: '^GSPC',
-          historical: data.historical.slice(0, 1) // Just the most recent day
-        }
-        await cache.set(cacheKey, result1D, CACHE_TTL * 2)
-        res.setHeader('X-Cache', 'MISS')
-        return res.json(result1D)
-      case '1W':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        break
-      case '1M':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        break
-      case 'YTD':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        break
-      case '3Y':
-        startDate = new Date(now.getTime() - 3 * 365 * 24 * 60 * 60 * 1000)
-        break
-      case '5Y':
-        startDate = new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000)
-        break
-      case '10Y':
-        startDate = new Date(now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000)
-        break
-      case '20Y':
-        startDate = new Date(now.getTime() - 20 * 365 * 24 * 60 * 60 * 1000)
-        break
-      default:
-        startDate = new Date(now.getFullYear(), 0, 1) // Default to YTD
-    }
-    
-    const filteredData = data.historical
-      .filter((item: any) => new Date(item.date) >= startDate)
-      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    // Sort by date ascending (oldest to newest)
+    const sortedData = data.historical.sort((a: any, b: any) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
     
     const result = {
       symbol: '^GSPC',
-      historical: filteredData
+      historical: sortedData
     }
     
-    // Cache the result (10 minutes for historical data)
-    await cache.set(cacheKey, result, CACHE_TTL * 2)
+    // Cache for 1 hour (data changes infrequently)
+    await cache.set(cacheKey, result, 60 * 60)
     
+    logger.info(`Fetched S&P 500 historical data: ${sortedData.length} points (20 years)`)
     res.setHeader('X-Cache', 'MISS')
     res.json(result)
   } catch (error) {
-    logger.error(`Error fetching S&P 500 historical data for ${period}`, {
+    logger.error(`Error fetching S&P 500 historical data`, {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     })
     
     res.status(500).json({
       error: 'Failed to fetch S&P 500 historical data',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    })
-  }
-}))
-
-/**
- * GET /api/market/index/historical
- * Get historical price data for any market index (S&P 500, NASDAQ, Russell 2000)
- * Fetches up to 20 years of historical data from FMP API
- * Query params:
- *   - symbol: SPX (^GSPC), NASDAQ (^IXIC), RUSSELL (^RUT) - default: SPX
- *   - period: 1D, 1W, 1M, YTD, 3Y, 5Y, 10Y, 20Y (default: YTD)
- */
-router.get('/index/historical', asyncHandler(async (req: Request, res: Response) => {
-  const indexSymbol = (req.query.symbol as string) || 'SPX'
-  const period = (req.query.period as string) || 'YTD'
-  
-  // Map friendly names to FMP symbols
-  const symbolMap: Record<string, { fmpSymbol: string; name: string }> = {
-    'SPX': { fmpSymbol: '^GSPC', name: 'S&P 500' },
-    'NASDAQ': { fmpSymbol: '^IXIC', name: 'NASDAQ Composite' },
-    'RUSSELL': { fmpSymbol: '^RUT', name: 'Russell 2000' }
-  }
-  
-  const indexInfo = symbolMap[indexSymbol]
-  if (!indexInfo) {
-    return res.status(400).json({
-      error: 'Invalid index symbol',
-      message: `Symbol must be one of: ${Object.keys(symbolMap).join(', ')}`
-    })
-  }
-  
-  const cacheKey = `market:index:${indexSymbol}:historical:${period}`
-  
-  // Try cache first
-  const cached = await cache.get(cacheKey)
-  if (cached.data) {
-    logger.debug(`Serving ${indexInfo.name} historical data (${period}) from cache`)
-    res.setHeader('X-Cache', 'HIT')
-    return res.json(cached.data)
-  }
-  
-  // Fetch full historical data from FMP
-  // Add 'from' parameter to get maximum historical data (20 years)
-  const date20YearsAgo = new Date()
-  date20YearsAgo.setFullYear(date20YearsAgo.getFullYear() - 20)
-  const fromDate = date20YearsAgo.toISOString().split('T')[0] // YYYY-MM-DD format
-  
-  const url = `${FMP_BASE_URL}/api/v3/historical-price-full/${encodeURIComponent(indexInfo.fmpSymbol)}?from=${fromDate}&apikey=${FMP_API_KEY}`
-  
-  try {
-    const response = await fetch(url)
-    
-    if (!response.ok) {
-      throw new Error(`FMP API error: ${response.statusText}`)
-    }
-    
-    const data: any = await response.json()
-    
-    if (!data || !data.historical || data.historical.length === 0) {
-      throw new Error(`No ${indexInfo.name} historical data received`)
-    }
-    
-    // Filter data based on period
-    const now = new Date()
-    let startDate: Date
-    
-    switch (period) {
-      case '1D':
-        // For 1D, just show the last trading day (most recent data point)
-        const result1D = {
-          symbol: indexInfo.fmpSymbol,
-          name: indexInfo.name,
-          historical: data.historical.slice(0, 1) // Just the most recent day
-        }
-        await cache.set(cacheKey, result1D, CACHE_TTL * 2)
-        res.setHeader('X-Cache', 'MISS')
-        return res.json(result1D)
-      case '1W':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        break
-      case '1M':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        break
-      case 'YTD':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        break
-      case '3Y':
-        startDate = new Date(now.getTime() - 3 * 365 * 24 * 60 * 60 * 1000)
-        break
-      case '5Y':
-        startDate = new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000)
-        break
-      case '10Y':
-        startDate = new Date(now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000)
-        break
-      case '20Y':
-        startDate = new Date(now.getTime() - 20 * 365 * 24 * 60 * 60 * 1000)
-        break
-      default:
-        startDate = new Date(now.getFullYear(), 0, 1) // Default to YTD
-    }
-    
-    const filteredData = data.historical
-      .filter((item: any) => new Date(item.date) >= startDate)
-      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    
-    const result = {
-      symbol: indexInfo.fmpSymbol,
-      name: indexInfo.name,
-      historical: filteredData
-    }
-    
-    // Cache the result (10 minutes for historical data)
-    await cache.set(cacheKey, result, CACHE_TTL * 2)
-    
-    logger.info(`Fetched ${indexInfo.name} historical data: ${filteredData.length} points for ${period}`)
-    res.setHeader('X-Cache', 'MISS')
-    res.json(result)
-  } catch (error) {
-    logger.error(`Error fetching ${indexInfo.name} historical data for ${period}`, {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    })
-    
-    res.status(500).json({
-      error: `Failed to fetch ${indexInfo.name} historical data`,
       message: error instanceof Error ? error.message : 'Unknown error'
     })
   }

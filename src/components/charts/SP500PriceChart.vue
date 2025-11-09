@@ -1,7 +1,7 @@
 <template>
   <div class="sp500-price-chart">
     <div class="chart-header">
-      <h3>{{ indexName }} Historical Price</h3>
+      <h3>S&P 500 Historical Price</h3>
       <div v-if="!loading && priceData.length > 0" class="chart-info">
         <span class="info-item">
           Range: {{ formatDate(selectedRange.start) }} - {{ formatDate(selectedRange.end) }}
@@ -14,7 +14,7 @@
     
     <div v-if="loading" class="chart-loading">
       <div class="spinner"></div>
-      <span>Loading {{ indexName }} data...</span>
+      <span>Loading S&P 500 data...</span>
     </div>
     
     <div v-else-if="error" class="chart-error">
@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import VChart from 'vue-echarts'
 import type { EChartsOption } from 'echarts'
 import { use } from 'echarts/core'
@@ -70,14 +70,11 @@ use([
 ])
 
 interface Props {
-  period: string
-  index?: string  // Market index: SPX, NASDAQ, RUSSELL
   loading?: boolean
   error?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  index: 'SPX',
   loading: false,
   error: null
 })
@@ -94,27 +91,19 @@ const internalLoading = ref(false)
 const internalError = ref<string | null>(null)
 const debounceTimer = ref<number | null>(null)
 
-// Index name mapping
-const indexNames: Record<string, string> = {
-  'SPX': 'S&P 500',
-  'NASDAQ': 'NASDAQ Composite',
-  'RUSSELL': 'Russell 2000'
-}
-
-const indexName = computed(() => indexNames[props.index] || 'Market Index')
-
 // Computed loading state (use prop or internal)
 const loading = computed(() => props.loading || internalLoading.value)
 const error = computed(() => props.error || internalError.value)
-// Fetch historical data for selected index based on period
+
+// Fetch S&P 500 historical data (always 20 years)
 async function fetchPriceData() {
-  console.log(`[Index Chart] Fetching data for ${props.index} (${props.period})`)
+  console.log(`[SP500 Chart] Fetching 20-year historical data`)
   internalLoading.value = true
   internalError.value = null
   
   try {
-    const url = `http://localhost:7071/api/market/index/historical?symbol=${props.index}&period=${props.period}`
-    console.log(`[Index Chart] Fetching from: ${url}`)
+    const url = `http://localhost:7071/api/market/sp500/historical`
+    console.log(`[SP500 Chart] Fetching from: ${url}`)
     
     const response = await fetch(url, { 
       signal: AbortSignal.timeout(10000) // 10 second timeout
@@ -122,7 +111,7 @@ async function fetchPriceData() {
     
     if (!response.ok) {
       const statusText = response.statusText || 'Unknown error'
-      throw new Error(`Failed to fetch ${indexName.value} data: ${response.status} ${statusText}`)
+      throw new Error(`Failed to fetch S&P 500 data: ${response.status} ${statusText}`)
     }
     
     const data = await response.json()
@@ -130,7 +119,7 @@ async function fetchPriceData() {
     // Validate data using Zod schema
     const validation = validateHistoricalData(data)
     if (!validation.success) {
-      console.error(`[Index Chart] Data validation failed:`, validation.errors)
+      console.error(`[SP500 Chart] Data validation failed:`, validation.errors)
       throw new Error(`Invalid data format: ${validation.errors?.join(', ')}`)
     }
     
@@ -139,16 +128,14 @@ async function fetchPriceData() {
     
     // Additional runtime checks for edge cases
     if (!validatedData.historical || validatedData.historical.length === 0) {
-      throw new Error('No historical data available for this period')
+      throw new Error('No historical data available')
     }
     
     if (validatedData.historical.length === 1) {
-      console.warn(`[Index Chart] Only one data point available - performance calculation not possible`)
+      console.warn(`[SP500 Chart] Only one data point available - performance calculation not possible`)
     }
     
-    console.log(`[Index Chart] Received and validated data:`, {
-      index: props.index,
-      name: indexName.value,
+    console.log(`[SP500 Chart] Received and validated data:`, {
       symbol: validatedData.symbol,
       dataPoints: validatedData.historical.length,
       firstDate: validatedData.historical[0]?.date,
@@ -158,7 +145,7 @@ async function fetchPriceData() {
     // Convert to ECharts format using service
     priceData.value = convertToChartFormat(validatedData.historical)
     
-    console.log(`[Index Chart] Converted ${priceData.value.length} data points for chart`)
+    console.log(`[SP500 Chart] Converted ${priceData.value.length} data points for chart`)
     
     // Initialize selected range to full period
     if (priceData.value.length > 0) {
@@ -171,14 +158,14 @@ async function fetchPriceData() {
         rangePerformance.value = result.performance
         console.log(`[SP500 Chart] Initial range: ${result.startDate} to ${result.endDate}, Performance: ${result.performance.toFixed(2)}%`)
         
-        // Don't emit rangeChange on initial load - let the modal's period selector handle heatmap updates
-        // Only emit when user actually drags the scrollbar
+        // Emit initial range so heatmap can load sector data for the full 20-year period
+        emit('rangeChange', { start: result.startDate, end: result.endDate })
       }
     }
     
     internalLoading.value = false
   } catch (err) {
-    console.error(`[Index Chart] Error fetching ${indexName.value} data:`, err)
+    console.error(`[SP500 Chart] Error fetching data:`, err)
     
     // Handle specific error types with user-friendly messages
     if (err instanceof TypeError && err.message.includes('fetch')) {
@@ -186,13 +173,13 @@ async function fetchPriceData() {
     } else if (err instanceof DOMException && err.name === 'TimeoutError') {
       internalError.value = 'Request timeout: Server took too long to respond. Please try again.'
     } else if (err instanceof Error && err.message.includes('Failed to fetch')) {
-      internalError.value = `Unable to load ${indexName.value} data. Please try again later.`
+      internalError.value = `Unable to load S&P 500 data. Please try again later.`
     } else if (err instanceof Error && err.message.includes('Invalid data format')) {
       internalError.value = 'Data validation error: Received invalid data from server.'
     } else if (err instanceof Error && err.message.includes('No historical data')) {
       internalError.value = 'No data available for this time period.'
     } else {
-      internalError.value = err instanceof Error ? err.message : `Failed to load ${indexName.value} data`
+      internalError.value = err instanceof Error ? err.message : `Failed to load S&P 500 data`
     }
     
     internalLoading.value = false
@@ -324,26 +311,27 @@ const chartOption = computed<EChartsOption>(() => ({
       type: 'slider',
       start: 0,
       end: 100,
-      height: 24,
+      height: 30,
       bottom: 10,
       handleSize: '80%',
       throttle: 50, // Throttle drag events during interaction
       handleStyle: {
-        color: '#00A88E',
-        borderColor: '#00755F'
+        color: 'rgba(255, 255, 255, 0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.1)'
       },
       dataBackground: {
-        lineStyle: { color: '#00A88E', width: 1 },
-        areaStyle: { color: 'rgba(0, 168, 142, 0.1)' }
+        lineStyle: { color: '#444', width: 1 },
+        areaStyle: { color: 'rgba(0, 181, 154, 0.1)' }
       },
       selectedDataBackground: {
-        lineStyle: { color: '#00C087', width: 1.5 },
-        areaStyle: { color: 'rgba(0, 192, 135, 0.2)' }
+        lineStyle: { color: '#999', width: 1.5 },
+        areaStyle: { color: 'rgba(255, 255, 255, 0.15)' }
       },
-      fillerColor: 'rgba(0, 168, 142, 0.15)',
-      borderColor: '#2A2A2E',
-      textStyle: { color: 'rgba(229, 229, 229, 0.6)', fontSize: 10 },
-      brushSelect: false
+      fillerColor: 'rgba(255, 255, 255, 0.03)',
+      borderColor: 'rgba(255, 255, 255, 0.03)',
+      textStyle: { color: '#999', fontSize: 10 },
+      brushSelect: false,
+      moveHandleSize: 5
     }
   ],
   series: [
@@ -377,10 +365,19 @@ const chartOption = computed<EChartsOption>(() => ({
   ]
 }))
 
-// Watch period and index changes
-watch([() => props.period, () => props.index], () => {
+// Fetch data on mount
+onMounted(() => {
   fetchPriceData()
-}, { immediate: true })
+})
+
+// Clean up on unmount
+onUnmounted(() => {
+  // Clear any pending debounce timers
+  if (debounceTimer.value !== null) {
+    window.clearTimeout(debounceTimer.value)
+    debounceTimer.value = null
+  }
+})
 </script>
 
 <style scoped>
@@ -388,11 +385,11 @@ watch([() => props.period, () => props.index], () => {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0px;
   background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
   border: 1px solid #2A2A2E;
   border-radius: 12px;
-  padding: 20px;
+  padding: 15px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
@@ -447,7 +444,7 @@ watch([() => props.period, () => props.index], () => {
 
 .chart {
   width: 100%;
-  height: 280px;
+  height: 205px;
 }
 
 .chart-loading {
