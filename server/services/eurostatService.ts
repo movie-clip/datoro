@@ -42,8 +42,17 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
     const timeLabels = data.dimension?.time?.category?.label
     const values = data.value
     
-    if (!timeLabels || !values) {
-      logger.warn('[Eurostat] Missing time labels or values in response')
+    const valueKeys = values ? Object.keys(values) : []
+    logger.info(`[Eurostat Parser] Response has dimensions: ${JSON.stringify(Object.keys(data.dimension || {}))}`)
+    logger.info(`[Eurostat Parser] Value object exists: ${!!values}, keys count: ${valueKeys.length}`)
+    
+    if (!timeLabels) {
+      logger.warn('[Eurostat] Missing time labels in response')
+      return []
+    }
+    
+    if (!values || valueKeys.length === 0) {
+      logger.warn('[Eurostat] Missing or empty values in response')
       return []
     }
     
@@ -55,6 +64,9 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
       return dim?.category?.index ? Object.keys(dim.category.index).length : 0
     })
     
+    logger.info(`[Eurostat Parser] Dimensions: ${dimNames.join(', ')}`)
+    logger.info(`[Eurostat Parser] Sizes: ${dimSizes.join(' × ')}`)
+    
     // Find time dimension index
     const timeIndex = dimNames.indexOf('time')
     if (timeIndex === -1) {
@@ -62,34 +74,73 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
       return []
     }
     
-    // Calculate time dimension stride (how many values to skip to get to next time period)
-    let stride = 1
-    for (let i = dimNames.length - 1; i > timeIndex; i--) {
-      stride *= dimSizes[i]
-    }
-    
-    // Extract data for the first series only (simplest approach for multi-dimensional data)
-    const result: EurostatDataPoint[] = []
+    // Get time dimension info
     const timeDim = data.dimension['time' as keyof typeof dimensions]
     if (!timeDim?.category?.index) {
       logger.warn('[Eurostat] Time dimension has no category index')
       return []
     }
     
-    const timeKeys = Object.keys(timeDim.category.index)
+    const timeIndexMap = timeDim.category.index
+    const timeKeys = Object.keys(timeIndexMap).sort((a, b) => timeIndexMap[a] - timeIndexMap[b])
+    const timeSize = dimSizes[timeIndex]
     
-    for (let i = 0; i < timeKeys.length; i++) {
-      const valueIndex = i * stride
-      const value = values[valueIndex.toString()]
+    // Find the first available value key to determine which series to extract
+    const availableKeys = Object.keys(values).map(Number).sort((a, b) => a - b)
+    if (availableKeys.length === 0) {
+      logger.warn('[Eurostat] No values available in response')
+      return []
+    }
+    
+    const firstKey = availableKeys[0]
+    
+    // Determine if time is the last (rightmost) dimension
+    const isTimeLastDimension = timeIndex === dimNames.length - 1
+    
+    logger.info(`[Eurostat Parser] First value key: ${firstKey}, time is ${isTimeLastDimension ? 'last' : 'not last'} dimension`)
+    
+    // Extract values for the first available series across all time periods
+    const result: EurostatDataPoint[] = []
+    
+    if (isTimeLastDimension) {
+      // Time is last dimension: consecutive time values are sequential (firstKey, firstKey+1, firstKey+2, ...)
+      // But only if they exist in the value object (sparse data)
+      for (let timeIdx = 0; timeIdx < timeKeys.length; timeIdx++) {
+        const timeKey = timeKeys[timeIdx]
+        const valueLinearIndex = firstKey + timeIdx
+        const value = values[valueLinearIndex.toString()]
+        
+        if (value !== null && value !== undefined && !isNaN(value)) {
+          result.push({
+            date: timeKey,
+            value: value
+          })
+        }
+      }
+    } else {
+      // Time is NOT the last dimension: need to calculate stride
+      // Calculate stride: product of all dimensions AFTER time
+      let stride = 1
+      for (let i = timeIndex + 1; i < dimNames.length; i++) {
+        stride *= dimSizes[i]
+      }
       
-      // Skip null/undefined values
-      if (value !== null && value !== undefined && !isNaN(value)) {
-        result.push({
-          date: timeKeys[i],
-          value: value
-        })
+      // Extract series by jumping by stride for each time period
+      for (let timeIdx = 0; timeIdx < timeKeys.length; timeIdx++) {
+        const timeKey = timeKeys[timeIdx]
+        const valueLinearIndex = (Math.floor(firstKey / timeSize) * timeSize) + (timeIdx * stride)
+        const value = values[valueLinearIndex.toString()]
+        
+        if (value !== null && value !== undefined && !isNaN(value)) {
+          result.push({
+            date: timeKey,
+            value: value
+          })
+        }
       }
     }
+    
+    logger.info(`[Eurostat Parser] Extracted ${result.length} data points`)
     
     // Sort by date (oldest first)
     return result.sort((a, b) => a.date.localeCompare(b.date))
@@ -162,17 +213,26 @@ export async function fetchEUUnemployment(): Promise<EurostatDataPoint[]> {
 }
 
 /**
- * 3. ECB Interest Rate (Deposit Facility Rate)
- * Dataset: irt_st_m (Short-term interest rates)
- * Using deposit facility rate which is always available
+ * 3. Euro Area Interest Rate (3-month Euribor)
+ * Dataset: irt_st_m (Short-term interest rates - monthly data)
+ * Using 3-month interbank rate (Euribor) as proxy for ECB policy impact
+ * Note: ECB official rates not available in Eurostat, would need ECB SDW API
  */
 export async function fetchEUInterestRate(): Promise<EurostatDataPoint[]> {
-  return fetchEurostatDataset('irt_st_m', {
-    geo: 'EA19',
-    int_rt: 'RT_DFR',    // Deposit facility rate
-    format: 'JSON',
-    lang: 'EN'
-  })
+  try {
+    logger.info('[Eurostat] Fetching EU Interest Rate (3-month Euribor)')
+    const result = await fetchEurostatDataset('irt_st_m', {
+      geo: 'EA',           // Euro area (changing composition)
+      int_rt: 'IRT_M3',    // 3-month interbank rate (Euribor)
+      format: 'JSON',
+      lang: 'EN'
+    })
+    logger.info(`[Eurostat] Interest Rate fetch complete: ${result.length} points`)
+    return result
+  } catch (error) {
+    logger.error('[Eurostat] Interest Rate fetch failed:', error)
+    return []
+  }
 }
 
 /**
@@ -193,21 +253,27 @@ export async function fetchEUGDP(): Promise<EurostatDataPoint[]> {
 /**
  * 5. EU Building Permits
  * Dataset: sts_cobp_m (Construction - building permits)
- * Note: This dataset often has no data available for EU27_2020 aggregate
- * Returns empty array if no data available
+ * Indicator: BPRM_DW (Building permits - number of dwellings)
+ * Note: Not filtering by cpa2_1 to get aggregate building data
+ * Coverage: EU27 aggregate data available since ~1995
+ * Unit: Index 2015=100
  */
 export async function fetchEUBuildingPermits(): Promise<EurostatDataPoint[]> {
   try {
-    return await fetchEurostatDataset('sts_cobp_m', {
+    logger.info('[Eurostat] Fetching EU Building Permits with BPRM_DW indicator')
+    const result = await fetchEurostatDataset('sts_cobp_m', {
       geo: 'EU27_2020',
-      indic_bt: 'BPRM',    // Building permits
-      unit: 'I15',         // Index 2015=100
-      s_adj: 'NSA',        // Not seasonally adjusted
+      indic_bt: 'BPRM_DW',    // Building permits - number of dwellings
+      // cpa2_1 NOT specified - returns all building types (parser extracts first series)
+      unit: 'I15',            // Index 2015=100
+      s_adj: 'NSA',           // Not seasonally adjusted
       format: 'JSON',
       lang: 'EN'
     })
+    logger.info(`[Eurostat] Building Permits result: ${result.length} data points`)
+    return result
   } catch (error) {
-    logger.warn('[Eurostat] Building permits data not available for EU27_2020, returning empty array')
+    logger.error('[Eurostat] Building permits fetch error:', error)
     return []
   }
 }
@@ -235,10 +301,10 @@ export async function fetchEUConsumerConfidence(): Promise<EurostatDataPoint[]> 
 export async function fetchEURetailSales(): Promise<EurostatDataPoint[]> {
   return fetchEurostatDataset('sts_trtu_m', {
     geo: 'EU27_2020',
-    indic_bt: 'TOVV',    // Volume of sales (value)
+    indic_bt: 'VOL_SLS', // Volume of sales
     nace_r2: 'G47',      // Retail trade
     unit: 'I21',         // Index 2021=100
-    s_adj: 'NSA',        // Not seasonally adjusted
+    s_adj: 'CA',         // Calendar adjusted (CA has data, NSA/SA don't)
     format: 'JSON',
     lang: 'EN'
   })

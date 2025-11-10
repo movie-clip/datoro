@@ -217,8 +217,8 @@ export default defineConfig(({ mode }) => {
       // No source maps in production for smaller builds
       sourcemap: false,
       
-      // Chunk size warnings (raised for chart-heavy app)
-      chunkSizeWarningLimit: 500, // Reduced from 1000 to catch issues
+      // Chunk size warnings (chart-heavy app needs larger chunks)
+      chunkSizeWarningLimit: 600, // Increased to 600 kB - ECharts vendor is ~526 kB (169 kB gzipped)
       
       // CSS code splitting for faster loads
       cssCodeSplit: true,
