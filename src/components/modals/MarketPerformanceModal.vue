@@ -105,6 +105,9 @@ const mouseDownOnOverlay = ref(false)
 
 let customRangeAbortController: AbortController | null = null
 
+// API base URL (uses env variable in production, localhost in dev)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071'
+
 // Use market performance composable
 const { 
   heatmapData,
@@ -176,7 +179,7 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
     error.value = null
     
     // Fetch sector performance for custom date range
-    const url = `http://localhost:7071/api/market/sectors/custom-range?startDate=${range.start}&endDate=${range.end}`
+    const url = `${API_BASE_URL}/api/market/sectors/custom-range?startDate=${range.start}&endDate=${range.end}`
     
     const response = await fetch(url, { 
       signal: customRangeAbortController.signal,

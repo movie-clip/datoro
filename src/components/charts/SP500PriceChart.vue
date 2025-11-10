@@ -95,6 +95,9 @@ const debounceTimer = ref<number | null>(null)
 const loading = computed(() => props.loading || internalLoading.value)
 const error = computed(() => props.error || internalError.value)
 
+// API base URL (uses env variable in production, localhost in dev)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071'
+
 // Fetch S&P 500 historical data (always 20 years)
 async function fetchPriceData() {
   console.log(`[SP500 Chart] Fetching 20-year historical data`)
@@ -102,7 +105,7 @@ async function fetchPriceData() {
   internalError.value = null
   
   try {
-    const url = `http://localhost:7071/api/market/sp500/historical`
+    const url = `${API_BASE_URL}/api/market/sp500/historical`
     console.log(`[SP500 Chart] Fetching from: ${url}`)
     
     const response = await fetch(url, { 
