@@ -249,11 +249,11 @@ function formatDate(dateStr: string): string {
 const chartOption = computed<EChartsOption>(() => ({
   backgroundColor: 'transparent',
   grid: {
-    left: '2%',
-    right: '8%', // More space for Y-axis labels
+    left: 50, // Fixed 50px for Y-axis labels
+    right: 10, // Minimal 10px padding on right
     top: '8%',
     bottom: '25%',
-    containLabel: true
+    containLabel: false // Disable auto-padding to control exact spacing
   },
   tooltip: {
     trigger: 'axis',
@@ -291,7 +291,7 @@ const chartOption = computed<EChartsOption>(() => ({
   },
   yAxis: {
     type: 'value',
-    position: 'right',
+    position: 'left',
     scale: true, // Enable smart scaling
     axisLine: { show: false },
     axisTick: { show: false },
