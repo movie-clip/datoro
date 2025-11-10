@@ -36,6 +36,8 @@
           {{ option.label }}
         </button>
       </div>
+      <!-- Custom controls slot for additional buttons -->
+      <slot name="controls"></slot>
       <VChart
         ref="modalChartRef"
         v-if="isMounted && hasSeriesData(modalOption)"
@@ -136,6 +138,8 @@
             {{ option.label }}
           </button>
         </div>
+        <!-- Custom controls slot for additional buttons -->
+        <slot name="controls"></slot>
         <!-- Chart -->
         <VChart
           class="echart-modal"

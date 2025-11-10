@@ -1,7 +1,6 @@
 import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
-import { getValuationRatiosSeriesFromBatch, type ValuationRatiosDataPoint } from '../services/financials/batchChartService'
 
 type Period = 'annual' | 'quarterly'
 
@@ -11,12 +10,16 @@ interface SeriesItem {
   data: [number, number][]
   yAxisIndex: number
   smooth?: boolean
-  lineStyle?: { width: number }
+  lineStyle?: { width?: number; color?: string }
+  itemStyle?: { color: string }
   showSymbol?: boolean
 }
 
+type RatioKey = 'pe' | 'ps' | 'roic' | 'grossMargin' | 'netMargin'
+
 export interface UseValuationRatiosSeriesReturn {
   period: ComputedRef<Period>
+  selectedRatios: Ref<RatioKey[]>
   series: ComputedRef<SeriesItem[]>
   compactSeries: ComputedRef<SeriesItem[]>
   title: Ref<string>
@@ -29,8 +32,11 @@ export interface UseValuationRatiosSeriesReturn {
 }
 
 export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
-  const title = ref('Ratios — Empty')
+  const title = ref('Financial Ratios — Empty')
   const message = ref('')
+  
+  // Selected ratios to display (default: all)
+  const selectedRatios = ref<RatioKey[]>(['pe', 'ps', 'roic'])
 
   // Use Pinia store with storeToRefs to maintain reactivity
   const tickerStore = useTickerStore()
@@ -40,9 +46,34 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
   const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data extraction - single source of truth
-  const rawData = computed(() => 
-    getValuationRatiosSeriesFromBatch(batchData.value, period.value)
-  )
+  const rawData = computed(() => {
+    const ratios = period.value === 'annual' 
+      ? batchData.value?.data?.ratiosAnnual 
+      : batchData.value?.data?.ratiosQuarter
+    
+    const keyMetrics = batchData.value?.data?.keyMetrics
+
+    if (!ratios || !Array.isArray(ratios)) return []
+
+    return ratios
+      .map((r: any) => {
+        if (!r.date) return null
+        
+        // Find matching keyMetrics entry for ROIC
+        const matchingMetrics = keyMetrics?.find((m: any) => m.date === r.date)
+        
+        return {
+          date: new Date(r.date).getTime(),
+          peRatio: Number(r.priceEarningsRatioTTM || r.priceEarningsRatio || 0),
+          psRatio: Number(r.priceToSalesRatioTTM || r.priceToSalesRatio || 0),
+          roic: Number((matchingMetrics as any)?.roic || 0) * 100, // ROIC as percentage
+          grossMargin: Number(r.grossProfitMargin || 0) * 100, // Convert to percentage
+          netMargin: Number(r.netProfitMargin || 0) * 100 // Convert to percentage
+        }
+      })
+      .filter((point): point is any => point !== null)
+      .sort((a, b) => a.date - b.date)
+  })
 
   const error = computed<string | null>(() => {
     if (batchError.value) return batchError.value
@@ -55,32 +86,44 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
     return null
   })
 
-  // Transform data to multi-series format for dual-axis chart
+  // Transform data to multi-series format
   const series = computed<SeriesItem[]>(() => {
     if (!rawData.value.length) return []
     
-    return [
-      {
-        name: 'P/E Ratio',
-        type: 'line',
-        data: rawData.value
-          .filter(d => d.peRatio !== 0)
-          .map(d => [d.date, d.peRatio] as [number, number]),
-        yAxisIndex: 0,
-        lineStyle: { width: 2 },
-        showSymbol: false
-      },
-      {
-        name: 'P/S Ratio',
-        type: 'line',
-        data: rawData.value
-          .filter(d => d.psRatio !== 0)
-          .map(d => [d.date, d.psRatio] as [number, number]),
-        yAxisIndex: 1,
-        lineStyle: { width: 2 },
-        showSymbol: false
+    const ratioConfig: Record<RatioKey, { name: string; key: keyof typeof rawData.value[0]; color: string }> = {
+      pe: { name: 'P/E Ratio', key: 'peRatio', color: '#3b82f6' },
+      ps: { name: 'P/S Ratio', key: 'psRatio', color: '#10b981' },
+      roic: { name: 'ROIC %', key: 'roic', color: '#06b6d4' },
+      grossMargin: { name: 'Gross Margin %', key: 'grossMargin', color: '#8b5cf6' },
+      netMargin: { name: 'Net Margin %', key: 'netMargin', color: '#ef4444' }
+    }
+    
+    const result: SeriesItem[] = []
+    
+    // Find the earliest date across all data to align all series
+    const earliestDate = rawData.value.length > 0 ? rawData.value[0].date : 0
+    
+    for (const ratioKey of selectedRatios.value) {
+      const config = ratioConfig[ratioKey]
+      const data = rawData.value
+        .map(d => [d.date, d[config.key]] as [number, number])
+      
+      if (data.length > 0) {
+        // Use axis 0 for ratios (PE, PS), axis 1 for percentages (ROIC, margins)
+        const isPercentage = ['roic', 'grossMargin', 'netMargin'].includes(ratioKey)
+        
+        result.push({
+          name: config.name,
+          type: 'line',
+          data,
+          yAxisIndex: isPercentage ? 1 : 0,
+          lineStyle: { color: config.color },
+          itemStyle: { color: config.color }
+        })
       }
-    ].filter(s => s.data.length > 0) // Only include series with data
+    }
+    
+    return result
   })
   
   // Compact series (same as full view for this chart)
@@ -122,6 +165,7 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
     error, 
     refresh,
     ticker: currentTicker,  // For cached growth calculations in BaseChart
-    dataType: 'valuationRatios'  // Cache key identifier
+    dataType: 'valuationRatios',  // Cache key identifier
+    selectedRatios
   }
 }

@@ -21,26 +21,7 @@
     :timeframe="timeframe"
     @update:selected-segments="selectedSegments = $event"
     @modal-closed="resetView"
-  >
-    <template #controls>
-      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-        <button 
-          :class="{ active: chartView === 'margin' }" 
-          class="view-toggle"
-          @click="chartView = 'margin'"
-        >
-          EBITDA & Margin
-        </button>
-        <button 
-          :class="{ active: chartView === 'bridge' }" 
-          class="view-toggle"
-          @click="chartView = 'bridge'"
-        >
-          Bridge View
-        </button>
-      </div>
-    </template>
-  </BaseChart>
+  />
 </template>
 
 <script setup lang="ts">
