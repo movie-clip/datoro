@@ -94,8 +94,6 @@ export async function fetchTreasuryRates(from?: string, to?: string): Promise<Tr
   
   const response = await fetch(`${API_BASE_URL}/api/macro/treasury?from=${fromDate}&to=${toDate}`)
   if (!response.ok) {
-    const text = await response.text()
-    console.error('[Macro] Treasury response:', text.substring(0, 200))
     throw new Error(`Failed to fetch treasury rates: ${response.statusText}`)
   }
   
@@ -176,7 +174,6 @@ export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroDat
   const from = getDateMonthsAgo(24) // 2 years of data
   const to = getTodayDate()
   
-  console.log('[Macro] Fetching all macro data via batch endpoint...')
   const startTime = performance.now()
   
   try {
@@ -188,12 +185,8 @@ export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroDat
     
     const data = await response.json()
     
-    const duration = performance.now() - startTime
-    console.log(`[Macro] Fetched all data in ${duration.toFixed(0)}ms (1 request)`)
-    
     return data
   } catch (error) {
-    console.error('[Macro] Batch fetch failed, falling back to individual requests:', error)
     return fetchAllMacroDataLegacy()
   }
 }
@@ -202,9 +195,6 @@ export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroDat
  * Fetch all EU macro data from Eurostat
  */
 export async function fetchAllEUMacroData(): Promise<EUMacroData> {
-  console.log('[Macro] Fetching all EU macro data via Eurostat batch endpoint...')
-  const startTime = performance.now()
-  
   try {
     const response = await fetch(`${API_BASE_URL}/api/macro/eu-batch`)
     
@@ -214,12 +204,8 @@ export async function fetchAllEUMacroData(): Promise<EUMacroData> {
     
     const data = await response.json()
     
-    const duration = performance.now() - startTime
-    console.log(`[Macro] Fetched all EU data in ${duration.toFixed(0)}ms (1 request)`)
-    
     return data
   } catch (error) {
-    console.error('[Macro] EU batch fetch failed:', error)
     // Return empty data structure on failure
     return {
       inflation: [],
@@ -243,9 +229,6 @@ async function fetchAllMacroDataLegacy(): Promise<MacroData> {
   const from = getDateMonthsAgo(24)
   const to = getTodayDate()
   
-  console.log('[Macro] Using legacy individual requests...')
-  const startTime = performance.now()
-  
   // Use Promise.allSettled to handle partial failures gracefully
   const results = await Promise.allSettled([
     fetchTreasuryRates(from, to),
@@ -260,9 +243,6 @@ async function fetchAllMacroDataLegacy(): Promise<MacroData> {
     fetchRiskPremium()
   ])
   
-  const duration = performance.now() - startTime
-  console.log(`[Macro] Fetched all data in ${duration.toFixed(0)}ms`)
-  
   // Extract data or use empty arrays for failed requests
   const [
     treasuryRatesResult,
@@ -276,14 +256,6 @@ async function fetchAllMacroDataLegacy(): Promise<MacroData> {
     sectorsResult,
     riskPremiumResult
   ] = results
-  
-  // Log any failures
-  results.forEach((result, index) => {
-    const names = ['treasury', 'federalFunds', 'consumerSentiment', 'retailSales', 'inflation', 'unemploymentRate', 'spx', 'indexStats', 'sectors', 'riskPremium']
-    if (result.status === 'rejected') {
-      console.error(`[Macro] Failed to fetch ${names[index]}:`, result.reason)
-    }
-  })
   
   return {
     treasuryRates: treasuryRatesResult.status === 'fulfilled' ? treasuryRatesResult.value : [],

@@ -25,8 +25,7 @@ export const MACRO_CHART_CONFIGS: ChartConfig[] = [
     dataKey: 'inflation',
     color: COLORS.chart.orange,
     valueFormatter: percentFormatter,
-    tooltipFormatter: percentFormatter,
-    yAxisLabel: '%'
+    tooltipFormatter: percentFormatter
   },
   {
     id: 'fedFunds',

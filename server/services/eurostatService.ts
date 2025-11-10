@@ -103,11 +103,41 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
     const result: EurostatDataPoint[] = []
     
     if (isTimeLastDimension) {
-      // Time is last dimension: consecutive time values are sequential (firstKey, firstKey+1, firstKey+2, ...)
-      // But only if they exist in the value object (sparse data)
-      for (let timeIdx = 0; timeIdx < timeKeys.length; timeIdx++) {
-        const timeKey = timeKeys[timeIdx]
-        const valueLinearIndex = firstKey + timeIdx
+      // Time is last dimension: find the series with the most recent/complete data
+      let bestSeriesBase = firstKey
+      let bestLastIndex = -1
+      
+      // Calculate how many series exist
+      const numSeries = Math.ceil(Math.max(...availableKeys) / timeSize) + 1
+      
+      // Check each series to find the one with most recent data
+      for (let seriesIdx = 0; seriesIdx < numSeries; seriesIdx++) {
+        const seriesBase = seriesIdx * timeSize
+        
+        // Find the last non-null value in this series
+        for (let timeIdx = timeKeys.length - 1; timeIdx >= 0; timeIdx--) {
+          const timeKey = timeKeys[timeIdx]
+          const timeMappedIdx = timeIndexMap[timeKey]
+          const valueIdx = seriesBase + timeMappedIdx
+          const value = values[valueIdx.toString()]
+          
+          if (value !== null && value !== undefined && !isNaN(value)) {
+            // Found the last non-null value in this series
+            if (timeMappedIdx > bestLastIndex) {
+              bestLastIndex = timeMappedIdx
+              bestSeriesBase = seriesBase
+            }
+            break
+          }
+        }
+      }
+      
+      logger.info(`[Eurostat Parser] Using series at base ${bestSeriesBase} (last index: ${bestLastIndex})`)
+      
+      // Extract values from the best series
+      for (const timeKey of timeKeys) {
+        const timeIdx = timeIndexMap[timeKey]
+        const valueLinearIndex = bestSeriesBase + timeIdx
         const value = values[valueLinearIndex.toString()]
         
         if (value !== null && value !== undefined && !isNaN(value)) {

@@ -89,15 +89,21 @@ export function useChartSync(): UseChartSyncReturn {
   const setupChartSync = (charts: UseMacroChartReturn[], sourceIndex: number) => {
     const sourceChart = charts[sourceIndex]
     
-    if (!sourceChart || !sourceChart.chartRef.value) return
+    if (!sourceChart || !sourceChart.chartRef.value) {
+      return
+    }
 
     const instance = (sourceChart.chartRef.value as any).chart
-    if (!instance) return
+    if (!instance) {
+      return
+    }
 
-    // Listen for dataZoom events
-    instance.on('dataZoom', (params: any) => {
+    // Listen for dataZoom events (this is the correct ECharts event name)
+    instance.on('datazoom', (params: any) => {
       // Prevent infinite loops
-      if (isSyncing.value) return
+      if (isSyncing.value) {
+        return
+      }
 
       const { start, end } = params.batch?.[0] || params
 
@@ -105,7 +111,9 @@ export function useChartSync(): UseChartSyncReturn {
       sourceChart.isZoomed.value = start !== 0 || end !== 100
 
       // Only sync if source chart has sync enabled
-      if (!sourceChart.isSynced.value) return
+      if (!sourceChart.isSynced.value) {
+        return
+      }
 
       // Begin sync operation
       isSyncing.value = true

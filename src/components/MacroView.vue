@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'
@@ -104,7 +104,6 @@ function isCacheValid(region: Region): boolean {
  */
 function getCachedData(region: Region): MacroData | EUMacroData | null {
   if (isCacheValid(region)) {
-    console.log('[Macro] Using cached data (age:', Math.floor((Date.now() - macroDataCache!.timestamp) / 1000), 's)')
     return macroDataCache!.data
   }
   return null
@@ -119,7 +118,6 @@ function setCachedData(data: MacroData | EUMacroData, region: Region): void {
     timestamp: Date.now(),
     region
   }
-  console.log('[Macro] Data cached for', CACHE_TTL.MACRO_DATA / 1000, 'seconds, region:', region)
 }
 
 // Region state
@@ -253,7 +251,6 @@ async function loadIndexData() {
   try {
     indexLoading.value = true
     indexError.value = null
-    console.log('[MacroView] Loading US index data (optimized endpoint)...')
     const indexStats = await fetchIndexStats()
     
     if (indexStats && indexStats.length > 0) {
@@ -271,11 +268,8 @@ async function loadIndexData() {
           name: indexNames[stat.symbol] || stat.symbol,
           change: stat['1D'] || 0
         }))
-      
-      console.log('[MacroView] US index data loaded:', indexData.value)
     }
   } catch (err: any) {
-    console.error('[MacroView] Failed to load index data:', err)
     indexError.value = err.message || 'Failed to load market indices'
   } finally {
     indexLoading.value = false
@@ -291,6 +285,33 @@ function handleRegionChange(newRegion: Region) {
 }
 
 /**
+ * Re-setup chart synchronization after data loads
+ */
+const setupSyncForAllCharts = async () => {
+  // Wait for charts to update with new data
+  await nextTick()
+  
+  setTimeout(() => {
+    charts.forEach((chart, index) => {
+      // Skip if chart ref is not available yet
+      if (!chart.chartRef.value) {
+        return
+      }
+      
+      // Remove old listeners by getting fresh instance
+      const instance = (chart.chartRef.value as any).chart
+      if (instance) {
+        // Remove all previous datazoom listeners to avoid duplicates
+        instance.off('datazoom')
+      }
+      
+      // Setup new sync
+      setupChartSync(charts, index)
+    })
+  }, 500)
+}
+
+/**
  * Load macro economic data with caching
  */
 const loadData = async () => {
@@ -303,6 +324,8 @@ const loadData = async () => {
     if (cached) {
       macroData.value = cached
       macroLoading.value = false
+      // Re-setup sync after loading cached data
+      setupSyncForAllCharts()
       return
     }
     
@@ -312,8 +335,10 @@ const loadData = async () => {
     
     // Store in cache
     setCachedData(freshData, selectedRegion.value)
+    
+    // Re-setup sync after loading fresh data
+    setupSyncForAllCharts()
   } catch (err: any) {
-    console.error('[Macro] Failed to load data:', err)
     error.value = err.message || 'Failed to load macro data'
   } finally {
     macroLoading.value = false
@@ -336,11 +361,6 @@ onMounted(async () => {
   
   // Load region-specific macro data
   await loadData()
-  
-  // Setup sync for all charts
-  charts.forEach((chart, index) => {
-    setupChartSync(charts, index)
-  })
 })
 </script>
 
