@@ -87,6 +87,10 @@ services:
       
       - key: DEV_ORIGIN
         value: https://datoro.onrender.com
+      
+      # Frontend URL (for Stripe redirects and email links)
+      - key: APP_URL
+        value: https://datoro.onrender.com
 
   # ==============================================
   # Redis Cache (Key-Value Store)
@@ -173,17 +177,21 @@ databases:
 #      * Create webhook endpoint: https://datoro-api.onrender.com/api/webhooks/stripe
 #      * Select events: checkout.session.completed, customer.subscription.*, invoice.payment_*
 #
-# 3. Optional: Set monitoring if using Sentry:
+# 3. CRITICAL: APP_URL is auto-set in render.yaml to https://datoro.onrender.com
+#    - If using custom domain, update APP_URL in Render dashboard manually
+#    - This controls Stripe redirects and email links
+#
+# 4. Optional: Set monitoring if using Sentry:
 #    - SENTRY_DSN (for error tracking)
 #
-# 4. Update ALLOWED_ORIGINS if using custom domain:
+# 5. Update ALLOWED_ORIGINS if using custom domain:
 #    - Add your production domain(s)
 #    - Add www subdomain if needed
 #
-# 5. Update frontend VITE_API_BASE_URL:
+# 6. Update frontend VITE_API_BASE_URL:
 #    - Change to your custom backend domain if not using default
 #
-# 6. Update CSP header in frontend headers:
+# 7. Update CSP header in frontend headers:
 #    - Update connect-src with your backend domain
 #
 # Note: AI insights are pre-generated and served as static JSON files
