@@ -79,7 +79,7 @@ const monitoring = getMonitoringService()
 
 // API Version - increment when FMP endpoints change to auto-invalidate caches
 // v2.3 - Added fmpDcf endpoint to batch data service
-const API_VERSION = 'v2.11' // Price history fix - cache invalidation
+const API_VERSION = 'v2.12' // Price history fix - cache invalidation
 const API_UPDATED = '2025-11-09T22:00:00Z'
 
 // Database health flag (disabled if offline to prevent 5s timeouts)

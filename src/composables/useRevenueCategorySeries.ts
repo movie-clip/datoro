@@ -62,17 +62,12 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
     // Extract total revenue
     const total = getRevenueSeriesFromBatch(data, period.value)
     
-    // Extract product categories
-    let product: RevenueSegmentsResult = { segments: [], series: {} }
-    if (data.data?.revenueSegments) {
-      product = getProductCategoriesFromBatch(data)
-    }
+    // Extract product categories - always call extraction function
+    // The function handles null/undefined internally and returns empty result
+    const product = getProductCategoriesFromBatch(data)
     
-    // Extract geographic categories
-    let geographic: RevenueSegmentsResult = { segments: [], series: {} }
-    if (data.data?.revenueGeographicSegments) {
-      geographic = getGeographicCategoriesFromBatch(data)
-    }
+    // Extract geographic categories - same pattern
+    const geographic = getGeographicCategoriesFromBatch(data)
 
     return { total, product, geographic }
   })
