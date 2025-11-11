@@ -908,6 +908,7 @@ export const getProductCategoriesFromBatch = memoize(function getProductCategori
   }
 }) as (batchData: BatchData | null) => RevenueSegmentsResult
 
+
 /**
  * Get geographic revenue categories from batch data (MEMOIZED)
  * Structure: { "date": { "Region Name": value, ... } }
@@ -917,7 +918,21 @@ export const getGeographicCategoriesFromBatch = memoize(function getGeographicCa
   try {
     const segmentData = batchData?.data?.revenueGeographicSegments
 
-    if (!segmentData || !Array.isArray(segmentData) || segmentData.length === 0) {
+    if (!segmentData) {
+      // eslint-disable-next-line no-console
+      console.debug('[getGeographicCategoriesFromBatch] No revenueGeographicSegments data found')
+      return { segments: [], series: {} }
+    }
+    
+    if (!Array.isArray(segmentData)) {
+      // eslint-disable-next-line no-console
+      console.warn('[getGeographicCategoriesFromBatch] revenueGeographicSegments is not an array:', typeof segmentData)
+      return { segments: [], series: {} }
+    }
+    
+    if (segmentData.length === 0) {
+      // eslint-disable-next-line no-console
+      console.debug('[getGeographicCategoriesFromBatch] revenueGeographicSegments array is empty')
       return { segments: [], series: {} }
     }
 
@@ -966,15 +981,21 @@ export const getGeographicCategoriesFromBatch = memoize(function getGeographicCa
     })
 
     if (skippedEntries > 0) {
-      console.warn(`[BatchChartService] Skipped ${skippedEntries} invalid geographic segment entries`)
+      // eslint-disable-next-line no-console
+      console.warn(`[getGeographicCategoriesFromBatch] Skipped ${skippedEntries} invalid geographic segment entries`)
     }
+    
+    // eslint-disable-next-line no-console
+    console.debug(`[getGeographicCategoriesFromBatch] Extracted ${allRegions.size} geographic segments from ${segmentData.length} entries`)
 
     return {
       segments: Array.from(allRegions).sort(),
       series: regionSeries
     }
   } catch (error) {
-    console.error('[BatchChartService] getGeographicCategoriesFromBatch error:', error)
+    // eslint-disable-next-line no-console
+    console.error('[getGeographicCategoriesFromBatch] Error:', error)
     return { segments: [], series: {} }
   }
 }) as (batchData: BatchData | null) => RevenueSegmentsResult
+

@@ -98,6 +98,8 @@ describe('Memoization Reactivity Fix', () => {
   it('should handle empty revenueSegments', () => {
     const emptyBatchData = {
       ...mockBatchData,
+      ticker: 'EMPTY', // Use different ticker to avoid cache collision
+      timestamp: new Date('2025-01-01T00:00:00Z').toISOString(), // Unique timestamp
       data: {
         ...mockBatchData.data,
         revenueSegments: [] as any[]

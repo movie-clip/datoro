@@ -253,9 +253,13 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           }
         }
         
-        // Special handling: /api/v4/score returns object, but we need array for consistency
+        // Special handling: Some FMP /api/v4 endpoints return object instead of array
         if (dataKey === 'financialScores' && data && !Array.isArray(data)) {
           result.data[dataKey] = [data]; // Wrap in array
+        } else if ((dataKey === 'revenueGeographicSegments' || dataKey === 'revenueSegments') && data && !Array.isArray(data)) {
+          // FMP revenue segmentation endpoints can return object instead of array
+          logger.info(`[BatchData] ${dataKey} returned object instead of array, wrapping in array`);
+          result.data[dataKey] = [data]; // Wrap in array for consistent parsing
         } else {
           result.data[dataKey] = data;
         }
