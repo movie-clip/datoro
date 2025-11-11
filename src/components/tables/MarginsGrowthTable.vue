@@ -34,7 +34,7 @@ import { formatNumber } from '@/utils/formatters'
 
 // Import chart components
 import NetIncomeChart from '../charts/NetIncomeChart.vue'
-import RevenueChart from '../charts/RevenueChart.vue'
+import RevenueChart from '../charts/RevenueByCategoryChart.vue'
 import ExpensesChart from '../charts/ExpensesChart.vue'
 
 // Use Pinia store

@@ -32,7 +32,7 @@ import ChartModal from '../common/ChartModal.vue'
 
 // Import chart components
 import PriceChart from '../charts/PriceChart.vue'
-import RevenueChart from '../charts/RevenueChart.vue'
+import RevenueChart from '../charts/RevenueByCategoryChart.vue'
 import EbitdaChart from '../charts/EbitdaChart.vue'
 import InsiderTradingChart from '../charts/InsiderTradingChart.vue'
 import type { Component } from 'vue'

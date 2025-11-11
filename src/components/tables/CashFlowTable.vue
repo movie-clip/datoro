@@ -34,7 +34,7 @@ import type { Component } from 'vue'
 import { formatNumber } from '@/utils/formatters'
 
 // Import chart components
-import RevenueChart from '../charts/RevenueChart.vue'
+import RevenueChart from '../charts/RevenueByCategoryChart.vue'
 import NetIncomeChart from '../charts/NetIncomeChart.vue'
 import EpsChart from '../charts/EpsChart.vue'
 import FcfChart from '../charts/FcfChart.vue'

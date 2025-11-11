@@ -136,12 +136,22 @@ const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
     
     // Return cached value if found
     // For object results (like RevenueSegmentsResult), we need to ensure reactivity
-    // by returning a new reference, but the arrays inside can be shared (they're immutable)
+    // by returning a new reference every time to force Vue to detect changes
     if (cached !== undefined) {
-      // If result is an object with 'segments' and 'series', return a shallow clone
-      // to ensure Vue's reactivity system detects the change
+      // If result is an object with 'segments' and 'series', return a deep clone
+      // to ensure Vue's reactivity system always detects a new object reference
       if (cached && typeof cached === 'object' && 'segments' in cached && 'series' in cached) {
-        return { ...cached } as ReturnType<T>
+        // Deep clone: new segments array + new series object with new arrays
+        const series: Record<string, SeriesPoint[]> = {}
+        for (const [key, value] of Object.entries(cached.series)) {
+          if (Array.isArray(value)) {
+            series[key] = [...value]
+          }
+        }
+        return {
+          segments: [...cached.segments],
+          series
+        } as ReturnType<T>
       }
       return cached
     }

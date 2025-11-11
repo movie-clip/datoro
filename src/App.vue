@@ -90,9 +90,10 @@ const SharesChart = defineAsyncComponent(() =>
 const CashDebtChart = defineAsyncComponent(() =>
   import('./components/charts/CashDebtChart.vue')
 )
-const RevenueByCategoryChart = defineAsyncComponent(() =>
+const RevenueChart = defineAsyncComponent(() =>
   import('./components/charts/RevenueByCategoryChart.vue')
 )
+const RevenueByCategoryChart = RevenueChart // Alias for backward compatibility
 
 // Use Pinia stores
 const tickerStore = useTickerStore()
