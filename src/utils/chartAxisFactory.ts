@@ -208,7 +208,13 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
     {
       type: 'value' as const,
       position: 'right' as const,
-      min: rightAxisType === 'percentage' ? 0 : (value: MinMaxValue) => {
+      min: rightAxisType === 'percentage' ? (value: MinMaxValue) => {
+        // Allow negative percentages (e.g., negative net margin)
+        // If all values are positive, start from 0
+        if (value.min >= 0) return 0
+        // If there are negative values, add 10% padding
+        return Math.floor(value.min / 10) * 10 - 5
+      } : (value: MinMaxValue) => {
         // Ensure 0 is always centered by making bounds symmetric
         const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
         // Add 10% padding to prevent data from touching edges
@@ -216,7 +222,7 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
       },
       max: rightAxisType === 'percentage' ? (value: MinMaxValue) => {
         // Round up to nearest 10 for clean scale (e.g., 38% -> 40%)
-        return Math.ceil(value.max / 10) * 10
+        return Math.ceil(value.max / 10) * 10 + 5
       } : (value: MinMaxValue) => {
         // Ensure 0 is always centered by making bounds symmetric
         const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
