@@ -58,6 +58,7 @@ import {
   type PriceDataPoint
 } from '../../services/market/sp500CalculationService'
 import { validateHistoricalData } from '../../schemas/marketPerformanceSchemas'
+import { marketDataCache } from '../../services/market/marketDataCache'
 
 // Register ECharts components
 use([
@@ -97,6 +98,8 @@ const error = computed(() => props.error || internalError.value)
 
 // API base URL (uses env variable in production, localhost in dev)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071'
+const CACHE_KEY = 'sp500:historical:20y:monthly'
+const CACHE_TTL_MINUTES = 60 // 1 hour - matches backend cache
 
 // Fetch S&P 500 historical data (always 20 years)
 async function fetchPriceData() {
@@ -105,11 +108,34 @@ async function fetchPriceData() {
   internalError.value = null
   
   try {
+    // Check client cache first (1 hour TTL)
+    const cachedData = marketDataCache.get<any>(CACHE_KEY)
+    if (cachedData) {
+      const cacheAge = marketDataCache.getAge(CACHE_KEY)
+      console.log(`[SP500 Chart] Using cached data (age: ${cacheAge}s)`)
+      
+      // Process cached data
+      priceData.value = convertToChartFormat(cachedData.historical)
+      
+      // Initialize selected range
+      if (priceData.value.length > 0) {
+        const result = calculatePerformance(priceData.value, 0, priceData.value.length - 1)
+        if (result) {
+          selectedRange.value = { start: result.startDate, end: result.endDate }
+          rangePerformance.value = result.performance
+          emit('rangeChange', { start: result.startDate, end: result.endDate })
+        }
+      }
+      
+      internalLoading.value = false
+      return
+    }
+    
     const url = `${API_BASE_URL}/api/market/sp500/historical`
-    console.log(`[SP500 Chart] Fetching from: ${url}`)
+    console.log(`[SP500 Chart] Fetching from API: ${url}`)
     
     const response = await fetch(url, { 
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: AbortSignal.timeout(30000) // Increased to 30 seconds
     })
     
     if (!response.ok) {
@@ -144,6 +170,9 @@ async function fetchPriceData() {
       firstDate: validatedData.historical[0]?.date,
       lastDate: validatedData.historical[validatedData.historical.length - 1]?.date
     })
+    
+    // Cache the validated data (1 hour TTL)
+    marketDataCache.set(CACHE_KEY, validatedData, CACHE_TTL_MINUTES)
     
     // Convert to ECharts format using service
     priceData.value = convertToChartFormat(validatedData.historical)
@@ -230,11 +259,11 @@ function handleDataZoom(event: any) {
       window.clearTimeout(debounceTimer.value)
     }
     
-    // Debounce the API call for sector data (500ms delay to wait for drag end)
+    // Debounce the API call for sector data (1000ms delay to wait for drag end)
     debounceTimer.value = window.setTimeout(() => {
       console.log(`[SP500 Chart] Range updated: ${result.startDate} to ${result.endDate}, Performance: ${result.performance.toFixed(2)}%`)
       emit('rangeChange', { start: result.startDate, end: result.endDate })
-    }, 500) // Increased to 500ms to better capture drag end
+    }, 1000) // Increased to 1s to better wait for user to finish adjusting
   } catch (err) {
     console.error('[SP500 Chart] Error in handleDataZoom:', err)
   }
@@ -353,7 +382,7 @@ const chartOption = computed<EChartsOption>(() => ({
       type: 'line',
       data: priceData.value.map(point => [point.timestamp, point.price]),
       smooth: true,
-      symbol: 'none',
+      symbol: 'none', // No visible data points
       lineStyle: {
         color: '#00A88E',
         width: 2

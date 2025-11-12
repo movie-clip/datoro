@@ -209,6 +209,10 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           
           if (!res.ok) {
             logger.warn(`[BatchData] ${key} failed: ${res.status} (${duration}ms)`);
+            if (key === 'quote') {
+              logger.error(`[BatchData] quote endpoint failed for ${t}: ${baseUrl}${endpoint}`);
+              logger.error(`[BatchData] quote status: ${res.status}, statusText: ${res.statusText}`);
+            }
             if (key === 'advancedDcf') {
               logger.error(`[BatchData] advancedDcf endpoint failed: ${baseUrl}${endpoint}`);
               logger.error(`[BatchData] advancedDcf status: ${res.status}, statusText: ${res.statusText}`);
@@ -217,6 +221,12 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           }
           
           const data = await res.json();
+          if (key === 'quote') {
+            logger.info(`[BatchData] quote data received for ${t}:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+            if (Array.isArray(data) && data.length > 0) {
+              logger.info(`[BatchData] quote data sample:`, { sharesOutstanding: data[0].sharesOutstanding });
+            }
+          }
           if (key === 'advancedDcf') {
             logger.info(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
           }

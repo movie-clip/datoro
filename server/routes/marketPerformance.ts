@@ -223,8 +223,8 @@ router.get('/sectors/custom-range', asyncHandler(async (req: Request, res: Respo
     const results = await Promise.all(sectorPromises)
     const validResults = results.filter(r => r !== null)
     
-    // Cache the result (30 minutes for custom range)
-    await cache.set(cacheKey, validResults, CACHE_TTL * 6)
+    // Cache the result (30 minutes for custom range - fire-and-forget)
+    cache.setFast(cacheKey, validResults, CACHE_TTL * 6)
     
     res.setHeader('X-Cache', 'MISS')
     res.json(validResults)
@@ -437,11 +437,11 @@ router.get('/sp500', asyncHandler(async (req: Request, res: Response) => {
 
 /**
  * GET /api/market/sp500/historical
- * Get S&P 500 historical price data for charting (20 years of data)
- * User controls time window via chart scrollbar
+ * Get S&P 500 historical price data for charting (20 years of monthly data)
+ * Returns one data point per month (last trading day) for better performance
  */
 router.get('/sp500/historical', asyncHandler(async (req: Request, res: Response) => {
-  const cacheKey = `market:sp500:historical:20y`
+  const cacheKey = `market:sp500:historical:20y:monthly`
   
   // Try cache first
   const cached = await cache.get(cacheKey)
@@ -476,15 +476,18 @@ router.get('/sp500/historical', asyncHandler(async (req: Request, res: Response)
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     
+    // Downsample to monthly data (last trading day of each month)
+    const monthlyData = downsampleToMonthly(sortedData)
+    
     const result = {
       symbol: '^GSPC',
-      historical: sortedData
+      historical: monthlyData
     }
     
-    // Cache for 1 hour (data changes infrequently)
-    await cache.set(cacheKey, result, 60 * 60)
+    // Cache for 1 hour (fire-and-forget - don't block response)
+    cache.setFast(cacheKey, result, 60 * 60)
     
-    logger.info(`Fetched S&P 500 historical data: ${sortedData.length} points (20 years)`)
+    logger.info(`Fetched S&P 500 historical data: ${monthlyData.length} monthly points (20 years)`)
     res.setHeader('X-Cache', 'MISS')
     res.json(result)
   } catch (error) {
@@ -655,5 +658,31 @@ router.get('/sectors/:sector/history', asyncHandler(async (req: Request, res: Re
     })
   }
 }))
+
+/**
+ * Downsample daily data to monthly data points
+ * Returns the last trading day of each month
+ */
+function downsampleToMonthly(dailyData: any[]): any[] {
+  if (!dailyData || dailyData.length === 0) {
+    return []
+  }
+  
+  const monthlyMap = new Map<string, any>()
+  
+  // Group by year-month and keep the last (most recent) entry for each month
+  for (const item of dailyData) {
+    const date = new Date(item.date)
+    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    
+    // Keep the most recent date for this month (data is sorted ascending)
+    monthlyMap.set(yearMonth, item)
+  }
+  
+  // Convert map back to array and sort by date
+  return Array.from(monthlyMap.values()).sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  )
+}
 
 export default router

@@ -4,6 +4,7 @@
  */
 
 import { API_BASE_URL } from '../../utils/apiConfig'
+import { marketDataCache } from '../market/marketDataCache'
 
 export interface TreasuryRate {
   date: string
@@ -165,6 +166,7 @@ export async function fetchRiskPremium(): Promise<RiskPremium[]> {
 
 /**
  * Fetch all macro data in one batch request (OPTIMIZED - 1 request instead of 10+)
+ * Includes client-side caching (15 min TTL)
  */
 export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroData | EUMacroData> {
   if (region === 'EU') {
@@ -173,6 +175,16 @@ export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroDat
   
   const from = getDateMonthsAgo(24) // 2 years of data
   const to = getTodayDate()
+  
+  // Check client cache first (15 min TTL - matches backend)
+  const cacheKey = `macro:batch:${region}:${from}:${to}`
+  const cachedData = marketDataCache.get<MacroData>(cacheKey)
+  
+  if (cachedData) {
+    const cacheAge = marketDataCache.getAge(cacheKey)
+    console.log(`[Macro] Using cached data (age: ${cacheAge}s)`)
+    return cachedData
+  }
   
   const startTime = performance.now()
   
@@ -184,6 +196,9 @@ export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroDat
     }
     
     const data = await response.json()
+    
+    // Cache for 15 minutes (matches backend cache)
+    marketDataCache.set(cacheKey, data, 15)
     
     return data
   } catch (error) {

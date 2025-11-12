@@ -11,6 +11,7 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import { fmpLimiter, globalFmpLimiter, decrementGlobalFmpCounter } from '../middleware/rateLimiter.js'
 import { getCacheService, CacheTTL } from '../services/cacheService.js'
 import { trackSearch, updateTickerCompanyName, trackApiRequest } from '../services/databaseService.js'
+import { fetchTickerBatch, fetchTickerPriority } from '../services/batchDataService.js'
 
 const router = express.Router()
 const cache = getCacheService()
@@ -134,18 +135,23 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
   
   logger.info(`[Batch] ${t} (${mode}) → CACHE MISS - Fetching from FMP...`)
   
-  // Import batch service
-  const { fetchTickerBatch, fetchTickerPriority } = await import('../services/batchDataService.js')
-  
   // Fetch data based on mode
   const result = mode === 'priority' 
     ? await fetchTickerPriority(t, FMP_API_KEY)
     : await fetchTickerBatch(t, FMP_API_KEY)
   
-  // Cache the result
-  await cache.set(cacheKey, result, CacheTTL.COMPANY_PROFILE) // 7 days
+  // Generate ETag BEFORE cache write (can be done in parallel)
+  const dataHash = cache.generateETag(result)
+  const etag = `"${API_VERSION}-${dataHash}"`
+  
+  // Cache the result (fire-and-forget - don't block response)
+  cache.setFast(cacheKey, result, CacheTTL.COMPANY_PROFILE)
   logger.info(`[Batch] ${t} (${mode}) → Cached with key: ${cacheKey}, TTL: ${CacheTTL.COMPANY_PROFILE}s`)
+  
   res.setHeader('X-Cache', 'miss')
+  res.setHeader('ETag', etag)
+  res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
+  res.setHeader('X-API-Version', API_VERSION)
   
   logger.info(`[Batch] ${t} (${mode}) → Fetched in ${result.fetchDuration}ms`)
   
@@ -176,14 +182,6 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
       })
     })
   }
-  
-  // Generate version-aware ETag for fresh data
-  const dataHash = cache.generateETag(result)
-  const etag = `"${API_VERSION}-${dataHash}"`
-  
-  res.setHeader('ETag', etag)
-  res.setHeader('Cache-Control', 'private, max-age=300') // 5 min client cache
-  res.setHeader('X-API-Version', API_VERSION)
   
   res.json(result)
 }))

@@ -77,21 +77,59 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
   try {
     const data = batchData.data
     
+    // Debug: Log what's actually in the batch data
+    console.log('[DCF Data] Batch data structure for', batchData.ticker, ':', {
+      hasQuote: !!data.quote,
+      quoteType: typeof data.quote,
+      quoteIsArray: Array.isArray(data.quote),
+      hasProfile: !!data.profile,
+      profileType: typeof data.profile,
+      hasKeyMetrics: !!data.keyMetrics,
+      keyMetricsType: typeof data.keyMetrics,
+      hasCashflow: !!data.cashflowAnnual,
+      allKeys: Object.keys(data)
+    })
+    
     // Extract profile data
     const profile = Array.isArray(data.profile) && data.profile.length > 0 
       ? data.profile[0] 
       : null
+    
+    if (profile) {
+      console.log('[DCF Data] Profile data:', { 
+        symbol: profile.symbol,
+        price: profile.price,
+        mktCap: profile.mktCap,
+        hasPrice: !!profile.price,
+        hasMktCap: !!profile.mktCap
+      })
+    }
     
     // Extract quote data
     const quote = Array.isArray(data.quote) && data.quote.length > 0 
       ? data.quote[0] 
       : null
     
+    if (quote) {
+      console.log('[DCF Data] Quote data:', {
+        symbol: quote.symbol,
+        price: quote.price,
+        sharesOutstanding: quote.sharesOutstanding,
+        marketCap: quote.marketCap
+      })
+    } else {
+      console.warn('[DCF Data] Quote is NULL for', batchData.ticker, '- Raw quote value:', data.quote)
+    }
+    
     // Extract cash flow statements (annual)
     const cashflowAnnual = data.cashflowAnnual || []
     
     // Extract balance sheet (for cash and debt)
     const balanceAnnual = data.balanceAnnual || []
+    
+    // Extract key metrics (has marketCap and other useful data)
+    const keyMetrics = (data.keyMetrics || []) as any[]
+    const latestKeyMetrics = keyMetrics.length > 0 ? keyMetrics[0] : null
     
     // Get most recent FCF from cash flow statement
     const latestCashflow = cashflowAnnual[0] // Most recent year
@@ -101,24 +139,66 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     
     // Get shares outstanding  
     // Try multiple sources with defensive checks
-    // FMP returns shares in actual count (e.g., 15,204,000,000 for AAPL)
+    // Priority: quote > cashflow > calculated from marketCap and price
     let sharesOutstanding = 0
+    let sharesSource = 'none'
     
+    // Try all available sources
     if (quote?.sharesOutstanding && Number(quote.sharesOutstanding) > 0) {
       sharesOutstanding = Number(quote.sharesOutstanding)
+      sharesSource = 'quote.sharesOutstanding'
+    } else if (quote?.marketCap && quote?.price && quote.price > 0) {
+      // Calculate from quote's marketCap and price
+      sharesOutstanding = Number(quote.marketCap) / quote.price
+      sharesSource = 'calculated (quote.marketCap / quote.price)'
     } else if (latestCashflow?.weightedAverageShsOut && Number(latestCashflow.weightedAverageShsOut) > 0) {
       sharesOutstanding = Number(latestCashflow.weightedAverageShsOut)
+      sharesSource = 'cashflow.weightedAverageShsOut'
     } else if (latestCashflow?.weightedAverageShsOutDil && Number(latestCashflow.weightedAverageShsOutDil) > 0) {
       sharesOutstanding = Number(latestCashflow.weightedAverageShsOutDil)
+      sharesSource = 'cashflow.weightedAverageShsOutDil'
+    } else if (latestKeyMetrics?.marketCap && quote?.price && quote.price > 0) {
+      // Calculate shares from market cap and current price
+      sharesOutstanding = Number(latestKeyMetrics.marketCap) / quote.price
+      sharesSource = 'calculated (keyMetrics.marketCap / quote.price)'
+    } else if (latestKeyMetrics?.marketCap && profile?.price && profile.price > 0) {
+      // Use profile price if quote price not available
+      sharesOutstanding = Number(latestKeyMetrics.marketCap) / profile.price
+      sharesSource = 'calculated (keyMetrics.marketCap / profile.price)'
+    } else if (profile?.mktCap && profile?.price && profile.price > 0) {
+      // Last resort: use profile market cap and price
+      sharesOutstanding = Number(profile.mktCap) / profile.price
+      sharesSource = 'calculated (profile.mktCap / profile.price)'
     }
     
     // Validation: Shares should be reasonable (> 1 million for any public company)
     if (sharesOutstanding < 1_000_000) {
-      console.warn('[DCF Data] Suspicious shares outstanding:', sharesOutstanding, 'for ticker:', batchData.ticker)
+      console.error('[DCF Data] Cannot determine shares outstanding for', batchData.ticker, '- Source:', sharesSource)
+      console.error('[DCF Data] Available data:', {
+        quoteShares: quote?.sharesOutstanding,
+        quoteMarketCap: quote?.marketCap,
+        quotePrice: quote?.price,
+        cashflowWeighted: latestCashflow?.weightedAverageShsOut,
+        cashflowDiluted: latestCashflow?.weightedAverageShsOutDil,
+        keyMetricsMarketCap: latestKeyMetrics?.marketCap,
+        profileMktCap: profile?.mktCap,
+        profilePrice: profile?.price
+      })
+      return null // Cannot calculate DCF without shares outstanding
+    } else {
+      console.log('[DCF Data] Shares outstanding for', batchData.ticker, ':', sharesOutstanding.toLocaleString(), '- Source:', sharesSource)
     }
     
-    // Get current price
-    const currentPrice = quote?.price || 0
+    // Get current price (from quote or profile)
+    const currentPrice = quote?.price || profile?.price || latestKeyMetrics?.marketCap && sharesOutstanding > 0 
+      ? Number(latestKeyMetrics.marketCap) / sharesOutstanding 
+      : 0
+    
+    if (!currentPrice || currentPrice <= 0) {
+      console.error('[DCF Data] Unable to determine current price for', batchData.ticker)
+      return null
+    }
+
     
     // Get cash and debt from balance sheet
     const latestBalance = balanceAnnual[0]

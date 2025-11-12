@@ -515,8 +515,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       fetchWithTimeout(`${FMP_BASE_URL}/api/v4/economic?name=unemploymentRate&apikey=${FMP_API_KEY}`, {}, 10000),
       // Index quotes - batch call for all 5 indices (optimized: 5 calls → 1 call)
       fetchWithTimeout(`${FMP_BASE_URL}/api/v3/quote/${symbols.join(',')}?apikey=${FMP_API_KEY}`, {}, 10000),
-      // Housing starts - fetch full historical data from 1959 (earliest available) to match other economic indicators
-      fetchWithTimeout(`${FMP_BASE_URL}/stable/economic-indicators?name=newPrivatelyOwnedHousingUnitsStartedTotalUnits&from=1959-01-01&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000)
+      // Housing starts - fetch only requested date range (typically last 12 months)
+      fetchWithTimeout(`${FMP_BASE_URL}/stable/economic-indicators?name=newPrivatelyOwnedHousingUnitsStartedTotalUnits&from=${fromDate}&to=${toDate}&apikey=${FMP_API_KEY}`, {}, 10000)
     ])
     
     // Process results
@@ -604,8 +604,8 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   logger.info(`[Macro] Batch → Fetched all data in ${duration}ms (8 FMP API calls - removed SPX, sectors, risk premium)`)
   logger.info(`[Macro] Batch → housingStarts array length: ${data.housingStarts?.length || 0}`)
   
-  // Cache for 15 minutes (balanced between freshness and performance)
-  await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
+  // Cache for 15 minutes (fire-and-forget - don't block response)
+  cache.setFast(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)

@@ -1,7 +1,7 @@
 import Redis from 'ioredis'
 import { LRUCache } from 'lru-cache'
 import crypto from 'crypto'
-import { MEMORY_LIMITS, CACHE_TTL, REDIS_TTL } from '../config/constants'
+import { MEMORY_LIMITS, CACHE_TTL, REDIS_TTL } from '../config/constants.js'
 import logger from './logger.js'
 
 interface CacheServiceOptions {
@@ -259,6 +259,35 @@ class CacheService {
   }
   
   /**
+   * Fast non-blocking cache write (fire-and-forget)
+   * Use this for cache writes that shouldn't block request response
+   * Skips TTL check - always writes to avoid extra Redis network call
+   */
+  setFast<T = any>(key: string, value: T, ttlSeconds: number = REDIS_TTL.DEFAULT): void {
+    this.stats.sets++
+
+    // Layer 1: Memory cache (instant)
+    this.memoryCache.set(key, value)
+
+    // Layer 2: Redis cache (fire-and-forget - don't block caller)
+    if (this.redisEnabled && this.connected && this.redis) {
+      setImmediate(() => {
+        const serialized = JSON.stringify(value)
+        this.stats.cacheWrites++
+        
+        const promise = ttlSeconds > 0 
+          ? this.redis!.setex(key, ttlSeconds, serialized)
+          : this.redis!.set(key, serialized)
+        
+        promise.catch((_error: Error) => {
+          logger.error('[CacheService] Redis SETFAST error:', _error.message)
+          this.stats.errors++
+        })
+      })
+    }
+  }
+  
+  /**
    * Generate ETag from data (MD5 hash)
    */
   generateETag(data: any): string {
@@ -438,6 +467,8 @@ class CacheService {
 
   /**
    * Ping Redis to check connectivity (for health checks)
+  /**
+   * Ping Redis to check connectivity (for health checks)
    */
   async ping(): Promise<boolean> {
     if (!this.redisEnabled || !this.connected || !this.redis) {
@@ -474,4 +505,3 @@ export function getCacheService(): CacheService {
 }
 
 export default CacheService
-
