@@ -51,7 +51,10 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
       ? batchData.value?.data?.ratiosAnnual 
       : batchData.value?.data?.ratiosQuarter
     
-    const keyMetrics = batchData.value?.data?.keyMetrics
+    // Use matching key metrics based on period
+    const keyMetrics = period.value === 'annual'
+      ? batchData.value?.data?.keyMetrics
+      : batchData.value?.data?.keyMetricsQuarter
 
     if (!ratios || !Array.isArray(ratios)) return []
 

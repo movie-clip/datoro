@@ -77,49 +77,15 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
   try {
     const data = batchData.data
     
-    // Debug: Log what's actually in the batch data
-    console.log('[DCF Data] Batch data structure for', batchData.ticker, ':', {
-      hasQuote: !!data.quote,
-      quoteType: typeof data.quote,
-      quoteIsArray: Array.isArray(data.quote),
-      hasProfile: !!data.profile,
-      profileType: typeof data.profile,
-      hasKeyMetrics: !!data.keyMetrics,
-      keyMetricsType: typeof data.keyMetrics,
-      hasCashflow: !!data.cashflowAnnual,
-      allKeys: Object.keys(data)
-    })
-    
     // Extract profile data
     const profile = Array.isArray(data.profile) && data.profile.length > 0 
       ? data.profile[0] 
       : null
     
-    if (profile) {
-      console.log('[DCF Data] Profile data:', { 
-        symbol: profile.symbol,
-        price: profile.price,
-        mktCap: profile.mktCap,
-        hasPrice: !!profile.price,
-        hasMktCap: !!profile.mktCap
-      })
-    }
-    
     // Extract quote data
     const quote = Array.isArray(data.quote) && data.quote.length > 0 
       ? data.quote[0] 
       : null
-    
-    if (quote) {
-      console.log('[DCF Data] Quote data:', {
-        symbol: quote.symbol,
-        price: quote.price,
-        sharesOutstanding: quote.sharesOutstanding,
-        marketCap: quote.marketCap
-      })
-    } else {
-      console.warn('[DCF Data] Quote is NULL for', batchData.ticker, '- Raw quote value:', data.quote)
-    }
     
     // Extract cash flow statements (annual)
     const cashflowAnnual = data.cashflowAnnual || []
@@ -173,20 +139,7 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     
     // Validation: Shares should be reasonable (> 1 million for any public company)
     if (sharesOutstanding < 1_000_000) {
-      console.error('[DCF Data] Cannot determine shares outstanding for', batchData.ticker, '- Source:', sharesSource)
-      console.error('[DCF Data] Available data:', {
-        quoteShares: quote?.sharesOutstanding,
-        quoteMarketCap: quote?.marketCap,
-        quotePrice: quote?.price,
-        cashflowWeighted: latestCashflow?.weightedAverageShsOut,
-        cashflowDiluted: latestCashflow?.weightedAverageShsOutDil,
-        keyMetricsMarketCap: latestKeyMetrics?.marketCap,
-        profileMktCap: profile?.mktCap,
-        profilePrice: profile?.price
-      })
       return null // Cannot calculate DCF without shares outstanding
-    } else {
-      console.log('[DCF Data] Shares outstanding for', batchData.ticker, ':', sharesOutstanding.toLocaleString(), '- Source:', sharesSource)
     }
     
     // Get current price (from quote or profile)
@@ -195,7 +148,6 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
       : 0
     
     if (!currentPrice || currentPrice <= 0) {
-      console.error('[DCF Data] Unable to determine current price for', batchData.ticker)
       return null
     }
 
