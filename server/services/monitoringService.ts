@@ -24,6 +24,17 @@ interface RecentError {
   statusCode?: number
 }
 
+interface EndpointPerformance {
+  count: number
+  responseTimes: number[]
+  avgResponseTime: number
+  p50ResponseTime: number
+  p95ResponseTime: number
+  p99ResponseTime: number
+  maxResponseTime: number
+  minResponseTime: number
+}
+
 interface Metrics {
   requests: {
     total: number
@@ -34,6 +45,7 @@ interface Metrics {
       '4xx': number
       '5xx': number
     }
+    aborted: number  // Track aborted/cancelled requests
   }
   performance: {
     responseTimes: number[]
@@ -41,6 +53,7 @@ interface Metrics {
     avgResponseTime: number
     p95ResponseTime: number
     p99ResponseTime: number
+    byEndpoint: Record<string, EndpointPerformance>  // Per-endpoint metrics
   }
   cache: {
     hits: number
@@ -80,14 +93,16 @@ class MonitoringService {
           '3xx': 0,
           '4xx': 0,
           '5xx': 0
-        }
+        },
+        aborted: 0  // Initialize aborted request counter
       },
       performance: {
         responseTimes: [],
         slowQueries: [],
         avgResponseTime: 0,
         p95ResponseTime: 0,
-        p99ResponseTime: 0
+        p99ResponseTime: 0,
+        byEndpoint: {}  // Initialize endpoint-specific performance tracking
       },
       cache: {
         hits: 0,
@@ -165,6 +180,9 @@ class MonitoringService {
 
     // Track response time
     this.trackResponseTime(duration)
+    
+    // Track endpoint-specific performance
+    this.trackEndpointPerformance(endpoint, duration)
 
     // Track slow queries (>2 seconds)
     if (duration > 2000) {
@@ -206,6 +224,47 @@ class MonitoringService {
       
       this.metrics.performance.p99ResponseTime = 
         Math.round(sorted[Math.floor(len * 0.99)])
+    }
+  }
+
+  /**
+   * Track endpoint-specific performance metrics
+   */
+  trackEndpointPerformance(endpoint: string, duration: number): void {
+    // Initialize endpoint metrics if not exists
+    if (!this.metrics.performance.byEndpoint[endpoint]) {
+      this.metrics.performance.byEndpoint[endpoint] = {
+        count: 0,
+        responseTimes: [],
+        avgResponseTime: 0,
+        p50ResponseTime: 0,
+        p95ResponseTime: 0,
+        p99ResponseTime: 0,
+        maxResponseTime: 0,
+        minResponseTime: Infinity
+      }
+    }
+
+    const endpointMetrics = this.metrics.performance.byEndpoint[endpoint]
+    endpointMetrics.count++
+    endpointMetrics.responseTimes.push(duration)
+
+    // Keep only last 100 response times per endpoint
+    if (endpointMetrics.responseTimes.length > 100) {
+      endpointMetrics.responseTimes.shift()
+    }
+
+    // Calculate percentiles for this endpoint
+    if (endpointMetrics.responseTimes.length > 0) {
+      const sorted = [...endpointMetrics.responseTimes].sort((a, b) => a - b)
+      const len = sorted.length
+
+      endpointMetrics.avgResponseTime = Math.round(sorted.reduce((a, b) => a + b, 0) / len)
+      endpointMetrics.p50ResponseTime = Math.round(sorted[Math.floor(len * 0.50)])
+      endpointMetrics.p95ResponseTime = Math.round(sorted[Math.floor(len * 0.95)])
+      endpointMetrics.p99ResponseTime = Math.round(sorted[Math.floor(len * 0.99)])
+      endpointMetrics.maxResponseTime = Math.round(sorted[len - 1])
+      endpointMetrics.minResponseTime = Math.round(sorted[0])
     }
   }
 
@@ -276,6 +335,14 @@ class MonitoringService {
     if (this.metrics.errors.recent.length > 20) {
       this.metrics.errors.recent.pop();
     }
+  }
+
+  /**
+   * Track aborted/cancelled request
+   * Called when client cancels request (AbortController)
+   */
+  trackAbortedRequest(): void {
+    this.metrics.requests.aborted++
   }
 
   /**
@@ -393,14 +460,16 @@ class MonitoringService {
       requests: {
         total: 0,
         byEndpoint: {},
-        byStatus: { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 }
+        byStatus: { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 },
+        aborted: 0  // Initialize aborted counter on reset
       },
       performance: {
         responseTimes: [],
         slowQueries: [],
         avgResponseTime: 0,
         p95ResponseTime: 0,
-        p99ResponseTime: 0
+        p99ResponseTime: 0,
+        byEndpoint: {}  // Reset endpoint-specific performance tracking
       },
       cache: {
         hits: 0,

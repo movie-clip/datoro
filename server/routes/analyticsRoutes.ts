@@ -15,6 +15,7 @@ import {
   getUserSearchHistory, 
   getApiRequestStats 
 } from '../services/databaseService.js'
+import { getMonitoringService } from '../services/monitoringService.js'
 
 const router = express.Router()
 
@@ -74,6 +75,27 @@ router.get('/stats', adminLimiter, validate(validateAnalyticsStats), asyncHandle
   const { hours } = req.query as { hours?: number } // Already validated and converted by middleware
   const stats = await getApiRequestStats(hours)
   res.json({ success: true, data: stats })
+}))
+
+/**
+ * POST /api/analytics/abort
+ * 
+ * Track aborted/cancelled request (sent via beacon when user switches tickers)
+ * Non-critical endpoint - always returns 204 No Content
+ * Used for performance monitoring and analytics
+ * 
+ * @param {string} ticker - The ticker that was aborted
+ * @param {string} mode - Request mode (full/lite)
+ * @param {string} timestamp - When abort occurred
+ * @returns {204} - No content (beacon endpoint)
+ */
+router.post('/abort', asyncHandler(async (req: Request, res: Response) => {
+  // Track in monitoring service
+  const monitoring = getMonitoringService()
+  monitoring.trackAbortedRequest()
+  
+  // Always return 204 No Content (beacon endpoint)
+  res.status(204).end()
 }))
 
 export default router

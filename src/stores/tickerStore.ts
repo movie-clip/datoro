@@ -225,6 +225,9 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   // Request deduplication: Track in-flight requests
   const pendingRequests = new Map<string, Promise<void>>()
   
+  // Request cancellation: Track AbortControllers for in-flight requests
+  const abortControllers = new Map<string, AbortController>()
+  
   // Check API version on startup (auto-clear cache if version changed)
   checkApiVersion(cache).catch(err => {
     console.error('[TickerStore] Version check error:', err)
@@ -306,6 +309,29 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
       return existingRequest
     }
     
+    // Cancel previous request if switching tickers (different requestKey)
+    // This prevents slow requests from overwriting faster ones
+    for (const [key, controller] of abortControllers.entries()) {
+      if (key !== requestKey) {
+        console.log(`[TickerStore] Aborting previous request: ${key}`)
+        controller.abort()
+        abortControllers.delete(key)
+        pendingRequests.delete(key)
+        
+        // Track aborted request in analytics (non-blocking beacon)
+        try {
+          navigator.sendBeacon(`${API_BASE_URL}/api/analytics/abort`, JSON.stringify({ 
+            ticker: key.split('-')[0],
+            mode: key.split('-')[1],
+            timestamp: new Date().toISOString()
+          }))
+        } catch (err) {
+          // Ignore beacon errors (analytics is non-critical)
+          console.debug('[TickerStore] Failed to send abort beacon:', err)
+        }
+      }
+    }
+    
     // Check cache first
     const cacheKey = `${t}-${mode}`
     const cached = cache.get(cacheKey)
@@ -329,6 +355,10 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
       error.value = null
       const startTime = performance.now()
       
+      // Create AbortController for this request
+      const abortController = new AbortController()
+      abortControllers.set(requestKey, abortController)
+      
       try {
         // Send ETag if we have cached data with matching version
         const headers: HeadersInit = {}
@@ -336,7 +366,10 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
           headers['If-None-Match'] = cached.etag
         }
         
-        const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`, { headers })
+        const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`, { 
+          headers,
+          signal: abortController.signal // Add abort signal
+        })
         
         // Handle 304 Not Modified - use cached data (server validated it's still fresh)
         if (response.status === 304 && cached) {
@@ -373,13 +406,23 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
         error.value = null
       } catch (err) {
         const e = err as Error
+        
+        // Handle abort errors (user switched tickers)
+        if (e.name === 'AbortError') {
+          console.log(`[TickerStore] Request aborted for ${t}`)
+          // Don't set error state for aborted requests
+          loading.value = false
+          return
+        }
+        
         console.error(`[TickerStore] Fetch error for ${t}:`, e.message)
         error.value = e.message || 'Failed to fetch ticker data'
         loading.value = false
         throw err // Re-throw so all waiting promises reject
       } finally {
-        // Clean up pending request tracking
+        // Clean up pending request tracking and abort controller
         pendingRequests.delete(requestKey)
+        abortControllers.delete(requestKey)
       }
     })()
     

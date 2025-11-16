@@ -129,116 +129,136 @@ async function fetchWithTimeout(url: string, options: FetchOptions = {}, timeout
 }
 
 /**
- * Fetch all data for a ticker in one batch
- * Returns everything needed for the dashboard in a single response
- * Now fetches 24 endpoints (added Advanced DCF for detailed valuation)
+ * Fetch ticker data with endpoint prioritization
+ * Phase 1 (Critical): Essential data for initial render (~800ms)
+ * Phase 2 (Secondary): Additional data fetched after Phase 1 completes (~500ms delay)
+ * 
+ * @param ticker - Stock ticker symbol
+ * @param fmpApiKey - FMP API key
+ * @returns BatchResult with all data
  */
 export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promise<BatchResult> {
   const t = ticker.toUpperCase().trim();
   const baseUrl = 'https://financialmodelingprep.com';
   
-  // All endpoints we need to fetch (24 total - added Advanced DCF)
-  const endpoints: Record<string, string> = {
-    // Core company data (Priority 1 - Always needed)
+  // PHASE 1: Critical endpoints (needed for initial render)
+  // ~10 endpoints, typically completes in 800-1200ms
+  const criticalEndpoints: Record<string, string> = {
+    // Core company data
     profile: `/api/v3/profile/${t}?apikey=${fmpApiKey}`,
     quote: `/api/v3/quote/${t}?apikey=${fmpApiKey}`,
     
-    // Financial statements (Priority 1 - Most charts need these)
+    // Financial statements (annual only for speed)
     incomeAnnual: `/api/v3/income-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
-    incomeQuarter: `/api/v3/income-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     balanceAnnual: `/api/v3/balance-sheet-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
-    balanceQuarter: `/api/v3/balance-sheet-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     cashflowAnnual: `/api/v3/cash-flow-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
-    cashflowQuarter: `/api/v3/cash-flow-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     
-    // TTM data for DCF (Priority 1 - More accurate current metrics)
+    // Essential metrics
     ratiosTTM: `/api/v3/ratios-ttm/${t}?apikey=${fmpApiKey}`,
     keyMetricsTTM: `/api/v3/key-metrics-ttm/${t}?apikey=${fmpApiKey}`,
-    
-    // Ratios and metrics (Priority 1)
     ratiosAnnual: `/api/v3/ratios/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
-    ratiosQuarter: `/api/v3/ratios/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     keyMetrics: `/api/v3/key-metrics/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
+    
+    // Price data (essential for charts)
+    priceHistory: `/api/v3/historical-price-full/${t}?from=${getDateMonthsAgo(360)}&apikey=${fmpApiKey}`,
+  };
+  
+  // PHASE 2: Secondary endpoints (can be deferred)
+  // ~14 endpoints, fetched 500ms after Phase 1 starts
+  const secondaryEndpoints: Record<string, string> = {
+    // Quarterly data (for detailed analysis)
+    incomeQuarter: `/api/v3/income-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
+    balanceQuarter: `/api/v3/balance-sheet-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
+    cashflowQuarter: `/api/v3/cash-flow-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
+    ratiosQuarter: `/api/v3/ratios/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     keyMetricsQuarter: `/api/v3/key-metrics/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     
-    // Price data (Priority 1) - Fetch all available history from 30 years ago
-    // Note: FMP historical-price-full endpoint may only return last 5 years by default,
-    // so we explicitly use 'from' parameter to get full history (30 years should cover all stocks)
-    priceHistory: `/api/v3/historical-price-full/${t}?from=${getDateMonthsAgo(360)}&apikey=${fmpApiKey}`,
-    
-    // Valuation (Priority 1 - DCF from FMP)
+    // Valuation models
     fmpDcf: `/api/v3/discounted-cash-flow/${t}?apikey=${fmpApiKey}`,
-    
-    // Advanced DCF (Priority 1 - Full 10-year projection model)
     advancedDcf: `/api/v4/advanced_discounted_cash_flow?symbol=${t}&apikey=${fmpApiKey}`,
     
-    // Additional data (Priority 2)
+    // Additional data
     revenueSegments: `/api/v4/revenue-product-segmentation?symbol=${t}&structure=flat&apikey=${fmpApiKey}`,
     revenueGeographicSegments: `/api/v4/revenue-geographic-segmentation?symbol=${t}&structure=flat&apikey=${fmpApiKey}`,
     dividendHistory: `/api/v3/historical-price-full/stock_dividend/${t}?apikey=${fmpApiKey}`,
     stockSplit: `/api/v3/historical-price-full/stock_split/${t}?apikey=${fmpApiKey}`,
     earningsCalendar: `/api/v3/historical/earning_calendar/${t}?apikey=${fmpApiKey}`,
     financialScores: `/api/v4/score?symbol=${t}&apikey=${fmpApiKey}`,
-    
-    // Analyst data (Priority 2)
     priceTargetSummary: `/api/v4/price-target-summary?symbol=${t}&apikey=${fmpApiKey}`,
     priceTargetConsensus: `/api/v4/price-target-consensus?symbol=${t}&apikey=${fmpApiKey}`,
-    
-    // Insider trading (Priority 2 - More historical data with search endpoint)
     insiderTrading: `/stable/insider-trading/search?symbol=${t}&page=0&limit=500&apikey=${fmpApiKey}`,
   };
 
-  // Fetch all in parallel
+  // Combine all endpoints for timing tracking
+  const allEndpoints = { ...criticalEndpoints, ...secondaryEndpoints };
   const startTime = Date.now();
   const endpointTimings: Record<string, number> = {};
   
   try {
-    const responses = await Promise.allSettled(
-      Object.entries(endpoints).map(async ([key, endpoint]): Promise<[string, any]> => {
-        const endpointStart = Date.now();
-        try {
-          // Fetch with 8 second timeout (reduced from 10 for faster failures)
-          const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          }, 8000);
-          
-          const duration = Date.now() - endpointStart;
-          endpointTimings[key] = duration;
-          
-          if (!res.ok) {
-            logger.warn(`[BatchData] ${key} failed: ${res.status} (${duration}ms)`);
-            if (key === 'quote') {
-              logger.error(`[BatchData] quote endpoint failed for ${t}: ${baseUrl}${endpoint}`);
-              logger.error(`[BatchData] quote status: ${res.status}, statusText: ${res.statusText}`);
-            }
-            if (key === 'advancedDcf') {
-              logger.error(`[BatchData] advancedDcf endpoint failed: ${baseUrl}${endpoint}`);
-              logger.error(`[BatchData] advancedDcf status: ${res.status}, statusText: ${res.statusText}`);
-            }
-            return [key, null];
+    // Helper function to fetch a single endpoint with timeout and error handling
+    const fetchEndpoint = async (key: string, endpoint: string): Promise<[string, any]> => {
+      const endpointStart = Date.now();
+      try {
+        // Fetch with 8 second timeout (reduced from 10 for faster failures)
+        const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
-          
-          const data = await res.json();
+        }, 8000);
+        
+        const duration = Date.now() - endpointStart;
+        endpointTimings[key] = duration;
+        
+        if (!res.ok) {
+          logger.warn(`[BatchData] ${key} failed: ${res.status} (${duration}ms)`);
           if (key === 'quote') {
-            logger.info(`[BatchData] quote data received for ${t}:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
-            if (Array.isArray(data) && data.length > 0) {
-              logger.info(`[BatchData] quote data sample:`, { sharesOutstanding: data[0].sharesOutstanding });
-            }
+            logger.error(`[BatchData] quote endpoint failed for ${t}: ${baseUrl}${endpoint}`);
+            logger.error(`[BatchData] quote status: ${res.status}, statusText: ${res.statusText}`);
           }
           if (key === 'advancedDcf') {
-            logger.info(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+            logger.error(`[BatchData] advancedDcf endpoint failed: ${baseUrl}${endpoint}`);
+            logger.error(`[BatchData] advancedDcf status: ${res.status}, statusText: ${res.statusText}`);
           }
-          return [key, data];
-        } catch (_error: any) {
-          const duration = Date.now() - endpointStart;
-          endpointTimings[key] = duration;
-          logger.warn(`[BatchData] ${key} error: ${_error.message} (${duration}ms)`);
           return [key, null];
         }
-      })
+        
+        const data = await res.json();
+        if (key === 'quote') {
+          logger.info(`[BatchData] quote data received for ${t}:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+          if (Array.isArray(data) && data.length > 0) {
+            logger.info(`[BatchData] quote data sample:`, { sharesOutstanding: data[0].sharesOutstanding });
+          }
+        }
+        if (key === 'advancedDcf') {
+          logger.info(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+        }
+        return [key, data];
+      } catch (_error: any) {
+        const duration = Date.now() - endpointStart;
+        endpointTimings[key] = duration;
+        logger.warn(`[BatchData] ${key} error: ${_error.message} (${duration}ms)`);
+        return [key, null];
+      }
+    };
+
+    // PHASE 1: Fetch critical endpoints immediately
+    logger.info(`[BatchData] ${t} - Starting Phase 1 (${Object.keys(criticalEndpoints).length} critical endpoints)`);
+    const criticalResults = await Promise.allSettled(
+      Object.entries(criticalEndpoints).map(([key, endpoint]) => fetchEndpoint(key, endpoint))
     );
+
+    // Wait 500ms before starting Phase 2 (allows critical data to be cached and rendered first)
+    logger.info(`[BatchData] ${t} - Phase 1 complete (${Date.now() - startTime}ms), starting Phase 2 after 500ms delay`);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // PHASE 2: Fetch secondary endpoints
+    logger.info(`[BatchData] ${t} - Starting Phase 2 (${Object.keys(secondaryEndpoints).length} secondary endpoints)`);
+    const secondaryResults = await Promise.allSettled(
+      Object.entries(secondaryEndpoints).map(([key, endpoint]) => fetchEndpoint(key, endpoint))
+    );
+
+    // Combine results from both phases
+    const responses = [...criticalResults, ...secondaryResults];
 
     // Build result object - ALWAYS return data, even if some endpoints failed
     const result: BatchResult = {
@@ -250,7 +270,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     };
 
     responses.forEach((__response, _index) => {
-      const key = Object.keys(endpoints)[_index];
+      const key = Object.keys(allEndpoints)[_index];
       if (__response.status === 'fulfilled') {
         const [dataKey, data] = __response.value;
         
