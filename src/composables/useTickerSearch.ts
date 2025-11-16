@@ -63,7 +63,7 @@ export function useTickerSearch(): UseTickerSearchReturn {
       return
     }
 
-    // Debounce search by 150ms - faster response while preventing excessive API calls
+    // Debounce search by 300ms - prevents excessive API calls while user is typing
     debounceTimer = setTimeout(async () => {
       searching.value = true
       searchError.value = null
@@ -100,6 +100,7 @@ export function useTickerSearch(): UseTickerSearchReturn {
         }
 
       } catch (_error) {
+        const error = _error as Error
         // Ignore abort errors
         if (error instanceof Error && error.name === 'AbortError') {
           return
@@ -112,7 +113,7 @@ export function useTickerSearch(): UseTickerSearchReturn {
         searching.value = false
         abortController = null
       }
-    }, 150)
+    }, 300) // 300ms debounce to prevent excessive API calls
   }
 
   const clearSearch = (): void => {

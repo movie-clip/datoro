@@ -65,14 +65,32 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
 
     let html = `<div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #E5E5E5;">${date}</div>`
 
-    // Filter out zero values and sort by value (descending)
-    const sortedParams = paramsArray
+    // Define fixed order for specific chart types
+    const ratioChartOrder = ['P/E Ratio', 'P/S Ratio', 'ROIC %', 'Gross Margin %', 'Net Margin %']
+    
+    // Check if this is a ratios chart by checking series names
+    const isRatiosChart = paramsArray.some(p => ratioChartOrder.includes(p.seriesName))
+    
+    // Filter out zero values
+    let sortedParams = paramsArray
       .map(item => {
         const value = isBarChart ? Number(item.value) : Number((item.value as [number, number])[1])
         return { ...item, numericValue: value }
       })
       .filter(item => item.numericValue !== 0 && !isNaN(item.numericValue))
-      .sort((a, b) => b.numericValue - a.numericValue) // Sort descending (biggest first)
+    
+    // Sort based on chart type
+    if (isRatiosChart) {
+      // Fixed order for ratios chart
+      sortedParams.sort((a, b) => {
+        const indexA = ratioChartOrder.indexOf(a.seriesName)
+        const indexB = ratioChartOrder.indexOf(b.seriesName)
+        return indexA - indexB
+      })
+    } else {
+      // Sort by value (descending) for other charts
+      sortedParams.sort((a, b) => b.numericValue - a.numericValue)
+    }
 
     sortedParams.forEach(item => {
       const marker = item.marker
