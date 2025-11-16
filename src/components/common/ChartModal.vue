@@ -5,6 +5,7 @@
         v-if="isOpen"
         class="modal-overlay"
         @click="close"
+        @wheel.prevent
       >
         <div
           class="modal-container"
@@ -189,7 +190,7 @@ watch(() => props.isOpen, (isOpen) => {
 
 .modal-body {
   padding: 24px;
-  overflow-y: auto;
+  overflow: hidden; /* Prevent scrollbars for chart modals */
   flex: 1;
   min-height: 0;
 }
