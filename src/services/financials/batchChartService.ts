@@ -13,7 +13,7 @@ import type { BatchData, FMPKeyMetrics } from '@/types'
 
 // [timestamp, value] for annual data
 // [timestamp, value, fiscalPeriod, fiscalYear] for quarterly data (preserves FMP fiscal quarters)
-type SeriesPoint = [number, number] | [number, number, string, string]
+export type SeriesPoint = [number, number] | [number, number, string, string]
 
 interface FcfDataPoint {
   date: number

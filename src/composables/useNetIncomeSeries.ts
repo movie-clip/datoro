@@ -2,7 +2,7 @@
 import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
-import { getNetIncomeSeriesFromBatch } from '../services/financials/batchChartService'
+import { getNetIncomeSeriesFromBatch, type SeriesPoint } from '../services/financials/batchChartService'
 import type { FMPIncomeStatement } from '../types/fmp.types'
 
 type Period = 'annual' | 'quarterly'
@@ -14,14 +14,12 @@ interface ViewModeOption {
 
 interface SeriesItem {
   name: string
-  data: [number, number][]
-  color?: string
+  data: SeriesPoint[] | [number, number][]  // Can be either SeriesPoint or simple 2-tuple for margin data
   type?: string
   yAxisIndex?: number
 }
 
 export interface UseNetIncomeSeriesReturn {
-  series: ComputedRef<SeriesItem[]>
   netIncomeWithMargin: ComputedRef<SeriesItem[]>
   title: ComputedRef<string>
   message: Ref<string | null>
@@ -44,7 +42,7 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
   const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data extraction - single source of truth
-  const rawData = computed<[number, number][]>(() =>
+  const rawData = computed<SeriesPoint[]>(() =>
     getNetIncomeSeriesFromBatch(batchData.value, period.value)
   )
 
@@ -83,18 +81,8 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
     { label: 'Quarterly', value: 'quarterly' }
   ])
 
-  // Process net income data into chart series
-  const series = computed<SeriesItem[]>(() => {
-    if (!rawData.value || rawData.value.length === 0) return []
-    
-    return [{
-      name: 'Net Income',
-      data: rawData.value,
-      color: '#5470c6' // ECharts default blue (matches Revenue chart)
-    }]
-  })
-
   // Combined net income bars with margin line for dual-axis view
+  // Note: Component (NetIncomeChart.vue) overrides colors and itemStyle for color-coding
   const netIncomeWithMargin = computed<SeriesItem[]>(() => {
     if (!rawData.value || rawData.value.length === 0) return []
     
@@ -102,7 +90,6 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
       {
         name: 'Net Income',
         data: rawData.value,
-        color: '#5470c6', // ECharts default blue (matches Revenue chart)
         type: 'bar',
         yAxisIndex: 0
       }
@@ -112,7 +99,6 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
       result.push({
         name: 'Net Margin %',
         data: marginData.value,
-        color: '#4ade80', // green color for margin line
         type: 'line',
         yAxisIndex: 1
       })
@@ -138,7 +124,6 @@ export function useNetIncomeSeries(): UseNetIncomeSeriesReturn {
   })
 
   return {
-    series,
     netIncomeWithMargin,
     title,
     message,

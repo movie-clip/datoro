@@ -28,11 +28,13 @@ interface DualYAxisOptions {
   rightAxisType?: RightAxisType
   isLarge?: boolean
   isMobile?: boolean
+  alignZero?: boolean // New option to align zero lines
 }
 
 interface YAxisConfigOptions extends YAxisOptions {
   dualAxis?: boolean
   rightAxisType?: RightAxisType
+  alignZero?: boolean
 }
 
 interface MinMaxValue {
@@ -165,96 +167,95 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
     yFormat = 'short',
     rightAxisType = 'default',
     isLarge = false,
-    isMobile = false
+    isMobile = false,
+    alignZero = false
   } = options
 
-  return [
-    // Left axis (for price/primary data)
-    {
-      type: 'value' as const,
-      scale: true,
-      position: 'left' as const,
-      splitNumber: 4, // Limit to 4 intervals for cleaner axis
-      min: (v: MinMaxValue) => {
-        const r = v.max - v.min
-        if (r === 0) {
-          const p = Math.abs(v.min) * 0.05 || 1
-          return v.min - p
-        }
-        const calculated = v.min - r * 0.03
-        // If all data is positive, don't let axis go negative
-        if (v.min >= 0 && calculated < 0) {
-          return 0
-        }
-        return calculated
-      },
-      max: (v: MinMaxValue) => {
-        const r = v.max - v.min
-        if (r === 0) {
-          const p = Math.abs(v.max) * 0.05 || 1
-          return v.max + p
-        }
-        return v.max + r * 0.03
-      },
-      axisLabel: { 
-        color: '#ddd', 
-        fontSize: isMobile ? 9 : (isLarge ? 11 : 10),
-        formatter: (val: number) => yFormatter(val, yFormat) 
-      },
-      axisLine: { lineStyle: { color: '#aaa' } },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
+  // If alignZero is enabled, use alignTicks to synchronize the zero line position
+  const leftAxisConfig = {
+    type: 'value' as const,
+    scale: true, // Always enable scale for proper data fitting
+    position: 'left' as const,
+    splitNumber: 4,
+    alignTicks: false, // Let each axis scale independently
+    min: (v: MinMaxValue) => {
+      const r = v.max - v.min
+      if (r === 0) {
+        const p = Math.abs(v.min) * 0.05 || 1
+        return v.min - p
+      }
+      const calculated = v.min - r * 0.05 // Add 5% padding at bottom
+      // If all data is positive, start from zero
+      if (v.min >= 0 && calculated < 0) {
+        return 0
+      }
+      return calculated
     },
-    // Right axis (for insider trading/secondary data or percentage margins)
-    {
-      type: 'value' as const,
-      position: 'right' as const,
-      min: rightAxisType === 'percentage' ? (value: MinMaxValue) => {
-        // Allow negative percentages (e.g., negative net margin)
-        // If all values are positive, start from 0
-        if (value.min >= 0) return 0
-        // If there are negative values, add 10% padding
-        return Math.floor(value.min / 10) * 10 - 5
-      } : (value: MinMaxValue) => {
-        // Ensure 0 is always centered by making bounds symmetric
-        const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
-        // Add 10% padding to prevent data from touching edges
-        return -absMax * 1.1
-      },
-      max: rightAxisType === 'percentage' ? (value: MinMaxValue) => {
-        // Round up to nearest 10 for clean scale (e.g., 38% -> 40%)
-        return Math.ceil(value.max / 10) * 10 + 5
-      } : (value: MinMaxValue) => {
-        // Ensure 0 is always centered by making bounds symmetric
-        const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
-        // Add 10% padding to prevent data from touching edges
-        return absMax * 1.1
-      },
-      splitNumber: 4, // Force 4 split lines for better centering
-      axisLabel: { 
-        color: '#ddd', 
-        fontSize: isMobile ? 9 : (isLarge ? 13 : 10),
-        formatter: (val: number) => {
-          if (rightAxisType === 'percentage') {
-            return val.toFixed(1) + '%'
-          }
-          // For ratio format, use it on right axis too
-          if (yFormat === 'ratio') {
-            return yFormatter(val, yFormat)
-          }
-          // Default: use short format for right axis (shares, counts, etc.)
-          return fmtShort(val)
+    max: (v: MinMaxValue) => {
+      const r = v.max - v.min
+      if (r === 0) {
+        const p = Math.abs(v.max) * 0.05 || 1
+        return v.max + p
+      }
+      return v.max + r * 0.05 // Add 5% padding at top
+    },
+    axisLabel: { 
+      color: '#ddd', 
+      fontSize: isMobile ? 9 : (isLarge ? 11 : 10),
+      formatter: (val: number) => yFormatter(val, yFormat) 
+    },
+    axisLine: { lineStyle: { color: '#aaa' } },
+    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }
+  }
+
+  const rightAxisConfig = {
+    type: 'value' as const,
+    position: 'right' as const,
+    scale: true, // Always enable scale for proper data fitting
+    alignTicks: false, // Don't force tick alignment - let each axis scale independently
+    min: rightAxisType === 'percentage' ? (value: MinMaxValue) => {
+      // Always start from 0 for positive margins, allow negative if needed
+      if (value.min >= 0) return 0
+      // For negative values, add padding
+      return Math.floor(value.min / 10) * 10 - 5
+    } : (value: MinMaxValue) => {
+      const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
+      return -absMax * 1.1
+    },
+    max: rightAxisType === 'percentage' ? (value: MinMaxValue) => {
+      // Add dynamic padding based on data range
+      const range = value.max - value.min
+      const padding = Math.max(5, range * 0.15) // 15% padding or minimum 5%
+      return Math.ceil((value.max + padding) / 5) * 5 // Round to nearest 5
+    } : (value: MinMaxValue) => {
+      const absMax = Math.max(Math.abs(value.min), Math.abs(value.max))
+      return absMax * 1.1
+    },
+    splitNumber: 4,
+    axisLabel: { 
+      color: '#ddd', 
+      fontSize: isMobile ? 9 : (isLarge ? 13 : 10),
+      formatter: (val: number) => {
+        if (rightAxisType === 'percentage') {
+          return val.toFixed(1) + '%'
         }
-      },
-      axisLine: { lineStyle: { color: '#aaa' } },
-      splitLine: { 
-        show: true,
-        lineStyle: { 
-          color: 'rgba(255,255,255,0.1)',
-          type: 'dashed' as const
+        if (yFormat === 'ratio') {
+          return yFormatter(val, yFormat)
         }
+        return fmtShort(val)
+      }
+    },
+    axisLine: { lineStyle: { color: '#aaa' } },
+    splitLine: { 
+      show: true,
+      lineStyle: { 
+        color: 'rgba(255,255,255,0.1)',
+        type: 'dashed' as const
       }
     }
-  ]
+  }
+
+  return [leftAxisConfig, rightAxisConfig]
 }
 
 /**

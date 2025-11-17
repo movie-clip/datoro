@@ -28,6 +28,8 @@ export interface UseRevenueCategorySeriesReturn {
   viewModeOptions: ViewModeOption[]
   series: ComputedRef<SeriesPoint[] | SeriesDataPoint[]>
   compactSeries: ComputedRef<SeriesPoint[]>
+  revenueWithMargin: ComputedRef<SeriesDataPoint[]>
+  grossMarginData: ComputedRef<[number, number][]>
   title: Ref<string>
   message: Ref<string>
   loading: Ref<boolean>
@@ -230,12 +232,62 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
   // Compact series always shows total revenue
   const compactSeries = computed(() => totalRevenue.value)
 
+  // Extract gross margin data from income statements
+  const grossMarginData = computed<[number, number][]>(() => {
+    const income = period.value === 'annual'
+      ? batchData.value?.data?.incomeAnnual
+      : batchData.value?.data?.incomeQuarter
+
+    if (!income || !Array.isArray(income)) return []
+
+    return income
+      .map((row) => {
+        if (!row.date) return null
+        const margin = Number(row.grossProfitRatio) || 0
+        // Convert to percentage (ratio is 0-1, we want 0-100)
+        return [new Date(row.date).getTime(), margin * 100] as [number, number]
+      })
+      .filter((point): point is [number, number] => point !== null)
+      .sort((a, b) => a[0] - b[0])
+  })
+
+  // Combined revenue bars with gross margin line for total view
+  const revenueWithMargin = computed<SeriesDataPoint[]>(() => {
+    if (!totalRevenue.value || totalRevenue.value.length === 0) return []
+
+    const result: SeriesDataPoint[] = [
+      {
+        name: 'Revenue',
+        data: totalRevenue.value as [number, number][],
+        stack: '',
+        itemStyle: {
+          color: '#5470c6' // ECharts default blue
+        }
+      }
+    ]
+
+    if (grossMarginData.value.length > 0) {
+      result.push({
+        name: 'Gross Margin %',
+        data: grossMarginData.value,
+        stack: '',
+        itemStyle: {
+          color: '#9333ea' // Purple color
+        }
+      } as any)
+    }
+
+    return result
+  })
+
   return {
     period,
     viewMode,
     viewModeOptions,
     series,
     compactSeries,
+    revenueWithMargin,
+    grossMarginData,
     title,
     message,
     loading,

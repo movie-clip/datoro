@@ -125,14 +125,21 @@ export function createMultiSeries(dataSource: SeriesDataObject[], kind: ChartKin
   if (isConfiguredSeriesArray(dataSource)) {
     // For bar charts with category axis, we still need to convert the data
     if (kind === 'bar' && yearsList.length > 0) {
-      return dataSource.map((s) => ({
-        ...s,
-        // Convert time-series data to category values for ALL series (bars and lines)
-        data: convertToCategoryData(s.data, yearsList)
-      }))
+      return dataSource.map((s) => {
+        // Strip yAxisIndex to avoid conflicts - parent component controls axis configuration
+        const { yAxisIndex, ...cleanSeries } = s
+        return {
+          ...cleanSeries,
+          // Convert time-series data to category values for ALL series (bars and lines)
+          data: convertToCategoryData(s.data, yearsList)
+        }
+      })
     } else {
-      // Use as-is for line charts (time axis)
-      return dataSource
+      // Strip yAxisIndex from configured series - parent component controls axis configuration
+      return dataSource.map((s) => {
+        const { yAxisIndex, ...cleanSeries } = s
+        return cleanSeries
+      })
     }
   }
 

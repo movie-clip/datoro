@@ -40,6 +40,7 @@
       <slot name="controls"></slot>
       <VChart
         ref="modalChartRef"
+        :key="`forceExpanded-${props.dualAxis ? 'dual' : 'single'}`"
         v-if="isMounted && hasSeriesData(modalOption)"
         class="echart-modal"
         :option="modalOption"
@@ -142,6 +143,7 @@
         <slot name="controls"></slot>
         <!-- Chart -->
         <VChart
+          :key="`chartModal-${props.dualAxis ? 'dual' : 'single'}`"
           class="echart-modal"
           :option="modalOption"
           autoresize
@@ -246,6 +248,7 @@ interface Props {
   useLegend?: boolean
   dualAxis?: boolean
   rightAxisType?: RightAxisType
+  alignZero?: boolean
   showGrowthLabels?: boolean
   invertGrowth?: boolean
   ticker?: string | null
@@ -277,6 +280,7 @@ const props = withDefaults(defineProps<Props>(), {
   useLegend: false,
   dualAxis: false,
   rightAxisType: 'symmetric',
+  alignZero: false,
   showGrowthLabels: false,
   invertGrowth: false,
   ticker: null,
@@ -620,6 +624,7 @@ const createOption = (isLarge = false): EChartsOption => {
       dualAxis: props.dualAxis,
       yFormat: props.yFormat,
       rightAxisType: props.rightAxisType as any,
+      alignZero: props.alignZero,
       isLarge,
       isMobile: isMobile.value,
       chartTitle: props.title
@@ -627,7 +632,7 @@ const createOption = (isLarge = false): EChartsOption => {
   }
 
   // Handle both single series array and multi-series array
-  const series = createSeriesConfig(
+  let series = createSeriesConfig(
     dataSource as [number, number][] | [number, number, string, string][] | SeriesDataObject[] | Record<string, unknown>, 
     props.kind, 
     {
@@ -639,10 +644,32 @@ const createOption = (isLarge = false): EChartsOption => {
     }
   )
 
+  // CRITICAL: Ensure yAxisIndex consistency with axis configuration
+  // When dualAxis=false, yAxis is a single object (not array), so NO series should have yAxisIndex
+  // When dualAxis=true, yAxis is an array [axis0, axis1], so series MUST have yAxisIndex
+  if (props.dualAxis && Array.isArray(series)) {
+    // Dual-axis mode: Add yAxisIndex based on series type
+    // Convention: bars use left axis (0), lines use right axis (1)
+    series = series.map((s: any) => {
+      if (s.type === 'line') {
+        return { ...s, yAxisIndex: 1 }
+      } else {
+        return { ...s, yAxisIndex: 0 }
+      }
+    })
+  } else if (!props.dualAxis && Array.isArray(series)) {
+    // Single-axis mode: Ensure NO yAxisIndex properties exist
+    series = series.map((s: any) => {
+      const { yAxisIndex, ...cleanSeries } = s
+      return cleanSeries
+    })
+  }
+
   // Don't show legend - we have view mode buttons for switching
   if (!base || !series) {
     return {} as EChartsOption
   }
+  
   return { ...base, series } as EChartsOption
 }
 
