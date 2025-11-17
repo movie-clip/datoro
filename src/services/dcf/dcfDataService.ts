@@ -139,13 +139,15 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     
     // Validation: Shares should be reasonable (> 1 million for any public company)
     if (sharesOutstanding < 1_000_000) {
-      return null // Cannot calculate DCF without shares outstanding
+      // Continue anyway - some small companies or special cases might have low share counts
     }
     
     // Get current price (from quote or profile)
-    const currentPrice = quote?.price || profile?.price || latestKeyMetrics?.marketCap && sharesOutstanding > 0 
-      ? Number(latestKeyMetrics.marketCap) / sharesOutstanding 
-      : 0
+    const currentPrice = quote?.price 
+      || profile?.price 
+      || (latestKeyMetrics?.marketCap && sharesOutstanding > 0 
+        ? Number(latestKeyMetrics.marketCap) / sharesOutstanding 
+        : 0)
     
     if (!currentPrice || currentPrice <= 0) {
       return null

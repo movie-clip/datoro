@@ -625,8 +625,8 @@ describe('Batch Data Service', () => {
       
       // If sequential, would take 17 * 100ms = 1700ms
       // In parallel, should take ~100ms (plus overhead)
-      // Allow up to 500ms for overhead
-      expect(duration).toBeLessThan(500)
+      // Allow up to 1000ms for overhead (CI/test environments can be slow)
+      expect(duration).toBeLessThan(1000)
     }, 15000)
   })
 

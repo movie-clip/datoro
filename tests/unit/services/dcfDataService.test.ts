@@ -383,8 +383,9 @@ describe('dcfDataService', () => {
       const result = getDcfDataFromBatch(batchData)
       
       expect(result).not.toBeNull()
-      expect(result!.currentPrice).toBe(0)
-      expect(result!.eps).toBe(0)
+      // Should fall back to profile price
+      expect(result!.currentPrice).toBe(150) // From profile.price
+      expect(result!.eps).toBe(0) // EPS comes from quote, so should be 0
     })
 
     it('should handle missing cashflow data', () => {
