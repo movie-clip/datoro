@@ -165,10 +165,10 @@ const displaySeries = computed(() => {
       showSymbol: false,
       lineStyle: { 
         width: 3,
-        color: '#3b82f6' // Blue line (matches EBITDA)
+        color: '#94a3b8' // Grey line
       },
       itemStyle: {
-        color: '#3b82f6'
+        color: '#94a3b8'
       }
     }
   ]

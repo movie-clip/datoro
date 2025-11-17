@@ -90,10 +90,10 @@ const ebitdaSeries = computed(() => {
       showSymbol: false, // Hide the dots on the line
       lineStyle: { 
         width: 3,
-        color: '#3b82f6' // Solid blue line
+        color: '#94a3b8' // Grey line
       },
       itemStyle: {
-        color: '#3b82f6' // Blue color for any visible points
+        color: '#94a3b8' // Grey color for any visible points
       }
     }
   ]
