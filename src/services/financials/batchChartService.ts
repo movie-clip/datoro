@@ -81,86 +81,7 @@ interface InsiderTradingResult {
 
 type Period = 'annual' | 'quarterly'
 
-/**
- * Simple LRU memoization cache
- * Key insight: ticker + args is enough (NO timestamp needed - Redis ensures consistency)
- */
-class LRUCache<T = any> {
-  private cache: Map<string, T>
-  private maxSize: number
 
-  constructor(maxSize = 100) {
-    this.cache = new Map()
-    this.maxSize = maxSize
-  }
-
-  get(key: string): T | undefined {
-    if (!this.cache.has(key)) return undefined
-    const value = this.cache.get(key)!
-    this.cache.delete(key)
-    this.cache.set(key, value)
-    return value
-  }
-
-  set(key: string, value: T): void {
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value as string | undefined
-      if (firstKey) {
-        this.cache.delete(firstKey)
-      }
-    }
-    this.cache.set(key, value)
-  }
-
-  clear(): void {
-    this.cache.clear()
-  }
-}
-
-const cache = new LRUCache(100)
-
-// Memoize wrapper: ticker + timestamp to ensure cache invalidation on new data
-// IMPORTANT: Returns deep clones for object results to maintain Vue reactivity
-const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
-  return function (this: any, ...args: any[]): ReturnType<T> {
-    // Handle null/undefined batchData
-    if (!args[0]) return fn.apply(this, args)
-
-    const ticker = args[0]?.ticker
-    const timestamp = args[0]?.timestamp
-    if (!ticker) return fn.apply(this, args)
-
-    // Include timestamp in cache key to invalidate when data refreshes
-    const key = `${fn.name}:${ticker}:${timestamp}:${args.slice(1).join(':')}`
-    const cached = cache.get(key)
-    
-    // Return cached value if found
-    // For object results (like RevenueSegmentsResult), we need to ensure reactivity
-    // by returning a new reference every time to force Vue to detect changes
-    if (cached !== undefined) {
-      // If result is an object with 'segments' and 'series', return a deep clone
-      // to ensure Vue's reactivity system always detects a new object reference
-      if (cached && typeof cached === 'object' && 'segments' in cached && 'series' in cached) {
-        // Deep clone: new segments array + new series object with new arrays
-        const series: Record<string, SeriesPoint[]> = {}
-        for (const [key, value] of Object.entries(cached.series)) {
-          if (Array.isArray(value)) {
-            series[key] = [...value]
-          }
-        }
-        return {
-          segments: [...cached.segments],
-          series
-        } as ReturnType<T>
-      }
-      return cached
-    }
-
-    const result = fn.apply(this, args)
-    cache.set(key, result)
-    return result
-  } as T
-}
 
 /**
  * Get revenue series from batch data
@@ -186,7 +107,7 @@ export function getRevenueSeriesFromBatch(batchData: BatchData | null, period: P
         row.calendarYear || ''  // FMP's fiscal year (e.g., "2023")
       ] as SeriesPoint)
     }
-    
+
     // For annual data, keep simple format
     return statements.map(row => [
       Date.parse(row.date),
@@ -228,7 +149,7 @@ export function getRevenueSegmentsFromBatch(batchData: BatchData | null): Revenu
       if (!entry || typeof entry !== 'object') {
         return
       }
-      
+
       // Get the date key (first property of the object)
       const entryObj = entry as Record<string, unknown>
       const dateKey = Object.keys(entryObj)[0]
@@ -318,7 +239,7 @@ export function getFcfSeriesFromBatch(batchData: BatchData | null, period: Perio
         }
       })
     }
-    
+
     return cashflow.map(row => {
       const metrics = kmMap.get(row.date)
       return {
@@ -433,7 +354,7 @@ export function getEbitdaSeriesFromBatch(batchData: BatchData | null, period: Pe
         fiscalYear: row.calendarYear || ''
       }))
     }
-    
+
     return statements.map(row => ({
       date: Date.parse(row.date),
       revenue: Number(row.revenue) || 0,
@@ -532,7 +453,7 @@ export function getCapitalReturnedSeriesFromBatch(batchData: BatchData | null, p
         }
       })
     }
-    
+
     return cashflow.map(row => {
       const dividends = Math.abs(Number(row.dividendsPaid) || 0)
       const buybacks = Math.abs(Number(row.commonStockRepurchased) || 0)
@@ -653,7 +574,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
         .map((row: any) => {
           if (!row.date) return null
           const yieldValue = Number(row.dividendYield) * 100 // Convert to percentage (0 if no dividend)
-          
+
           return [
             Date.parse(row.date),
             yieldValue,
@@ -669,7 +590,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
       .map((row: any) => {
         if (!row.date) return null
         const yieldValue = Number(row.dividendYield) * 100 // Convert to percentage (0 if no dividend)
-        
+
         return [
           Date.parse(row.date),
           yieldValue
@@ -697,8 +618,8 @@ export interface ValuationRatiosDataPoint {
 export function getValuationRatiosSeriesFromBatch(batchData: BatchData | null, period: Period = 'annual'): ValuationRatiosDataPoint[] {
   try {
     // Try requested period first
-    let ratios = period === 'annual' 
-      ? batchData?.data?.ratiosAnnual 
+    let ratios = period === 'annual'
+      ? batchData?.data?.ratiosAnnual
       : batchData?.data?.ratiosQuarter
 
     // Fallback to annual if quarterly is unavailable
@@ -713,13 +634,13 @@ export function getValuationRatiosSeriesFromBatch(batchData: BatchData | null, p
     return ratios
       .map((r: any) => {
         if (!r.date) return null
-        
+
         const peRatio = Number(r.priceEarningsRatioTTM || r.priceEarningsRatio || 0)
         const psRatio = Number(r.priceToSalesRatioTTM || r.priceToSalesRatio || 0)
-        
+
         // Skip invalid data points
         if (peRatio === 0 && psRatio === 0) return null
-        
+
         return {
           date: new Date(r.date).getTime(),
           peRatio,
@@ -735,11 +656,11 @@ export function getValuationRatiosSeriesFromBatch(batchData: BatchData | null, p
 }
 
 /**
- * Get Insider Trading aggregated data from batch data (MEMOIZED - expensive)
+ * Get Insider Trading aggregated data from batch data
  * Used by: InsiderTradingChart
  * Replaces: /api/v4/insider-trading (1 call from insiderTrading)
  */
-export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFromBatch(batchData: BatchData | null): InsiderTradingResult {
+export function getInsiderTradingFromBatch(batchData: BatchData | null): InsiderTradingResult {
   try {
     const insiderData = batchData?.data?.insiderTrading
 
@@ -752,7 +673,7 @@ export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFrom
 
     insiderData.forEach(trade => {
       if (!trade.transactionDate) return
-      
+
       const date = new Date(trade.transactionDate)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 
@@ -788,10 +709,7 @@ export const getInsiderTradingFromBatch = memoize(function getInsiderTradingFrom
     console.error('[BatchChartService] getInsiderTradingFromBatch error:', _error)
     return { buys: [], sells: [], net: [] }
   }
-})
-
-// Export cache for testing
-export { cache as memoCache }
+}
 
 /**
  * Get price history series from batch data
@@ -834,7 +752,7 @@ export function getPriceSeriesFromBatch(batchData: BatchData | null, maxDays: nu
  * New structure: FMP returns { "date": { "Category": value, ... } }
  * Used by: RevenueByCategoryChart (product segmentation)
  */
-export const getProductCategoriesFromBatch = memoize(function getProductCategoriesFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
+export function getProductCategoriesFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
   try {
     // Defensive null checks
     if (!batchData || !batchData.data) {
@@ -857,7 +775,7 @@ export const getProductCategoriesFromBatch = memoize(function getProductCategori
         skippedEntries++
         return
       }
-      
+
       const entryObj = entry as Record<string, unknown>
       const dateKey = Object.keys(entryObj)[0] // First key is the date
       if (!dateKey) {
@@ -906,7 +824,7 @@ export const getProductCategoriesFromBatch = memoize(function getProductCategori
     console.error('[BatchChartService] getProductCategoriesFromBatch error:', error)
     return { segments: [], series: {} }
   }
-}) as (batchData: BatchData | null) => RevenueSegmentsResult
+}
 
 
 /**
@@ -914,7 +832,7 @@ export const getProductCategoriesFromBatch = memoize(function getProductCategori
  * Structure: { "date": { "Region Name": value, ... } }
  * Used by: RevenueByCategoryChart (geographic segmentation)
  */
-export const getGeographicCategoriesFromBatch = memoize(function getGeographicCategoriesFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
+export function getGeographicCategoriesFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
   try {
     const segmentData = batchData?.data?.revenueGeographicSegments
 
@@ -923,13 +841,13 @@ export const getGeographicCategoriesFromBatch = memoize(function getGeographicCa
       console.debug('[getGeographicCategoriesFromBatch] No revenueGeographicSegments data found')
       return { segments: [], series: {} }
     }
-    
+
     if (!Array.isArray(segmentData)) {
       // eslint-disable-next-line no-console
       console.warn('[getGeographicCategoriesFromBatch] revenueGeographicSegments is not an array:', typeof segmentData)
       return { segments: [], series: {} }
     }
-    
+
     if (segmentData.length === 0) {
       // eslint-disable-next-line no-console
       console.debug('[getGeographicCategoriesFromBatch] revenueGeographicSegments array is empty')
@@ -946,7 +864,7 @@ export const getGeographicCategoriesFromBatch = memoize(function getGeographicCa
         skippedEntries++
         return
       }
-      
+
       const entryObj = entry as Record<string, unknown>
       const dateKey = Object.keys(entryObj)[0]
       if (!dateKey) {
@@ -984,7 +902,7 @@ export const getGeographicCategoriesFromBatch = memoize(function getGeographicCa
       // eslint-disable-next-line no-console
       console.warn(`[getGeographicCategoriesFromBatch] Skipped ${skippedEntries} invalid geographic segment entries`)
     }
-    
+
     // eslint-disable-next-line no-console
     console.debug(`[getGeographicCategoriesFromBatch] Extracted ${allRegions.size} geographic segments from ${segmentData.length} entries`)
 
@@ -997,5 +915,5 @@ export const getGeographicCategoriesFromBatch = memoize(function getGeographicCa
     console.error('[getGeographicCategoriesFromBatch] Error:', error)
     return { segments: [], series: {} }
   }
-}) as (batchData: BatchData | null) => RevenueSegmentsResult
+}
 

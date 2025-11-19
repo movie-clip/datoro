@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, toRef } from 'vue'
 import MarketHeatmapChart from '../charts/MarketHeatmapChart.vue'
 import SP500PriceChart from '../charts/SP500PriceChart.vue'
 import { useMarketPerformance } from '../../composables/useMarketPerformance'
@@ -114,14 +114,16 @@ const {
   heatmapData,
   sp500Data,
   summary, 
-  loading, 
-  error, 
+  loading,
+  customLoading,
+  error,
+  customError,
   lastUpdate,
   currentPeriod,
   isCustomRange,
   fetchData,
   updateWithCustomRange
-} = useMarketPerformance()
+} = useMarketPerformance({ enabled: toRef(props, 'modelValue') })
 
 // Handle modal close
 function handleClose() {
@@ -158,13 +160,13 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
     
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       console.warn('[Market Performance Modal] Invalid date format:', range)
-      error.value = 'Invalid date format'
+      customError.value = 'Invalid date format'
       return
     }
     
     if (startDate >= endDate) {
       console.warn('[Market Performance Modal] Start date must be before end date')
-      error.value = 'Invalid date range: Start date must be before end date'
+      customError.value = 'Invalid date range: Start date must be before end date'
       return
     }
     
@@ -203,8 +205,8 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
     // Create new abort controller for this request
     customRangeAbortController = new AbortController()
     
-    loading.value = true
-    error.value = null
+    customLoading.value = true
+    customError.value = null
     
     // Fetch sector performance for custom date range
     const url = `${API_BASE_URL}/api/market/sectors/custom-range?startDate=${range.start}&endDate=${range.end}`
@@ -260,7 +262,7 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
     updateWithCustomRange(customSectors)
     console.log(`[Market Performance Modal] Updated heatmap with ${customSectors.length} sectors for range ${range.start} to ${range.end}`)
     
-    loading.value = false
+    customLoading.value = false
   } catch (err) {
     // Ignore abort errors (expected when request is cancelled)
     if (err instanceof Error && err.name === 'AbortError') {
@@ -271,16 +273,16 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
     
     // Handle specific error types
     if (err instanceof TypeError && err.message.includes('fetch')) {
-      error.value = 'Network error: Unable to connect to server'
+      customError.value = 'Network error: Unable to connect to server'
     } else if (err instanceof Error && err.message.includes('No sector data')) {
-      error.value = 'No data available for this date range'
+      customError.value = 'No data available for this date range'
     } else if (err instanceof Error && err.message.includes('Invalid date')) {
-      error.value = 'Invalid date range selected'
+      customError.value = 'Invalid date range selected'
     } else {
-      error.value = err instanceof Error ? err.message : 'Failed to load custom range data'
+      customError.value = err instanceof Error ? err.message : 'Failed to load custom range data'
     }
     
-    loading.value = false
+    customLoading.value = false
   }
 }
 

@@ -1,13 +1,13 @@
 // src/composables/useMarketPerformance.ts
 // Composable for managing market performance data and heatmap state
 
-import { ref, computed, type Ref } from 'vue'
-import { 
-  getAllSectorsData, 
+import { ref, computed, type Ref, watch } from 'vue'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import {
+  getAllSectorsData,
   fetchSP500Performance,
-  clearCache, 
   type SectorData,
-  type SP500Performance 
+  type SP500Performance
 } from '../services/market/marketPerformanceService'
 
 export interface HeatmapNode {
@@ -20,100 +20,137 @@ export interface HeatmapNode {
   }
 }
 
-export function useMarketPerformance() {
-  const sectorsData = ref<SectorData[]>([])
-  const sp500Data = ref<SP500Performance | null>(null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
-  const lastUpdate = ref<Date | null>(null)
+interface UseMarketPerformanceOptions {
+  enabled?: Ref<boolean>
+}
+
+export function useMarketPerformance(options: UseMarketPerformanceOptions = {}) {
+  const queryClient = useQueryClient()
   const currentPeriod = ref<string>('1D')
-  const isCustomRange = ref(false) // Track if showing custom range data
+  const isCustomRange = ref(false)
+  const customSectorsData = ref<SectorData[]>([])
+  const lastUpdate = ref<Date | null>(null)
+  const customLoading = ref(false)
+  const customError = ref<string | null>(null)
+
+  // Query for Sectors Data
+  const {
+    data: querySectorsData,
+    isLoading: sectorsLoading,
+    error: sectorsError,
+    refetch: refetchSectors
+  } = useQuery({
+    queryKey: ['market', 'sectors', currentPeriod],
+    queryFn: () => getAllSectorsData(currentPeriod.value),
+    enabled: options.enabled ?? ref(true),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1
+  })
+
+  // Query for S&P 500 Data
+  const {
+    data: sp500Data,
+    isLoading: sp500Loading,
+    error: sp500Error,
+    refetch: refetchSP500
+  } = useQuery({
+    queryKey: ['market', 'sp500', currentPeriod],
+    queryFn: () => fetchSP500Performance(currentPeriod.value),
+    enabled: options.enabled ?? ref(true),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1
+  })
+
+  // Combined Loading State
+  const loading = computed(() => {
+    if (customLoading.value) return true
+    // If showing custom range, we are not loading standard queries
+    if (isCustomRange.value) return false
+    return sectorsLoading.value || sp500Loading.value
+  })
+
+  // Combined Error State
+  const error = computed(() => {
+    if (customError.value) return customError.value
+    if (isCustomRange.value) return null
+    if (sectorsError.value) return sectorsError.value instanceof Error ? sectorsError.value.message : 'Failed to fetch sectors'
+    if (sp500Error.value) return sp500Error.value instanceof Error ? sp500Error.value.message : 'Failed to fetch S&P 500 data'
+    return null
+  })
+
+  // Active Sectors Data (Standard vs Custom)
+  const sectorsData = computed(() => {
+    if (isCustomRange.value) {
+      return customSectorsData.value
+    }
+    return querySectorsData.value || []
+  })
+
+  // Update lastUpdate when data changes
+  watch([querySectorsData, sp500Data], () => {
+    if (!isCustomRange.value && (querySectorsData.value || sp500Data.value)) {
+      lastUpdate.value = new Date()
+    }
+  })
 
   /**
-   * Fetch sector performance data and S&P 500 data
-   * @param forceRefresh Force refresh (clear cache)
-   * @param period Time period to fetch (defaults to currentPeriod)
+   * Fetch data (wrapper for refetch or period change)
    */
   async function fetchData(forceRefresh = false, period?: string): Promise<void> {
-    if (forceRefresh) {
-      clearCache()
-    }
-
-    const fetchPeriod = period || currentPeriod.value
-    currentPeriod.value = fetchPeriod
-
-    console.log(`[Market Performance] Fetching data for period: ${fetchPeriod}`)
-
-    loading.value = true
-    error.value = null
-
-    try {
-      // Fetch both sectors and S&P 500 in parallel
-      const [sectorsResult, sp500Result] = await Promise.all([
-        getAllSectorsData(fetchPeriod),
-        fetchSP500Performance(fetchPeriod)
+    if (period && period !== currentPeriod.value) {
+      currentPeriod.value = period
+      isCustomRange.value = false // Reset custom range when changing period
+      // Query will auto-refetch due to key change
+    } else if (forceRefresh) {
+      isCustomRange.value = false
+      await Promise.all([
+        refetchSectors(),
+        refetchSP500()
       ])
-      
-      console.log(`[Market Performance] Received ${sectorsResult.length} sectors:`, sectorsResult.slice(0, 2))
-      console.log(`[Market Performance] Received S&P 500 data:`, sp500Result)
-      
-      sectorsData.value = sectorsResult
-      sp500Data.value = sp500Result
-      lastUpdate.value = new Date()
-      isCustomRange.value = false // Reset custom range flag
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to fetch market data'
-      console.error('Error fetching market performance:', err)
-    } finally {
-      loading.value = false
     }
   }
 
   /**
    * Get color based on performance percentage relative to all sectors
-   * Uses dynamic thresholds based on data distribution (percentiles)
-   * This ensures color differentiation regardless of time window
-   * 
-   * Color logic:
-   * - Positive performance: Green shades (best) → Grey (worst positive)
-   * - Negative performance: Red shades (worst negative)
    */
   function getPerformanceColor(performance: number, allPerformances: number[]): string {
     if (allPerformances.length === 0) return '#00594C' // Fallback
-    
+
     // Sort performances to calculate percentiles
     const sorted = [...allPerformances].sort((a, b) => a - b)
     const len = sorted.length
-    
+
     // Handle edge case: only 1 sector
     if (len === 1) return performance >= 0 ? '#00755F' : '#A83232'
-    
+
     // If current performance is negative, use red shades
     if (performance < 0) {
       const negatives = sorted.filter(p => p < 0)
       const negLen = negatives.length
-      
+
       if (negLen === 1) return '#A83232'
-      
+
       const negP67 = negatives[Math.floor(negLen * 0.67)] ?? negatives[negLen - 1] ?? 0
       const negP33 = negatives[Math.floor(negLen * 0.33)] ?? negatives[0] ?? 0
-      
+
       if (performance <= negP33) return '#C62828'  // Worst negatives (strongest red)
       if (performance <= negP67) return '#A83232'  // Moderate negatives (medium red)
       return '#8B4545'  // Slight negatives (muted red)
     }
-    
+
     // If current performance is positive, use green → grey gradient
     const positives = sorted.filter(p => p >= 0)
     const posLen = positives.length
-    
+
     if (posLen === 1) return '#00755F'
-    
+
     const posP83 = positives[Math.floor(posLen * 0.83)] ?? positives[posLen - 1] ?? 0
     const posP67 = positives[Math.floor(posLen * 0.67)] ?? positives[posLen - 1] ?? 0
     const posP33 = positives[Math.floor(posLen * 0.33)] ?? positives[0] ?? 0
     const posP17 = positives[Math.floor(posLen * 0.17)] ?? positives[0] ?? 0
-    
+
     if (performance >= posP83) return '#00A88E'   // Top performers (bright green)
     if (performance >= posP67) return '#00755F'   // Above average (medium green)
     if (performance >= posP33) return '#00594C'   // Average (dark green)
@@ -123,7 +160,6 @@ export function useMarketPerformance() {
 
   /**
    * Transform sector data into ECharts treemap format
-   * Single-level structure: Just sectors (simpler, like Finviz)
    */
   const heatmapData = computed<HeatmapNode[]>(() => {
     if (!sectorsData.value.length) return []
@@ -143,10 +179,9 @@ export function useMarketPerformance() {
 
   /**
    * Update sectors data with custom range data
-   * This allows updating the heatmap with custom date range selections
    */
   function updateWithCustomRange(customSectors: SectorData[]): void {
-    sectorsData.value = customSectors
+    customSectorsData.value = customSectors
     isCustomRange.value = true
     lastUpdate.value = new Date()
   }
@@ -186,7 +221,9 @@ export function useMarketPerformance() {
     sectorsData,
     sp500Data,
     loading,
+    customLoading,
     error,
+    customError,
     lastUpdate,
     currentPeriod,
     isCustomRange,

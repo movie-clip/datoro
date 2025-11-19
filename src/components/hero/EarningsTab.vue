@@ -86,7 +86,7 @@ import { getEarningsFromBatch } from '@/services/financials/batchTableService'
 import SkeletonLoader from '@/components/common/SkeletonLoader.vue'
 
 interface Props {
-  batchData: BatchData | null
+  batchData: BatchData | null | undefined
   loading?: boolean
 }
 

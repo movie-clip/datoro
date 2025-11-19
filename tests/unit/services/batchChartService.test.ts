@@ -12,8 +12,7 @@ import {
   getExpensesSeriesFromBatch,
   getDividendYieldSeriesFromBatch,
   getInsiderTradingFromBatch,
-  getPriceSeriesFromBatch,
-  memoCache
+  getPriceSeriesFromBatch
 } from '../../../src/services/financials/batchChartService.js';
 
 // Mock batch data fixtures
@@ -78,19 +77,19 @@ const mockBatchData = {
       { date: '2023-04-01', dividendYield: 0.00545, period: 'Q2', calendarYear: '2023' }
     ],
     revenueSegments: [
-      { 
-        '2023-09-30': { 
-          'iPhone': 200583000000, 
-          'Mac': 29357000000, 
+      {
+        '2023-09-30': {
+          'iPhone': 200583000000,
+          'Mac': 29357000000,
           'iPad': 28300000000,
           'Wearables, Home and Accessories': 39845000000,
           'Services': 85200000000
         }
       },
-      { 
-        '2022-09-24': { 
-          'iPhone': 205489000000, 
-          'Mac': 40177000000, 
+      {
+        '2022-09-24': {
+          'iPhone': 205489000000,
+          'Mac': 40177000000,
           'iPad': 29292000000,
           'Wearables, Home and Accessories': 41241000000,
           'Services': 78129000000
@@ -109,23 +108,23 @@ const mockBatchData = {
       ]
     },
     insiderTrading: [
-      { 
-        transactionDate: '2023-11-15', 
-        securitiesTransacted: 10000, 
-        price: 180.50, 
-        acquisitionOrDisposition: 'D' 
+      {
+        transactionDate: '2023-11-15',
+        securitiesTransacted: 10000,
+        price: 180.50,
+        acquisitionOrDisposition: 'D'
       },
-      { 
-        transactionDate: '2023-11-20', 
-        securitiesTransacted: 5000, 
-        price: 182.00, 
-        acquisitionOrDisposition: 'A' 
+      {
+        transactionDate: '2023-11-20',
+        securitiesTransacted: 5000,
+        price: 182.00,
+        acquisitionOrDisposition: 'A'
       },
-      { 
-        transactionDate: '2023-10-10', 
-        securitiesTransacted: 15000, 
-        price: 175.00, 
-        acquisitionOrDisposition: 'D' 
+      {
+        transactionDate: '2023-10-10',
+        securitiesTransacted: 15000,
+        price: 175.00,
+        acquisitionOrDisposition: 'D'
       }
     ],
     priceHistory: {
@@ -148,16 +147,13 @@ const mockBatchData = {
 };
 
 describe('Batch Chart Service', () => {
-  
-  // Clear memoization cache before each test to ensure test isolation
-  beforeEach(() => {
-    memoCache.clear();
-  });
-  
+
+
+
   describe('getRevenueSeriesFromBatch', () => {
     it('should extract annual revenue series', () => {
       const result = getRevenueSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toEqual([Date.parse('2023-09-30'), 383285000000]);
       expect(result[1]).toEqual([Date.parse('2022-09-24'), 394328000000]);
@@ -166,7 +162,7 @@ describe('Batch Chart Service', () => {
 
     it('should extract quarterly revenue series', () => {
       const result = getRevenueSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result).toHaveLength(4);
       expect(result[0][1]).toBe(119575000000);
       expect(result[1][1]).toBe(89498000000);
@@ -175,14 +171,14 @@ describe('Batch Chart Service', () => {
     it('should return empty array if no data', () => {
       const emptyData = { data: {} };
       const result = getRevenueSeriesFromBatch(emptyData, 'annual');
-      
+
       expect(result).toEqual([]);
     });
 
     it('should handle missing incomeAnnual gracefully', () => {
       const incompleteData = { data: { incomeQuarter: [] } };
       const result = getRevenueSeriesFromBatch(incompleteData, 'annual');
-      
+
       expect(result).toEqual([]);
     });
 
@@ -197,7 +193,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getRevenueSeriesFromBatch(badData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0][1]).toBe(0); // null becomes 0
       expect(result[1][1]).toBe(0); // 'invalid' becomes 0
@@ -208,11 +204,11 @@ describe('Batch Chart Service', () => {
   describe('getRevenueSegmentsFromBatch', () => {
     it('should extract revenue segments and series', () => {
       const result = getRevenueSegmentsFromBatch(mockBatchData);
-      
+
       expect(result.segments).toContain('iPhone');
       expect(result.segments).toContain('Services');
       expect(result.segments.length).toBeGreaterThan(0);
-      
+
       expect(result.series['iPhone']).toBeDefined();
       expect(result.series['iPhone'].length).toBeGreaterThan(0);
       expect(result.series['iPhone'][0]).toHaveLength(2); // [timestamp, value]
@@ -220,7 +216,7 @@ describe('Batch Chart Service', () => {
 
     it('should sort segments alphabetically', () => {
       const result = getRevenueSegmentsFromBatch(mockBatchData);
-      
+
       const sorted = [...result.segments].sort();
       expect(result.segments).toEqual(sorted);
     });
@@ -228,7 +224,7 @@ describe('Batch Chart Service', () => {
     it('should return empty structure if no segment data', () => {
       const noSegments = { data: {} };
       const result = getRevenueSegmentsFromBatch(noSegments);
-      
+
       expect(result.segments).toEqual([]);
       expect(result.series).toEqual({});
     });
@@ -246,7 +242,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getRevenueSegmentsFromBatch(dataWithZeros);
-      
+
       expect(result.segments).toContain('Active');
       expect(result.segments).not.toContain('Legacy');
       expect(result.segments).not.toContain('Discontinued');
@@ -256,13 +252,13 @@ describe('Batch Chart Service', () => {
   describe('getFcfSeriesFromBatch', () => {
     it('should extract FCF series with metrics for annual data', () => {
       const result = getFcfSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty('date');
       expect(result[0]).toHaveProperty('fcf');
       expect(result[0]).toHaveProperty('fcfPerShare');
       expect(result[0]).toHaveProperty('sbc');
-      
+
       expect(result[0].fcf).toBe(99584000000);
       expect(result[0].fcfPerShare).toBe(6.30);
       expect(result[0].sbc).toBe(10833000000);
@@ -270,7 +266,7 @@ describe('Batch Chart Service', () => {
 
     it('should extract quarterly FCF series', () => {
       const result = getFcfSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result).toHaveLength(2);
       expect(result[0].fcf).toBe(39118000000);
     });
@@ -282,7 +278,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getFcfSeriesFromBatch(noMetrics, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0].fcfPerShare).toBe(0); // No metrics, defaults to 0
     });
@@ -290,7 +286,7 @@ describe('Batch Chart Service', () => {
     it('should return empty array if no cashflow data', () => {
       const noCashflow = { data: {} };
       const result = getFcfSeriesFromBatch(noCashflow, 'annual');
-      
+
       expect(result).toEqual([]);
     });
   });
@@ -298,7 +294,7 @@ describe('Batch Chart Service', () => {
   describe('getNetIncomeSeriesFromBatch', () => {
     it('should extract annual net income series', () => {
       const result = getNetIncomeSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toEqual([Date.parse('2023-09-30'), 96995000000]);
       expect(result[1][1]).toBe(99803000000);
@@ -306,7 +302,7 @@ describe('Batch Chart Service', () => {
 
     it('should extract quarterly net income series', () => {
       const result = getNetIncomeSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result).toHaveLength(4);
       expect(result[0][1]).toBe(33916000000);
     });
@@ -320,7 +316,7 @@ describe('Batch Chart Service', () => {
   describe('getEpsSeriesFromBatch', () => {
     it('should extract annual EPS series by default', () => {
       const result = getEpsSeriesFromBatch(mockBatchData);
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toEqual([Date.parse('2023-09-30'), 6.13]);
       expect(result[1][1]).toBe(6.15);
@@ -328,7 +324,7 @@ describe('Batch Chart Service', () => {
 
     it('should extract quarterly EPS series when specified', () => {
       const result = getEpsSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result).toHaveLength(4);
       // Quarterly data returns 4-element arrays: [timestamp, value, period, fiscalYear]
       // If period/fiscalYear are missing from mock data, they will be empty strings
@@ -339,7 +335,7 @@ describe('Batch Chart Service', () => {
     it('should return empty array if no annual data', () => {
       const noData = { data: { incomeAnnual: [] } };
       const result = getEpsSeriesFromBatch(noData);
-      
+
       expect(result).toEqual([]);
     });
 
@@ -352,7 +348,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getEpsSeriesFromBatch(zeroEps);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0][1]).toBe(0);
     });
@@ -361,13 +357,13 @@ describe('Batch Chart Service', () => {
   describe('getEbitdaSeriesFromBatch', () => {
     it('should extract EBITDA series with bridge components', () => {
       const result = getEbitdaSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty('date');
       expect(result[0]).toHaveProperty('revenue');
       expect(result[0]).toHaveProperty('ebitda');
       expect(result[0]).toHaveProperty('depreciationAndAmortization');
-      
+
       expect(result[0].ebitda).toBe(125887000000);
       expect(result[0].operatingIncome).toBe(114368000000);
     });
@@ -384,7 +380,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getEbitdaSeriesFromBatch(partialData, 'annual');
-      
+
       expect(result[0].revenue).toBe(1000000);
       expect(result[0].ebitda).toBe(500000);
       expect(result[0].costOfRevenue).toBe(0);
@@ -399,12 +395,12 @@ describe('Batch Chart Service', () => {
   describe('getCashDebtSeriesFromBatch', () => {
     it('should extract cash and debt series', () => {
       const result = getCashDebtSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty('date');
       expect(result[0]).toHaveProperty('cash');
       expect(result[0]).toHaveProperty('debt');
-      
+
       // Cash = cashAndCashEquivalents + shortTermInvestments
       expect(result[0].cash).toBe(29965000000 + 31590000000);
       expect(result[0].debt).toBe(111088000000);
@@ -412,7 +408,7 @@ describe('Batch Chart Service', () => {
 
     it('should extract quarterly data', () => {
       const result = getCashDebtSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result).toHaveLength(2);
       expect(result[0].cash).toBe(40760000000 + 35228000000);
     });
@@ -428,7 +424,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getCashDebtSeriesFromBatch(noShortTerm, 'annual');
-      
+
       expect(result[0].cash).toBe(1000000); // Only cash, no short term
       expect(result[0].debt).toBe(500000);
     });
@@ -437,13 +433,13 @@ describe('Batch Chart Service', () => {
   describe('getCapitalReturnedSeriesFromBatch', () => {
     it('should extract capital returned (dividends + buybacks)', () => {
       const result = getCapitalReturnedSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty('date');
       expect(result[0]).toHaveProperty('dividends');
       expect(result[0]).toHaveProperty('buybacks');
       expect(result[0]).toHaveProperty('total');
-      
+
       // FMP returns negative numbers, we convert to positive
       expect(result[0].dividends).toBe(14841000000);
       expect(result[0].buybacks).toBe(77550000000);
@@ -452,7 +448,7 @@ describe('Batch Chart Service', () => {
 
     it('should handle quarterly data', () => {
       const result = getCapitalReturnedSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result).toHaveLength(2);
       expect(result[0].dividends).toBeGreaterThan(0);
     });
@@ -468,7 +464,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getCapitalReturnedSeriesFromBatch(missingValues, 'annual');
-      
+
       expect(result[0].dividends).toBe(1000000);
       expect(result[0].buybacks).toBe(0);
       expect(result[0].total).toBe(1000000);
@@ -478,7 +474,7 @@ describe('Batch Chart Service', () => {
   describe('getSharesSeriesFromBatch', () => {
     it('should extract shares outstanding series', () => {
       const result = getSharesSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toEqual([Date.parse('2023-09-30'), 15812547000]);
       expect(result[1][1]).toBe(16215963000);
@@ -486,7 +482,7 @@ describe('Batch Chart Service', () => {
 
     it('should handle quarterly data', () => {
       const result = getSharesSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result).toHaveLength(4);
       expect(result[0][1]).toBe(15552752000);
     });
@@ -500,14 +496,14 @@ describe('Batch Chart Service', () => {
   describe('getExpensesSeriesFromBatch', () => {
     it('should extract expense breakdown', () => {
       const result = getExpensesSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty('date');
       expect(result[0]).toHaveProperty('costOfRevenue');
       expect(result[0]).toHaveProperty('operatingExpenses');
       expect(result[0]).toHaveProperty('researchAndDevelopment');
       expect(result[0]).toHaveProperty('sellingGeneralAdmin');
-      
+
       expect(result[0].costOfRevenue).toBe(214137000000);
       expect(result[0].researchAndDevelopment).toBe(29915000000);
     });
@@ -523,7 +519,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getExpensesSeriesFromBatch(partialExpenses, 'annual');
-      
+
       expect(result[0].costOfRevenue).toBe(1000000);
       expect(result[0].operatingExpenses).toBe(0);
       expect(result[0].researchAndDevelopment).toBe(0);
@@ -533,10 +529,10 @@ describe('Batch Chart Service', () => {
   describe('getDividendYieldSeriesFromBatch', () => {
     it('should return annual dividend yield from ratiosAnnual', () => {
       const result = getDividendYieldSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(result.length).toBeGreaterThan(0);
       expect(result[0]).toHaveLength(2); // [timestamp, yield%]
-      
+
       // Verify yield matches mock data (0.00551 * 100 = 0.551%)
       expect(result[0][1]).toBe(0.551);
       expect(result[0][1]).toBeGreaterThan(0);
@@ -545,11 +541,11 @@ describe('Batch Chart Service', () => {
 
     it('should return quarterly dividend yield from keyMetricsQuarter', () => {
       const result = getDividendYieldSeriesFromBatch(mockBatchData, 'quarterly');
-      
+
       expect(result.length).toBeGreaterThan(0);
       // Quarterly data includes fiscal period metadata (4-element arrays)
       expect(result[0].length).toBeGreaterThanOrEqual(2);
-      
+
       // First point should be Q1 2024 with yield 0.540% (0.00540 * 100)
       expect(result[0][1]).toBe(0.540);
     });
@@ -562,23 +558,23 @@ describe('Batch Chart Service', () => {
           keyMetricsQuarter: [] // Empty quarterly data
         }
       };
-      
+
       const result = getDividendYieldSeriesFromBatch(dataWithoutQuarterly as any, 'quarterly');
-      
+
       // Should fallback to annual data
       expect(result.length).toBeGreaterThan(0);
       expect(result[0][1]).toBe(0.551); // From ratiosAnnual
     });
 
     it('should return empty array if no dividend data', () => {
-      const noDividends = { 
-        data: { 
+      const noDividends = {
+        data: {
           profile: [{ price: 150 }],
-          dividendHistory: { historical: [] } 
-        } 
+          dividendHistory: { historical: [] }
+        }
       };
       const result = getDividendYieldSeriesFromBatch(noDividends, 'annual');
-      
+
       expect(result).toEqual([]);
     });
 
@@ -590,7 +586,7 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getDividendYieldSeriesFromBatch(noPrice, 'annual');
-      
+
       // Without price history, should return empty array
       expect(result).toEqual([]);
     });
@@ -599,11 +595,11 @@ describe('Batch Chart Service', () => {
   describe('getInsiderTradingFromBatch', () => {
     it('should aggregate insider trading by month', () => {
       const result = getInsiderTradingFromBatch(mockBatchData);
-      
+
       expect(result).toHaveProperty('buys');
       expect(result).toHaveProperty('sells');
       expect(result).toHaveProperty('net');
-      
+
       expect(Array.isArray(result.buys)).toBe(true);
       expect(Array.isArray(result.sells)).toBe(true);
       expect(Array.isArray(result.net)).toBe(true);
@@ -611,26 +607,26 @@ describe('Batch Chart Service', () => {
 
     it('should calculate buy and sell values correctly', () => {
       const result = getInsiderTradingFromBatch(mockBatchData);
-      
+
       // November 2023 should have both buy and sell
       const novBuys = result.buys.find(item => {
         const date = new Date(item[0]);
         return date.getMonth() === 10 && date.getFullYear() === 2023;
       });
-      
+
       const novSells = result.sells.find(item => {
         const date = new Date(item[0]);
         return date.getMonth() === 10 && date.getFullYear() === 2023;
       });
-      
+
       expect(novBuys).toBeDefined();
       expect(novSells).toBeDefined();
-      
+
       if (novBuys) {
         // Buy: 5000 * 182.00 = 910,000
         expect(novBuys[1]).toBe(5000 * 182.00);
       }
-      
+
       if (novSells) {
         // Sells: (10000 * 180.50) = 1,805,000
         expect(novSells[1]).toBe(10000 * 180.50);
@@ -639,12 +635,12 @@ describe('Batch Chart Service', () => {
 
     it('should calculate net shares correctly', () => {
       const result = getInsiderTradingFromBatch(mockBatchData);
-      
+
       const novNet = result.net.find(item => {
         const date = new Date(item[0]);
         return date.getMonth() === 10 && date.getFullYear() === 2023;
       });
-      
+
       expect(novNet).toBeDefined();
       if (novNet) {
         // Net = +5000 (buy) - 10000 (sell) = -5000
@@ -655,7 +651,7 @@ describe('Batch Chart Service', () => {
     it('should return empty arrays if no insider data', () => {
       const noInsider = { data: {} };
       const result = getInsiderTradingFromBatch(noInsider);
-      
+
       expect(result.buys).toEqual([]);
       expect(result.sells).toEqual([]);
       expect(result.net).toEqual([]);
@@ -663,10 +659,10 @@ describe('Batch Chart Service', () => {
 
     it('should sort results by date', () => {
       const result = getInsiderTradingFromBatch(mockBatchData);
-      
+
       // Check buys are sorted
       for (let i = 1; i < result.buys.length; i++) {
-        expect(result.buys[i][0]).toBeGreaterThanOrEqual(result.buys[i-1][0]);
+        expect(result.buys[i][0]).toBeGreaterThanOrEqual(result.buys[i - 1][0]);
       }
     });
   });
@@ -674,23 +670,23 @@ describe('Batch Chart Service', () => {
   describe('getPriceSeriesFromBatch', () => {
     it('should extract price history series', () => {
       const result = getPriceSeriesFromBatch(mockBatchData);
-      
+
       expect(result.length).toBeGreaterThan(0);
       expect(result[0]).toHaveLength(2); // [timestamp, price]
-      
+
       // Should be sorted ascending by timestamp (oldest first)
       for (let i = 1; i < result.length; i++) {
-        expect(result[i][0]).toBeGreaterThan(result[i-1][0]);
+        expect(result[i][0]).toBeGreaterThan(result[i - 1][0]);
       }
     });
 
     it('should use adjClose if available, else close', () => {
       const result = getPriceSeriesFromBatch(mockBatchData);
-      
+
       // Sorted ascending, so oldest is first (2022-08-05)
       const oldest = result[0];
       expect(oldest[1]).toBe(155.00);  // From 2022-08-05
-      
+
       // Most recent is last (2024-01-15)
       const newest = result[result.length - 1];
       expect(newest[1]).toBe(185.50);
@@ -703,7 +699,7 @@ describe('Batch Chart Service', () => {
       yesterday.setDate(yesterday.getDate() - 1);
       const tenDaysAgo = new Date(today);
       tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-      
+
       const recentData = {
         data: {
           priceHistory: {
@@ -715,9 +711,9 @@ describe('Batch Chart Service', () => {
           }
         }
       };
-      
+
       const result = getPriceSeriesFromBatch(recentData, 7);
-      
+
       // Should only include data from last 7 days (filters out 10-day-old data)
       expect(result.length).toBe(2);
       const oldestTimestamp = result[0][0];
@@ -739,25 +735,25 @@ describe('Batch Chart Service', () => {
         }
       };
       const result = getPriceSeriesFromBatch(badData);
-      
+
       expect(result.length).toBe(2); // Only 2 valid data points
     });
 
     it('should return empty array if no price history', () => {
       const noPrice = { data: {} };
       const result = getPriceSeriesFromBatch(noPrice);
-      
+
       expect(result).toEqual([]);
     });
 
     it('should handle empty historical array', () => {
-      const emptyHistory = { 
-        data: { 
-          priceHistory: { historical: [] } 
-        } 
+      const emptyHistory = {
+        data: {
+          priceHistory: { historical: [] }
+        }
       };
       const result = getPriceSeriesFromBatch(emptyHistory);
-      
+
       expect(result).toEqual([]);
     });
   });
@@ -783,14 +779,14 @@ describe('Batch Chart Service', () => {
           cashflowQuarter: null
         }
       };
-      
+
       expect(getRevenueSeriesFromBatch(malformed)).toEqual([]);
       expect(getFcfSeriesFromBatch(malformed, 'quarterly')).toEqual([]);
     });
 
     it('should not throw errors on missing nested properties', () => {
       const partial = { data: { someOtherField: 'value' } };
-      
+
       expect(() => getRevenueSeriesFromBatch(partial)).not.toThrow();
       expect(() => getFcfSeriesFromBatch(partial)).not.toThrow();
       expect(() => getCashDebtSeriesFromBatch(partial)).not.toThrow();
@@ -800,7 +796,7 @@ describe('Batch Chart Service', () => {
   describe('Data Type Conversions', () => {
     it('should convert date strings to timestamps', () => {
       const result = getRevenueSeriesFromBatch(mockBatchData, 'annual');
-      
+
       expect(typeof result[0][0]).toBe('number');
       expect(result[0][0]).toBeGreaterThan(0);
       expect(result[0][0]).toBe(Date.parse('2023-09-30'));
@@ -816,10 +812,10 @@ describe('Batch Chart Service', () => {
           }]
         }
       };
-      
+
       const revenueResult = getRevenueSeriesFromBatch(stringData, 'annual');
       const incomeResult = getNetIncomeSeriesFromBatch(stringData, 'annual');
-      
+
       expect(typeof revenueResult[0][1]).toBe('number');
       expect(revenueResult[0][1]).toBe(1000000);
       expect(typeof incomeResult[0][1]).toBe('number');
@@ -836,10 +832,10 @@ describe('Batch Chart Service', () => {
           }]
         }
       };
-      
+
       const revenueResult = getRevenueSeriesFromBatch(nullData, 'annual');
       const incomeResult = getNetIncomeSeriesFromBatch(nullData, 'annual');
-      
+
       expect(revenueResult[0][1]).toBe(0);
       expect(incomeResult[0][1]).toBe(0);
     });
@@ -919,7 +915,7 @@ describe('Batch Chart Service', () => {
       }
 
       const result = getPriceSeriesFromBatch(validBatchData)
-      
+
       expect(result).toHaveLength(2)
       expect(result[0][1]).toBe(183.5)  // Uses adjClose
       expect(result[1][1]).toBe(184.8)
@@ -943,7 +939,7 @@ describe('Batch Chart Service', () => {
       }
 
       const result = getPriceSeriesFromBatch(batchDataNoAdjClose)
-      
+
       expect(result).toHaveLength(1)
       expect(result[0][1]).toBe(184.0)  // Fallback to close
     })
@@ -977,7 +973,7 @@ describe('Batch Chart Service', () => {
       }
 
       const result = getPriceSeriesFromBatch(batchDataInvalidDates)
-      
+
       // Should only include the valid entry
       expect(result).toHaveLength(1)
       expect(result[0][1]).toBe(184.0)
@@ -1012,7 +1008,7 @@ describe('Batch Chart Service', () => {
       }
 
       const result = getPriceSeriesFromBatch(batchDataInvalidPrices)
-      
+
       // Should only include the valid entry
       expect(result).toHaveLength(1)
       expect(result[0][1]).toBe(184.0)
@@ -1043,7 +1039,7 @@ describe('Batch Chart Service', () => {
       }
 
       const result = getPriceSeriesFromBatch(unsortedBatchData)
-      
+
       // Should be sorted oldest to newest
       expect(result).toHaveLength(3)
       expect(result[0][1]).toBe(184.0)  // 2024-01-01
@@ -1054,7 +1050,7 @@ describe('Batch Chart Service', () => {
     it('should handle maxDays parameter to limit data range', () => {
       const now = Date.now()
       const oneDayMs = 24 * 60 * 60 * 1000
-      
+
       const batchDataManyDays = {
         ticker: 'AAPL',
         data: {
@@ -1080,7 +1076,7 @@ describe('Batch Chart Service', () => {
 
       // Get last 15 days only
       const result = getPriceSeriesFromBatch(batchDataManyDays, 15)
-      
+
       // Should exclude data older than 15 days
       expect(result.length).toBeLessThanOrEqual(2)
     })
@@ -1113,7 +1109,7 @@ describe('Batch Chart Service', () => {
       }
 
       const result = getPriceSeriesFromBatch(realFMPStructure)
-      
+
       expect(result).toHaveLength(1)
       expect(result[0]).toEqual([
         new Date('2024-11-06').getTime(),
@@ -1138,7 +1134,7 @@ describe('Batch Chart Service', () => {
       }
 
       const result = getPriceSeriesFromBatch(largePriceHistory)
-      
+
       expect(result.length).toBeGreaterThan(7000)
       expect(result[0]).toHaveLength(2)  // [timestamp, price]
       expect(typeof result[0][0]).toBe('number')
