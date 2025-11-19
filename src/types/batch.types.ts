@@ -9,6 +9,7 @@ import type {
   FMPCashFlow,
   FMPKeyMetrics,
   FMPRatiosTTM,
+  FMPRatios,
   FMPEnterpriseValue,
   FMPFinancialGrowth,
   FMPInsiderTrading,
@@ -16,6 +17,11 @@ import type {
   FMPDividend,
   FMPHistoricalPrice,
   FMPPriceTarget,
+  FMPRevenueProductSegment,
+  FMPRevenueGeographicSegment,
+  FMPFinancialScore,
+  FMPPriceTargetSummary,
+  FMPPriceTargetConsensus,
   FMPDCF,
   FMPEarnings
 } from './fmp.types'
@@ -61,26 +67,26 @@ export interface BatchData {
     /** Quarterly cash flow statements */
     cashflowQuarter: FMPCashFlow[]
     
-    /** Annual ratios */
-    ratiosAnnual?: unknown[]
+    /** Annual ratios (currentRatio, quickRatio, debtRatio, returnOnEquity, etc.) */
+    ratiosAnnual?: FMPRatios[]
     
     /** Quarterly ratios */
-    ratiosQuarter?: unknown[]
+    ratiosQuarter?: FMPRatios[]
     
     /** Key metrics (annual) */
-    keyMetrics?: unknown[]
+    keyMetrics?: FMPKeyMetrics[]
     
     /** Key metrics (quarterly) - for FCF per share and other quarterly metrics */
-    keyMetricsQuarter?: unknown[]
+    keyMetricsQuarter?: FMPKeyMetrics[]
     
     /** Historical price data with structure { symbol, historical: [...] } */
     priceHistory?: { symbol: string; historical: FMPHistoricalPrice[] }
     
     /** Revenue segments by product (FMP returns { "date": { "Category": value } }) */
-    revenueSegments?: unknown[]
+    revenueSegments?: FMPRevenueProductSegment[]
     
     /** Revenue segments by geography (FMP returns { "date": { "Region": value } }) */
-    revenueGeographicSegments?: unknown[]
+    revenueGeographicSegments?: FMPRevenueGeographicSegment[]
     
     /** Dividend history with structure { symbol, historical: [...] } */
     dividendHistory?: { symbol: string; historical: FMPDividend[] }
@@ -91,14 +97,14 @@ export interface BatchData {
     /** Historical earnings calendar with actual vs estimated EPS and revenue */
     earningsCalendar?: FMPEarnings[]
     
-    /** Financial scores (Altman Z, Piotroski, etc.) */
-    financialScores?: unknown[]
+    /** Financial scores (Altman Z-Score, Piotroski Score, etc.) */
+    financialScores?: FMPFinancialScore[]
     
-    /** Price target summary */
-    priceTargetSummary?: unknown[]
+    /** Price target summary (analyst price targets over time) */
+    priceTargetSummary?: FMPPriceTargetSummary[]
     
-    /** Price target consensus */
-    priceTargetConsensus?: unknown[]
+    /** Price target consensus (aggregate analyst targets) */
+    priceTargetConsensus?: FMPPriceTargetConsensus[]
     
     /** Insider trading transactions */
     insiderTrading: FMPInsiderTrading[]

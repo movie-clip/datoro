@@ -134,7 +134,7 @@ interface RevenueSegmentRow {
  */
 export function getRevenueSegmentsFromBatch(batchData: BatchData | null): RevenueSegmentsResult {
   try {
-    const segmentData = batchData?.data?.revenueSegments as any[] | undefined
+    const segmentData = batchData?.data?.revenueSegments
 
     if (!segmentData || !Array.isArray(segmentData) || segmentData.length === 0) {
       return { segments: [], series: {} }
@@ -209,8 +209,8 @@ export function getFcfSeriesFromBatch(batchData: BatchData | null, period: Perio
 
     // Use the correct key metrics based on period
     const keyMetrics = period === 'quarterly'
-      ? batchData?.data?.keyMetricsQuarter as FMPKeyMetrics[] | undefined
-      : batchData?.data?.keyMetrics as FMPKeyMetrics[] | undefined
+      ? batchData?.data?.keyMetricsQuarter
+      : batchData?.data?.keyMetrics
 
     if (!cashflow || !Array.isArray(cashflow)) {
       return []

@@ -94,7 +94,7 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     const balanceAnnual = data.balanceAnnual || []
     
     // Extract key metrics (has marketCap and other useful data)
-    const keyMetrics = (data.keyMetrics || []) as any[]
+    const keyMetrics = data.keyMetrics || []
     const latestKeyMetrics = keyMetrics.length > 0 ? keyMetrics[0] : null
     
     // Get most recent FCF from cash flow statement
@@ -180,7 +180,7 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     // Get TTM EPS, P/E ratio, and EPS growth
     // Priority 1: Use TTM data (most current)
     // Priority 2: Fall back to quote/annual data
-    const ratiosTTM = (data as any).ratiosTTM?.[0] || null
+    const ratiosTTM = data.ratiosTTM?.[0] || null
     
     // EPS from quote (already TTM)
     // Ensure we extract a number value, not an object
@@ -194,7 +194,7 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
       currentPE = Number(ratiosTTM.priceEarningsRatioTTM) || 0
     } else {
       // Fallback to annual data if TTM not available
-      const ratiosAnnual = data.ratiosAnnual?.[0] as any
+      const ratiosAnnual = data.ratiosAnnual?.[0]
       currentPE = Number(ratiosAnnual?.priceEarningsRatio) || 0
     }
     

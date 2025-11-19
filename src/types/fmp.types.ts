@@ -355,6 +355,141 @@ export interface FMPRatiosTTM {
 }
 
 /**
+ * Financial Ratios (Annual or Quarterly)
+ * Endpoint: /ratios/{symbol}
+ * Similar to FMPRatiosTTM but for annual/quarterly periods
+ */
+export interface FMPRatios {
+  date: string
+  symbol?: string
+  period?: string
+  currentRatio?: number
+  quickRatio?: number
+  cashRatio?: number
+  daysOfSalesOutstanding?: number
+  daysOfInventoryOutstanding?: number
+  operatingCycle?: number
+  daysOfPayablesOutstanding?: number
+  cashConversionCycle?: number
+  grossProfitMargin?: number
+  operatingProfitMargin?: number
+  pretaxProfitMargin?: number
+  netProfitMargin?: number
+  effectiveTaxRate?: number
+  returnOnAssets?: number
+  returnOnEquity?: number
+  returnOnCapitalEmployed?: number
+  netIncomePerEBT?: number
+  ebtPerEbit?: number
+  ebitPerRevenue?: number
+  debtRatio?: number
+  debtEquityRatio?: number
+  longTermDebtToCapitalization?: number
+  totalDebtToCapitalization?: number
+  interestCoverage?: number
+  cashFlowToDebtRatio?: number
+  companyEquityMultiplier?: number
+  receivablesTurnover?: number
+  payablesTurnover?: number
+  inventoryTurnover?: number
+  fixedAssetTurnover?: number
+  assetTurnover?: number
+  operatingCashFlowPerShare?: number
+  freeCashFlowPerShare?: number
+  cashPerShare?: number
+  payoutRatio?: number
+  operatingCashFlowSalesRatio?: number
+  freeCashFlowOperatingCashFlowRatio?: number
+  cashFlowCoverageRatios?: number
+  shortTermCoverageRatios?: number
+  capitalExpenditureCoverageRatio?: number
+  dividendPaidAndCapexCoverageRatio?: number
+  dividendPayoutRatio?: number
+  priceBookValueRatio?: number
+  priceToBookRatio?: number
+  priceToSalesRatio?: number
+  priceEarningsRatio?: number
+  priceToFreeCashFlowsRatio?: number
+  priceToOperatingCashFlowsRatio?: number
+  priceCashFlowRatio?: number
+  priceEarningsToGrowthRatio?: number
+  priceSalesRatio?: number
+  dividendYield?: number
+  enterpriseValueMultiple?: number
+  priceFairValue?: number
+  [key: string]: any
+}
+
+/**
+ * Revenue Product Segment (dynamic structure)
+ * Endpoint: /revenue-product-segmentation?symbol={ticker}
+ * FMP returns: { "2025-09-27": { "Mac": 33708000000, "iPhone": 209586000000, ... } }
+ */
+export interface FMPRevenueProductSegment {
+  [date: string]: {
+    [segmentName: string]: number
+  }
+}
+
+/**
+ * Revenue Geographic Segment (dynamic structure)
+ * Endpoint: /revenue-geographic-segmentation?symbol={ticker}
+ * Same structure as product segments but for geographic regions
+ */
+export interface FMPRevenueGeographicSegment {
+  [date: string]: {
+    [regionName: string]: number
+  }
+}
+
+/**
+ * Financial Scores (Altman Z-Score, Piotroski Score)
+ * Endpoint: /api/v4/score?symbol={ticker}
+ */
+export interface FMPFinancialScore {
+  symbol: string
+  altmanZScore?: number | string
+  piotroskiScore?: number | string
+  workingCapital?: number | string
+  totalAssets?: number | string
+  retainedEarnings?: number | string
+  ebit?: number | string
+  marketCap?: number | string
+  totalLiabilities?: number | string
+  revenue?: number | string
+  [key: string]: any
+}
+
+/**
+ * Price Target Summary
+ * Endpoint: /price-target-summary?symbol={ticker}
+ */
+export interface FMPPriceTargetSummary {
+  lastMonth?: number | string
+  lastMonthAvgPriceTarget?: number | string
+  lastQuarter?: number | string
+  lastQuarterAvgPriceTarget?: number | string
+  lastYear?: number | string
+  lastYearAvgPriceTarget?: number | string
+  allTime?: number | string
+  allTimeAvgPriceTarget?: number | string
+  publishers?: string
+  [key: string]: any
+}
+
+/**
+ * Price Target Consensus
+ * Endpoint: /price-target-consensus?symbol={ticker}
+ */
+export interface FMPPriceTargetConsensus {
+  targetHigh?: number | string
+  targetLow?: number | string
+  targetConsensus?: number | string
+  targetMedian?: number | string
+  [key: string]: any
+}
+
+/**
  * Enterprise Value (Annual or Quarterly)
  * Endpoints: /enterprise-values/{symbol}, /enterprise-values/{symbol}?period=quarter
  */

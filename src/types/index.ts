@@ -10,6 +10,7 @@ export type {
   FMPCashFlow,
   FMPKeyMetrics,
   FMPRatiosTTM,
+  FMPRatios,
   FMPEnterpriseValue,
   FMPFinancialGrowth,
   FMPInsiderTrading,
@@ -17,6 +18,11 @@ export type {
   FMPDividend,
   FMPHistoricalPrice,
   FMPPriceTarget,
+  FMPRevenueProductSegment,
+  FMPRevenueGeographicSegment,
+  FMPFinancialScore,
+  FMPPriceTargetSummary,
+  FMPPriceTargetConsensus,
   FMPDCF
 } from './fmp.types'
 
