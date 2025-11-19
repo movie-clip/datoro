@@ -20,7 +20,10 @@ export function ensureEChartsRegistered(): Promise<boolean> {
 const app = createApp(App)
 const pinia = createPinia()
 
+import { VueQueryPlugin } from '@tanstack/vue-query'
+
 app.use(pinia)
+app.use(VueQueryPlugin)
 
 // Add global error handler
 app.config.errorHandler = (err, instance, info) => {

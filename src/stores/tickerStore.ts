@@ -1,9 +1,10 @@
 // src/stores/tickerStore.ts
-// Centralized ticker data store using Pinia
-// Replaces individual component fetching with shared state
+// Centralized ticker data store using Pinia + TanStack Query
+// Replaces custom caching with industry standard server state management
 
 import { defineStore } from 'pinia'
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, type Ref, type ComputedRef, watch } from 'vue'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { API_BASE_URL } from '../utils/apiConfig'
 import type {
   BatchData,
@@ -16,138 +17,10 @@ import type {
   FMPHistoricalPrice,
   FMPDividend
 } from '../types'
-import { STORAGE_KEYS } from '../config/storage'
 import { trackSearch, trackTickerView } from '../services/analytics/gaService'
-import { setItemAsync } from '../utils/asyncStorage'
 
 // Re-export types for components
 export type { BatchData, FMPProfile, FMPQuote, FMPIncomeStatement, FMPBalanceSheet, FMPCashFlow, FMPInsiderTrading, FMPHistoricalPrice, FMPDividend }
-
-// Local storage key for API version tracking
-const API_VERSION_KEY = STORAGE_KEYS.API_VERSION/**
- * API version response
- */
-interface ApiVersionResponse {
-  version: string
-}
-
-/**
- * Cache entry with metadata
- */
-interface CachedEntry {
-  data: BatchData
-  etag: string | null
-  version: string | null
-  timestamp: number
-}
-
-/**
- * Cache statistics
- */
-interface CacheStats {
-  size: number
-  maxSize: number
-  keys: string[]
-}
-
-/**
- * Check API version and clear cache if version changed
- * This ensures stale data is auto-cleared when FMP endpoints change
- */
-async function checkApiVersion(cache: LRUCache): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/version`)
-    const { version }: ApiVersionResponse = await response.json()
-    
-    const cachedVersion = localStorage.getItem(API_VERSION_KEY)
-    if (cachedVersion && cachedVersion !== version) {
-      console.log(`[TickerStore] API version changed: ${cachedVersion} → ${version}`)
-      console.log('[TickerStore] Clearing cache to prevent stale data')
-      cache.clear()
-      // Async write (non-critical)
-      setItemAsync(API_VERSION_KEY, version).catch(err => {
-        console.warn('[TickerStore] Failed to persist API version:', err)
-      })
-      return true // Cache was cleared
-    } else if (!cachedVersion) {
-      // First time - just store version (async)
-      setItemAsync(API_VERSION_KEY, version).catch(err => {
-        console.warn('[TickerStore] Failed to persist API version:', err)
-      })
-    }
-    return false
-  } catch (_err) {
-    const error = _err as Error
-    console.warn('[TickerStore] Version check failed:', error.message)
-    return false
-  }
-}
-
-/**
- * LRU Cache with max size limit
- * Automatically evicts least recently used items when full
- */
-class LRUCache {
-  private maxSize: number
-  private cache: Map<string, CachedEntry>
-
-  constructor(maxSize = 50) {
-    this.maxSize = maxSize
-    this.cache = new Map()
-  }
-
-  get(key: string): CachedEntry | undefined {
-    if (!this.cache.has(key)) {
-      return undefined
-    }
-    
-    // Move to end (mark as recently used)
-    const value = this.cache.get(key)!
-    this.cache.delete(key)
-    this.cache.set(key, value)
-    return value
-  }
-
-  set(key: string, value: CachedEntry): void {
-    // Remove if exists (to re-add at end)
-    if (this.cache.has(key)) {
-      this.cache.delete(key)
-    }
-    
-    // Evict oldest if at capacity
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value as string
-      this.cache.delete(firstKey)
-    }
-    
-    this.cache.set(key, value)
-  }
-
-  has(key: string): boolean {
-    return this.cache.has(key)
-  }
-
-  delete(key: string): boolean {
-    return this.cache.delete(key)
-  }
-
-  clear(): void {
-    this.cache.clear()
-  }
-
-  get size(): number {
-    return this.cache.size
-  }
-
-  // Get cache statistics
-  getStats(): CacheStats {
-    return {
-      size: this.cache.size,
-      maxSize: this.maxSize,
-      keys: Array.from(this.cache.keys())
-    }
-  }
-}
 
 /**
  * Income statements by period
@@ -179,12 +52,14 @@ interface CashFlowStatements {
 export interface TickerStoreState {
   // State
   currentTicker: Ref<string>
-  batchData: Ref<BatchData | null>
-  loading: Ref<boolean>
-  error: Ref<string | null>
-  fetchTime: Ref<number>
   timeframe: Ref<'annual' | 'quarterly'>
-  
+
+  // Query State (from Vue Query)
+  batchData: Ref<BatchData | undefined>
+  loading: Ref<boolean>
+  error: Ref<unknown>
+  isFetching: Ref<boolean>
+
   // Computed
   profile: ComputedRef<FMPProfile | null>
   quote: ComputedRef<FMPQuote | null>
@@ -199,40 +74,65 @@ export interface TickerStoreState {
   financialScores: ComputedRef<any | null>
   insiderTrading: ComputedRef<FMPInsiderTrading[]>
   earningsCalendar: ComputedRef<any[]>
-  
+
   // Actions
   setTicker: (ticker: string, mode?: 'full' | 'lite') => Promise<void>
-  fetchTickerData: (ticker: string, mode?: 'full' | 'lite') => Promise<void>
   refresh: () => Promise<void>
-  clearCache: () => void
-  getCacheStats: () => CacheStats
   setTimeframe: (timeframe: 'annual' | 'quarterly') => void
 }
 
 export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   // State
   const currentTicker = ref('AAPL')
-  const batchData = ref<BatchData | null>(null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
-  const fetchTime = ref(0)
   const timeframe = ref<'annual' | 'quarterly'>('annual')
-  
-  // Cache (5 min TTL, max 50 items)
-  const cache = new LRUCache(50)
-  const CACHE_TTL = 5 * 60 * 1000
-  
-  // Request deduplication: Track in-flight requests
-  const pendingRequests = new Map<string, Promise<void>>()
-  
-  // Request cancellation: Track AbortControllers for in-flight requests
-  const abortControllers = new Map<string, AbortController>()
-  
-  // Check API version on startup (auto-clear cache if version changed)
-  checkApiVersion(cache).catch(err => {
-    console.error('[TickerStore] Version check error:', err)
+  const currentMode = ref<'full' | 'lite'>('full')
+
+  const queryClient = useQueryClient()
+
+  // Vue Query: Fetcher function
+  const fetchTickerData = async (ticker: string, mode: 'full' | 'lite'): Promise<BatchData> => {
+    const t = ticker.trim().toUpperCase()
+    if (!t) throw new Error('Ticker is required')
+
+    const startTime = performance.now()
+
+    const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const data: BatchData = await response.json()
+
+    // Track successful load
+    const duration = Math.round(performance.now() - startTime)
+    trackTickerView(t, duration)
+
+    return data
+  }
+
+  // Vue Query: Main Query
+  const {
+    data: batchData,
+    isLoading: loading,
+    error,
+    isFetching,
+    refetch
+  } = useQuery({
+    // Unique key for caching: ['ticker', 'AAPL', 'full']
+    queryKey: computed(() => ['ticker', currentTicker.value, currentMode.value]),
+
+    // Fetcher function
+    queryFn: () => fetchTickerData(currentTicker.value, currentMode.value),
+
+    // Configuration
+    staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
+    gcTime: 15 * 60 * 1000,   // Keep unused data in memory for 15 minutes
+    retry: 2,                 // Retry failed requests twice
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    enabled: computed(() => !!currentTicker.value), // Only run if ticker exists
   })
-  
+
   // Computed - Individual data accessors
   const profile = computed((): FMPProfile | null => {
     const p = batchData.value?.data?.profile
@@ -241,7 +141,7 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     }
     return null
   })
-  
+
   const quote = computed((): FMPQuote | null => {
     const q = batchData.value?.data?.quote
     if (Array.isArray(q) && q.length > 0 && q[0]) {
@@ -249,201 +149,59 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     }
     return null
   })
-  
+
   const incomeStatements = computed((): IncomeStatements => ({
     annual: batchData.value?.data?.incomeAnnual || [],
     quarter: batchData.value?.data?.incomeQuarter || []
   }))
-  
+
   const balanceSheets = computed((): BalanceSheets => ({
     annual: batchData.value?.data?.balanceAnnual || [],
     quarter: batchData.value?.data?.balanceQuarter || []
   }))
-  
+
   const cashFlowStatements = computed((): CashFlowStatements => ({
     annual: batchData.value?.data?.cashflowAnnual || [],
     quarter: batchData.value?.data?.cashflowQuarter || []
   }))
-  
+
   const ratios = computed(() => batchData.value?.data?.ratiosAnnual || [])
   const keyMetrics = computed(() => batchData.value?.data?.keyMetrics || [])
-  
+
   const priceHistory = computed((): FMPHistoricalPrice[] => {
     const hist = batchData.value?.data?.priceHistory
     return hist?.historical || []
   })
-  
+
   const revenueSegments = computed(() => batchData.value?.data?.revenueSegments || [])
   const dividendHistory = computed((): FMPDividend[] => batchData.value?.data?.dividendHistory?.historical || [])
-  
+
   const financialScores = computed((): any | null => {
     const scores = batchData.value?.data?.financialScores
     return Array.isArray(scores) && scores.length > 0 ? scores[0] : null
   })
-  
+
   const insiderTrading = computed((): FMPInsiderTrading[] => batchData.value?.data?.insiderTrading || [])
   const earningsCalendar = computed(() => batchData.value?.data?.earningsCalendar || [])
-  
+
   // Actions
   async function setTicker(ticker: string, mode: 'full' | 'lite' = 'full'): Promise<void> {
     const t = ticker.trim().toUpperCase()
-    if (!t) return
-    
+    if (!t || (t === currentTicker.value && mode === currentMode.value)) return
+
     currentTicker.value = t
-    
+    currentMode.value = mode
+
     // Track ticker search in GA4
     trackSearch(t, 'direct')
-    
-    await fetchTickerData(t, mode)
+
+    // Note: We don't need to call fetch manually, changing the reactive 
+    // currentTicker/currentMode will automatically trigger useQuery
   }
-  
-  async function fetchTickerData(ticker: string, mode: 'full' | 'lite' = 'full'): Promise<void> {
-    const t = ticker.trim().toUpperCase()
-    if (!t) return
-    
-    // Request deduplication: If there's already a pending request for this ticker+mode, return that promise
-    const requestKey = `${t}-${mode}`
-    const existingRequest = pendingRequests.get(requestKey)
-    if (existingRequest) {
-      console.log(`[TickerStore] ${t} - Deduplicating concurrent request`)
-      return existingRequest
-    }
-    
-    // Cancel previous request if switching tickers (different requestKey)
-    // This prevents slow requests from overwriting faster ones
-    for (const [key, controller] of abortControllers.entries()) {
-      if (key !== requestKey) {
-        console.log(`[TickerStore] Aborting previous request: ${key}`)
-        controller.abort()
-        abortControllers.delete(key)
-        pendingRequests.delete(key)
-        
-        // Track aborted request in analytics (non-blocking beacon)
-        try {
-          navigator.sendBeacon(`${API_BASE_URL}/api/analytics/abort`, JSON.stringify({ 
-            ticker: key.split('-')[0],
-            mode: key.split('-')[1],
-            timestamp: new Date().toISOString()
-          }))
-        } catch (err) {
-          // Ignore beacon errors (analytics is non-critical)
-          console.debug('[TickerStore] Failed to send abort beacon:', err)
-        }
-      }
-    }
-    
-    // Check cache first
-    const cacheKey = `${t}-${mode}`
-    const cached = cache.get(cacheKey)
-    const currentVersion = localStorage.getItem(API_VERSION_KEY)
-    
-    // Use cached data if:
-    // 1. Cache exists and not expired
-    // 2. Version matches (prevents serving stale data after API changes)
-    if (cached && 
-        Date.now() - cached.timestamp < CACHE_TTL && 
-        cached.version === currentVersion) {
-      batchData.value = cached.data
-      loading.value = false
-      error.value = null
-      return
-    }
-    
-    // Create new request promise
-    const requestPromise = (async () => {
-      loading.value = true
-      error.value = null
-      const startTime = performance.now()
-      
-      // Create AbortController for this request
-      const abortController = new AbortController()
-      abortControllers.set(requestKey, abortController)
-      
-      try {
-        // Send ETag if we have cached data with matching version
-        const headers: HeadersInit = {}
-        if (cached?.etag && cached?.version === currentVersion) {
-          headers['If-None-Match'] = cached.etag
-        }
-        
-        const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`, { 
-          headers,
-          signal: abortController.signal // Add abort signal
-        })
-        
-        // Handle 304 Not Modified - use cached data (server validated it's still fresh)
-        if (response.status === 304 && cached) {
-          console.log(`[TickerStore] ${t} - 304 Not Modified (using cached data)`)
-          batchData.value = cached.data
-          loading.value = false
-          error.value = null
-          fetchTime.value = Math.round(performance.now() - startTime)
-          return
-        }
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-        
-        const result: BatchData = await response.json()
-        fetchTime.value = Math.round(performance.now() - startTime)
-        
-        batchData.value = result
-        
-        // Track successful ticker data load in GA4
-        trackTickerView(t, fetchTime.value)
-        
-        // Store in cache with ETag and version for future 304 responses
-        const etag = response.headers.get('etag')
-        cache.set(cacheKey, {
-          data: result,
-          etag: etag || null,
-          version: currentVersion,
-          timestamp: Date.now()
-        })
-        
-        loading.value = false
-        error.value = null
-      } catch (err) {
-        const e = err as Error
-        
-        // Handle abort errors (user switched tickers)
-        if (e.name === 'AbortError') {
-          console.log(`[TickerStore] Request aborted for ${t}`)
-          // Don't set error state for aborted requests
-          loading.value = false
-          return
-        }
-        
-        console.error(`[TickerStore] Fetch error for ${t}:`, e.message)
-        error.value = e.message || 'Failed to fetch ticker data'
-        loading.value = false
-        throw err // Re-throw so all waiting promises reject
-      } finally {
-        // Clean up pending request tracking and abort controller
-        pendingRequests.delete(requestKey)
-        abortControllers.delete(requestKey)
-      }
-    })()
-    
-    // Track this request
-    pendingRequests.set(requestKey, requestPromise)
-    
-    return requestPromise
-  }
-  
+
   // Refresh current ticker data
   async function refresh(): Promise<void> {
-    if (currentTicker.value) {
-      // Clear cache for current ticker
-      cache.delete(`${currentTicker.value}-full`)
-      await fetchTickerData(currentTicker.value, 'full')
-    }
-  }
-  
-  // Clear all cache
-  function clearCache(): void {
-    cache.clear()
+    await refetch()
   }
 
   // Set timeframe (annual or quarterly)
@@ -454,12 +212,14 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   return {
     // State
     currentTicker,
+    timeframe,
+
+    // Query State
     batchData,
     loading,
     error,
-    fetchTime,
-    timeframe,
-    
+    isFetching,
+
     // Computed
     profile,
     quote,
@@ -474,15 +234,10 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
     financialScores,
     insiderTrading,
     earningsCalendar,
-    
+
     // Actions
     setTicker,
-    fetchTickerData,
     refresh,
-    clearCache,
-    setTimeframe,
-    
-    // Cache monitoring
-    getCacheStats: () => cache.getStats()
+    setTimeframe
   }
 })
