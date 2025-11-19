@@ -169,7 +169,7 @@ import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 import GrowthLabels from './GrowthLabels.vue'
 import { calculateGrowthRates, formatGrowth as formatGrowthUtil, type GrowthRates } from '../../utils/growthCalculator.js'
-import { getCachedGrowthRates } from '../../services/financials/growthService.js'
+import { getGrowthRates } from '../../services/financials/growthService.js'
 import { fmtShort, yFormatter } from '../../utils/chartFormatters.js'
 import { convertToCategoryData, extractYearsFromSeries, getAllDataPoints } from '../../utils/chartDataTransformers.js'
 import { isConfiguredSeries, isMultiSeriesFormat, isConfiguredSeriesArray } from '../../utils/chartTypeGuards.js'
@@ -420,7 +420,7 @@ const growthData = computed((): GrowthRates | null => {
   
   // Use cached calculations when ticker is available (prevents duplicate work with HeroSection)
   if (props.ticker) {
-    return getCachedGrowthRates(dataToAnalyze, props.ticker, props.dataType)
+    return getGrowthRates(dataToAnalyze)
   }
   
   // Fallback to direct calculation (backwards compatibility)

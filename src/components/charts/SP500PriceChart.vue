@@ -58,7 +58,6 @@ import {
   type PriceDataPoint
 } from '../../services/market/sp500CalculationService'
 import { validateHistoricalData } from '../../schemas/marketPerformanceSchemas'
-import { marketDataCache } from '../../services/market/marketDataCache'
 
 // Register ECharts components
 use([
@@ -98,39 +97,15 @@ const error = computed(() => props.error || internalError.value)
 
 // API base URL (uses env variable in production, localhost in dev)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071'
-const CACHE_KEY = 'sp500:historical:20y:monthly'
-const CACHE_TTL_MINUTES = 60 // 1 hour - matches backend cache
 
 // Fetch S&P 500 historical data (always 20 years)
+// Note: Server handles caching with Redis (1 hour TTL)
 async function fetchPriceData() {
   console.log(`[SP500 Chart] Fetching 20-year historical data`)
   internalLoading.value = true
   internalError.value = null
   
   try {
-    // Check client cache first (1 hour TTL)
-    const cachedData = marketDataCache.get<any>(CACHE_KEY)
-    if (cachedData) {
-      const cacheAge = marketDataCache.getAge(CACHE_KEY)
-      console.log(`[SP500 Chart] Using cached data (age: ${cacheAge}s)`)
-      
-      // Process cached data
-      priceData.value = convertToChartFormat(cachedData.historical)
-      
-      // Initialize selected range
-      if (priceData.value.length > 0) {
-        const result = calculatePerformance(priceData.value, 0, priceData.value.length - 1)
-        if (result) {
-          selectedRange.value = { start: result.startDate, end: result.endDate }
-          rangePerformance.value = result.performance
-          emit('rangeChange', { start: result.startDate, end: result.endDate })
-        }
-      }
-      
-      internalLoading.value = false
-      return
-    }
-    
     const url = `${API_BASE_URL}/api/market/sp500/historical`
     console.log(`[SP500 Chart] Fetching from API: ${url}`)
     
@@ -170,9 +145,6 @@ async function fetchPriceData() {
       firstDate: validatedData.historical[0]?.date,
       lastDate: validatedData.historical[validatedData.historical.length - 1]?.date
     })
-    
-    // Cache the validated data (1 hour TTL)
-    marketDataCache.set(CACHE_KEY, validatedData, CACHE_TTL_MINUTES)
     
     // Convert to ECharts format using service
     priceData.value = convertToChartFormat(validatedData.historical)

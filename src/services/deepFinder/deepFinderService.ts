@@ -26,28 +26,6 @@ export interface DeepFinderResponse {
 }
 
 /**
- * Cache entry structure
- */
-interface CacheEntry {
-  data: DeepFinderResponse
-  timestamp: number
-}
-
-// Client-side cache (5 minutes TTL, matching project pattern)
-const cache = new Map<string, CacheEntry>()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-
-/**
- * Generate cache key from tickers array
- */
-function getCacheKey(tickers: string[]): string {
-  if (!tickers || tickers.length === 0) {
-    return 'deep-finder:default'
-  }
-  return `deep-finder:${[...tickers].sort().join(',')}`
-}
-
-/**
  * Fetch deep finder data from server
  * Returns stocks sorted by distance from MA200
  *
@@ -56,14 +34,6 @@ function getCacheKey(tickers: string[]): string {
  */
 export async function fetchDeepFinderData(tickers: string[] = []): Promise<DeepFinderResponse> {
   try {
-    // Check client-side cache first
-    const cacheKey = getCacheKey(tickers)
-    const cached = cache.get(cacheKey)
-
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached.data
-    }
-
     // Build URL with query parameters
     let url = `${API_BASE_URL}/api/deep-finder`
 
@@ -85,15 +55,7 @@ export async function fetchDeepFinderData(tickers: string[] = []): Promise<DeepF
       throw new Error(`Failed to fetch deep finder data: ${response.statusText}`)
     }
 
-    const data: DeepFinderResponse = await response.json()
-
-    // Store in client cache
-    cache.set(cacheKey, {
-      data,
-      timestamp: Date.now()
-    })
-
-    return data
+    return await response.json()
   } catch (_error) {
     console.error('Error fetching deep finder data:', error)
     throw error

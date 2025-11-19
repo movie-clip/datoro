@@ -1,3 +1,15 @@
+/**
+ * Ticker Search Composable
+ * 
+ * Uses debouncing for user input without local caching.
+ * Server-side caching (Redis) handles caching to prevent redundant API calls.
+ * 
+ * Architecture:
+ * - Debounced input (300ms) to prevent excessive API calls
+ * - Request cancellation via AbortController
+ * - Server handles caching (5min TTL in Redis)
+ */
+
 import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 interface SearchResult {
@@ -5,11 +17,6 @@ interface SearchResult {
   name: string
   exchangeShortName?: string
   [key: string]: unknown
-}
-
-interface CacheEntry {
-  data: SearchResult[]
-  timestamp: number
 }
 
 export interface UseTickerSearchReturn {
@@ -26,11 +33,6 @@ export function useTickerSearch(): UseTickerSearchReturn {
   const searchResults = shallowRef<SearchResult[]>([])
   const searching = ref(false)
   const searchError = ref<string | null>(null)
-
-  // Client-side cache to avoid duplicate API calls
-  const searchCache = new Map<string, CacheEntry>()
-  const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-  const MAX_CACHE_SIZE = 50 // Limit cache size
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
   let abortController: AbortController | null = null
@@ -56,13 +58,6 @@ export function useTickerSearch(): UseTickerSearchReturn {
 
     const normalizedQuery = query.trim().toUpperCase()
 
-    // Check client-side cache first
-    const cached = searchCache.get(normalizedQuery)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      searchResults.value = cached.data
-      return
-    }
-
     // Debounce search by 300ms - prevents excessive API calls while user is typing
     debounceTimer = setTimeout(async () => {
       searching.value = true
@@ -84,20 +79,6 @@ export function useTickerSearch(): UseTickerSearchReturn {
 
         const data = await response.json()
         searchResults.value = data || []
-
-        // Cache the result
-        searchCache.set(normalizedQuery, {
-          data: data || [],
-          timestamp: Date.now()
-        })
-
-        // Limit cache size (LRU behavior - remove oldest)
-        if (searchCache.size > MAX_CACHE_SIZE) {
-          const firstKey = searchCache.keys().next().value
-          if (firstKey) {
-            searchCache.delete(firstKey)
-          }
-        }
 
       } catch (_error) {
         const error = _error as Error
@@ -135,7 +116,6 @@ export function useTickerSearch(): UseTickerSearchReturn {
   // Cleanup function for component unmount
   const cleanup = (): void => {
     clearSearch()
-    searchCache.clear()
   }
 
   return {

@@ -86,7 +86,6 @@ import { ref, computed, onMounted, onUnmounted, watch, toRef } from 'vue'
 import MarketHeatmapChart from '../charts/MarketHeatmapChart.vue'
 import SP500PriceChart from '../charts/SP500PriceChart.vue'
 import { useMarketPerformance } from '../../composables/useMarketPerformance'
-import { marketDataCache } from '../../services/market/marketDataCache'
 import type { SectorData } from '../../services/market/marketPerformanceService'
 
 interface Props {
@@ -170,33 +169,6 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
       return
     }
     
-    // Check client cache first (30 min TTL)
-    const cacheKey = `sectors:custom:${range.start}:${range.end}`
-    const cachedData = marketDataCache.get<any[]>(cacheKey)
-    
-    if (cachedData) {
-      console.log(`[Market Performance Modal] Using cached sector data for range ${range.start} to ${range.end}`)
-      
-      // Convert cached data to SectorData format
-      const customSectors: SectorData[] = cachedData
-        .map((sector: any) => {
-          if (!sector.sector || !sector.changesPercentage) return null
-          const percentageStr = String(sector.changesPercentage).replace('%', '')
-          const performance = parseFloat(percentageStr)
-          if (isNaN(performance)) return null
-          
-          return {
-            sector: sector.sector,
-            performance: performance,
-            totalMarketCap: Math.abs(performance) * 100000000000
-          }
-        })
-        .filter((s): s is SectorData => s !== null)
-      
-      updateWithCustomRange(customSectors)
-      return
-    }
-    
     // Cancel any pending custom range request
     if (customRangeAbortController) {
       customRangeAbortController.abort()
@@ -228,10 +200,8 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
       throw new Error('No sector data available for this date range')
     }
     
-    // Cache the raw API response (30 min TTL)
-    marketDataCache.set(cacheKey, data, 30)
-    
     // Convert API data to SectorData format
+    // Note: Server handles caching with Redis (30min TTL)
     const customSectors: SectorData[] = data
       .map((sector: any) => {
         if (!sector.sector || !sector.changesPercentage) {

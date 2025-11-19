@@ -4,10 +4,6 @@
 import type { FMPNewsItem } from '../../types/fmp.types'
 import { API_BASE_URL } from '../../utils/apiConfig'
 
-// Client-side cache (5 minutes TTL like other data)
-const newsCache = new Map<string, { data: FMPNewsItem[]; timestamp: number }>()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-
 export interface NewsResponse {
   success: boolean
   data: FMPNewsItem[]
@@ -34,19 +30,6 @@ export async function fetchTickerNews(
     }
 
     const tickerUpper = ticker.toUpperCase()
-    const cacheKey = `${tickerUpper}:${limit}`
-
-    // Check client-side cache first
-    const cached = newsCache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`[newsService] Client cache HIT for ${tickerUpper}`)
-      return {
-        success: true,
-        data: cached.data
-      }
-    }
-
-    console.log(`[newsService] Client cache MISS for ${tickerUpper} - fetching from API`)
 
     const response = await fetch(
       `${API_BASE_URL}/api/news/${tickerUpper}?limit=${limit}`,
@@ -66,18 +49,6 @@ export async function fetchTickerNews(
 
     const data = await response.json()
     const newsData = Array.isArray(data) ? data : []
-
-    // Store in client cache
-    newsCache.set(cacheKey, {
-      data: newsData,
-      timestamp: Date.now()
-    })
-
-    // Clean old cache entries (keep last 10)
-    if (newsCache.size > 10) {
-      const firstKey = newsCache.keys().next().value
-      if (firstKey) newsCache.delete(firstKey)
-    }
 
     return {
       success: true,

@@ -1,10 +1,12 @@
 /**
  * Macro Economic Data Service
  * Fetches macro economic indicators from FMP API
+ * 
+ * Note: Server-side caching (Redis) handles all caching with 15min TTL.
+ * No client-side cache needed - reduces code complexity and prevents stale data.
  */
 
 import { API_BASE_URL } from '../../utils/apiConfig'
-import { marketDataCache } from '../market/marketDataCache'
 
 export interface TreasuryRate {
   date: string
@@ -166,7 +168,7 @@ export async function fetchRiskPremium(): Promise<RiskPremium[]> {
 
 /**
  * Fetch all macro data in one batch request (OPTIMIZED - 1 request instead of 10+)
- * Includes client-side caching (15 min TTL)
+ * Server handles caching with Redis (15 min TTL)
  */
 export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroData | EUMacroData> {
   if (region === 'EU') {
@@ -176,18 +178,6 @@ export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroDat
   const from = getDateMonthsAgo(24) // 2 years of data
   const to = getTodayDate()
   
-  // Check client cache first (15 min TTL - matches backend)
-  const cacheKey = `macro:batch:${region}:${from}:${to}`
-  const cachedData = marketDataCache.get<MacroData>(cacheKey)
-  
-  if (cachedData) {
-    const cacheAge = marketDataCache.getAge(cacheKey)
-    console.log(`[Macro] Using cached data (age: ${cacheAge}s)`)
-    return cachedData
-  }
-  
-  const startTime = performance.now()
-  
   try {
     const response = await fetch(`${API_BASE_URL}/api/macro/batch?from=${from}&to=${to}`)
     
@@ -195,13 +185,9 @@ export async function fetchAllMacroData(region: Region = 'US'): Promise<MacroDat
       throw new Error(`Failed to fetch macro data: ${response.statusText}`)
     }
     
-    const data = await response.json()
-    
-    // Cache for 15 minutes (matches backend cache)
-    marketDataCache.set(cacheKey, data, 15)
-    
-    return data
-  } catch (error) {
+    return await response.json()
+  } catch (_error) {
+    console.warn('[Macro] Batch endpoint failed, falling back to legacy fetch:', _error)
     return fetchAllMacroDataLegacy()
   }
 }
@@ -220,7 +206,7 @@ export async function fetchAllEUMacroData(): Promise<EUMacroData> {
     const data = await response.json()
     
     return data
-  } catch (error) {
+  } catch (_error) {
     // Return empty data structure on failure
     return {
       inflation: [],
@@ -266,10 +252,10 @@ async function fetchAllMacroDataLegacy(): Promise<MacroData> {
     retailSalesResult,
     inflationResult,
     unemploymentRateResult,
-    spxResult,
+    _spxResult,
     indexStatsResult,
-    sectorsResult,
-    riskPremiumResult
+    _sectorsResult,
+    _riskPremiumResult
   ] = results
   
   return {

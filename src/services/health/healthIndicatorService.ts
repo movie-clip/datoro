@@ -2,7 +2,7 @@
 // Health indicator calculations extracted from HeroSection
 // Testable, reusable, and cacheable
 
-import { getCachedGrowthRates } from '../financials/growthService'
+import { getGrowthRates } from '../financials/growthService'
 import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch } from '../financials/batchChartService'
 import type { BatchData } from '@/types'
 
@@ -113,9 +113,9 @@ export function calculatePerformanceHealth(
   const revenueSeries = getRevenueSeriesFromBatch(batchData, 'annual')
   const netIncomeSeries = getNetIncomeSeriesFromBatch(batchData, 'annual')
 
-  // Use CACHED growth calculations - prevents duplicate work
-  const revenueGrowthRates = getCachedGrowthRates(revenueSeries, ticker, 'revenue')
-  const netIncomeGrowthRates = getCachedGrowthRates(netIncomeSeries, ticker, 'netIncome')
+  // Calculate growth rates
+  const revenueGrowthRates = getGrowthRates(revenueSeries)
+  const netIncomeGrowthRates = getGrowthRates(netIncomeSeries)
 
   // Use 5-year if available, otherwise 2-year, otherwise 1-year
   const revenueGrowth = revenueGrowthRates.twoYear ?? revenueGrowthRates.oneYear
