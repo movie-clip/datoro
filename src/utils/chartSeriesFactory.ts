@@ -14,12 +14,25 @@ interface SeriesItemStyle {
   [key: string]: unknown
 }
 
+interface SeriesAreaStyle {
+  color?: string | {
+    type: string
+    x: number
+    y: number
+    x2: number
+    y2: number
+    colorStops: Array<{ offset: number, color: string }>
+  }
+  opacity?: number
+}
+
 interface BarSeriesOptions {
   name?: string
   barMaxWidth?: number
   yearsList?: number[]
   stack?: string
   itemStyle?: SeriesItemStyle
+  color?: string
 }
 
 interface LineSeriesOptions {
@@ -27,6 +40,9 @@ interface LineSeriesOptions {
   smooth?: boolean
   isLarge?: boolean
   itemStyle?: SeriesItemStyle
+  areaStyle?: SeriesAreaStyle
+  color?: string
+  type?: 'solid' | 'dashed' | 'dotted'
 }
 
 interface MultiSeriesOptions {
@@ -34,10 +50,13 @@ interface MultiSeriesOptions {
   barMaxWidth?: number
   smooth?: boolean
   isLarge?: boolean
+  color?: string
 }
 
 interface SeriesConfigOptions extends MultiSeriesOptions {
   title?: string
+  areaStyle?: SeriesAreaStyle
+  lineType?: 'solid' | 'dashed' | 'dotted'
 }
 
 export interface SeriesDataObject {
@@ -45,7 +64,9 @@ export interface SeriesDataObject {
   data: [number, number][]
   stack?: string
   itemStyle?: SeriesItemStyle
+  areaStyle?: SeriesAreaStyle
   type?: string
+  lineStyle?: { type?: 'solid' | 'dashed' | 'dotted', width?: number, color?: string }
   [key: string]: unknown
 }
 
@@ -61,13 +82,19 @@ export function createBarSeries(data: [number, number][] | number[], options: Ba
     barMaxWidth,
     yearsList = [],
     stack,
-    itemStyle = {}
+    itemStyle = {},
+    color
   } = options
 
   // Convert time-series to category values if category axis is used
-  const barData = yearsList.length > 0 
+  const barData = yearsList.length > 0
     ? convertToCategoryData(data as [number, number][], yearsList)
     : data
+
+  const finalItemStyle = { opacity: 0.9, ...itemStyle }
+  if (color) {
+    finalItemStyle.color = color
+  }
 
   return {
     type: 'bar' as const,
@@ -75,7 +102,7 @@ export function createBarSeries(data: [number, number][] | number[], options: Ba
     data: barData,
     barMaxWidth,
     stack: stack || undefined,
-    itemStyle: { opacity: 0.9, ...itemStyle }
+    itemStyle: finalItemStyle
   }
 }
 
@@ -90,8 +117,16 @@ export function createLineSeries(data: [number, number][], options: LineSeriesOp
     name = 'Series',
     smooth = false,
     isLarge = false,
-    itemStyle = {}
+    itemStyle = {},
+    areaStyle,
+    color,
+    type = 'solid'
   } = options
+
+  const finalItemStyle = { opacity: 0.9, ...itemStyle }
+  if (color) {
+    finalItemStyle.color = color
+  }
 
   return {
     type: 'line' as const,
@@ -100,8 +135,13 @@ export function createLineSeries(data: [number, number][], options: LineSeriesOp
     smooth,
     showSymbol: false,
     emphasis: { disabled: true },
-    lineStyle: { width: isLarge ? 3 : 2 },
-    itemStyle: { opacity: 0.9, ...itemStyle }
+    lineStyle: {
+      width: isLarge ? 3 : 2,
+      color: color,
+      type
+    },
+    itemStyle: finalItemStyle,
+    areaStyle
   }
 }
 
@@ -146,7 +186,7 @@ export function createMultiSeries(dataSource: SeriesDataObject[], kind: ChartKin
   // Otherwise, apply default configuration based on chart kind
   return dataSource.map((s) => {
     // For bar charts with category axis, convert time-series to category values
-    const seriesData = (kind === 'bar' && yearsList.length > 0) 
+    const seriesData = (kind === 'bar' && yearsList.length > 0)
       ? convertToCategoryData(s.data, yearsList)
       : s.data
 
@@ -183,8 +223,8 @@ export function createMultiSeries(dataSource: SeriesDataObject[], kind: ChartKin
  * @returns Array of ECharts series configurations
  */
 export function createSeriesConfig(
-  dataSource: [number, number][] | [number, number, string, string][] | SeriesDataObject[] | Record<string, unknown>, 
-  kind: ChartKind, 
+  dataSource: [number, number][] | [number, number, string, string][] | SeriesDataObject[] | Record<string, unknown>,
+  kind: ChartKind,
   options: SeriesConfigOptions = {}
 ) {
   const { title = 'Series' } = options

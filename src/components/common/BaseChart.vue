@@ -46,6 +46,8 @@
         :option="modalOption"
         :class="{ 'loading-chart': loading }"
         autoresize
+        role="img"
+        :aria-label="title"
       />
       <div
         v-if="loading && hasSeriesData(modalOption)"
@@ -76,6 +78,8 @@
         :class="{ 'clickable': !isModal, 'loading-chart': loading, 'empty-chart': hasEmptyData }" 
         :option="option" 
         autoresize 
+        role="img"
+        :aria-label="title"
         @click="handleClick"
       />
       <!-- Empty data overlay (similar to loading overlay) -->
@@ -147,6 +151,8 @@
           class="echart-modal"
           :option="modalOption"
           autoresize
+          role="img"
+          :aria-label="title"
         />
         
         <!-- Growth Labels Section -->
@@ -161,24 +167,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted, markRaw } from 'vue'
 import { storeToRefs } from 'pinia'
 import VChart from 'vue-echarts'
 import type { EChartsOption } from 'echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 import GrowthLabels from './GrowthLabels.vue'
-import { calculateGrowthRates, formatGrowth as formatGrowthUtil, type GrowthRates } from '../../utils/growthCalculator.js'
-import { getGrowthRates } from '../../services/financials/growthService.js'
-import { fmtShort, yFormatter } from '../../utils/chartFormatters.js'
-import { convertToCategoryData, extractYearsFromSeries, getAllDataPoints } from '../../utils/chartDataTransformers.js'
-import { isConfiguredSeries, isMultiSeriesFormat, isConfiguredSeriesArray } from '../../utils/chartTypeGuards.js'
-import { getTooltipConfig } from '../../composables/useTooltipFormatter.js'
-import { createSeriesConfig, type SeriesDataObject } from '../../utils/chartSeriesFactory.js'
-import { createXAxisConfig, createYAxisConfig } from '../../utils/chartAxisFactory.js'
+import { formatGrowth as formatGrowthUtil, type GrowthRates } from '../../utils/growthCalculator.js'
 import { useIsMobile } from '../../composables/useIsMobile.js'
-import { buildFiscalQuarterMap, formatFiscalQuarter, calculateCalendarQuarter } from '../../utils/fiscalQuarterUtils.js'
 import { useTickerStore } from '../../stores/tickerStore'
+import { 
+  isChartDataEmpty, 
+  calculateChartGrowth, 
+  generateCategoryData,
+  type CategoryData 
+} from '../../services/charts/chartDataTransformer'
+import { buildChartOption, type ChartOptionBuilderParams } from '../../services/charts/chartOptionBuilder'
 
 // Track if component is mounted AND ECharts is ready
 const isMounted = ref(false)
@@ -357,74 +362,13 @@ const toggleSegment = (segmentValue: string): void => {
 // Computed property to check if data is empty (but valid, not an error)
 const hasEmptyData = computed((): boolean => {
   if (!props.emptyDataMessage) return false
-  if (props.error) return false // Has a real error, not just empty
-  if (props.loading) return false // Still loading
-  
-  // Check if series is empty
-  const isEmpty = !props.series || 
-    (Array.isArray(props.series) && props.series.length === 0) ||
-    (Array.isArray(props.series) && props.series.every((s: any) => 
-      !s?.data || (Array.isArray(s.data) && s.data.length === 0)
-    ))
-  
-  return isEmpty
+  return isChartDataEmpty(props.series, props.loading, props.error)
 })
 
 // Growth calculation and formatting
-// Calculate growth data for the chart
 const growthData = computed((): GrowthRates | null => {
   if (!props.showGrowthLabels) return null
-  
-  // Use custom growth data if provided (e.g., for price chart with 1D/1W/1M)
-  if (props.customGrowthData) return props.customGrowthData
-  
-  // Handle both simple array and multi-series object
-  let dataToAnalyze: Array<[number, number]> = []
-  
-  if (Array.isArray(props.series)) {
-    if (props.series.length > 0 && Array.isArray(props.series[0])) {
-      // Simple array of [timestamp, value] pairs
-      dataToAnalyze = props.series as Array<[number, number]>
-    } else if (props.series.length > 0 && (props.series[0] as any)?.data) {
-      // Multi-series: use the first series or sum all series
-      // For stacked charts, we should sum all series values at each timestamp
-      if (props.stacked && props.series.length > 1) {
-        // Sum all series values at each timestamp
-        const dateMap = new Map<number, number>()
-        props.series.forEach((s: any) => {
-          if (s.data && Array.isArray(s.data)) {
-            s.data.forEach((point: any) => {
-              // Handle both [date, value] and [date, value, period, year] formats
-              const date = Array.isArray(point) ? point[0] : point
-              const value = Array.isArray(point) ? point[1] : 0
-              dateMap.set(date, (dateMap.get(date) || 0) + value)
-            })
-          }
-        })
-        dataToAnalyze = Array.from(dateMap.entries()).sort((a, b) => a[0] - b[0])
-      } else {
-        // Use first series
-        const firstSeries = (props.series[0] as any).data || []
-        // Handle both [date, value] and [date, value, period, year] formats
-        dataToAnalyze = firstSeries.map((point: any) => {
-          if (Array.isArray(point)) {
-            return [point[0], point[1]] as [number, number]
-          }
-          return point
-        })
-      }
-    }
-  }
-  
-  if (dataToAnalyze.length < 2) return null
-  
-  // Use cached calculations when ticker is available (prevents duplicate work with HeroSection)
-  if (props.ticker) {
-    return getGrowthRates(dataToAnalyze)
-  }
-  
-  // Fallback to direct calculation (backwards compatibility)
-  return calculateGrowthRates(dataToAnalyze)
+  return calculateChartGrowth(props.series, props.ticker, props.customGrowthData, props.stacked)
 })
 
 // Format growth for display
@@ -443,243 +387,49 @@ const hasSeriesData = (opt: EChartsOption): boolean => {
   return Array.isArray(opt.series) ? opt.series.length > 0 : true
 }
 
-// Memoized category data calculation (computed once, used by both compact & modal)
-interface CategoryDataCache {
-  uniqueYears: number | null
-  yearsList: number[]
-  categoryData: string[]
-  timestamps: number[]
-}
-
-const categoryDataCache = computed<CategoryDataCache>(() => {
-  let uniqueYears: number | null = null
-  let yearsList: number[] = []
-  let categoryData: string[] = []
-  let timestamps: number[] = []
-  
-  if (props.kind === 'bar') {
-    // Always use full series for category calculation (consistent for both views)
-    const dataSource = props.series
-    
-    if (Array.isArray(dataSource)) {
-      const allDataPoints = getAllDataPoints(dataSource as any)
-      
-      if (allDataPoints.length > 0) {
-        if (props.timeframe === 'quarterly') {
-          const uniqueTimestamps = [...new Set(allDataPoints.map(point => point[0]))].sort((a, b) => a - b)
-          
-          const firstPoint = allDataPoints.find(p => p && p.length > 0)
-          const hasFiscalQuarters = firstPoint && firstPoint.length === 4
-          
-          if (hasFiscalQuarters) {
-            // O(1) Map lookup instead of O(n) find() - OPTIMIZED!
-            // Use fiscal quarter utilities for consistent handling
-            const fiscalQuarterMap = buildFiscalQuarterMap(allDataPoints)
-            
-            const timestampQuarterPairs = uniqueTimestamps.map(ts => {
-              const fiscalInfo = fiscalQuarterMap.get(ts)
-              const label = fiscalInfo 
-                ? formatFiscalQuarter(fiscalInfo.period, fiscalInfo.year)
-                : ''
-              return { ts, label }
-            })
-            
-            timestamps = timestampQuarterPairs.map(item => item.ts)
-            categoryData = timestampQuarterPairs.map(item => item.label)
-            uniqueYears = timestamps.length
-          } else {
-            // Fallback to calendar quarter calculation using utility
-            const timestampQuarterPairs = uniqueTimestamps.map(ts => {
-              const label = calculateCalendarQuarter(ts)
-              return { ts, label }
-            })
-            
-            timestamps = timestampQuarterPairs.map(item => item.ts)
-            categoryData = timestampQuarterPairs.map(item => item.label)
-            uniqueYears = timestamps.length
-          }
-        } else {
-          yearsList = extractYearsFromSeries(allDataPoints)
-          uniqueYears = yearsList.length
-          categoryData = yearsList.map(y => String(y))
-        }
-      }
-    }
-  }
-  
-  return { uniqueYears, yearsList, categoryData, timestamps }
+// Memoized category data calculation
+const categoryDataCache = computed<CategoryData>(() => {
+  return generateCategoryData(props.series, props.kind, props.timeframe)
 })
 
-const createOption = (isLarge = false): EChartsOption => {
-  // Use compactSeries for compact view if provided, otherwise use series
-  const dataSource = !isLarge && props.compactSeries ? props.compactSeries : props.series
-  
-  // Get cached category data (computed once for both compact & modal)
-  const { uniqueYears, yearsList, categoryData, timestamps } = categoryDataCache.value
-  
-  // In modal view with useLegend, show legend at top
-  const showLegendAtTop = isLarge && props.useLegend
-  // Increased top padding on mobile modal (50 instead of 30) for toggle buttons
-  const topPadding = showLegendAtTop ? 60 : (isLarge ? (isMobile.value ? 50 : 30) : 45)
-  // Add extra bottom padding if showLegend is enabled (for multi-series charts)
-  const bottomPadding = isLarge ? 60 : props.showLegend ? (isMobile.value ? 15 : 55) : (isMobile.value ? 15 : 50)
-  
-  // Build legend selection: only first series (typically 'Total Revenue') selected by default
-  // Apply this whenever useLegend is true, not just in modal view
-  const legendSelected: Record<string, boolean> = {}
-  if (props.useLegend && Array.isArray(props.series) && props.series.length > 0 && (props.series[0] as any)?.name) {
-    props.series.forEach((s: any, idx: number) => {
-      legendSelected[s.name] = idx === 0 // Only first item selected
-    })
-  }
-  
-  const base: unknown = {
-    backgroundColor: 'transparent',
-    // Performance optimizations for smooth interactions
-    useUTC: false, // Use local time for faster date processing
-    animation: props.enableZoom ? { // Conditional animation for zoom-enabled charts
-      duration: 300, // Quick animations
-      easing: 'cubicOut'
-    } : true, // Default animations for other charts
-    // Smooth animations when data updates (Y-axis scale changes)
-    animationDuration: 400,
-    animationEasing: 'cubicOut',
-    animationDurationUpdate: 400, // Animate Y-axis scale changes when data updates
-    animationEasingUpdate: 'cubicInOut',
-    // Only show title in non-modal view (in modal, it's shown as HTML element)
-    title: isLarge ? undefined : {
-      text: props.title, 
-      left: 'center',
-      top: 0,
-      textStyle: { color: '#fff', fontSize: 14 } 
-    },
-    // Add dataZoom for interactive zooming and panning (for line charts when enabled or in modal view)
-    // Only use 'inside' type (mouse wheel + drag) without visible slider
-    // Optimized for smooth performance with large datasets
-    dataZoom: props.kind === 'line' && (isLarge || props.enableZoom) ? [
-      {
-        type: 'inside', // Mouse wheel zoom + drag to pan
-        start: 0,
-        end: 100,
-        zoomOnMouseWheel: true, // Zoom with mouse wheel
-        moveOnMouseMove: true, // Pan by dragging
-        moveOnMouseWheel: false, // Don't pan with wheel (only zoom)
-        preventDefaultMouseMove: false, // Allow default mouse behavior
-        throttle: 50, // Throttle updates for smoother interaction (50ms is optimal)
-        zoomLock: false, // Allow zooming
-        minSpan: 1, // Minimum zoom span (1% = can zoom in very close)
-        maxSpan: 100 // Maximum zoom span (100% = can see all data)
-      }
-    ] : undefined,
-    // Toolbox removed - cleaner UI without top-right buttons
-    // Legend configuration
-    legend: showLegendAtTop ? {
-      // Modal view with useLegend (single-select)
-      show: true,
-      type: 'plain',
-      orient: 'horizontal',
-      top: 10,
-      left: 'center',
-      textStyle: { color: '#ddd', fontSize: 12 },
-      selectedMode: 'single',
-      selected: legendSelected
-    } : props.showLegend ? {
-      // Multi-series legend (all items shown at once, e.g., EPS chart)
-      show: true,
-      type: 'plain',
-      orient: 'horizontal',
-      bottom: 5,
-      left: 'center',
-      textStyle: { color: '#ddd', fontSize: isMobile.value ? 11 : 12 },
-      selectedMode: 'multiple', // Allow toggling individual series
-      itemGap: isMobile.value ? 8 : 12
-    } : props.useLegend ? {
-      // Compact view with useLegend - hide legend but apply selection
-      show: false,
-      selected: legendSelected
-    } : { 
-      // No legend
-      show: false 
-    },
-    grid: { 
-      left: isMobile.value ? 12 : 24, 
-      right: isMobile.value ? 12 : 24, 
-      top: topPadding, 
-      bottom: bottomPadding
-    },
-    tooltip: getTooltipConfig({
-      isLarge,
-      isMobile: isMobile.value,
-      kind: props.kind,
-      dualAxis: props.dualAxis,
-      yFormat: props.yFormat
-    }),
-    xAxis: createXAxisConfig(props.kind, {
-      categoryData,
-      isLarge,
-      isMobile: isMobile.value,
-      isQuarterly: props.timeframe === 'quarterly'
-    }),
-    yAxis: createYAxisConfig({
-      dualAxis: props.dualAxis,
-      yFormat: props.yFormat,
-      rightAxisType: props.rightAxisType as any,
-      alignZero: props.alignZero,
-      isLarge,
-      isMobile: isMobile.value,
-      chartTitle: props.title
-    }),
-  }
-
-  // Handle both single series array and multi-series array
-  let series = createSeriesConfig(
-    dataSource as [number, number][] | [number, number, string, string][] | SeriesDataObject[] | Record<string, unknown>, 
-    props.kind, 
-    {
-      title: props.title,
-      yearsList: props.timeframe === 'quarterly' ? timestamps : yearsList,
-      barMaxWidth: props.barMaxWidth,
-      smooth: props.smooth as any,
-      isLarge
-    }
-  )
-
-  // CRITICAL: Ensure yAxisIndex consistency with axis configuration
-  // When dualAxis=false, yAxis is a single object (not array), so NO series should have yAxisIndex
-  // When dualAxis=true, yAxis is an array [axis0, axis1], so series MUST have yAxisIndex
-  if (props.dualAxis && Array.isArray(series)) {
-    // Dual-axis mode: Add yAxisIndex based on series type
-    // Convention: bars use left axis (0), lines use right axis (1)
-    series = series.map((s: any) => {
-      if (s.type === 'line') {
-        return { ...s, yAxisIndex: 1 }
-      } else {
-        return { ...s, yAxisIndex: 0 }
-      }
-    })
-  } else if (!props.dualAxis && Array.isArray(series)) {
-    // Single-axis mode: Ensure NO yAxisIndex properties exist
-    series = series.map((s: any) => {
-      const { yAxisIndex, ...cleanSeries } = s
-      return cleanSeries
-    })
-  }
-
-  // Don't show legend - we have view mode buttons for switching
-  if (!base || !series) {
-    return {} as EChartsOption
-  }
-  
-  return { ...base, series } as EChartsOption
-}
+// Prepare params for builder
+const getBuilderParams = (): ChartOptionBuilderParams => ({
+  title: props.title,
+  series: props.series,
+  compactSeries: props.compactSeries,
+  kind: props.kind,
+  yFormat: props.yFormat,
+  smooth: props.smooth,
+  barMaxWidth: props.barMaxWidth,
+  isModal: props.isModal,
+  forceExpanded: props.forceExpanded,
+  viewMode: props.viewMode,
+  selectedSegments: props.selectedSegments,
+  loading: props.loading,
+  showLegend: props.showLegend,
+  stacked: props.stacked,
+  useLegend: props.useLegend,
+  dualAxis: props.dualAxis,
+  rightAxisType: props.rightAxisType,
+  alignZero: props.alignZero,
+  ticker: props.ticker,
+  timeframe: props.timeframe,
+  enableZoom: props.enableZoom,
+  isMobile: isMobile.value,
+  categoryData: categoryDataCache.value
+})
 
 // Optimized: Compute compact option (always needed for initial render)
-const option = computed(() => createOption(false))
+const option = computed(() => {
+  const opt = buildChartOption(getBuilderParams(), false)
+  return markRaw(opt)
+})
 
 // Optimized: Only compute modal option when actually needed (modal open or forceExpanded)
 const modalOption = computed(() => {
   if (props.forceExpanded || showModal.value) {
-    return createOption(true)
+    const opt = buildChartOption(getBuilderParams(), true)
+    return markRaw(opt)
   }
   // Return compact option as fallback (avoids unnecessary computation)
   return option.value
