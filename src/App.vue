@@ -44,6 +44,11 @@ const AIAnalysisPanel = defineAsyncComponent(() =>
   import('./components/layout/AIAnalysisPanel.vue')
 )
 
+// Lazy load BingoPanel
+const BingoPanel = defineAsyncComponent(() =>
+  import('./components/layout/BingoPanel.vue')
+)
+
 // Cookie Consent Banner
 import CookieConsent from './components/common/CookieConsent.vue'
 
@@ -221,7 +226,8 @@ const tabs = computed<Tab[]>(() => [
   { id: 'performance', label: 'Performance', icon: '/icons/performance.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null, disabled: !hasActiveSubscription.value },
-  { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null, disabled: !hasActiveSubscription.value }
+  { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null, disabled: !hasActiveSubscription.value },
+  { id: 'bingo', label: 'Bingo', icon: '/icons/dcf.png', badge: 'New', disabled: !hasActiveSubscription.value }
 ])
 
 // Save tab preference and track tab views
@@ -541,6 +547,17 @@ const handleSelectTicker = (ticker: string): void => {
             :company-name="companyName"
             type="risks"
           />
+        </section>
+      </TabPanel>
+
+      <!-- Bingo Tab -->
+      <TabPanel 
+        id="bingo" 
+        :active="activeTab === 'bingo'"
+        :lazyLoad="true"
+      >
+        <section class="bingo-container">
+          <BingoPanel :company-name="companyName" />
         </section>
       </TabPanel>
     </div>
@@ -981,6 +998,13 @@ const handleSelectTicker = (ticker: string): void => {
 .charts.desktop-only,
 .ai-analysis-grid.desktop-only {
   display: grid;
+}
+
+.bingo-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 12px auto 0;
+  padding: 0 12px;
 }
 
 /* ============================================

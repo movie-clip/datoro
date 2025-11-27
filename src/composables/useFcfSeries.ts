@@ -1,4 +1,4 @@
-import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, watch, markRaw, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getFcfSeriesFromBatch } from '../services/financials/batchChartService'
@@ -41,9 +41,9 @@ export function useFcfSeries(): UseFcfSeriesReturn {
   // Map timeframe from store to period
   const period = computed<Period>(() => timeframe.value)
 
-  // Memoized raw data extraction - single source of truth
+  // Memoized raw data extraction - single source of truth (markRaw for performance)
   const rawData = computed(() => 
-    getFcfSeriesFromBatch(batchData.value, period.value)
+    markRaw(getFcfSeriesFromBatch(batchData.value, period.value))
   )
 
   const error = computed<string | null>(() => {

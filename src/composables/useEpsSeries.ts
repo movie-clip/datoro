@@ -1,4 +1,4 @@
-import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, watch, markRaw, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getEpsSeriesFromBatch } from '../services/financials/batchChartService'
@@ -20,8 +20,8 @@ export function useEpsSeries(): UseEpsSeriesReturn {
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
 
-  // Memoized data extraction - single source of truth
-  const series = computed<[number, number][]>(() => getEpsSeriesFromBatch(batchData.value, timeframe.value))
+  // Memoized data extraction - single source of truth (markRaw for performance)
+  const series = computed<[number, number][]>(() => markRaw(getEpsSeriesFromBatch(batchData.value, timeframe.value)) as [number, number][])
 
   const error = computed<string | null>(() => {
     if (batchError.value) return batchError.value

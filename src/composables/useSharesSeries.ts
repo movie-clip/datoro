@@ -1,4 +1,4 @@
-import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, watch, markRaw, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { getSharesSeriesFromBatch } from '../services/financials/batchChartService'
@@ -20,11 +20,11 @@ export function useSharesSeries(periodRef?: Ref<'annual' | 'quarterly'>): UseSha
   const tickerStore = useTickerStore()
   const { batchData, loading, currentTicker, error: batchError, timeframe } = storeToRefs(tickerStore)
 
-  // Memoized data extraction - single source of truth
+  // Memoized data extraction - single source of truth (markRaw for performance)
   const series = computed<[number, number][]>(() => {
     // Use provided period ref or fallback to store's timeframe
     const period = periodRef?.value || timeframe.value
-    return getSharesSeriesFromBatch(batchData.value, period)
+    return markRaw(getSharesSeriesFromBatch(batchData.value, period)) as [number, number][]
   })
 
   const error = computed<string | null>(() => {

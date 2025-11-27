@@ -12,6 +12,27 @@
   
   /* Neutral colors */
   --color-grey: #aaa;
+  
+  /* Chart-specific design tokens (Performance: Reduces style recalculations) */
+  --chart-bg-primary: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  --chart-bg-overlay: rgba(15, 15, 16, 0.6);
+  --chart-bg-overlay-solid: rgba(15, 15, 16, 0.9);
+  --chart-border-base: #2A2A2E;
+  --chart-border-active: #00594C;
+  --chart-border-hover: rgba(56, 189, 248, 0.5);
+  --chart-text-primary: #E5E5E5;
+  --chart-text-secondary: rgba(229, 229, 229, 0.65);
+  --chart-text-muted: #999;
+  --chart-shadow-base: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --chart-shadow-hover: 0 4px 20px rgba(0, 89, 76, 0.3);
+  --chart-shadow-glow: 0 0 12px rgba(0, 89, 76, 0.4);
+  --chart-font-base: 14px;
+  --chart-font-small: 12px;
+  --chart-font-large: 18px;
+  --chart-border-radius: 6px;
+  --chart-border-radius-large: 12px;
+  --chart-transition-fast: 0.2s;
+  --chart-backdrop-blur: blur(4px);
 }
 
 /* Reset and base styles */

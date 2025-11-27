@@ -44,6 +44,7 @@
         v-if="isMounted && hasSeriesData(modalOption)"
         class="echart-modal"
         :option="modalOption"
+        :update-options="{ lazyUpdate: true, notMerge: false }"
         :class="{ 'loading-chart': loading }"
         autoresize
         role="img"
@@ -76,7 +77,8 @@
         v-else-if="isMounted && (hasSeriesData(option) || hasEmptyData)"
         class="echart" 
         :class="{ 'clickable': !isModal, 'loading-chart': loading, 'empty-chart': hasEmptyData }" 
-        :option="option" 
+        :option="option"
+        :update-options="{ lazyUpdate: true, notMerge: false }"
         autoresize 
         role="img"
         :aria-label="title"
@@ -150,6 +152,7 @@
           :key="`chartModal-${props.dualAxis ? 'dual' : 'single'}`"
           class="echart-modal"
           :option="modalOption"
+          :update-options="{ lazyUpdate: true, notMerge: false }"
           autoresize
           role="img"
           :aria-label="title"
@@ -167,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount, onMounted, markRaw } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted, markRaw, shallowRef, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import VChart from 'vue-echarts'
 import type { EChartsOption } from 'echarts'
@@ -387,13 +390,22 @@ const hasSeriesData = (opt: EChartsOption): boolean => {
   return Array.isArray(opt.series) ? opt.series.length > 0 : true
 }
 
-// Memoized category data calculation
+// Deep memoized category data calculation (prevents expensive recalculations)
+const lastCategoryKey = ref('')
+const lastCategoryData = ref<CategoryData>({ yearsList: [], categoryData: [], timestamps: [] })
 const categoryDataCache = computed<CategoryData>(() => {
-  return generateCategoryData(props.series, props.kind, props.timeframe)
+  const seriesLength = Array.isArray(props.series) ? props.series.length : 0
+  const key = `${seriesLength}-${props.kind}-${props.timeframe}`
+  if (lastCategoryKey.value === key) {
+    return lastCategoryData.value
+  }
+  lastCategoryKey.value = key
+  lastCategoryData.value = generateCategoryData(props.series, props.kind, props.timeframe)
+  return lastCategoryData.value
 })
 
 // Prepare params for builder
-const getBuilderParams = (): ChartOptionBuilderParams => ({
+const getBuilderParams = (isLarge: boolean): ChartOptionBuilderParams => ({
   title: props.title,
   series: props.series,
   compactSeries: props.compactSeries,
@@ -419,20 +431,28 @@ const getBuilderParams = (): ChartOptionBuilderParams => ({
   categoryData: categoryDataCache.value
 })
 
-// Optimized: Compute compact option (always needed for initial render)
-const option = computed(() => {
-  const opt = buildChartOption(getBuilderParams(), false)
-  return markRaw(opt)
+// Performance: Use shallowRef + watchEffect instead of computed
+// Only rebuild chart options when VISUAL props change (not loading/error)
+const option = shallowRef<EChartsOption>({ series: [] })
+const modalOption = shallowRef<EChartsOption>({ series: [] })
+
+// Update compact chart option when visual props change
+watchEffect(() => {
+  if (props.series && isMounted.value && echartsReady.value) {
+    const opt = buildChartOption(getBuilderParams(false), false)
+    option.value = markRaw(opt)
+  }
 })
 
-// Optimized: Only compute modal option when actually needed (modal open or forceExpanded)
-const modalOption = computed(() => {
-  if (props.forceExpanded || showModal.value) {
-    const opt = buildChartOption(getBuilderParams(), true)
-    return markRaw(opt)
+// Update modal chart option when needed (modal open or forceExpanded)
+watchEffect(() => {
+  if ((props.forceExpanded || showModal.value) && props.series && isMounted.value && echartsReady.value) {
+    const opt = buildChartOption(getBuilderParams(true), true)
+    modalOption.value = markRaw(opt)
+  } else if (option.value && option.value.series) {
+    // Use compact option as fallback
+    modalOption.value = option.value
   }
-  // Return compact option as fallback (avoids unnecessary computation)
-  return option.value
 })
 </script>
 
@@ -453,28 +473,28 @@ const modalOption = computed(() => {
   right: 1px;
   width: 30px;
   height: 30px;
-  background: rgba(15, 15, 16, 0.6);
-  border: 1px solid #2A2A2E;
-  border-radius: 6px;
+  background: var(--chart-bg-overlay);
+  border: 1px solid var(--chart-border-base);
+  border-radius: var(--chart-border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--chart-font-base);
   line-height: 1;
-  color: rgba(229, 229, 229, 0.6);
+  color: var(--chart-text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
-  backdrop-filter: blur(4px);
+  transition: all var(--chart-transition-fast);
+  backdrop-filter: var(--chart-backdrop-blur);
   z-index: 10;
   padding: 0;
 }
 
 .expand-hint:hover {
-  background: rgba(15, 15, 16, 0.9);
-  border-color: #00594C;
-  color: #E5E5E5;
+  background: var(--chart-bg-overlay-solid);
+  border-color: var(--chart-border-active);
+  color: var(--chart-text-primary);
   transform: scale(1.1);
-  box-shadow: 0 0 12px rgba(0, 89, 76, 0.4);
+  box-shadow: var(--chart-shadow-glow);
 }
 
 /* ============================================
@@ -526,11 +546,11 @@ const modalOption = computed(() => {
 
 .loading-spinner {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
-  border: 1px solid #2A2A2E;
-  border-radius: 6px;
-  color: #E5E5E5;
-  font-size: 14px;
+  background: var(--chart-bg-primary);
+  border: 1px solid var(--chart-border-base);
+  border-radius: var(--chart-border-radius);
+  color: var(--chart-text-primary);
+  font-size: var(--chart-font-base);
   box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
 }
 
@@ -559,10 +579,10 @@ const modalOption = computed(() => {
 
 .empty-data-panel {
   padding: 20px 28px;
-  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
-  border: 1px solid #2A2A2E;
+  background: var(--chart-bg-primary);
+  border: 1px solid var(--chart-border-base);
   border-radius: 8px;
-  color: #E5E5E5;
+  color: var(--chart-text-primary);
   text-align: center;
   max-width: 400px;
   box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);

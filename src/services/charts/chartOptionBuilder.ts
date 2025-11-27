@@ -171,16 +171,22 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
         }
     }
 
+    // Performance: Disable animations for large datasets (>500 points)
+    const dataPointCount = Array.isArray(dataSource) 
+        ? (Array.isArray(dataSource[0]) ? dataSource.length : 0)
+        : 0
+    const disableAnimation = dataPointCount > 500
+
     const base: unknown = {
         backgroundColor: 'transparent',
         useUTC: false,
-        animation: enableZoom ? {
+        animation: disableAnimation ? false : (enableZoom ? {
             duration: 300,
             easing: 'cubicOut'
-        } : true,
-        animationDuration: 400,
+        } : true),
+        animationDuration: disableAnimation ? 0 : 400,
         animationEasing: 'cubicOut',
-        animationDurationUpdate: 400,
+        animationDurationUpdate: disableAnimation ? 0 : 400,
         animationEasingUpdate: 'cubicInOut',
         title: isLarge ? undefined : {
             text: title,
