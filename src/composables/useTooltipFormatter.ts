@@ -59,9 +59,19 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
     // For bar charts, params[0].value is the data value, not an array
     // For line charts, params[0].value is [timestamp, value]
     const isBarChart = kind === 'bar'
-    const date = isBarChart
-      ? firstParam.name // Bar chart uses category name (year)
-      : new Date((firstParam.value as [number, number])[0]).toLocaleDateString()
+    
+    // Safe date extraction with fallback
+    let date: string
+    if (isBarChart) {
+      date = firstParam.name // Bar chart uses category name (year)
+    } else {
+      const value = firstParam.value
+      if (Array.isArray(value) && value.length >= 1 && typeof value[0] === 'number') {
+        date = new Date(value[0]).toLocaleDateString()
+      } else {
+        date = firstParam.name || 'N/A'
+      }
+    }
 
     let html = `<div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #E5E5E5;">${date}</div>`
 
@@ -71,10 +81,23 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
     // Check if this is a ratios chart by checking series names
     const isRatiosChart = paramsArray.some(p => ratioChartOrder.includes(p.seriesName))
     
-    // Filter out zero values
+    // Filter out zero values with safe value extraction
     const sortedParams = paramsArray
       .map(item => {
-        const value = isBarChart ? Number(item.value) : Number((item.value as [number, number])[1])
+        let value: number
+        if (isBarChart) {
+          value = Number(item.value)
+        } else {
+          // Safely extract value from [timestamp, value] tuple
+          const val = item.value
+          if (Array.isArray(val) && val.length >= 2) {
+            value = Number(val[1])
+          } else if (typeof val === 'number') {
+            value = val
+          } else {
+            value = NaN
+          }
+        }
         return { ...item, numericValue: value }
       })
       .filter(item => item.numericValue !== 0 && !isNaN(item.numericValue))
