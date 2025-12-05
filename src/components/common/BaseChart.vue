@@ -172,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount, onMounted, markRaw, shallowRef, watchEffect } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted, markRaw, shallowRef, watch, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import VChart from 'vue-echarts'
 import type { EChartsOption } from 'echarts'
