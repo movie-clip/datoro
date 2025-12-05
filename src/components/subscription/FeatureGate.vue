@@ -4,24 +4,43 @@
     <slot v-if="hasAccess" />
 
     <!-- Show paywall if no access -->
-    <div v-else class="paywall-overlay">
+    <div
+      v-else
+      class="paywall-overlay"
+    >
       <div class="paywall-content">
-        <div class="lock-icon">🔒</div>
+        <div class="lock-icon">
+          🔒
+        </div>
         <h3>{{ title }}</h3>
         <p>{{ message }}</p>
         
-        <div v-if="isInTrial" class="trial-notice">
+        <div
+          v-if="isInTrial"
+          class="trial-notice"
+        >
           <p>✨ You have {{ daysRemaining }} days left in your free trial</p>
-          <button @click="handleUpgrade" class="btn-upgrade">
+          <button
+            class="btn-upgrade"
+            @click="handleUpgrade"
+          >
             Upgrade to Pro ($19/month)
           </button>
         </div>
 
         <div v-else>
-          <button @click="handleLogin" v-if="!isAuthenticated" class="btn-login">
+          <button
+            v-if="!isAuthenticated"
+            class="btn-login"
+            @click="handleLogin"
+          >
             Sign In to Continue
           </button>
-          <button @click="handleUpgrade" v-else class="btn-upgrade">
+          <button
+            v-else
+            class="btn-upgrade"
+            @click="handleUpgrade"
+          >
             Start Free Trial
           </button>
         </div>

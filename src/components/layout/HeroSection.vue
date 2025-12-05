@@ -9,8 +9,14 @@
       />
       
       <!-- About Tab - Company Description -->
-      <div v-show="activeTab === 'about'" class="tab-content">
-        <div v-if="loading" class="description-skeleton">
+      <div
+        v-show="activeTab === 'about'"
+        class="tab-content"
+      >
+        <div
+          v-if="loading"
+          class="description-skeleton"
+        >
           <SkeletonLoader 
             variant="text" 
             :style="{ marginBottom: '8px', height: '14px' }" 
@@ -31,14 +37,23 @@
         >
           {{ companyDescription }}
         </CollapsibleContent>
-        <div v-else class="description-placeholder">
+        <div
+          v-else
+          class="description-placeholder"
+        >
           <p>No company description available</p>
         </div>
       </div>
 
       <!-- News Tab -->
-      <div v-show="activeTab === 'news'" class="tab-content">
-        <div v-if="newsLoading" class="description-skeleton">
+      <div
+        v-show="activeTab === 'news'"
+        class="tab-content"
+      >
+        <div
+          v-if="newsLoading"
+          class="description-skeleton"
+        >
           <SkeletonLoader 
             variant="text" 
             :style="{ marginBottom: '8px', height: '14px' }" 
@@ -52,13 +67,25 @@
             :style="{ height: '14px' }" 
           />
         </div>
-        <div v-else-if="newsItems.length > 0" class="news-container">
+        <div
+          v-else-if="newsItems.length > 0"
+          class="news-container"
+        >
           <!-- First News Item (always visible) -->
-          <NewsCard v-if="newsItems[0]" :item="newsItems[0]" />
+          <NewsCard
+            v-if="newsItems[0]"
+            :item="newsItems[0]"
+          />
           
           <!-- Additional News Items (collapsible) -->
-          <div v-if="newsItems.length > 1" class="news-expandable">
-            <div v-show="newsExpanded" class="additional-news">
+          <div
+            v-if="newsItems.length > 1"
+            class="news-expandable"
+          >
+            <div
+              v-show="newsExpanded"
+              class="additional-news"
+            >
               <NewsCard 
                 v-for="(item, index) in newsItems.slice(1, 3)" 
                 :key="index"
@@ -73,94 +100,128 @@
             </button>
           </div>
         </div>
-        <div v-else class="description-placeholder">
+        <div
+          v-else
+          class="description-placeholder"
+        >
           <p>{{ newsError || 'No recent news available' }}</p>
         </div>
       </div>
 
       <!-- Earnings Tab -->
-      <div v-show="activeTab === 'earnings'" class="tab-content">
-        <EarningsTab :batch-data="batchData" :loading="loading" />
+      <div
+        v-show="activeTab === 'earnings'"
+        class="tab-content"
+      >
+        <EarningsTab
+          :batch-data="batchData"
+          :loading="loading"
+        />
       </div>
       
       <!-- Price Chart -->
       <PriceChart />
     </div>
 
-      <!-- Secondary: Key Metrics Card (40% width) -->
-      <div class="key-metrics-card">
-        <h3 class="metrics-title">Key Metrics</h3>
+    <!-- Secondary: Key Metrics Card (40% width) -->
+    <div class="key-metrics-card">
+      <h3 class="metrics-title">
+        Key Metrics
+      </h3>
         
-        <!-- Loading State -->
-        <div v-if="loading" class="metrics-loading">
-          <SkeletonLoader 
-            v-for="i in 6" 
-            :key="i" 
-            variant="card" 
-            :style="{ marginBottom: '16px', height: '90px', borderRadius: '8px' }" 
-          />
+      <!-- Loading State -->
+      <div
+        v-if="loading"
+        class="metrics-loading"
+      >
+        <SkeletonLoader 
+          v-for="i in 6" 
+          :key="i" 
+          variant="card" 
+          :style="{ marginBottom: '16px', height: '90px', borderRadius: '8px' }" 
+        />
+      </div>
+
+      <!-- Metrics Grid -->
+      <div
+        v-else-if="!error"
+        class="metrics-grid"
+      >
+        <!-- Market Cap -->
+        <div class="metric-item">
+          <div class="metric-label">
+            Market Cap
+          </div>
+          <div class="metric-value">
+            {{ data.marketCap }}
+          </div>
         </div>
 
-        <!-- Metrics Grid -->
-        <div v-else-if="!error" class="metrics-grid">
-          <!-- Market Cap -->
-          <div class="metric-item">
-            <div class="metric-label">Market Cap</div>
-            <div class="metric-value">{{ data.marketCap }}</div>
+        <!-- P/E Ratio -->
+        <div class="metric-item">
+          <div class="metric-label">
+            P/E Ratio
           </div>
-
-          <!-- P/E Ratio -->
-          <div class="metric-item">
-            <div class="metric-label">P/E Ratio</div>
-            <div class="metric-value">{{ data.pe }}</div>
+          <div class="metric-value">
+            {{ data.pe }}
           </div>
+        </div>
 
-          <!-- FCF Yield -->
-          <div class="metric-item">
-            <div class="metric-label">FCF Yield</div>
+        <!-- FCF Yield -->
+        <div class="metric-item">
+          <div class="metric-label">
+            FCF Yield
+          </div>
+          <div 
+            class="metric-value"
+            :class="getYieldClass(data.fcfYield)"
+          >
+            {{ data.fcfYield }}
+          </div>
+        </div>
+
+        <!-- Profit Margin -->
+        <div class="metric-item">
+          <div class="metric-label">
+            Profit Margin
+          </div>
+          <div 
+            class="metric-value"
+            :class="getMarginClass(data.profitMargin)"
+          >
+            {{ data.profitMargin }}
+          </div>
+        </div>
+
+        <!-- Health Indicator -->
+        <div class="metric-item metric-item-full">
+          <div class="metric-label">
+            Overall Health
+          </div>
+          <div class="health-indicators">
             <div 
-              class="metric-value"
-              :class="getYieldClass(data.fcfYield)"
+              v-for="indicator in healthIndicators" 
+              :key="indicator.label"
+              class="health-indicator"
+              :class="`health-${indicator.status}`"
+              :data-tooltip="indicator.tooltip"
             >
-              {{ data.fcfYield }}
-            </div>
-          </div>
-
-          <!-- Profit Margin -->
-          <div class="metric-item">
-            <div class="metric-label">Profit Margin</div>
-            <div 
-              class="metric-value"
-              :class="getMarginClass(data.profitMargin)"
-            >
-              {{ data.profitMargin }}
-            </div>
-          </div>
-
-          <!-- Health Indicator -->
-          <div class="metric-item metric-item-full">
-            <div class="metric-label">Overall Health</div>
-            <div class="health-indicators">
-              <div 
-                v-for="indicator in healthIndicators" 
-                :key="indicator.label"
-                class="health-indicator"
-                :class="`health-${indicator.status}`"
-                :data-tooltip="indicator.tooltip"
-              >
-                <span class="health-dot"></span>
-                <span class="health-label">{{ indicator.label }}</span>
-              </div>
+              <span class="health-dot" />
+              <span class="health-label">{{ indicator.label }}</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Error State -->
-        <div v-else class="metrics-error">
-          <p>{{ error }}</p>
-        </div>
+      <!-- Error State -->
+      <div
+        v-else
+        class="metrics-error"
+      >
+        <p>{{ error }}</p>
+      </div>
     </div>
-    </div>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -3,7 +3,7 @@
 
 /// <reference path="./types/express.d.ts" />
 
-import express, { type Express, type Request, type Response, type NextFunction } from 'express'
+import express, { type Express, type Request, type Response } from 'express'
 import compression from 'compression'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { getCacheService, CacheTTL } from './services/cacheService.js'
 import { getMonitoringService } from './services/monitoringService.js'
-import logger, { log } from './services/logger.js'
+import logger from './services/logger.js'
 import * as sentryService from './services/sentryService.js'
 import authRoutes from './routes/authRoutes.js'
 import watchlistRoutes from './routes/watchlist.js'
@@ -31,7 +31,6 @@ import feedbackRoutes, { initFeedbackRoutes } from './routes/feedback.js'
 import newsRoutes, { initNewsRoutes } from './routes/newsRoutes.js'
 import marketPerformanceRoutes from './routes/marketPerformance.js'
 import { 
-  validate,
   validateProfile,
   validateIncomeStatement,
   validateBalanceSheet,
@@ -39,25 +38,16 @@ import {
   validateRevenueSegments,
   validateFinancialScores,
   validateHistoricalPrice,
-  validateSearch,
-  validateAnalyticsPopular,
-  validateAnalyticsHistory,
-  validateAnalyticsStats
+  validateSearch
 } from './middleware/validation.js'
 import { 
   trackSearch, 
   updateTickerCompanyName, 
   trackApiRequest,
-  getPopularTickers,
-  getUserSearchHistory,
-  getApiRequestStats,
   getPrismaClient
 } from './services/databaseService.js'
 import { 
   fmpLimiter, 
-  globalFmpLimiter,
-  decrementGlobalFmpCounter,
-  adminLimiter, 
   speedLimiter 
 } from './middleware/rateLimiter.js'
 import { 

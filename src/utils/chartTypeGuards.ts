@@ -61,10 +61,10 @@ export function isConfiguredSeriesArray(data: unknown): boolean {
  * @returns True if data needs configuration (not already configured)
  */
 export function needsSeriesConfiguration(data: unknown): boolean {
-  if (isConfiguredSeries(_data)) {
+  if (isConfiguredSeries(data)) {
     return false
   }
-  if (isMultiSeriesFormat(_data) && Array.isArray(_data) && data.length > 0 && isConfiguredSeries(data[0])) {
+  if (isMultiSeriesFormat(data) && Array.isArray(data) && data.length > 0 && isConfiguredSeries(data[0])) {
     return false
   }
   return true

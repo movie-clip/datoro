@@ -1,30 +1,79 @@
 <template>
   <div class="dcf-results">
-    <h3 class="section-title">Valuation Results</h3>
+    <h3 class="section-title">
+      Valuation Results
+    </h3>
     
-    <div v-if="intrinsicValue !== null || advancedDcfValue?.intrinsicValue" class="results-grid">
+    <div
+      v-if="intrinsicValue !== null || advancedDcfValue?.intrinsicValue"
+      class="results-grid"
+    >
       <!-- Custom DCF Intrinsic Value Card -->
       <div 
         class="result-card active" 
         :data-tooltip="getDcfTooltip()"
       >
-        <div class="card-label">PEG Model</div>
-        <div v-if="intrinsicValue !== null" class="card-value" :class="getDcfValueClass(intrinsicValue)">
+        <div class="card-label">
+          PEG Model
+        </div>
+        <div
+          v-if="intrinsicValue !== null"
+          class="card-value"
+          :class="getDcfValueClass(intrinsicValue)"
+        >
           ${{ formatNumber(intrinsicValue) }}
-          <span v-if="upside !== null" class="upside-inline" :class="getUpsideClass(upside)">
+          <span
+            v-if="upside !== null"
+            class="upside-inline"
+            :class="getUpsideClass(upside)"
+          >
             ({{ upside > 0 ? '+' : '' }}{{ upside.toFixed(1) }}%)
           </span>
         </div>
-        <div v-else-if="pegError" class="card-value text-warning" title="Click for details">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        <div
+          v-else-if="pegError"
+          class="card-value text-warning"
+          title="Click for details"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            style="display: inline-block; vertical-align: middle; margin-right: 4px;"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+            />
+            <line
+              x1="12"
+              y1="8"
+              x2="12"
+              y2="12"
+            />
+            <line
+              x1="12"
+              y1="16"
+              x2="12.01"
+              y2="16"
+            />
           </svg>
           N/A
         </div>
-        <div v-else class="card-value text-muted">N/A</div>
-        <div class="card-hint">Custom cash flow model</div>
+        <div
+          v-else
+          class="card-value text-muted"
+        >
+          N/A
+        </div>
+        <div class="card-hint">
+          Custom cash flow model
+        </div>
       </div>
 
       <!-- Advanced DCF Card (not clickable) -->
@@ -35,36 +84,127 @@
       >
         <div class="card-label">
           Advanced DCF
-          <svg v-if="advancedDcfValue?.warning" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-left: 4px; color: #ff9800;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          <svg
+            v-if="advancedDcfValue?.warning"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            style="display: inline-block; vertical-align: middle; margin-left: 4px; color: #ff9800;"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+            />
+            <line
+              x1="12"
+              y1="8"
+              x2="12"
+              y2="12"
+            />
+            <line
+              x1="12"
+              y1="16"
+              x2="12.01"
+              y2="16"
+            />
           </svg>
         </div>
-        <div v-if="advancedDcfValue?.intrinsicValue !== null && advancedDcfValue?.intrinsicValue !== undefined" class="card-value" :class="getDcfValueClass(advancedDcfValue.intrinsicValue)">
+        <div
+          v-if="advancedDcfValue?.intrinsicValue !== null && advancedDcfValue?.intrinsicValue !== undefined"
+          class="card-value"
+          :class="getDcfValueClass(advancedDcfValue.intrinsicValue)"
+        >
           ${{ formatNumber(advancedDcfValue.intrinsicValue) }}
-          <span v-if="advancedDcfValue?.upside !== null && advancedDcfValue?.upside !== undefined" class="upside-inline" :class="getUpsideClass(advancedDcfValue.upside)">
+          <span
+            v-if="advancedDcfValue?.upside !== null && advancedDcfValue?.upside !== undefined"
+            class="upside-inline"
+            :class="getUpsideClass(advancedDcfValue.upside)"
+          >
             ({{ advancedDcfValue.upside > 0 ? '+' : '' }}{{ advancedDcfValue.upside.toFixed(1) }}%)
           </span>
         </div>
-        <div v-else-if="advancedDcfValue?.error" class="card-value text-warning" title="Click for details">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        <div
+          v-else-if="advancedDcfValue?.error"
+          class="card-value text-warning"
+          title="Click for details"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            style="display: inline-block; vertical-align: middle; margin-right: 4px;"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+            />
+            <line
+              x1="12"
+              y1="8"
+              x2="12"
+              y2="12"
+            />
+            <line
+              x1="12"
+              y1="16"
+              x2="12.01"
+              y2="16"
+            />
           </svg>
           N/A
         </div>
-        <div v-else class="card-value text-muted">—</div>
-        <div class="card-hint">FMP 10-year model</div>
+        <div
+          v-else
+          class="card-value text-muted"
+        >
+          —
+        </div>
+        <div class="card-hint">
+          FMP 10-year model
+        </div>
       </div>
     </div>
 
-    <div v-else class="results-placeholder">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    <div
+      v-else
+      class="results-placeholder"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="48"
+        height="48"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+        />
+        <line
+          x1="12"
+          y1="16"
+          x2="12"
+          y2="12"
+        />
+        <line
+          x1="12"
+          y1="8"
+          x2="12.01"
+          y2="8"
+        />
       </svg>
       <p>Adjust assumptions to see results</p>
     </div>

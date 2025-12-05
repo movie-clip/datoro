@@ -39,7 +39,10 @@
             @mousedown.prevent
           >
             <!-- Recent Searches Section (shown when input is empty) -->
-            <div v-if="!localInput && recentSearches.length > 0 && !searching" class="recent-section">
+            <div
+              v-if="!localInput && recentSearches.length > 0 && !searching"
+              class="recent-section"
+            >
               <div class="recent-header">
                 <span class="recent-icon">🕐</span>
                 <span class="recent-title">Recent Searches</span>
@@ -64,15 +67,15 @@
               aria-live="polite"
             >
               <div class="loading-spinner-container">
-                <div class="loading-spinner-dot"></div>
+                <div class="loading-spinner-dot" />
                 <span>Searching...</span>
               </div>
             </div>
 
             <!-- Search Results -->
             <button
-              v-else-if="localInput && searchResults.length > 0"
               v-for="result in searchResults"
+              v-else-if="localInput && searchResults.length > 0"
               :key="result.symbol"
               type="button"
               class="search-result"
@@ -81,11 +84,20 @@
               @click="selectTicker(result.symbol)"
             >
               <div class="result-left">
-                <div class="result-symbol">{{ result.symbol }}</div>
+                <div class="result-symbol">
+                  {{ result.symbol }}
+                </div>
               </div>
               <div class="result-right">
-                <div class="result-name">{{ result.name }}</div>
-                <div v-if="result.exchange" class="result-exchange">{{ result.exchange }}</div>
+                <div class="result-name">
+                  {{ result.name }}
+                </div>
+                <div
+                  v-if="result.exchange"
+                  class="result-exchange"
+                >
+                  {{ result.exchange }}
+                </div>
               </div>
             </button>
           </div>
@@ -110,7 +122,7 @@
         v-if="confirmedTicker" 
         :ticker="confirmedTicker" 
         @update:company-name="$emit('update:companyName', $event)"
-        @update:companyProfile="companyProfile = $event"
+        @update:company-profile="companyProfile = $event"
       />
     </div>
     <!-- TODO: uncomment to show company description  -->
@@ -136,7 +148,7 @@ interface Props {
 }
 
 // Props used in template (ESLint can't detect template usage)
-// eslint-disable-next-line no-unused-vars
+ 
 const props = withDefaults(defineProps<Props>(), {
   confirmedTicker: ''
 })

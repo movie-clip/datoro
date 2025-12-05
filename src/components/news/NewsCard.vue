@@ -10,17 +10,31 @@
         class="news-image"
         loading="lazy"
         @error="handleImageError"
-      />
-      <div v-else class="news-image-placeholder">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-          <path d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM9 11H6V8H9V11ZM19 19H5V5H19V19Z" fill="currentColor" opacity="0.3"/>
+      >
+      <div
+        v-else
+        class="news-image-placeholder"
+      >
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM9 11H6V8H9V11ZM19 19H5V5H19V19Z"
+            fill="currentColor"
+            opacity="0.3"
+          />
         </svg>
       </div>
     </div>
 
     <!-- News Content -->
     <div class="news-text">
-      <h4 class="news-title">{{ item.title || 'Untitled' }}</h4>
+      <h4 class="news-title">
+        {{ item.title || 'Untitled' }}
+      </h4>
       
       <div class="news-meta">
         <time 
@@ -31,11 +45,22 @@
         >
           {{ formattedDate(item.publishedDate) }}
         </time>
-        <span v-if="item.publishedDate && item.site" class="news-separator">•</span>
-        <span v-if="item.site" class="news-source-badge">{{ item.site }}</span>
+        <span
+          v-if="item.publishedDate && item.site"
+          class="news-separator"
+        >•</span>
+        <span
+          v-if="item.site"
+          class="news-source-badge"
+        >{{ item.site }}</span>
       </div>
 
-      <p v-if="item.text" class="news-excerpt">{{ truncateText(item.text, 120) }}</p>
+      <p
+        v-if="item.text"
+        class="news-excerpt"
+      >
+        {{ truncateText(item.text, 120) }}
+      </p>
 
       <a 
         v-if="item.url && isValidUrl(item.url)"

@@ -1,6 +1,9 @@
 <template>
   <div class="tab-navigation">
-    <div class="tab-list" role="tablist">
+    <div
+      class="tab-list"
+      role="tablist"
+    >
       <button
         v-for="tab in tabs"
         :key="tab.id"
@@ -13,7 +16,10 @@
       >
         <span class="tab-icon">
           <!-- Support component, image path, or emoji/string icons -->
-          <component v-if="typeof tab.icon === 'object'" :is="tab.icon" />
+          <component
+            :is="tab.icon"
+            v-if="typeof tab.icon === 'object'"
+          />
           <img 
             v-else-if="typeof tab.icon === 'string' && (tab.icon.endsWith('.png') || tab.icon.endsWith('.jpg') || tab.icon.endsWith('.svg'))" 
             :src="tab.icon" 
@@ -23,11 +29,14 @@
             decoding="async"
             width="28"
             height="28"
-          />
+          >
           <template v-else>{{ tab.icon }}</template>
         </span>
         <span class="tab-label">{{ tab.label }}</span>
-        <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
+        <span
+          v-if="tab.badge"
+          class="tab-badge"
+        >{{ tab.badge }}</span>
       </button>
     </div>
   </div>

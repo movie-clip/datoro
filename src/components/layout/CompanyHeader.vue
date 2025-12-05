@@ -5,16 +5,31 @@
     class="company-header company-header-skeleton"
   >
     <div class="company-logo-skeleton">
-      <SkeletonLoader variant="card" :style="{ width: '48px', height: '48px', borderRadius: '8px' }" />
+      <SkeletonLoader
+        variant="card"
+        :style="{ width: '48px', height: '48px', borderRadius: '8px' }"
+      />
     </div>
     <div class="company-info">
       <div class="company-identity">
-        <SkeletonLoader variant="text" :style="{ width: '150px', height: '16px' }" />
-        <SkeletonLoader variant="text" :style="{ width: '60px', height: '14px', marginLeft: '8px' }" />
+        <SkeletonLoader
+          variant="text"
+          :style="{ width: '150px', height: '16px' }"
+        />
+        <SkeletonLoader
+          variant="text"
+          :style="{ width: '60px', height: '14px', marginLeft: '8px' }"
+        />
       </div>
       <div class="price-info">
-        <SkeletonLoader variant="text" :style="{ width: '80px', height: '20px' }" />
-        <SkeletonLoader variant="text" :style="{ width: '100px', height: '14px', marginLeft: '8px' }" />
+        <SkeletonLoader
+          variant="text"
+          :style="{ width: '80px', height: '20px' }"
+        />
+        <SkeletonLoader
+          variant="text"
+          :style="{ width: '100px', height: '14px', marginLeft: '8px' }"
+        />
       </div>
     </div>
   </div>
@@ -61,9 +76,16 @@
     </div>
     
     <!-- Next Earnings Date -->
-    <div v-if="nextEarningsDate" class="earnings-info">
-      <div class="earnings-label">Next Earnings</div>
-      <div class="earnings-date">{{ formatEarningsDate(nextEarningsDate) }}</div>
+    <div
+      v-if="nextEarningsDate"
+      class="earnings-info"
+    >
+      <div class="earnings-label">
+        Next Earnings
+      </div>
+      <div class="earnings-date">
+        {{ formatEarningsDate(nextEarningsDate) }}
+      </div>
     </div>
   </div>
 </template>

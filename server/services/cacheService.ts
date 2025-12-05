@@ -36,7 +36,7 @@ type FetchFunction<T> = () => Promise<T>
  * Fast hash function for cache keys (faster than JSON.stringify + MD5)
  * Uses simple string concatenation with separator for simple objects
  */
-function fastHash(value: any): string {
+function _fastHash(value: any): string {
   if (typeof value === 'string') {
     return value
   }
@@ -46,11 +46,11 @@ function fastHash(value: any): string {
   if (typeof value === 'object' && value !== null) {
     // For simple objects, use string concat (3x faster than JSON.stringify)
     if (Array.isArray(value)) {
-      return value.map(fastHash).join('|')
+      return value.map(_fastHash).join('|')
     }
     // Sort keys for consistent hashing
     const keys = Object.keys(value).sort()
-    return keys.map(k => `${k}:${fastHash(value[k])}`).join('|')
+    return keys.map(k => `${k}:${_fastHash(value[k])}`).join('|')
   }
   return String(value)
 }

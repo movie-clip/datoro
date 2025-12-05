@@ -1,4 +1,4 @@
-import { PrismaClient, type User, type PopularTicker } from '@prisma/client';
+import { PrismaClient, type User } from '@prisma/client';
 import { buildDatabaseUrl, getPoolConfig } from '../config/database.config.js';
 import logger from './logger.js'
 

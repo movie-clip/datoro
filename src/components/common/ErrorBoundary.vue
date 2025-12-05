@@ -51,25 +51,46 @@ const toggleDetails = () => {
 </script>
 
 <template>
-  <div v-if="error" class="error-boundary" :class="{ 'mobile': isMobile }">
+  <div
+    v-if="error"
+    class="error-boundary"
+    :class="{ 'mobile': isMobile }"
+  >
     <div class="error-container">
-      <div class="error-icon">⚠️</div>
-      <h2 class="error-title">Oops! Something went wrong</h2>
-      <p class="error-message">{{ error.message || 'An unexpected error occurred' }}</p>
+      <div class="error-icon">
+        ⚠️
+      </div>
+      <h2 class="error-title">
+        Oops! Something went wrong
+      </h2>
+      <p class="error-message">
+        {{ error.message || 'An unexpected error occurred' }}
+      </p>
       
       <div class="error-actions">
-        <button @click="reload" class="btn-reload">
+        <button
+          class="btn-reload"
+          @click="reload"
+        >
           🔄 Reload Page
         </button>
-        <button @click="toggleDetails" class="btn-details">
+        <button
+          class="btn-details"
+          @click="toggleDetails"
+        >
           {{ showDetails ? '▲ Hide Details' : '▼ Show Details' }}
         </button>
       </div>
       
-      <div v-if="showDetails" class="error-details">
+      <div
+        v-if="showDetails"
+        class="error-details"
+      >
         <h3>Error Details:</h3>
         <pre>{{ error.stack }}</pre>
-        <p v-if="errorInfo"><strong>Component Info:</strong> {{ errorInfo }}</p>
+        <p v-if="errorInfo">
+          <strong>Component Info:</strong> {{ errorInfo }}
+        </p>
         <p><strong>Device:</strong> {{ isMobile ? 'Mobile' : 'Desktop' }}</p>
         <p><strong>User Agent:</strong> {{ userAgent }}</p>
       </div>

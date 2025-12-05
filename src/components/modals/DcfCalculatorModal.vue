@@ -3,19 +3,25 @@
     <Transition name="modal">
       <div
         v-if="modelValue"
+        ref="overlayRef"
         class="modal-overlay"
+        tabindex="0"
         @mousedown="handleOverlayMouseDown"
         @click="handleOverlayClick"
         @keydown.esc="handleClose"
-        tabindex="0"
-        ref="overlayRef"
       >
-        <div class="modal-container" @mousedown.stop>
+        <div
+          class="modal-container"
+          @mousedown.stop
+        >
           <div class="modal-header">
             <div class="header-content">
               <h2>
                 DCF Calculator
-                <span v-if="typedCompanyData" class="company-context">
+                <span
+                  v-if="typedCompanyData"
+                  class="company-context"
+                >
                   <img 
                     v-if="typedCompanyData.image" 
                     :src="typedCompanyData.image" 
@@ -33,32 +39,107 @@
                 </span>
               </h2>
             </div>
-            <button class="close-button" @click="handleClose" aria-label="Close modal">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="close-button"
+              aria-label="Close modal"
+              @click="handleClose"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
           </div>
 
           <div class="modal-body">
             <!-- Loading state -->
-            <div v-if="loading" class="data-loading">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" opacity="0.3"></circle>
-                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round">
-                  <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+            <div
+              v-if="loading"
+              class="data-loading"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  opacity="0.3"
+                />
+                <path
+                  d="M12 2a10 10 0 0 1 10 10"
+                  stroke-linecap="round"
+                >
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 12 12"
+                    to="360 12 12"
+                    dur="1s"
+                    repeatCount="indefinite"
+                  />
                 </path>
               </svg>
               <p>Loading financial data...</p>
             </div>
 
             <!-- Data validation warning -->
-            <div v-else-if="!dataValidation.valid" class="data-warning">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            <div
+              v-else-if="!dataValidation.valid"
+              class="data-warning"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+                <line
+                  x1="12"
+                  y1="8"
+                  x2="12"
+                  y2="12"
+                />
+                <line
+                  x1="12"
+                  y1="16"
+                  x2="12.01"
+                  y2="16"
+                />
               </svg>
               <div>
                 <strong>Insufficient Data</strong>
@@ -66,10 +147,16 @@
               </div>
             </div>
 
-            <div v-else class="dcf-content">
+            <div
+              v-else
+              class="dcf-content"
+            >
               <!-- Left column: Model Assumptions -->
               <div class="left-column">
-                <DcfInputs v-model="inputs" :company-data="typedCompanyData ?? undefined" />
+                <DcfInputs
+                  v-model="inputs"
+                  :company-data="typedCompanyData ?? undefined"
+                />
               </div>
               
               <!-- Right column: Valuation Results + Chart -->
@@ -81,8 +168,8 @@
                   :advanced-dcf-value="typedAdvancedDcfValue ?? undefined"
                   :peg-error="pegError ?? undefined"
                   :selected-model="selectedModel"
-                  @select-model="selectModel"
                   class="compact-results"
+                  @select-model="selectModel"
                 />
                 
                 <DcfForecastChart 

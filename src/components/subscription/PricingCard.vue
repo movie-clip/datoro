@@ -7,13 +7,18 @@
         <span class="amount">{{ price }}</span>
         <span class="period">/month</span>
       </div>
-      <p class="trial-info">{{ trialDays }}-day free trial included</p>
+      <p class="trial-info">
+        {{ trialDays }}-day free trial included
+      </p>
     </div>
 
     <div class="features">
       <h3>Includes:</h3>
       <ul>
-        <li v-for="feature in features" :key="feature">
+        <li
+          v-for="feature in features"
+          :key="feature"
+        >
           <span class="checkmark">✓</span>
           {{ feature }}
         </li>
@@ -21,14 +26,19 @@
     </div>
 
     <button 
-      @click="handleSubscribe" 
-      :disabled="loading || !canSubscribe"
+      :disabled="loading || !canSubscribe" 
       class="subscribe-btn"
+      @click="handleSubscribe"
     >
       {{ buttonText }}
     </button>
 
-    <p v-if="error" class="error-message">{{ error }}</p>
+    <p
+      v-if="error"
+      class="error-message"
+    >
+      {{ error }}
+    </p>
 
     <p class="terms">
       Cancel anytime. No long-term contracts.

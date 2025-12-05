@@ -1,16 +1,50 @@
 <template>
   <div class="heatmap-wrapper">
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
+    <div
+      v-if="loading"
+      class="loading-state"
+    >
+      <div class="spinner" />
       <p>Loading market data...</p>
     </div>
 
-    <div v-else-if="!data || data.length === 0" class="empty-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="7" height="7"></rect>
-        <rect x="14" y="3" width="7" height="7"></rect>
-        <rect x="14" y="14" width="7" height="7"></rect>
-        <rect x="3" y="14" width="7" height="7"></rect>
+    <div
+      v-else-if="!data || data.length === 0"
+      class="empty-state"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="48"
+        height="48"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <rect
+          x="3"
+          y="3"
+          width="7"
+          height="7"
+        />
+        <rect
+          x="14"
+          y="3"
+          width="7"
+          height="7"
+        />
+        <rect
+          x="14"
+          y="14"
+          width="7"
+          height="7"
+        />
+        <rect
+          x="3"
+          y="14"
+          width="7"
+          height="7"
+        />
       </svg>
       <p>No market data available</p>
     </div>

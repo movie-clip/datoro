@@ -3,14 +3,17 @@
     <Transition name="modal">
       <div
         v-if="modelValue"
+        ref="overlayRef"
         class="modal-overlay"
+        tabindex="0"
         @mousedown="handleOverlayMouseDown"
         @click="handleOverlayClick"
         @keydown.esc="handleClose"
-        tabindex="0"
-        ref="overlayRef"
       >
-        <div class="modal-container" @mousedown.stop>
+        <div
+          class="modal-container"
+          @mousedown.stop
+        >
           <div class="modal-header">
             <div class="header-content">
               <h2>
@@ -24,18 +27,62 @@
                   stroke-width="2"
                   class="header-icon"
                 >
-                  <rect x="3" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="14" width="7" height="7"></rect>
-                  <rect x="3" y="14" width="7" height="7"></rect>
+                  <rect
+                    x="3"
+                    y="3"
+                    width="7"
+                    height="7"
+                  />
+                  <rect
+                    x="14"
+                    y="3"
+                    width="7"
+                    height="7"
+                  />
+                  <rect
+                    x="14"
+                    y="14"
+                    width="7"
+                    height="7"
+                  />
+                  <rect
+                    x="3"
+                    y="14"
+                    width="7"
+                    height="7"
+                  />
                 </svg>
                 Market Performance
               </h2>
             </div>
-            <button class="close-button" @click="handleClose" aria-label="Close modal">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="close-button"
+              aria-label="Close modal"
+              @click="handleClose"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
           </div>
@@ -44,34 +91,59 @@
             <div class="body-layout">
               <!-- Main Content Area -->
               <div class="main-content">
-            <!-- Error Message -->
-            <div v-if="error" class="error-message">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              <span>{{ error }}</span>
-            </div>
+                <!-- Error Message -->
+                <div
+                  v-if="error"
+                  class="error-message"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                    />
+                    <line
+                      x1="12"
+                      y1="8"
+                      x2="12"
+                      y2="12"
+                    />
+                    <line
+                      x1="12"
+                      y1="16"
+                      x2="12.01"
+                      y2="16"
+                    />
+                  </svg>
+                  <span>{{ error }}</span>
+                </div>
 
-            <!-- S&P 500 Price Chart -->
-            <!-- Chart shows 20 years of historical data with interactive scrollbar -->
-            <SP500PriceChart 
-              @range-change="handleCustomRangeChange"
-            />
+                <!-- S&P 500 Price Chart -->
+                <!-- Chart shows 20 years of historical data with interactive scrollbar -->
+                <SP500PriceChart 
+                  @range-change="handleCustomRangeChange"
+                />
 
-            <!-- Heatmap Chart Component -->
-            <div class="heatmap-section">
-              <div class="heatmap-header">
-                <h4>S&P 500 Sector Performance</h4>
-                <span class="heatmap-note">Drag chart scrollbar to view sector performance for custom time ranges</span>
-              </div>
-              <MarketHeatmapChart 
-                :data="heatmapData"
-                :sp500="sp500Data"
-                :loading="loading"
-              />
-            </div>
+                <!-- Heatmap Chart Component -->
+                <div class="heatmap-section">
+                  <div class="heatmap-header">
+                    <h4>S&P 500 Sector Performance</h4>
+                    <span class="heatmap-note">Drag chart scrollbar to view sector performance for custom time ranges</span>
+                  </div>
+                  <MarketHeatmapChart 
+                    :data="heatmapData"
+                    :sp500="sp500Data"
+                    :loading="loading"
+                  />
+                </div>
               </div>
             </div>
           </div>

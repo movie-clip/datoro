@@ -44,9 +44,9 @@ const AIAnalysisPanel = defineAsyncComponent(() =>
   import('./components/layout/AIAnalysisPanel.vue')
 )
 
-// Lazy load BingoPanel
-const BingoPanel = defineAsyncComponent(() =>
-  import('./components/layout/BingoPanel.vue')
+// Lazy load CheckListPanel
+const CheckListPanel = defineAsyncComponent(() =>
+  import('./components/layout/CheckListPanel.vue')
 )
 
 // Cookie Consent Banner
@@ -356,300 +356,413 @@ const handleSelectTicker = (ticker: string): void => {
   <ErrorBoundary>
     <main class="page">
       <header class="app-header">
-      <div class="header-container">
-        <div class="header-left">
-          <!-- Hamburger Menu Button -->
-          <button 
-            class="hamburger-menu-button" 
-            @click="toggleMainMenu"
-            title="Menu"
-            aria-label="Open main menu"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
+        <div class="header-container">
+          <div class="header-left">
+            <!-- Hamburger Menu Button -->
+            <button 
+              class="hamburger-menu-button" 
+              title="Menu"
+              aria-label="Open main menu"
+              @click="toggleMainMenu"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="3"
+                  y1="6"
+                  x2="21"
+                  y2="6"
+                />
+                <line
+                  x1="3"
+                  y1="12"
+                  x2="21"
+                  y2="12"
+                />
+                <line
+                  x1="3"
+                  y1="18"
+                  x2="21"
+                  y2="18"
+                />
+              </svg>
+            </button>
           
-          <img 
-            src="/logo.png" 
-            :alt="`${BRAND.name} Logo`"
-            class="brand-logo"
-            @error="handleImageError"
-          >
-          <span class="brand-text">{{ BRAND.name }}</span>
-        </div>
+            <img 
+              src="/logo.png" 
+              :alt="`${BRAND.name} Logo`"
+              class="brand-logo"
+              @error="handleImageError"
+            >
+            <span class="brand-text">{{ BRAND.name }}</span>
+          </div>
         
-        <div class="header-right">
-          <!-- Show auth buttons if not logged in -->
-          <template v-if="!authStore.isAuthenticated">
-            <button class="auth-button sign-in" @click="openSignIn">
-              Sign In
-            </button>
-            <button class="auth-button sign-up" @click="openSignUp">
-              Sign Up
-            </button>
-          </template>
-          
-          <!-- Show user menu if logged in -->
-          <template v-else>
-            <div class="user-menu">
-              <img 
-                v-if="user?.avatarUrl" 
-                :src="user.avatarUrl" 
-                :alt="user.name || 'User'"
-                class="user-avatar"
-              />
-              <div v-else class="user-avatar-placeholder">
-                {{ (user?.name || user?.email || 'U')[0]?.toUpperCase() || 'U' }}
-              </div>
-              <span class="user-name">{{ user?.name || user?.email }}</span>
-              <button class="logout-button" @click="handleLogout" title="Sign Out">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
+          <div class="header-right">
+            <!-- Show auth buttons if not logged in -->
+            <template v-if="!authStore.isAuthenticated">
+              <button
+                class="auth-button sign-in"
+                @click="openSignIn"
+              >
+                Sign In
               </button>
-            </div>
-          </template>
+              <button
+                class="auth-button sign-up"
+                @click="openSignUp"
+              >
+                Sign Up
+              </button>
+            </template>
+          
+            <!-- Show user menu if logged in -->
+            <template v-else>
+              <div class="user-menu">
+                <img 
+                  v-if="user?.avatarUrl" 
+                  :src="user.avatarUrl" 
+                  :alt="user.name || 'User'"
+                  class="user-avatar"
+                >
+                <div
+                  v-else
+                  class="user-avatar-placeholder"
+                >
+                  {{ (user?.name || user?.email || 'U')[0]?.toUpperCase() || 'U' }}
+                </div>
+                <span class="user-name">{{ user?.name || user?.email }}</span>
+                <button
+                  class="logout-button"
+                  title="Sign Out"
+                  @click="handleLogout"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line
+                      x1="21"
+                      y1="12"
+                      x2="9"
+                      y2="12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </template>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <!-- Auth Modal -->
-    <AuthModal 
-      :is-open="showAuthModal"
-      :default-tab="authModalTab"
-      @close="closeAuthModal"
-      @success="handleAuthSuccess"
-      @show-verify-email="handleShowVerifyEmail"
-    />
-
-    <section
-      class="ticker-bar-section"
-    >
-      <GlobalTickerBar 
-        v-model="inputTicker"
-        :confirmed-ticker="tickerStore.currentTicker"
-        @submit="applyTicker" 
-        @update:company-name="companyName = $event"
+      <!-- Auth Modal -->
+      <AuthModal 
+        :is-open="showAuthModal"
+        :default-tab="authModalTab"
+        @close="closeAuthModal"
+        @success="handleAuthSuccess"
+        @show-verify-email="handleShowVerifyEmail"
       />
-    </section>
 
-    <!-- Hero Section: Price Chart + Key Metrics -->
-    <section class="hero-section">
-      <HeroSection />
-    </section>
-
-    <!-- Tab Navigation + Timeframe Toggle Row -->
-    <div class="nav-row">
-      <TabNavigation 
-        :model-value="activeTab"
-        @update:model-value="(value: string) => activeTab = value"
-        :tabs="tabs"
-        class="tab-navigation"
-      />
-      <TimeframeToggle />
-    </div>
-
-    <!-- Tab Content -->
-    <div class="tab-content">
-      <!-- Valuation Tab -->
-      <TabPanel 
-        id="valuation" 
-        :active="activeTab === 'valuation'"
-        :lazyLoad="true"
+      <section
+        class="ticker-bar-section"
       >
-        <section class="charts">
-          <section class="panel">
-            <ValuationRatiosChart />
-          </section>
-          <section class="panel">
-            <EbitdaChart />
-          </section>
-          <section class="panel">
-            <InsiderTradingChart />
-          </section>
-        </section>
-      </TabPanel>
-
-      <!-- Performance Tab -->
-      <TabPanel 
-        id="performance" 
-        :active="activeTab === 'performance'"
-        :lazyLoad="true"
-      >
-        <section class="charts">
-          <section class="panel">
-            <RevenueByCategoryChart />
-          </section>
-          <section class="panel">
-            <NetIncomeChart />
-          </section>
-          <section class="panel">
-            <FcfChart />
-          </section>
-        </section>
-      </TabPanel>
-
-      <!-- Returns Tab -->
-      <TabPanel 
-        id="profitability" 
-        :active="activeTab === 'profitability'"
-        :lazyLoad="true"
-      >
-        <section class="charts">
-          <section class="panel">
-            <CapitalReturnedChart />
-          </section>
-          <section class="panel">
-            <DividendYieldChart />
-          </section>
-          <section class="panel">
-            <ExpensesChart />
-          </section>
-        </section>
-      </TabPanel>
-
-      <!-- Balance Tab -->
-      <TabPanel 
-        id="balance" 
-        :active="activeTab === 'balance'"
-        :lazyLoad="true"
-      >
-        <section class="charts">
-          <section class="panel">
-            <CashDebtChart />
-          </section>
-          <section class="panel">
-            <SharesChart />
-          </section>
-          <section class="panel">
-            <EpsChart />
-          </section>
-        </section>
-      </TabPanel>
-
-      <!-- AI Insights Tab -->
-      <TabPanel 
-        id="insights" 
-        :active="activeTab === 'insights'"
-        :lazyLoad="true"
-      >
-        <section class="ai-analysis-grid">
-          <AIAnalysisPanel
-            :company-name="companyName"
-            type="advantages"
-          />
-          <AIAnalysisPanel
-            :company-name="companyName"
-            type="risks"
-          />
-        </section>
-      </TabPanel>
-
-      <!-- Bingo Tab -->
-      <TabPanel 
-        id="bingo" 
-        :active="activeTab === 'bingo'"
-        :lazyLoad="true"
-      >
-        <section class="bingo-container">
-          <BingoPanel :company-name="companyName" />
-        </section>
-      </TabPanel>
-    </div>
-
-    <!-- Price Target Bar: After all tabs -->
-    <section class="price-target-section">
-      <section class="panel">
-        <PriceTargetBar />
+        <GlobalTickerBar 
+          v-model="inputTicker"
+          :confirmed-ticker="tickerStore.currentTicker"
+          @submit="applyTicker" 
+          @update:company-name="companyName = $event"
+        />
       </section>
-    </section>
-    
-    <!-- Main Menu -->
-    <MainMenu 
-      :is-open="showMainMenu"
-      :is-authenticated="authStore.isAuthenticated"
-      @close="showMainMenu = false"
-      @toggle-watchlist="handleToggleWatchlist"
-      @select-ticker="handleSelectTicker"
-      @show-deep-finder="toggleDeepFinder"
-      @show-macro="toggleMacro"
-      @show-feedback="toggleFeedback"
-    />
-    
-    <!-- Deep Finder Modal -->
-    <DeepFinderModal v-model="showDeepFinder" />
 
-    <!-- Macro Dashboard Modal -->
-    <Teleport to="body">
-      <div v-if="showMacro" class="modal-overlay" @click.self="showMacro = false">
-        <div class="modal-container macro-modal">
-          <button class="modal-close macro-close" @click="showMacro = false" aria-label="Close">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-          <MacroView />
-        </div>
-      </div>
-    </Teleport>
+      <!-- Hero Section: Price Chart + Key Metrics -->
+      <section class="hero-section">
+        <HeroSection />
+      </section>
 
-    <!-- Feedback Modal -->
-    <Teleport to="body">
-      <div v-if="showFeedback" class="modal-overlay" @click.self="showFeedback = false">
-        <div class="modal-container feedback-modal">
-          <button v-if="!feedbackSubmitted" class="modal-close" @click="showFeedback = false">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-          <FeedbackForm @submitted="handleFeedbackSubmitted" />
-        </div>
+      <!-- Tab Navigation + Timeframe Toggle Row -->
+      <div class="nav-row">
+        <TabNavigation 
+          :model-value="activeTab"
+          :tabs="tabs"
+          class="tab-navigation"
+          @update:model-value="(value: string) => activeTab = value"
+        />
+        <TimeframeToggle />
       </div>
-    </Teleport>
-    
-    <!-- Watchlist Panel -->
-    <WatchlistPanel 
-      :is-open="showWatchlistPanel"
-      @close="showWatchlistPanel = false"
-      @toggle-watchlist="handleToggleWatchlist"
-      @select-ticker="handleSelectTicker"
-    />
-    
-    <!-- Email Verification Page -->
-    <VerifyEmailPage 
-      v-if="showVerifyEmailPage"
-      :token="verifyEmailToken"
-      :mode="verifyEmailMode"
-      :email="verifyEmailAddress"
-      @close="showVerifyEmailPage = false"
-    />
-    
-    <!-- Footer -->
-    <footer class="app-footer">
-      <div class="footer-content">
-        <div class="footer-section">
-          <p class="footer-copyright">© 2025 Datoro. All rights reserved.</p>
-        </div>
-        <div class="footer-section">
-          <a href="/privacy-policy.html" target="_blank" class="footer-link">Privacy Policy</a>
-          <span class="footer-divider">|</span>
-          <a href="/terms-of-service.html" target="_blank" class="footer-link">Terms of Service</a>
-          <span class="footer-divider">|</span>
-          <a href="/cookie-policy.html" target="_blank" class="footer-link">Cookie Policy</a>
-        </div>
-      </div>
-    </footer>
 
-    <!-- Cookie Consent Banner -->
-    <CookieConsent />
-  </main>
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Valuation Tab -->
+        <TabPanel 
+          id="valuation" 
+          :active="activeTab === 'valuation'"
+          :lazy-load="true"
+        >
+          <section class="charts">
+            <section class="panel">
+              <ValuationRatiosChart />
+            </section>
+            <section class="panel">
+              <EbitdaChart />
+            </section>
+            <section class="panel">
+              <InsiderTradingChart />
+            </section>
+          </section>
+        </TabPanel>
+
+        <!-- Performance Tab -->
+        <TabPanel 
+          id="performance" 
+          :active="activeTab === 'performance'"
+          :lazy-load="true"
+        >
+          <section class="charts">
+            <section class="panel">
+              <RevenueByCategoryChart />
+            </section>
+            <section class="panel">
+              <NetIncomeChart />
+            </section>
+            <section class="panel">
+              <FcfChart />
+            </section>
+          </section>
+        </TabPanel>
+
+        <!-- Returns Tab -->
+        <TabPanel 
+          id="profitability" 
+          :active="activeTab === 'profitability'"
+          :lazy-load="true"
+        >
+          <section class="charts">
+            <section class="panel">
+              <CapitalReturnedChart />
+            </section>
+            <section class="panel">
+              <DividendYieldChart />
+            </section>
+            <section class="panel">
+              <ExpensesChart />
+            </section>
+          </section>
+        </TabPanel>
+
+        <!-- Balance Tab -->
+        <TabPanel 
+          id="balance" 
+          :active="activeTab === 'balance'"
+          :lazy-load="true"
+        >
+          <section class="charts">
+            <section class="panel">
+              <CashDebtChart />
+            </section>
+            <section class="panel">
+              <SharesChart />
+            </section>
+            <section class="panel">
+              <EpsChart />
+            </section>
+          </section>
+        </TabPanel>
+
+        <!-- AI Insights Tab -->
+        <TabPanel 
+          id="insights" 
+          :active="activeTab === 'insights'"
+          :lazy-load="true"
+        >
+          <section class="ai-analysis-grid">
+            <AIAnalysisPanel
+              :company-name="companyName"
+              type="advantages"
+            />
+            <AIAnalysisPanel
+              :company-name="companyName"
+              type="risks"
+            />
+          </section>
+        </TabPanel>
+
+        <!-- Bingo Tab -->
+        <TabPanel 
+          id="bingo" 
+          :active="activeTab === 'bingo'"
+          :lazy-load="true"
+        >
+          <section class="bingo-container">
+            <CheckListPanel :company-name="companyName" />
+          </section>
+        </TabPanel>
+      </div>
+
+      <!-- Price Target Bar: After all tabs -->
+      <section class="price-target-section">
+        <section class="panel">
+          <PriceTargetBar />
+        </section>
+      </section>
+    
+      <!-- Main Menu -->
+      <MainMenu 
+        :is-open="showMainMenu"
+        :is-authenticated="authStore.isAuthenticated"
+        @close="showMainMenu = false"
+        @toggle-watchlist="handleToggleWatchlist"
+        @select-ticker="handleSelectTicker"
+        @show-deep-finder="toggleDeepFinder"
+        @show-macro="toggleMacro"
+        @show-feedback="toggleFeedback"
+      />
+    
+      <!-- Deep Finder Modal -->
+      <DeepFinderModal v-model="showDeepFinder" />
+
+      <!-- Macro Dashboard Modal -->
+      <Teleport to="body">
+        <div
+          v-if="showMacro"
+          class="modal-overlay"
+          @click.self="showMacro = false"
+        >
+          <div class="modal-container macro-modal">
+            <button
+              class="modal-close macro-close"
+              aria-label="Close"
+              @click="showMacro = false"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
+              </svg>
+            </button>
+            <MacroView />
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- Feedback Modal -->
+      <Teleport to="body">
+        <div
+          v-if="showFeedback"
+          class="modal-overlay"
+          @click.self="showFeedback = false"
+        >
+          <div class="modal-container feedback-modal">
+            <button
+              v-if="!feedbackSubmitted"
+              class="modal-close"
+              @click="showFeedback = false"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
+              </svg>
+            </button>
+            <FeedbackForm @submitted="handleFeedbackSubmitted" />
+          </div>
+        </div>
+      </Teleport>
+    
+      <!-- Watchlist Panel -->
+      <WatchlistPanel 
+        :is-open="showWatchlistPanel"
+        @close="showWatchlistPanel = false"
+        @toggle-watchlist="handleToggleWatchlist"
+        @select-ticker="handleSelectTicker"
+      />
+    
+      <!-- Email Verification Page -->
+      <VerifyEmailPage 
+        v-if="showVerifyEmailPage"
+        :token="verifyEmailToken"
+        :mode="verifyEmailMode"
+        :email="verifyEmailAddress"
+        @close="showVerifyEmailPage = false"
+      />
+    
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div class="footer-content">
+          <div class="footer-section">
+            <p class="footer-copyright">
+              © 2025 Datoro. All rights reserved.
+            </p>
+          </div>
+          <div class="footer-section">
+            <a
+              href="/privacy-policy.html"
+              target="_blank"
+              class="footer-link"
+            >Privacy Policy</a>
+            <span class="footer-divider">|</span>
+            <a
+              href="/terms-of-service.html"
+              target="_blank"
+              class="footer-link"
+            >Terms of Service</a>
+            <span class="footer-divider">|</span>
+            <a
+              href="/cookie-policy.html"
+              target="_blank"
+              class="footer-link"
+            >Cookie Policy</a>
+          </div>
+        </div>
+      </footer>
+
+      <!-- Cookie Consent Banner -->
+      <CookieConsent />
+    </main>
   </ErrorBoundary>
 </template>
 

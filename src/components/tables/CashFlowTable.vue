@@ -11,10 +11,13 @@
     @row-click="handleRowClick"
   />
   
-  <ChartModal :is-open="showChartModal" @close="showChartModal = false">
+  <ChartModal
+    :is-open="showChartModal"
+    @close="showChartModal = false"
+  >
     <component 
-      v-if="selectedMetric" 
-      :is="selectedMetric.component"
+      :is="selectedMetric.component" 
+      v-if="selectedMetric"
       force-expanded
     />
   </ChartModal>

@@ -151,10 +151,30 @@
                 stroke="currentColor"
                 stroke-width="2"
               >
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
+                <rect
+                  x="3"
+                  y="3"
+                  width="7"
+                  height="7"
+                />
+                <rect
+                  x="14"
+                  y="3"
+                  width="7"
+                  height="7"
+                />
+                <rect
+                  x="14"
+                  y="14"
+                  width="7"
+                  height="7"
+                />
+                <rect
+                  x="3"
+                  y="14"
+                  width="7"
+                  height="7"
+                />
               </svg>
               <span>Market Performance</span>
             </button>
@@ -460,7 +480,7 @@ watch(currentView, async (view) => {
     try {
       await initializeWatchlists()
     } catch (_err) {
-      console.error('Error loading watchlist:', err)
+      console.error('Error loading watchlist:', _err)
       error.value = 'Failed to load watchlist'
     }
   }
@@ -518,7 +538,7 @@ const handleRemove = async (ticker) => {
   try {
     await toggleWatchlist(ticker)
   } catch (_err) {
-    console.error('Error removing ticker:', err)
+    console.error('Error removing ticker:', _err)
   }
 }
 

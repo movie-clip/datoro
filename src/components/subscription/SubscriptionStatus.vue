@@ -1,18 +1,27 @@
 <template>
   <div class="subscription-status">
     <!-- Loading State -->
-    <div v-if="!user" class="status-loading">
-      <div class="spinner"></div>
+    <div
+      v-if="!user"
+      class="status-loading"
+    >
+      <div class="spinner" />
       <p>Loading subscription...</p>
     </div>
 
     <!-- No Subscription (should not happen - all users have subscriptions) -->
-    <div v-else-if="!user.subscription" class="status-error">
+    <div
+      v-else-if="!user.subscription"
+      class="status-error"
+    >
       <p>No subscription found. Please contact support.</p>
     </div>
 
     <!-- Active Trial -->
-    <div v-else-if="isInTrial && !isTrialExpired" class="status-trial">
+    <div
+      v-else-if="isInTrial && !isTrialExpired"
+      class="status-trial"
+    >
       <div class="status-header">
         <h3>Free Trial Active</h3>
         <span class="status-badge trial">Trial</span>
@@ -26,16 +35,25 @@
         <p v-if="user.subscription.trialEndsAt">
           <strong>Trial ends:</strong> {{ formatDate(user.subscription.trialEndsAt) }}
         </p>
-        <p class="trial-note">Upgrade to Pro to continue enjoying premium features after your trial ends.</p>
+        <p class="trial-note">
+          Upgrade to Pro to continue enjoying premium features after your trial ends.
+        </p>
       </div>
 
-      <button @click="handleUpgrade" class="btn-primary" :disabled="loading">
+      <button
+        class="btn-primary"
+        :disabled="loading"
+        @click="handleUpgrade"
+      >
         {{ loading ? 'Loading...' : 'Upgrade to Pro ($19/month)' }}
       </button>
     </div>
 
     <!-- Expired Trial -->
-    <div v-else-if="isInTrial && isTrialExpired" class="status-expired">
+    <div
+      v-else-if="isInTrial && isTrialExpired"
+      class="status-expired"
+    >
       <div class="status-header">
         <h3>Trial Expired</h3>
         <span class="status-badge expired">Expired</span>
@@ -43,13 +61,20 @@
       
       <p>Your free trial has ended. Upgrade to Pro to continue accessing premium features.</p>
 
-      <button @click="handleUpgrade" class="btn-primary" :disabled="loading">
+      <button
+        class="btn-primary"
+        :disabled="loading"
+        @click="handleUpgrade"
+      >
         {{ loading ? 'Loading...' : 'Upgrade to Pro ($19/month)' }}
       </button>
     </div>
 
     <!-- Active Paid Subscription -->
-    <div v-else-if="user.subscription.status === 'ACTIVE'" class="status-active">
+    <div
+      v-else-if="user.subscription.status === 'ACTIVE'"
+      class="status-active"
+    >
       <div class="status-header">
         <h3>Datoro Pro</h3>
         <span class="status-badge active">Active</span>
@@ -60,21 +85,28 @@
         <p v-if="user.subscription.currentPeriodEnd">
           <strong>Next billing:</strong> {{ formatDate(user.subscription.currentPeriodEnd) }}
         </p>
-        <p v-if="user.subscription.cancelAtPeriodEnd && user.subscription.currentPeriodEnd" class="cancel-notice">
+        <p
+          v-if="user.subscription.cancelAtPeriodEnd && user.subscription.currentPeriodEnd"
+          class="cancel-notice"
+        >
           ⚠️ Your subscription will be canceled on {{ formatDate(user.subscription.currentPeriodEnd) }}
         </p>
       </div>
 
       <div class="action-buttons">
-        <button @click="handleManageSubscription" class="btn-secondary" :disabled="loading">
+        <button
+          class="btn-secondary"
+          :disabled="loading"
+          @click="handleManageSubscription"
+        >
           {{ loading ? 'Loading...' : 'Manage Subscription' }}
         </button>
         
         <button 
           v-if="user.subscription.cancelAtPeriodEnd" 
-          @click="handleResume" 
           class="btn-primary" 
-          :disabled="loading"
+          :disabled="loading" 
+          @click="handleResume"
         >
           {{ loading ? 'Loading...' : 'Resume Subscription' }}
         </button>
@@ -82,7 +114,10 @@
     </div>
 
     <!-- Other Status (Past Due, Canceled, etc.) -->
-    <div v-else class="status-inactive">
+    <div
+      v-else
+      class="status-inactive"
+    >
       <div class="status-header">
         <h3>Subscription Issue</h3>
         <span class="status-badge inactive">{{ user.subscription.status }}</span>
@@ -90,13 +125,20 @@
       
       <p>There's an issue with your subscription. Please update your payment method.</p>
 
-      <button @click="handleManageSubscription" class="btn-primary" :disabled="loading">
+      <button
+        class="btn-primary"
+        :disabled="loading"
+        @click="handleManageSubscription"
+      >
         {{ loading ? 'Loading...' : 'Update Payment Method' }}
       </button>
     </div>
 
     <!-- Error Message -->
-    <div v-if="error" class="error-message">
+    <div
+      v-if="error"
+      class="error-message"
+    >
       {{ error }}
     </div>
   </div>

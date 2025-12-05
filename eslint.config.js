@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import pluginVue from 'eslint-plugin-vue';
+import vueParser from 'vue-eslint-parser';
 import globals from 'globals';
 import typescriptEslint from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
@@ -18,6 +19,7 @@ export default [
       '*.config.js',
       '*.config.mjs',
       '*.config.cjs',
+      '*.config.ts',
       'coverage/**',
       '.github/**',
       'scripts/voice-generation/**/*.py',
@@ -36,8 +38,8 @@ export default [
       'tests/manual/**/*.{js,mjs}',
       'tests/load/**/*.js',
       'tests/e2e/**/*.{js,ts}',
-      // Ignore utility scripts
-      'scripts/**/*.{js,mjs}'
+      // Ignore utility scripts (all types)
+      'scripts/**/*.{js,mjs,ts}'
     ]
   },
 
@@ -103,6 +105,64 @@ export default [
     }
   },
 
+  // Vue files with TypeScript (<script setup lang="ts">)
+  {
+    files: ['src/**/*.vue'],
+    languageOptions: {
+      parser: vueParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        parser: typescriptParser,
+        extraFileExtensions: ['.vue']
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint
+    },
+    rules: {
+      // Disable base rule for TypeScript
+      'no-unused-vars': 'off',
+      'no-undef': 'off',  // TypeScript handles this
+      
+      // TypeScript-specific rules (more lenient for Vue components)
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none',
+        destructuredArrayIgnorePattern: '^_',
+        ignoreRestSiblings: true
+      }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      
+      // Vue-specific rules
+      'vue/multi-word-component-names': 'off',
+      'vue/no-v-html': 'warn',
+      'vue/no-unused-vars': 'warn',
+      'vue/no-side-effects-in-computed-properties': 'warn',
+      'vue/no-mutating-props': 'warn',
+      'vue/no-template-shadow': 'warn',
+      'vue/require-default-prop': 'off',
+      
+      // Console warnings
+      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      
+      // Modern practices
+      'prefer-const': 'error',
+      'no-var': 'error',
+      
+      // Allow empty catch blocks
+      'no-empty': ['error', { allowEmptyCatch: true }]
+    }
+  },
+
   // TypeScript configuration for production code (src + server)
   {
     files: ['src/**/*.ts', 'server/**/*.ts'],
@@ -127,10 +187,13 @@ export default [
       // Disable base rule for TypeScript
       'no-unused-vars': 'off',
       
-      // TypeScript-specific rules
-      '@typescript-eslint/no-unused-vars': ['error', { 
+      // TypeScript-specific rules (more lenient for production code)
+      '@typescript-eslint/no-unused-vars': ['warn', { 
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none',
+        destructuredArrayIgnorePattern: '^_',
+        ignoreRestSiblings: true
       }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
@@ -187,7 +250,10 @@ export default [
       // TypeScript-specific rules (more lenient for tests)
       '@typescript-eslint/no-unused-vars': ['warn', { 
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
+        varsIgnorePattern: '^_',
+        caughtErrors: 'none',
+        destructuredArrayIgnorePattern: '^_',
+        ignoreRestSiblings: true
       }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',

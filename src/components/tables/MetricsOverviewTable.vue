@@ -15,8 +15,8 @@
       @close="closeChartModal"
     >
       <component
-        v-if="selectedMetric"
         :is="selectedMetric.component"
+        v-if="selectedMetric"
         :key="selectedMetric.key"
       />
     </ChartModal>

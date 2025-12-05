@@ -1,6 +1,8 @@
 <template>
   <div class="dcf-inputs">
-    <h3 class="section-title">Model Assumptions</h3>
+    <h3 class="section-title">
+      Model Assumptions
+    </h3>
     
     <div class="inputs-grid">
       <!-- Current Company Data (Read-only) -->
@@ -12,13 +14,19 @@
         </div>
         <div class="scenario-inputs">
           <div class="input-wrapper readonly">
-            <div class="readonly-value">{{ formatEps(companyData?.eps) }}</div>
+            <div class="readonly-value">
+              {{ formatEps(companyData?.eps) }}
+            </div>
           </div>
           <div class="input-wrapper readonly">
-            <div class="readonly-value">{{ formatPE(companyData?.currentPE) }}</div>
+            <div class="readonly-value">
+              {{ formatPE(companyData?.currentPE) }}
+            </div>
           </div>
           <div class="input-wrapper readonly">
-            <div class="readonly-value">{{ formatGrowth(companyData?.epsGrowth) }}</div>
+            <div class="readonly-value">
+              {{ formatGrowth(companyData?.epsGrowth) }}
+            </div>
           </div>
         </div>
       </div>
@@ -36,34 +44,34 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.fcfGrowthRate.best"
-              @input="handleInput('fcfGrowthRate', 'best', $event)"
               type="number"
               step="0.1"
               min="-50"
               max="100"
-            />
+              @input="handleInput('fcfGrowthRate', 'best', $event)"
+            >
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper average-case">
             <input
               :value="modelValue.fcfGrowthRate.average"
-              @input="handleInput('fcfGrowthRate', 'average', $event)"
               type="number"
               step="0.1"
               min="-50"
               max="100"
-            />
+              @input="handleInput('fcfGrowthRate', 'average', $event)"
+            >
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper worst-case">
             <input
               :value="modelValue.fcfGrowthRate.worst"
-              @input="handleInput('fcfGrowthRate', 'worst', $event)"
               type="number"
               step="0.1"
               min="-50"
               max="100"
-            />
+              @input="handleInput('fcfGrowthRate', 'worst', $event)"
+            >
             <span class="input-suffix">%</span>
           </div>
         </div>
@@ -77,34 +85,34 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.peRatio.best"
-              @input="handleInput('peRatio', 'best', $event)"
               type="number"
               step="0.5"
               min="0"
               max="100"
-            />
+              @input="handleInput('peRatio', 'best', $event)"
+            >
             <span class="input-suffix">x</span>
           </div>
           <div class="input-wrapper average-case">
             <input
               :value="modelValue.peRatio.average"
-              @input="handleInput('peRatio', 'average', $event)"
               type="number"
               step="0.5"
               min="0"
               max="100"
-            />
+              @input="handleInput('peRatio', 'average', $event)"
+            >
             <span class="input-suffix">x</span>
           </div>
           <div class="input-wrapper worst-case">
             <input
               :value="modelValue.peRatio.worst"
-              @input="handleInput('peRatio', 'worst', $event)"
               type="number"
               step="0.5"
               min="0"
               max="100"
-            />
+              @input="handleInput('peRatio', 'worst', $event)"
+            >
             <span class="input-suffix">x</span>
           </div>
         </div>
@@ -118,34 +126,34 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.discountRate.best"
-              @input="handleInput('discountRate', 'best', $event)"
               type="number"
               step="0.1"
               min="0"
               max="30"
-            />
+              @input="handleInput('discountRate', 'best', $event)"
+            >
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper average-case">
             <input
               :value="modelValue.discountRate.average"
-              @input="handleInput('discountRate', 'average', $event)"
               type="number"
               step="0.1"
               min="0"
               max="30"
-            />
+              @input="handleInput('discountRate', 'average', $event)"
+            >
             <span class="input-suffix">%</span>
           </div>
           <div class="input-wrapper worst-case">
             <input
               :value="modelValue.discountRate.worst"
-              @input="handleInput('discountRate', 'worst', $event)"
               type="number"
               step="0.1"
               min="0"
               max="30"
-            />
+              @input="handleInput('discountRate', 'worst', $event)"
+            >
             <span class="input-suffix">%</span>
           </div>
         </div>
@@ -159,12 +167,12 @@
           <div class="input-wrapper best-case">
             <input
               :value="modelValue.projectionYears"
-              @input="handleInput('projectionYears', null, $event)"
               type="number"
               step="1"
               min="3"
               max="10"
-            />
+              @input="handleInput('projectionYears', null, $event)"
+            >
             <span class="input-suffix">yrs</span>
           </div>
         </div>
@@ -173,10 +181,21 @@
     </div>
 
     <div class="actions">
-      <button class="reset-button" @click="resetToDefaults">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="1 4 1 10 7 10"></polyline>
-          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+      <button
+        class="reset-button"
+        @click="resetToDefaults"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
         </svg>
         Reset to Defaults
       </button>

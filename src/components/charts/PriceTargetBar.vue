@@ -4,11 +4,24 @@
       Analyst Price Target
     </h3>
     
-    <div v-if="loading" class="loading">Loading price target data...</div>
+    <div
+      v-if="loading"
+      class="loading"
+    >
+      Loading price target data...
+    </div>
     
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div
+      v-else-if="error"
+      class="error"
+    >
+      {{ error }}
+    </div>
     
-    <div v-else-if="hasData" class="visualization">
+    <div
+      v-else-if="hasData"
+      class="visualization"
+    >
       <!-- Labels above bar -->
       <div class="labels-row">
         <div class="label-item undervalued">
@@ -51,8 +64,12 @@
         >
           <div class="marker-line" />
           <div class="marker-label">
-            <div class="marker-value">${{ currentPrice.toFixed(2) }}</div>
-            <div class="marker-name">Current</div>
+            <div class="marker-value">
+              ${{ currentPrice.toFixed(2) }}
+            </div>
+            <div class="marker-name">
+              Current
+            </div>
           </div>
         </div>
 
@@ -64,25 +81,41 @@
         >
           <div class="marker-line target" />
           <div class="marker-label target">
-            <div class="marker-value">${{ targetConsensus.toFixed(2) }}</div>
-            <div class="marker-name">Consensus</div>
+            <div class="marker-value">
+              ${{ targetConsensus.toFixed(2) }}
+            </div>
+            <div class="marker-name">
+              Consensus
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Price range labels -->
       <div class="range-labels">
-        <span class="range-label left" :title="`Low: $${targetLow.toFixed(2)}`">${{ minPrice.toFixed(2) }}</span>
-        <span class="range-label right" :title="`High: $${targetHigh.toFixed(2)}`">${{ maxPrice.toFixed(2) }}</span>
+        <span
+          class="range-label left"
+          :title="`Low: $${targetLow.toFixed(2)}`"
+        >${{ minPrice.toFixed(2) }}</span>
+        <span
+          class="range-label right"
+          :title="`High: $${targetHigh.toFixed(2)}`"
+        >${{ maxPrice.toFixed(2) }}</span>
       </div>
 
       <!-- Analysis text -->
-      <div class="analysis-text" :class="analysisClass">
+      <div
+        class="analysis-text"
+        :class="analysisClass"
+      >
         {{ analysisMessage }}
       </div>
     </div>
 
-    <div v-else class="no-data">
+    <div
+      v-else
+      class="no-data"
+    >
       No analyst price target data available for this stock
     </div>
   </div>

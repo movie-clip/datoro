@@ -1,8 +1,27 @@
 <template>
-  <div v-if="isOpen" class="auth-modal-overlay" @click.self="closeModal">
-    <div class="auth-modal" role="dialog" aria-modal="true">
-      <button class="close-button" @click="closeModal" aria-label="Close">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <div
+    v-if="isOpen"
+    class="auth-modal-overlay"
+    @click.self="closeModal"
+  >
+    <div
+      class="auth-modal"
+      role="dialog"
+      aria-modal="true"
+    >
+      <button
+        class="close-button"
+        aria-label="Close"
+        @click="closeModal"
+      >
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
@@ -23,9 +42,15 @@
       </div>
       
       <!-- Sign In Form -->
-      <form v-if="activeTab === 'signin'" @submit.prevent="handleSignIn" class="auth-form">
+      <form
+        v-if="activeTab === 'signin'"
+        class="auth-form"
+        @submit.prevent="handleSignIn"
+      >
         <h2>Welcome Back</h2>
-        <p class="subtitle">Sign in to access premium features</p>
+        <p class="subtitle">
+          Sign in to access premium features
+        </p>
         
         <div class="form-group">
           <label for="signin-email">Email</label>
@@ -36,7 +61,7 @@
             placeholder="you@example.com"
             required
             autocomplete="email"
-          />
+          >
         </div>
         
         <div class="form-group">
@@ -48,12 +73,21 @@
             placeholder="••••••••"
             required
             autocomplete="current-password"
-          />
+          >
         </div>
         
-        <div v-if="error" class="error-message">{{ error }}</div>
+        <div
+          v-if="error"
+          class="error-message"
+        >
+          {{ error }}
+        </div>
         
-        <button type="submit" class="submit-button" :disabled="loading">
+        <button
+          type="submit"
+          class="submit-button"
+          :disabled="loading"
+        >
           <span v-if="!loading">Sign In</span>
           <span v-else>Signing in...</span>
         </button>
@@ -62,21 +96,49 @@
           <span>or</span>
         </div>
         
-        <button type="button" class="google-button" @click="handleGoogleSignIn" :disabled="loading">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-            <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.183l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9.003 18z" fill="#34A853"/>
-            <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z" fill="#FBBC05"/>
-            <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+        <button
+          type="button"
+          class="google-button"
+          :disabled="loading"
+          @click="handleGoogleSignIn"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+          >
+            <path
+              d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
+              fill="#4285F4"
+            />
+            <path
+              d="M9.003 18c2.43 0 4.467-.806 5.956-2.183l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9.003 18z"
+              fill="#34A853"
+            />
+            <path
+              d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29c.708-2.127 2.692-3.71 5.036-3.71z"
+              fill="#EA4335"
+            />
           </svg>
           Continue with Google
         </button>
       </form>
       
       <!-- Sign Up Form -->
-      <form v-else @submit.prevent="handleSignUp" class="auth-form">
+      <form
+        v-else
+        class="auth-form"
+        @submit.prevent="handleSignUp"
+      >
         <h2>Create Account</h2>
-        <p class="subtitle">Start your free trial today</p>
+        <p class="subtitle">
+          Start your free trial today
+        </p>
         
         <div class="form-group">
           <label for="signup-name">Name (optional)</label>
@@ -86,7 +148,7 @@
             type="text" 
             placeholder="John Doe"
             autocomplete="name"
-          />
+          >
         </div>
         
         <div class="form-group">
@@ -98,7 +160,7 @@
             placeholder="you@example.com"
             required
             autocomplete="email"
-          />
+          >
         </div>
         
         <div class="form-group">
@@ -110,13 +172,22 @@
             placeholder="••••••••"
             required
             autocomplete="new-password"
-          />
+          >
           <small class="hint">Min 8 characters, 1 uppercase, 1 lowercase, 1 number</small>
         </div>
         
-        <div v-if="error" class="error-message">{{ error }}</div>
+        <div
+          v-if="error"
+          class="error-message"
+        >
+          {{ error }}
+        </div>
         
-        <button type="submit" class="submit-button" :disabled="loading">
+        <button
+          type="submit"
+          class="submit-button"
+          :disabled="loading"
+        >
           <span v-if="!loading">Create Account</span>
           <span v-else>Creating account...</span>
         </button>
@@ -125,20 +196,48 @@
           <span>or</span>
         </div>
         
-        <button type="button" class="google-button" @click="handleGoogleSignIn" :disabled="loading">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-            <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.183l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9.003 18z" fill="#34A853"/>
-            <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z" fill="#FBBC05"/>
-            <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+        <button
+          type="button"
+          class="google-button"
+          :disabled="loading"
+          @click="handleGoogleSignIn"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+          >
+            <path
+              d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
+              fill="#4285F4"
+            />
+            <path
+              d="M9.003 18c2.43 0 4.467-.806 5.956-2.183l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9.003 18z"
+              fill="#34A853"
+            />
+            <path
+              d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29c.708-2.127 2.692-3.71 5.036-3.71z"
+              fill="#EA4335"
+            />
           </svg>
           Continue with Google
         </button>
         
         <p class="terms">
           By creating an account, you agree to our 
-          <a href="/terms" target="_blank">Terms of Service</a> and 
-          <a href="/privacy" target="_blank">Privacy Policy</a>.
+          <a
+            href="/terms"
+            target="_blank"
+          >Terms of Service</a> and 
+          <a
+            href="/privacy"
+            target="_blank"
+          >Privacy Policy</a>.
         </p>
       </form>
     </div>

@@ -3,12 +3,19 @@
     <!-- Dropdown Trigger -->
     <button 
       class="dropdown-trigger"
-      @click="toggleDropdown"
       :disabled="loading"
+      @click="toggleDropdown"
     >
       <div class="trigger-content">
-        <svg class="watchlist-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        <svg
+          class="watchlist-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
         <span class="watchlist-name">{{ currentWatchlistName }}</span>
         <svg 
@@ -20,14 +27,18 @@
           stroke="currentColor" 
           stroke-width="2"
         >
-          <polyline points="6 9 12 15 18 9"></polyline>
+          <polyline points="6 9 12 15 18 9" />
         </svg>
       </div>
     </button>
 
     <!-- Dropdown Menu -->
     <Transition name="dropdown">
-      <div v-if="isOpen" class="dropdown-menu" @click.stop>
+      <div
+        v-if="isOpen"
+        class="dropdown-menu"
+        @click.stop
+      >
         <!-- Watchlist List -->
         <div class="watchlist-section">
           <div class="section-header">
@@ -49,22 +60,34 @@
               <div class="watchlist-actions">
                 <button 
                   class="action-btn rename-btn"
-                  @click.stop="startRename(watchlist)"
                   title="Rename watchlist"
+                  @click.stop="startRename(watchlist)"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </button>
                 <button 
                   class="action-btn delete-btn"
-                  @click.stop="confirmDelete(watchlist)"
                   title="Delete watchlist"
+                  @click.stop="confirmDelete(watchlist)"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>
                 </button>
               </div>
@@ -72,19 +95,36 @@
           </div>
         </div>
 
-        <div class="dropdown-divider"></div>
+        <div class="dropdown-divider" />
 
         <!-- Create New Watchlist -->
         <button 
           class="create-new-btn" 
           :class="{ 'is-disabled': watchlists.length >= 5 }"
           :disabled="watchlists.length >= 5"
-          @click="startCreate"
           :title="watchlists.length >= 5 ? 'Maximum of 5 watchlists reached' : 'Create a new watchlist'"
+          @click="startCreate"
         >
-          <svg class="plus-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
+          <svg
+            class="plus-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line
+              x1="12"
+              y1="5"
+              x2="12"
+              y2="19"
+            />
+            <line
+              x1="5"
+              y1="12"
+              x2="19"
+              y2="12"
+            />
           </svg>
           <span>Create New Watchlist{{ watchlists.length >= 5 ? ' (Max 5)' : '' }}</span>
         </button>
@@ -93,8 +133,15 @@
 
     <!-- Create/Rename Modal -->
     <Transition name="modal">
-      <div v-if="showModal" class="modal-overlay" @click="cancelModal">
-        <div class="modal-content" @click.stop>
+      <div
+        v-if="showModal"
+        class="modal-overlay"
+        @click="cancelModal"
+      >
+        <div
+          class="modal-content"
+          @click.stop
+        >
           <h3 class="modal-title">
             {{ modalMode === 'create' ? 'Create New Watchlist' : 'Rename Watchlist' }}
           </h3>
@@ -111,28 +158,45 @@
           >
           
           <div class="modal-actions">
-            <button class="modal-btn cancel-btn" @click="cancelModal">
+            <button
+              class="modal-btn cancel-btn"
+              @click="cancelModal"
+            >
               Cancel
             </button>
             <button 
               class="modal-btn confirm-btn" 
-              @click="confirmModal"
               :disabled="!modalInputValue.trim()"
+              @click="confirmModal"
             >
               {{ modalMode === 'create' ? 'Create' : 'Rename' }}
             </button>
           </div>
 
-          <p v-if="modalError" class="modal-error">{{ modalError }}</p>
+          <p
+            v-if="modalError"
+            class="modal-error"
+          >
+            {{ modalError }}
+          </p>
         </div>
       </div>
     </Transition>
 
     <!-- Delete Confirmation Modal -->
     <Transition name="modal">
-      <div v-if="showDeleteConfirm" class="modal-overlay" @click="cancelDelete">
-        <div class="modal-content delete-modal" @click.stop>
-          <h3 class="modal-title">Delete Watchlist?</h3>
+      <div
+        v-if="showDeleteConfirm"
+        class="modal-overlay"
+        @click="cancelDelete"
+      >
+        <div
+          class="modal-content delete-modal"
+          @click.stop
+        >
+          <h3 class="modal-title">
+            Delete Watchlist?
+          </h3>
           
           <p class="delete-warning">
             Are you sure you want to delete "<strong>{{ watchlistToDelete?.name }}</strong>"?
@@ -140,15 +204,26 @@
           </p>
           
           <div class="modal-actions">
-            <button class="modal-btn cancel-btn" @click="cancelDelete">
+            <button
+              class="modal-btn cancel-btn"
+              @click="cancelDelete"
+            >
               Cancel
             </button>
-            <button class="modal-btn delete-btn" @click="executeDelete">
+            <button
+              class="modal-btn delete-btn"
+              @click="executeDelete"
+            >
               Delete
             </button>
           </div>
 
-          <p v-if="deleteError" class="modal-error">{{ deleteError }}</p>
+          <p
+            v-if="deleteError"
+            class="modal-error"
+          >
+            {{ deleteError }}
+          </p>
         </div>
       </div>
     </Transition>

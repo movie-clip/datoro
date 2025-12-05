@@ -334,7 +334,7 @@ export function getEarningsFromBatch(batchData: BatchData | null): EarningsRepor
         
         // Calculate quarter from fiscal date
         const month = fiscalDate.getMonth() + 1
-        let quarter = Math.ceil(month / 3)
+        const quarter = Math.ceil(month / 3)
         const fiscalQuarter = `Q${quarter} ${fiscalDate.getFullYear()}`
         
         // Format report date

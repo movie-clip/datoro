@@ -68,8 +68,6 @@ export function getFCFYieldColor(fcfYield: number | null | undefined): string | 
     : fcfYield > 2 ? COLORS.metrics.excellent
     : fcfYield >= 1 ? COLORS.metrics.acceptable
     : COLORS.metrics.poor
-  
-  console.log(`FCF Yield Color Debug: value=${fcfYield}, color=${result}`)
   return result
 }
 

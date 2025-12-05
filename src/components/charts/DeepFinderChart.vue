@@ -1,15 +1,24 @@
 <template>
   <div class="deep-finder-chart">
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
+    <div
+      v-if="loading"
+      class="loading-state"
+    >
+      <div class="spinner" />
       <p>Loading data...</p>
     </div>
     
-    <div v-else-if="error" class="error">
+    <div
+      v-else-if="error"
+      class="error"
+    >
       <p>{{ error }}</p>
     </div>
     
-    <div v-else-if="props.tickers.length === 0" class="no-data">
+    <div
+      v-else-if="props.tickers.length === 0"
+      class="no-data"
+    >
       <p>Add stocks to your watchlist to analyze them here</p>
     </div>
     
@@ -42,7 +51,10 @@
       </div>
     </div>
     
-    <div v-else class="no-data">
+    <div
+      v-else
+      class="no-data"
+    >
       No data available
     </div>
   </div>

@@ -1,63 +1,106 @@
 <template>
   <div class="verify-email-page">
     <!-- Loading State -->
-    <div v-if="status === 'verifying'" class="verify-card">
-      <div class="spinner"></div>
+    <div
+      v-if="status === 'verifying'"
+      class="verify-card"
+    >
+      <div class="spinner" />
       <h2>Verifying Your Email...</h2>
       <p>Please wait while we confirm your email address.</p>
     </div>
 
     <!-- Success State -->
-    <div v-else-if="status === 'success'" class="verify-card success">
+    <div
+      v-else-if="status === 'success'"
+      class="verify-card success"
+    >
       <div class="icon-check">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M20 6L9 17l-5-5" />
         </svg>
       </div>
       <h2>Email Verified Successfully!</h2>
       <p>Your email has been confirmed. You can now access all features.</p>
-      <button @click="closeAndLogin" class="btn-primary">
+      <button
+        class="btn-primary"
+        @click="closeAndLogin"
+      >
         Continue to App
       </button>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="status === 'error'" class="verify-card error">
+    <div
+      v-else-if="status === 'error'"
+      class="verify-card error"
+    >
       <div class="icon-error">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
       <h2>Verification Failed</h2>
       <p>{{ errorMessage }}</p>
-      <div v-if="canResend" class="resend-section">
-        <p class="resend-hint">Need a new verification link?</p>
+      <div
+        v-if="canResend"
+        class="resend-section"
+      >
+        <p class="resend-hint">
+          Need a new verification link?
+        </p>
         <button 
-          @click="resendEmail" 
-          :disabled="resendLoading"
+          :disabled="resendLoading" 
           class="btn-secondary"
+          @click="resendEmail"
         >
           {{ resendLoading ? 'Sending...' : 'Resend Verification Email' }}
         </button>
-        <p v-if="resendSuccess" class="success-message">
+        <p
+          v-if="resendSuccess"
+          class="success-message"
+        >
           ✓ Verification email sent! Please check your inbox.
         </p>
       </div>
-      <button @click="close" class="btn-text">
+      <button
+        class="btn-text"
+        @click="close"
+      >
         Back to App
       </button>
     </div>
 
     <!-- Pending State (for when user just registered) -->
-    <div v-else-if="status === 'pending'" class="verify-card pending">
+    <div
+      v-else-if="status === 'pending'"
+      class="verify-card pending"
+    >
       <div class="icon-mail">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       </div>
       <h2>Check Your Email</h2>
       <p>We've sent a verification link to <strong>{{ userEmail }}</strong></p>
-      <p class="verify-hint">Click the link in the email to verify your account.</p>
+      <p class="verify-hint">
+        Click the link in the email to verify your account.
+      </p>
       
       <div class="tips">
         <h3>Didn't receive the email?</h3>
@@ -69,17 +112,23 @@
       </div>
 
       <button 
-        @click="resendEmail" 
-        :disabled="resendLoading || cooldownSeconds > 0"
+        :disabled="resendLoading || cooldownSeconds > 0" 
         class="btn-secondary"
+        @click="resendEmail"
       >
         {{ resendLoading ? 'Sending...' : cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : 'Resend Verification Email' }}
       </button>
-      <p v-if="resendSuccess" class="success-message">
+      <p
+        v-if="resendSuccess"
+        class="success-message"
+      >
         ✓ Email sent! Check your inbox.
       </p>
 
-      <button @click="close" class="btn-text">
+      <button
+        class="btn-text"
+        @click="close"
+      >
         I'll verify later
       </button>
     </div>

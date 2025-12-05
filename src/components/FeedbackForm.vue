@@ -1,16 +1,33 @@
 <template>
   <div class="feedback-form">
     <!-- Success Message -->
-    <div v-if="submitted" class="success-message">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    <div
+      v-if="submitted"
+      class="success-message"
+    >
+      <svg
+        class="icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
       </svg>
       <h3>Thank you!</h3>
       <p>Your feedback has been submitted successfully.</p>
     </div>
 
     <!-- Form -->
-    <form v-else @submit.prevent="submitFeedback" class="form">
+    <form
+      v-else
+      class="form"
+      @submit.prevent="submitFeedback"
+    >
       <!-- Name -->
       <div class="form-group">
         <label for="name">Name</label>
@@ -21,7 +38,7 @@
           placeholder="Your name"
           :disabled="loading"
           required
-        />
+        >
       </div>
 
       <!-- Email -->
@@ -34,17 +51,29 @@
           placeholder="your.email@example.com"
           :disabled="loading"
           required
-        />
+        >
       </div>
 
       <!-- Category -->
       <div class="form-group">
         <label for="category">Category</label>
-        <select id="category" v-model="formData.category" :disabled="loading">
-          <option value="general">General Feedback</option>
-          <option value="bug">Bug Report</option>
-          <option value="feature">Feature Request</option>
-          <option value="other">Other</option>
+        <select
+          id="category"
+          v-model="formData.category"
+          :disabled="loading"
+        >
+          <option value="general">
+            General Feedback
+          </option>
+          <option value="bug">
+            Bug Report
+          </option>
+          <option value="feature">
+            Feature Request
+          </option>
+          <option value="other">
+            Other
+          </option>
         </select>
       </div>
 
@@ -59,17 +88,29 @@
           :disabled="loading"
           required
         />
-        <div class="char-count">{{ formData.message.length }} / 2000</div>
+        <div class="char-count">
+          {{ formData.message.length }} / 2000
+        </div>
       </div>
 
       <!-- Error Message -->
-      <div v-if="error" class="error-message">
+      <div
+        v-if="error"
+        class="error-message"
+      >
         {{ error }}
       </div>
 
       <!-- Submit Button -->
-      <button type="submit" class="btn-primary" :disabled="loading || !isFormValid">
-        <span v-if="loading" class="spinner"></span>
+      <button
+        type="submit"
+        class="btn-primary"
+        :disabled="loading || !isFormValid"
+      >
+        <span
+          v-if="loading"
+          class="spinner"
+        />
         <span v-else>Send Feedback</span>
       </button>
     </form>

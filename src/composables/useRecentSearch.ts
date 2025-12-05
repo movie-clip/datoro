@@ -22,7 +22,7 @@ export function useRecentSearch(): RecentSearchReturn {
       const stored = sessionStorage.getItem(STORAGE_KEY)
       return stored ? JSON.parse(stored) : []
     } catch (_err) {
-      console.error('[RecentSearch] Failed to load from sessionStorage:', err)
+      console.error('[RecentSearch] Failed to load from sessionStorage:', _err)
       return []
     }
   }
@@ -34,7 +34,7 @@ export function useRecentSearch(): RecentSearchReturn {
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(recentSearches.value))
     } catch (_err) {
-      console.error('[RecentSearch] Failed to save to sessionStorage:', err)
+      console.error('[RecentSearch] Failed to save to sessionStorage:', _err)
     }
   }
 

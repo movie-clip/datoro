@@ -15,9 +15,17 @@
     <!-- Scrollable Body -->
     <div class="macro-body">
       <!-- Error State -->
-      <div v-if="error" class="error-state">
+      <div
+        v-if="error"
+        class="error-state"
+      >
         <p>{{ error }}</p>
-        <button @click="retry" class="retry-btn">Retry</button>
+        <button
+          class="retry-btn"
+          @click="retry"
+        >
+          Retry
+        </button>
       </div>
 
       <!-- Charts Grid -->

@@ -1,5 +1,8 @@
 <template>
-  <div v-if="growthData" class="growth-labels">
+  <div
+    v-if="growthData"
+    class="growth-labels"
+  >
     <!-- Short-term mode: 1D, 1W, 1M -->
     <template v-if="growthData.oneDay !== undefined">
       <div

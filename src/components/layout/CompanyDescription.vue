@@ -3,7 +3,9 @@
     v-if="description" 
     class="company-description"
   >
-    <h4 class="description-title">About</h4>
+    <h4 class="description-title">
+      About
+    </h4>
     <div class="description-content">
       <p 
         :class="{ 'description-collapsed': !isExpanded }"

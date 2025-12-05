@@ -1,10 +1,15 @@
 <template>
   <Transition name="cookie-consent">
-    <div v-if="showBanner" class="cookie-overlay">
+    <div
+      v-if="showBanner"
+      class="cookie-overlay"
+    >
       <div class="cookie-panel">
         <!-- Header -->
         <div class="cookie-header">
-          <h2 class="cookie-title">Your Privacy</h2>
+          <h2 class="cookie-title">
+            Your Privacy
+          </h2>
           <p class="cookie-subtitle">
             We use cookies to improve your experience and analyze site traffic.
           </p>
@@ -17,18 +22,23 @@
             <div class="cookie-item-left">
               <div class="checkbox-wrapper">
                 <input 
-                  type="checkbox" 
                   id="essential" 
+                  type="checkbox" 
                   checked 
                   disabled
                   class="cookie-check"
-                />
-                <label for="essential" class="cookie-label">
+                >
+                <label
+                  for="essential"
+                  class="cookie-label"
+                >
                   Essential
                   <span class="badge-required">Always Active</span>
                 </label>
               </div>
-              <p class="cookie-desc">Required for site functionality</p>
+              <p class="cookie-desc">
+                Required for site functionality
+              </p>
             </div>
           </div>
 
@@ -37,14 +47,19 @@
             <div class="cookie-item-left">
               <div class="checkbox-wrapper">
                 <input 
-                  type="checkbox" 
                   id="analytics" 
-                  v-model="preferences.analytics"
+                  v-model="preferences.analytics" 
+                  type="checkbox"
                   class="cookie-check"
-                />
-                <label for="analytics" class="cookie-label">Analytics</label>
+                >
+                <label
+                  for="analytics"
+                  class="cookie-label"
+                >Analytics</label>
               </div>
-              <p class="cookie-desc">Help us improve user experience</p>
+              <p class="cookie-desc">
+                Help us improve user experience
+              </p>
             </div>
           </div>
 
@@ -53,14 +68,19 @@
             <div class="cookie-item-left">
               <div class="checkbox-wrapper">
                 <input 
-                  type="checkbox" 
                   id="advertising" 
-                  v-model="preferences.advertising"
+                  v-model="preferences.advertising" 
+                  type="checkbox"
                   class="cookie-check"
-                />
-                <label for="advertising" class="cookie-label">Advertising</label>
+                >
+                <label
+                  for="advertising"
+                  class="cookie-label"
+                >Advertising</label>
               </div>
-              <p class="cookie-desc">Personalized ads and analytics</p>
+              <p class="cookie-desc">
+                Personalized ads and analytics
+              </p>
             </div>
           </div>
         </div>
@@ -68,17 +88,29 @@
         <!-- Actions -->
         <div class="cookie-footer">
           <div class="cookie-actions">
-            <button @click="rejectAll" class="btn btn-secondary">
+            <button
+              class="btn btn-secondary"
+              @click="rejectAll"
+            >
               Reject all
             </button>
-            <button @click="acceptAll" class="btn btn-primary">
+            <button
+              class="btn btn-primary"
+              @click="acceptAll"
+            >
               Accept all
             </button>
           </div>
           <div class="cookie-links">
-            <a href="/privacy" class="link">Privacy</a>
+            <a
+              href="/privacy"
+              class="link"
+            >Privacy</a>
             <span class="dot">•</span>
-            <a href="/cookies" class="link">Cookies</a>
+            <a
+              href="/cookies"
+              class="link"
+            >Cookies</a>
           </div>
         </div>
       </div>
@@ -88,14 +120,25 @@
   <!-- Settings Icon (Always Visible) -->
   <button 
     v-if="!showBanner && consentGiven" 
-    @click="showBanner = true" 
-    class="cookie-icon"
+    class="cookie-icon" 
     title="Cookie Settings"
     aria-label="Cookie Settings"
+    @click="showBanner = true"
   >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M12 1v6m0 6v6m5.2-13.2l-3.5 3.5m-3.4 3.4l-3.5 3.5m13.2.2h-6m-6 0H1m13.2-5.2l-3.5-3.5m-3.4-3.4l-3.5-3.5"/>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="3"
+      />
+      <path d="M12 1v6m0 6v6m5.2-13.2l-3.5 3.5m-3.4 3.4l-3.5 3.5m13.2.2h-6m-6 0H1m13.2-5.2l-3.5-3.5m-3.4-3.4l-3.5-3.5" />
     </svg>
   </button>
 </template>

@@ -2,26 +2,60 @@
   <div class="sp500-price-chart">
     <div class="chart-header">
       <h3>S&P 500 Historical Price</h3>
-      <div v-if="!loading && priceData.length > 0" class="chart-info">
+      <div
+        v-if="!loading && priceData.length > 0"
+        class="chart-info"
+      >
         <span class="info-item">
           Range: {{ formatDate(selectedRange.start) }} - {{ formatDate(selectedRange.end) }}
         </span>
-        <span class="info-item performance" :class="rangePerformance >= 0 ? 'positive' : 'negative'">
+        <span
+          class="info-item performance"
+          :class="rangePerformance >= 0 ? 'positive' : 'negative'"
+        >
           Performance: {{ rangePerformance >= 0 ? '+' : '' }}{{ rangePerformance.toFixed(2) }}%
         </span>
       </div>
     </div>
     
-    <div v-if="loading" class="chart-loading">
-      <div class="spinner"></div>
+    <div
+      v-if="loading"
+      class="chart-loading"
+    >
+      <div class="spinner" />
       <span>Loading S&P 500 data...</span>
     </div>
     
-    <div v-else-if="error" class="chart-error">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    <div
+      v-else-if="error"
+      class="chart-error"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+        />
+        <line
+          x1="12"
+          y1="8"
+          x2="12"
+          y2="12"
+        />
+        <line
+          x1="12"
+          y1="16"
+          x2="12.01"
+          y2="16"
+        />
       </svg>
       <span>{{ error }}</span>
     </div>

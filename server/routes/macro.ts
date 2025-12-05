@@ -58,7 +58,7 @@ function initMacroRoutes(deps: { apiVersion?: string; fmpApiKey: string; isDatab
   /**
    * Fetch with timeout helper
    */
-  async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 10000): Promise<globalThis.Response> {
+  async function fetchWithTimeout(url: string, options: Parameters<typeof fetch>[1] = {}, timeout = 10000): Promise<globalThis.Response> {
     const controller = new AbortController()
     const id = setTimeout(() => controller.abort(), timeout)
     

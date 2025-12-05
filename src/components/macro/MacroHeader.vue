@@ -12,28 +12,55 @@
         </div>
       </div>
       
-      <div v-if="indexData.length > 0" class="index-cards">
-        <div v-for="(index, i) in indexData" :key="i" class="index-card">
-          <div class="index-name">{{ index.name }}</div>
-          <div class="index-change" :class="{ positive: index.change >= 0, negative: index.change < 0 }">
+      <div
+        v-if="indexData.length > 0"
+        class="index-cards"
+      >
+        <div
+          v-for="(index, i) in indexData"
+          :key="i"
+          class="index-card"
+        >
+          <div class="index-name">
+            {{ index.name }}
+          </div>
+          <div
+            class="index-change"
+            :class="{ positive: index.change >= 0, negative: index.change < 0 }"
+          >
             {{ index.change >= 0 ? '+' : '' }}{{ index.change.toFixed(2) }}%
           </div>
         </div>
       </div>
       
       <!-- Skeleton Loading (5 cards) -->
-      <div v-else-if="indexLoading" class="index-cards">
-        <div v-for="i in 5" :key="`skeleton-${i}`" class="index-card skeleton">
-          <div class="index-name skeleton-text"></div>
-          <div class="index-change skeleton-text"></div>
+      <div
+        v-else-if="indexLoading"
+        class="index-cards"
+      >
+        <div
+          v-for="i in 5"
+          :key="`skeleton-${i}`"
+          class="index-card skeleton"
+        >
+          <div class="index-name skeleton-text" />
+          <div class="index-change skeleton-text" />
         </div>
       </div>
       
       <!-- Error State -->
-      <div v-else-if="indexError" class="index-error">
+      <div
+        v-else-if="indexError"
+        class="index-error"
+      >
         <span class="error-icon">⚠️</span>
         <span class="error-text">{{ indexError }}</span>
-        <button class="retry-btn" @click="$emit('retry-index')">Retry</button>
+        <button
+          class="retry-btn"
+          @click="$emit('retry-index')"
+        >
+          Retry
+        </button>
       </div>
     </div>
   </div>

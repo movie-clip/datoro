@@ -6,8 +6,8 @@
     <button
       v-if="chart.isZoomed.value"
       class="reset-zoom-btn"
-      @click="chart.resetZoom"
       title="Reset zoom"
+      @click="chart.resetZoom"
     >
       ↺
     </button>
@@ -16,15 +16,23 @@
     <button
       class="chart-sync-btn"
       :class="{ active: chart.isSynced.value }"
-      @click="chart.toggleSync"
       :title="chart.isSynced.value ? 'Synced with other charts' : 'Click to sync with other charts'"
+      @click="chart.toggleSync"
     >
-      <img src="/icons/sync.png" alt="Sync" class="sync-icon" />
+      <img
+        src="/icons/sync.png"
+        alt="Sync"
+        class="sync-icon"
+      >
     </button>
     
     <!-- Chart Container -->
     <div class="chart-container">
-      <SkeletonLoader v-if="loading && !hasChartData" variant="chart" height="250px" />
+      <SkeletonLoader
+        v-if="loading && !hasChartData"
+        variant="chart"
+        height="250px"
+      />
       <v-chart 
         v-else-if="hasChartData"
         :ref="(el: any) => chart.chartRef.value = el"

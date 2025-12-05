@@ -843,7 +843,7 @@ export function getGeographicCategoriesFromBatch(batchData: BatchData | null): R
     }
 
     if (!Array.isArray(segmentData)) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[getGeographicCategoriesFromBatch] revenueGeographicSegments is not an array:', typeof segmentData)
       return { segments: [], series: {} }
     }
@@ -899,7 +899,7 @@ export function getGeographicCategoriesFromBatch(batchData: BatchData | null): R
     })
 
     if (skippedEntries > 0) {
-      // eslint-disable-next-line no-console
+       
       console.warn(`[getGeographicCategoriesFromBatch] Skipped ${skippedEntries} invalid geographic segment entries`)
     }
 
@@ -911,7 +911,7 @@ export function getGeographicCategoriesFromBatch(batchData: BatchData | null): R
       series: regionSeries
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[getGeographicCategoriesFromBatch] Error:', error)
     return { segments: [], series: {} }
   }

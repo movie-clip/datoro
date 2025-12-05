@@ -106,7 +106,7 @@ class WatchlistService {
       })
       
       return watchlist
-    } catch (_error) {
+    } catch {
       return null
     }
   }

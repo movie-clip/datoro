@@ -1,7 +1,10 @@
 <template>
   <div class="earnings-tab">
     <!-- Loading State -->
-    <div v-if="loading" class="earnings-loading">
+    <div
+      v-if="loading"
+      class="earnings-loading"
+    >
       <div 
         v-for="i in 4" 
         :key="i" 
@@ -15,12 +18,18 @@
     </div>
 
     <!-- No Data State -->
-    <div v-else-if="earnings.length === 0" class="earnings-empty">
+    <div
+      v-else-if="earnings.length === 0"
+      class="earnings-empty"
+    >
       <p>No earnings data available for {{ currentYear }}</p>
     </div>
 
     <!-- Earnings Grid -->
-    <div v-else class="earnings-grid">
+    <div
+      v-else
+      class="earnings-grid"
+    >
       <div 
         v-for="(item, index) in earnings" 
         :key="index"
@@ -29,7 +38,9 @@
         <!-- Header with Link -->
         <div class="earnings-header">
           <div class="quarter-info">
-            <h4 class="fiscal-quarter">{{ item.fiscalQuarter }}</h4>
+            <h4 class="fiscal-quarter">
+              {{ item.fiscalQuarter }}
+            </h4>
             <span class="report-date">{{ formatDate(item.reportDate) }}</span>
           </div>
           <a 
@@ -40,10 +51,22 @@
             class="earnings-link"
             title="View SEC filings (10-K/10-Q)"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
               <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
+              <line
+                x1="10"
+                y1="14"
+                x2="21"
+                y2="3"
+              />
             </svg>
           </a>
         </div>
@@ -54,7 +77,10 @@
           <div class="metric-row">
             <span class="metric-label">EPS</span>
             <div class="metric-values">
-              <span class="actual" :class="{ beat: item.epsBeat, miss: item.epsBeat === false }">
+              <span
+                class="actual"
+                :class="{ beat: item.epsBeat, miss: item.epsBeat === false }"
+              >
                 ${{ item.epsActual?.toFixed(2) || '—' }}
               </span>
               <span class="vs">vs</span>
@@ -66,7 +92,10 @@
           <div class="metric-row">
             <span class="metric-label">Revenue</span>
             <div class="metric-values">
-              <span class="actual" :class="{ beat: item.revenueBeat, miss: item.revenueBeat === false }">
+              <span
+                class="actual"
+                :class="{ beat: item.revenueBeat, miss: item.revenueBeat === false }"
+              >
                 ${{ item.revenueActual?.toFixed(2) || '—' }}B
               </span>
               <span class="vs">vs</span>

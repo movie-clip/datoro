@@ -496,10 +496,10 @@ export function validateBatchData(data: unknown): BatchDataType {
   try {
     return BatchDataSchema.parse(data)
   } catch (_error) {
-    if (error instanceof z.ZodError) {
+    if (_error instanceof z.ZodError) {
       console.error('[BatchDataValidation] Validation failed:', {
         ticker: (data as any)?.ticker,
-        errors: error.issues.map((e: z.ZodIssue) => ({
+        errors: _error.issues.map((e: z.ZodIssue) => ({
           path: e.path.join('.'),
           message: e.message,
           code: e.code
@@ -536,7 +536,7 @@ export function validateBatchData(data: unknown): BatchDataType {
         }
       }
     }
-    throw error
+    throw _error
   }
 }
 

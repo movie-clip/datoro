@@ -1,15 +1,15 @@
 <template>
   <div class="styled-select-wrapper">
     <div class="select-inner">
-      <slot name="icon"></slot>
+      <slot name="icon" />
       <select 
         :value="modelValue"
-        @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
         class="styled-select"
         :class="{ 'has-icon': $slots.icon }"
         :disabled="disabled"
+        @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
       >
-        <slot></slot>
+        <slot />
       </select>
       <svg 
         class="chevron-icon"
@@ -19,7 +19,7 @@
         stroke="currentColor" 
         stroke-width="2"
       >
-        <polyline points="6 9 12 15 18 9"></polyline>
+        <polyline points="6 9 12 15 18 9" />
       </svg>
     </div>
   </div>

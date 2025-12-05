@@ -37,11 +37,11 @@
         </button>
       </div>
       <!-- Custom controls slot for additional buttons -->
-      <slot name="controls"></slot>
+      <slot name="controls" />
       <VChart
+        v-if="isMounted && hasSeriesData(modalOption)"
         ref="modalChartRef"
         :key="`forceExpanded-${props.dualAxis ? 'dual' : 'single'}`"
-        v-if="isMounted && hasSeriesData(modalOption)"
         class="echart-modal"
         :option="modalOption"
         :update-options="{ lazyUpdate: true, notMerge: false }"
@@ -73,8 +73,8 @@
         variant="chart"
       />
       <VChart 
-        ref="chartRef"
         v-else-if="isMounted && (hasSeriesData(option) || hasEmptyData)"
+        ref="chartRef"
         class="echart" 
         :class="{ 'clickable': !isModal, 'loading-chart': loading, 'empty-chart': hasEmptyData }" 
         :option="option"
@@ -90,7 +90,9 @@
         class="empty-data-overlay"
       >
         <div class="empty-data-panel">
-          <p class="empty-message">{{ emptyDataMessage }}</p>
+          <p class="empty-message">
+            {{ emptyDataMessage }}
+          </p>
         </div>
       </div>
       <div
@@ -146,7 +148,7 @@
           </button>
         </div>
         <!-- Custom controls slot for additional buttons -->
-        <slot name="controls"></slot>
+        <slot name="controls" />
         <!-- Chart -->
         <VChart
           :key="`chartModal-${props.dualAxis ? 'dual' : 'single'}`"
@@ -399,9 +401,16 @@ const categoryDataCache = computed<CategoryData>(() => {
   if (lastCategoryKey.value === key) {
     return lastCategoryData.value
   }
+  // Update cache refs outside computed (moved to watch)
+  return generateCategoryData(props.series, props.kind, props.timeframe)
+})
+
+// Update cache when category data changes
+watch(categoryDataCache, (newData) => {
+  const seriesLength = Array.isArray(props.series) ? props.series.length : 0
+  const key = `${seriesLength}-${props.kind}-${props.timeframe}`
   lastCategoryKey.value = key
-  lastCategoryData.value = generateCategoryData(props.series, props.kind, props.timeframe)
-  return lastCategoryData.value
+  lastCategoryData.value = newData
 })
 
 // Prepare params for builder

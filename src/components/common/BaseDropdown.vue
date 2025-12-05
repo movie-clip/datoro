@@ -1,16 +1,27 @@
 <template>
-  <div class="base-dropdown" ref="dropdownRef">
+  <div
+    ref="dropdownRef"
+    class="base-dropdown"
+  >
     <!-- Dropdown Trigger -->
     <button 
       class="dropdown-trigger"
-      @click="toggleDropdown"
       :disabled="disabled"
+      @click="toggleDropdown"
     >
       <div class="trigger-content">
         <!-- Icon Slot (optional) -->
         <slot name="icon">
-          <svg v-if="showDefaultIcon" class="default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          <svg
+            v-if="showDefaultIcon"
+            class="default-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         </slot>
         
@@ -27,14 +38,18 @@
           stroke="currentColor" 
           stroke-width="2"
         >
-          <polyline points="6 9 12 15 18 9"></polyline>
+          <polyline points="6 9 12 15 18 9" />
         </svg>
       </div>
     </button>
 
     <!-- Dropdown Menu -->
     <Transition name="dropdown">
-      <div v-if="isOpen" class="dropdown-menu" @click.stop>
+      <div
+        v-if="isOpen"
+        class="dropdown-menu"
+        @click.stop
+      >
         <div class="dropdown-list">
           <button
             v-for="option in options"

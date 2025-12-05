@@ -15,17 +15,31 @@
           class="news-image"
           loading="lazy"
           @error="handleImageError"
-        />
-        <div v-else class="news-image-placeholder">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-            <path d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM9 11H6V8H9V11ZM19 19H5V5H19V19Z" fill="currentColor" opacity="0.3"/>
+        >
+        <div
+          v-else
+          class="news-image-placeholder"
+        >
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path
+              d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM9 11H6V8H9V11ZM19 19H5V5H19V19Z"
+              fill="currentColor"
+              opacity="0.3"
+            />
           </svg>
         </div>
       </div>
 
       <!-- News Content -->
       <div class="news-text">
-        <h4 class="news-title">{{ firstNewsItem.title }}</h4>
+        <h4 class="news-title">
+          {{ firstNewsItem.title }}
+        </h4>
         
         <div class="news-meta">
           <time 
@@ -39,7 +53,9 @@
           <span class="news-source-badge">{{ firstNewsItem.site }}</span>
         </div>
 
-        <p class="news-excerpt">{{ truncateText(firstNewsItem.text, 100) }}</p>
+        <p class="news-excerpt">
+          {{ truncateText(firstNewsItem.text, 100) }}
+        </p>
 
         <a 
           v-if="firstNewsItem.url"
@@ -54,7 +70,10 @@
     </article>
 
     <!-- Additional News Items (2-3, collapsible via parent) -->
-    <div v-if="additionalNewsItems.length > 0" class="additional-news">
+    <div
+      v-if="additionalNewsItems.length > 0"
+      class="additional-news"
+    >
       <article 
         v-for="(item, index) in additionalNewsItems" 
         :key="index"
@@ -69,17 +88,31 @@
             class="news-image"
             loading="lazy"
             @error="handleImageError"
-          />
-          <div v-else class="news-image-placeholder">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <path d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM9 11H6V8H9V11ZM19 19H5V5H19V19Z" fill="currentColor" opacity="0.3"/>
+          >
+          <div
+            v-else
+            class="news-image-placeholder"
+          >
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM9 11H6V8H9V11ZM19 19H5V5H19V19Z"
+                fill="currentColor"
+                opacity="0.3"
+              />
             </svg>
           </div>
         </div>
 
         <!-- News Content -->
         <div class="news-text">
-          <h4 class="news-title">{{ item.title }}</h4>
+          <h4 class="news-title">
+            {{ item.title }}
+          </h4>
           
           <div class="news-meta">
             <time 
@@ -93,7 +126,9 @@
             <span class="news-source-badge">{{ item.site }}</span>
           </div>
 
-          <p class="news-excerpt">{{ truncateText(item.text, 100) }}</p>
+          <p class="news-excerpt">
+            {{ truncateText(item.text, 100) }}
+          </p>
 
           <a 
             v-if="item.url"

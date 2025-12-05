@@ -2,19 +2,30 @@
   <div class="bingo-panel">
     <div class="bingo-header">
       <h2>Financial Health Bingo</h2>
-      <p class="subtitle">Check if {{ companyName }} passes the fundamental tests</p>
+      <p class="subtitle">
+        Check if {{ companyName }} passes the fundamental tests
+      </p>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
+    <div
+      v-if="loading"
+      class="loading-state"
+    >
+      <div class="spinner" />
       <p>Analyzing fundamentals...</p>
     </div>
 
-    <div v-else-if="!hasData" class="empty-state">
+    <div
+      v-else-if="!hasData"
+      class="empty-state"
+    >
       <p>Insufficient data for Bingo analysis</p>
     </div>
 
-    <div v-else class="bingo-content">
+    <div
+      v-else
+      class="bingo-content"
+    >
       <div class="bingo-grid">
         <div 
           v-for="(cell, index) in bingoCells" 
@@ -27,16 +38,25 @@
               <span class="metric-name">{{ cell.label }}</span>
               <span class="status-icon">{{ cell.passed ? '✓' : '✗' }}</span>
             </div>
-            <div class="metric-value">{{ cell.displayValue }}</div>
-            <div class="metric-threshold">Target: {{ cell.thresholdLabel }}</div>
+            <div class="metric-value">
+              {{ cell.displayValue }}
+            </div>
+            <div class="metric-threshold">
+              Target: {{ cell.thresholdLabel }}
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="bingo-summary" :class="summaryClass">
+      <div
+        class="bingo-summary"
+        :class="summaryClass"
+      >
         <h3>{{ summaryTitle }}</h3>
         <p>{{ summaryMessage }}</p>
-        <div class="score">Score: {{ score }}/9</div>
+        <div class="score">
+          Score: {{ score }}/9
+        </div>
       </div>
     </div>
   </div>

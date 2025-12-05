@@ -72,7 +72,7 @@ export function createTooltipFormatter(options: TooltipFormatterOptions = {}): (
     const isRatiosChart = paramsArray.some(p => ratioChartOrder.includes(p.seriesName))
     
     // Filter out zero values
-    let sortedParams = paramsArray
+    const sortedParams = paramsArray
       .map(item => {
         const value = isBarChart ? Number(item.value) : Number((item.value as [number, number])[1])
         return { ...item, numericValue: value }

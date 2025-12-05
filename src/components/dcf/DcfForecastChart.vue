@@ -2,7 +2,10 @@
   <div class="dcf-chart">
     <h3 class="chart-title">
       Price Forecast
-      <span v-if="selectedModel" class="chart-subtitle">
+      <span
+        v-if="selectedModel"
+        class="chart-subtitle"
+      >
         {{ selectedModel === 'peg' ? '(PEG Model)' : '(Advanced DCF)' }}
       </span>
     </h3>
@@ -14,14 +17,47 @@
         :autoresize="true"
         class="chart"
       />
-      <div v-else class="chart-placeholder">
-        <svg v-if="pegError" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      <div
+        v-else
+        class="chart-placeholder"
+      >
+        <svg
+          v-if="pegError"
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <line
+            x1="12"
+            y1="8"
+            x2="12"
+            y2="12"
+          />
+          <line
+            x1="12"
+            y1="16"
+            x2="12.01"
+            y2="16"
+          />
         </svg>
-        <p v-if="pegError" class="error-message">{{ pegError }}</p>
-        <p v-else>Enter assumptions to see price forecast</p>
+        <p
+          v-if="pegError"
+          class="error-message"
+        >
+          {{ pegError }}
+        </p>
+        <p v-else>
+          Enter assumptions to see price forecast
+        </p>
       </div>
     </div>
   </div>
