@@ -227,7 +227,7 @@ const tabs = computed<Tab[]>(() => [
   { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null, disabled: !hasActiveSubscription.value },
-  { id: 'bingo', label: 'Bingo', icon: '/icons/dcf.png', badge: 'New', disabled: !hasActiveSubscription.value }
+  { id: 'checklist', label: 'Check List', icon: '/icons/dcf.png', badge: 'New', disabled: !hasActiveSubscription.value }
 ])
 
 // Save tab preference and track tab views
@@ -597,13 +597,13 @@ const handleSelectTicker = (ticker: string): void => {
           </section>
         </TabPanel>
 
-        <!-- Bingo Tab -->
+        <!-- Check List Tab -->
         <TabPanel 
-          id="bingo" 
-          :active="activeTab === 'bingo'"
+          id="checklist" 
+          :active="activeTab === 'checklist'"
           :lazy-load="true"
         >
-          <section class="bingo-container">
+          <section class="checklist-container">
             <CheckListPanel :company-name="companyName" />
           </section>
         </TabPanel>
@@ -1113,7 +1113,7 @@ const handleSelectTicker = (ticker: string): void => {
   display: grid;
 }
 
-.bingo-container {
+.checklist-container {
   width: 100%;
   max-width: 1400px;
   margin: 12px auto 0;

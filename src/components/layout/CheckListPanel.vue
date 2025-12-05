@@ -1,7 +1,7 @@
 <template>
-  <div class="bingo-panel">
-    <div class="bingo-header">
-      <h2>Financial Health Bingo</h2>
+  <div class="checklist-panel">
+    <div class="checklist-header">
+      <h2>Financial Health Check List</h2>
       <p class="subtitle">
         Check if {{ companyName }} passes the fundamental tests
       </p>
@@ -19,37 +19,40 @@
       v-else-if="!hasData"
       class="empty-state"
     >
-      <p>Insufficient data for Bingo analysis</p>
+      <p>Insufficient data for Check List analysis</p>
     </div>
 
     <div
       v-else
-      class="bingo-content"
+      class="checklist-content"
     >
-      <div class="bingo-grid">
-        <div 
-          v-for="(cell, index) in bingoCells" 
-          :key="index"
-          class="bingo-cell"
-          :class="{ 'is-match': cell.passed }"
-        >
-          <div class="cell-content">
-            <div class="cell-header">
-              <span class="metric-name">{{ cell.label }}</span>
+      <table class="checklist-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Value</th>
+            <th>Target</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            v-for="(cell, index) in checkListCells" 
+            :key="index"
+            :class="{ 'is-match': cell.passed }"
+          >
+            <td class="metric-name">{{ cell.label }}</td>
+            <td class="metric-value">{{ cell.displayValue }}</td>
+            <td class="metric-threshold">{{ cell.thresholdLabel }}</td>
+            <td class="status-cell">
               <span class="status-icon">{{ cell.passed ? '✓' : '✗' }}</span>
-            </div>
-            <div class="metric-value">
-              {{ cell.displayValue }}
-            </div>
-            <div class="metric-threshold">
-              Target: {{ cell.thresholdLabel }}
-            </div>
-          </div>
-        </div>
-      </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <div
-        class="bingo-summary"
+        class="checklist-summary"
         :class="summaryClass"
       >
         <h3>{{ summaryTitle }}</h3>
@@ -104,8 +107,11 @@ const revenueGrowth = computed(() => {
 
 const netIncomeGrowth = computed(() => {
   if (!latestIncome.value || !prevIncome.value) return null
+  const currentNetIncome = latestIncome.value.netIncome
+  const prevNetIncome = prevIncome.value.netIncome
+  if (currentNetIncome === undefined || prevNetIncome === undefined) return null
   // Handle negative base case? For simplicity, just standard growth formula
-  return (latestIncome.value.netIncome - prevIncome.value.netIncome) / Math.abs(prevIncome.value.netIncome)
+  return (currentNetIncome - prevNetIncome) / Math.abs(prevNetIncome)
 })
 
 const grossMargin = computed(() => latestIncome.value?.grossProfitRatio || latestRatio.value?.grossProfitMargin)
@@ -116,12 +122,15 @@ const debtToEquity = computed(() => latestRatio.value?.debtEquityRatio)
 const freeCashFlow = computed(() => latestCashFlow.value?.freeCashFlow)
 const sharesOutstandingChange = computed(() => {
   if (!latestIncome.value || !prevIncome.value) return null
+  const currentShares = latestIncome.value.weightedAverageShsOut
+  const prevShares = prevIncome.value.weightedAverageShsOut
+  if (currentShares === undefined || prevShares === undefined) return null
   // Negative change means buybacks (good)
-  return (latestIncome.value.weightedAverageShsOut - prevIncome.value.weightedAverageShsOut) / prevIncome.value.weightedAverageShsOut
+  return (currentShares - prevShares) / prevShares
 })
 
-// Bingo Cells Configuration
-const bingoCells = computed(() => {
+// Check List Cells Configuration
+const checkListCells = computed(() => {
   const cells = [
     {
       id: 'rev_growth',
@@ -212,7 +221,7 @@ const bingoCells = computed(() => {
   }))
 })
 
-const score = computed(() => bingoCells.value.filter(c => c.passed).length)
+const score = computed(() => checkListCells.value.filter(c => c.passed).length)
 
 const summaryTitle = computed(() => {
   if (score.value >= 8) return 'Excellent Candidate!'
@@ -238,24 +247,25 @@ const summaryClass = computed(() => {
 </script>
 
 <style scoped>
-.bingo-panel {
+.checklist-panel {
   padding: 24px;
   background: #151518;
   border-radius: 12px;
   color: #E5E5E5;
-  width: 100%; /* Full width */
+  width: 100%;
   margin: 0 auto;
 }
 
-.bingo-header {
+.checklist-header {
   text-align: center;
   margin-bottom: 32px;
 }
 
-.bingo-header h2 {
+.checklist-header h2 {
   font-size: 28px;
   font-weight: 700;
   background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); /* Blue gradient */
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0 0 8px 0;
@@ -266,32 +276,44 @@ const summaryClass = computed(() => {
   font-size: 16px;
 }
 
-.bingo-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
   margin-bottom: 32px;
-}
-
-.bingo-cell {
   background: #1E1E22;
-  border: 1px solid #2A2A2E;
   border-radius: 12px;
-  padding: 24px; /* Increased padding */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  transition: all 0.3s ease;
-  position: relative;
   overflow: hidden;
 }
 
-.bingo-cell.is-match {
-  background: rgba(59, 130, 246, 0.1); /* Blue background tint */
-  border-color: #3B82F6; /* Blue border */
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15); /* Blue glow */
+.checklist-table thead {
+  background: #2A2A2E;
+  border-bottom: 2px solid #3B82F6;
+}
+
+.checklist-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #E5E5E5;
+  font-size: 14px;
+}
+
+.checklist-table td {
+  padding: 20px 16px;
+  border-bottom: 1px solid #2A2A2E;
+  transition: all 0.3s ease;
+}
+
+.checklist-table tr:last-child td {
+  border-bottom: none;
+}
+
+.checklist-table tr.is-match {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.checklist-table tr.is-match td {
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 .cell-header {
@@ -313,11 +335,11 @@ const summaryClass = computed(() => {
   color: #EF4444; /* Red X by default */
 }
 
-.bingo-cell.is-match .status-icon {
+.checklist-table tr.is-match .status-icon {
   color: #3B82F6; /* Blue Check */
 }
 
-.bingo-cell.is-match .metric-name {
+.checklist-table tr.is-match .metric-name {
   color: #E5E5E5;
 }
 
@@ -333,7 +355,7 @@ const summaryClass = computed(() => {
   color: #6B7280;
 }
 
-.bingo-summary {
+.checklist-summary {
   text-align: center;
   padding: 24px;
   border-radius: 12px;
@@ -341,12 +363,12 @@ const summaryClass = computed(() => {
   border: 1px solid #2A2A2E;
 }
 
-.bingo-summary h3 {
+.checklist-summary h3 {
   font-size: 20px;
   margin: 0 0 8px 0;
 }
 
-.bingo-summary p {
+.checklist-summary p {
   color: #9CA3AF;
   margin: 0 0 16px 0;
 }
@@ -417,13 +439,13 @@ const summaryClass = computed(() => {
 }
 
 @media (max-width: 768px) {
-  .bingo-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .checklist-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 480px) {
-  .bingo-grid {
+  .checklist-grid {
     grid-template-columns: 1fr;
   }
 }
