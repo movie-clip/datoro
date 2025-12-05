@@ -82,7 +82,7 @@ export default defineConfig(({ mode }) => {
 
     server: {
       host: '0.0.0.0', // Allow access from local network (iPhone, etc.)
-      port: 5173,
+      port: 5173, // Changed from 5173 due to Windows blocking port 5173
       
       // Enable HMR for instant hot-reload during development
       hmr: true,
