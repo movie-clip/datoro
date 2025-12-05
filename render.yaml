@@ -91,6 +91,9 @@ services:
       # Frontend URL (for Stripe redirects and email links)
       - key: APP_URL
         value: https://datoro.onrender.com
+    
+    # Note: Service name changed from datoro-api to datoro-prod-api
+    # Update VITE_API_BASE_URL in Render dashboard if needed
 
   # ==============================================
   # Redis Cache (Key-Value Store)
@@ -114,7 +117,7 @@ services:
     # Environment Variables (injected during build)
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://datoro-api.onrender.com
+        value: https://datoro-prod-api.onrender.com
     
     # Only rebuild frontend when these files change
     buildFilter:
@@ -142,7 +145,7 @@ services:
       # 'wasm-unsafe-eval' is safer alternative but 'unsafe-eval' needed for compatibility
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' data: https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://datoro-api.onrender.com https://*.google-analytics.com https://*.analytics.google.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' data: https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://datoro-prod-api.onrender.com https://*.google-analytics.com https://*.analytics.google.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
     
     # SPA routing: redirect all routes to index.html
     routes:
