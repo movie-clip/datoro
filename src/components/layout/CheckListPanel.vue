@@ -41,7 +41,21 @@
               {{ cell.label }}
             </td>
             <td class="metric-value" :class="{ 'passed': cell.passed }">
-              {{ cell.displayValue }}
+              <div class="value-container">
+                <span class="value-text">{{ cell.displayValue }}</span>
+                <div 
+                  v-if="cell.sparkline && cell.sparkline.length > 0" 
+                  class="sparkline"
+                >
+                  <div
+                    v-for="(value, idx) in getSparklineBars(cell.sparkline)"
+                    :key="idx"
+                    class="bar"
+                    :class="{ 'trend-positive': cell.passed, 'trend-negative': !cell.passed }"
+                    :style="{ height: value + '%' }"
+                  />
+                </div>
+              </div>
             </td>
             <td class="metric-threshold">{{ cell.thresholdLabel }}</td>
           </tr>
@@ -126,7 +140,7 @@ const epsGrowth = computed(() => {
 
 const fcfYield = computed(() => {
   // Get FCF Yield from calculated cash flow facts (same as health indicators)
-  const cashFlow = getCashFlowFactsFromBatch(batchData.value)
+  const cashFlow = getCashFlowFactsFromBatch(batchData.value || null)
   // fcfYield is a formatted string like "-87.7%" or "5.2%"
   // Parse it to get the decimal value for threshold check
   const parsed = parseFloat(cashFlow.fcfYield)
@@ -162,6 +176,45 @@ const altmanZScore = computed(() => {
   return typeof score === 'number' ? score : (typeof score === 'string' ? parseFloat(score) : null)
 })
 
+// Get sparkline data for metrics (last 5 years)
+const getSparklineData = (id: string): number[] => {
+  try {
+    const annual = incomeStatements.value?.annual
+    if (!annual || annual.length < 2) return []
+    
+    const ratiosData = ratios.value || []
+    const last5Years = annual.slice(0, Math.min(5, annual.length)).reverse() // Oldest to newest, max 5
+    
+    let data: number[] = []
+    
+    switch (id) {
+      case 'rev_growth':
+        data = last5Years.map(stmt => stmt.revenue || 0)
+        break
+      case 'ni_growth':
+        data = last5Years.map(stmt => stmt.netIncome || 0)
+        break
+      case 'eps_growth':
+        data = last5Years.map(stmt => stmt.eps || 0)
+        break
+      case 'gross_margin':
+        data = ratiosData.slice(0, Math.min(5, ratiosData.length)).reverse().map(r => (r.grossProfitMargin || 0) * 100)
+        break
+      case 'shares':
+        data = last5Years.map(stmt => stmt.weightedAverageShsOut || 0)
+        break
+      default:
+        return []
+    }
+    
+    // Filter out invalid data points
+    return data.filter(val => typeof val === 'number' && isFinite(val))
+  } catch (error) {
+    console.error('Error generating sparkline data:', error)
+    return []
+  }
+}
+
 // Check List Cells Configuration
 const checkListCells = computed(() => {
   const cells = [
@@ -170,6 +223,7 @@ const checkListCells = computed(() => {
       label: 'Revenue Growth (5Y)',
       value: revenueGrowth.value,
       displayValue: formatPercent(revenueGrowth.value),
+      sparkline: getSparklineData('rev_growth'),
       threshold: 0.15,
       thresholdLabel: '> 15%',
       check: (v: number) => v > 0.15
@@ -179,6 +233,7 @@ const checkListCells = computed(() => {
       label: 'Net Income Growth (5Y)',
       value: netIncomeGrowth.value,
       displayValue: formatPercent(netIncomeGrowth.value),
+      sparkline: getSparklineData('ni_growth'),
       threshold: 0.15,
       thresholdLabel: '> 15%',
       check: (v: number) => v > 0.15
@@ -188,6 +243,7 @@ const checkListCells = computed(() => {
       label: 'FCF Yield',
       value: fcfYield.value,
       displayValue: formatPercent(fcfYield.value),
+      sparkline: [],
       threshold: 0.025,
       thresholdLabel: '> 2.5%',
       check: (v: number) => v > 0.025
@@ -197,6 +253,7 @@ const checkListCells = computed(() => {
       label: 'EPS Growth (5Y)',
       value: epsGrowth.value,
       displayValue: formatPercent(epsGrowth.value),
+      sparkline: getSparklineData('eps_growth'),
       threshold: 0.15,
       thresholdLabel: '> 15%',
       check: (v: number) => v > 0.15
@@ -206,6 +263,7 @@ const checkListCells = computed(() => {
       label: 'Gross Margin',
       value: grossMargin.value,
       displayValue: formatPercent(grossMargin.value),
+      sparkline: getSparklineData('gross_margin'),
       threshold: 0.30,
       thresholdLabel: '> 30%',
       check: (v: number) => v > 0.30
@@ -215,6 +273,7 @@ const checkListCells = computed(() => {
       label: 'Shares Outstanding (5Y)',
       value: sharesOutstandingChange.value,
       displayValue: formatPercent(sharesOutstandingChange.value),
+      sparkline: getSparklineData('shares'),
       threshold: 0,
       thresholdLabel: sharesOutstandingChange.value !== null && sharesOutstandingChange.value < 0 
         ? 'Decreasing' 
@@ -226,6 +285,7 @@ const checkListCells = computed(() => {
       label: 'Altman Z-Score',
       value: altmanZScore.value,
       displayValue: altmanZScore.value?.toFixed(2),
+      sparkline: [],
       threshold: 2.99,
       thresholdLabel: '> 2.99',
       check: (v: number) => v > 2.99
@@ -253,6 +313,29 @@ const summaryMessage = computed(() => {
   if (score.value >= 3) return 'Some good signs, but several red flags. Dig deeper into the weaknesses.'
   return 'Fails many fundamental tests. Proceed with significant caution.'
 })
+
+// Generate bar heights for sparkline (normalized to 20-100% for better visual distinction)
+const getSparklineBars = (data: number[]): number[] => {
+  if (!data || data.length === 0) return []
+  
+  try {
+    const validData = data.filter(val => typeof val === 'number' && isFinite(val))
+    if (validData.length === 0) return []
+    
+    const min = Math.min(...validData)
+    const max = Math.max(...validData)
+    const range = max - min || 1
+    
+    return validData.map(value => {
+      // Scale to 20-100% range for better visual differentiation
+      const normalized = ((value - min) / range) * 80 + 20
+      return Math.max(20, Math.min(100, normalized)) // Clamp between 20-100%
+    })
+  } catch (error) {
+    console.error('Error generating sparkline bars:', error)
+    return []
+  }
+}
 
 const summaryClass = computed(() => {
   if (score.value >= 6) return 'summary-excellent'
@@ -345,18 +428,18 @@ const summaryClass = computed(() => {
 }
 
 .metric-name {
-  font-size: 15px;
+  font-size: 16px;
   color: #ef4444;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .metric-name.passed {
   color: #10b981;
-  font-weight: 600;
 }
 
 .metric-value {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #ef4444;
 }
@@ -365,9 +448,50 @@ const summaryClass = computed(() => {
   color: #10b981;
 }
 
+.value-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.value-text {
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.sparkline .bar {
+  flex: 1;
+  min-width: 12px;
+  border-radius: 2px 2px 0 0;
+  transition: all 0.2s ease;
+}
+
+.sparkline .bar.trend-positive {
+  background: #10b981;
+  opacity: 0.9;
+}
+
+.sparkline .bar.trend-negative {
+  background: #ef4444;
+  opacity: 0.9;
+}
+
+.sparkline .bar:hover {
+  opacity: 1;
+  filter: brightness(1.1);
+}
+
 .metric-threshold {
   font-size: 13px;
-  color: #6B7280;
+  color: #9CA3AF;
   font-weight: 500;
 }
 
