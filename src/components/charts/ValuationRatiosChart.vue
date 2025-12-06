@@ -66,11 +66,12 @@ function toggleRatio(ratioKey: RatioKey) {
   if (index > -1) {
     // Remove if already selected (but keep at least one)
     if (selectedRatios.value.length > 1) {
-      selectedRatios.value.splice(index, 1)
+      // Create new array without the deselected ratio (ensures reactivity)
+      selectedRatios.value = selectedRatios.value.filter(key => key !== ratioKey)
     }
   } else {
-    // Add if not selected
-    selectedRatios.value.push(ratioKey)
+    // Add if not selected (create new array to ensure reactivity)
+    selectedRatios.value = [...selectedRatios.value, ratioKey]
   }
 }
 

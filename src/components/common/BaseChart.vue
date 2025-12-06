@@ -41,7 +41,7 @@
       <VChart
         v-if="isMounted && hasSeriesData(modalOption)"
         ref="modalChartRef"
-        :key="`forceExpanded-${props.dualAxis ? 'dual' : 'single'}`"
+        :key="`forceExpanded-${props.dualAxis ? 'dual' : 'single'}-${props.series?.length || 0}`"
         class="echart-modal"
         :option="modalOption"
         :update-options="{ lazyUpdate: true, notMerge: false }"
@@ -151,7 +151,7 @@
         <slot name="controls" />
         <!-- Chart -->
         <VChart
-          :key="`chartModal-${props.dualAxis ? 'dual' : 'single'}`"
+          :key="`chartModal-${props.dualAxis ? 'dual' : 'single'}-${props.series?.length || 0}`"
           class="echart-modal"
           :option="modalOption"
           :update-options="{ lazyUpdate: true, notMerge: false }"
@@ -354,14 +354,13 @@ const toggleSegment = (segmentValue: string): void => {
   if (idx >= 0) {
     // Remove if already selected (but keep at least one)
     if (current.length > 1) {
-      current.splice(idx, 1)
+      // Create new array without the deselected segment (ensures reactivity)
+      emit('update:selectedSegments', current.filter(seg => seg !== segmentValue))
     }
   } else {
-    // Add if not selected
-    current.push(segmentValue)
+    // Add if not selected (create new array to ensure reactivity)
+    emit('update:selectedSegments', [...current, segmentValue])
   }
-  
-  emit('update:selectedSegments', current)
 }
 
 // Computed property to check if data is empty (but valid, not an error)
