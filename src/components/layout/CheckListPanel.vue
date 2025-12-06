@@ -29,7 +29,6 @@
             <th>Metric</th>
             <th>Value</th>
             <th>Target</th>
-            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -38,12 +37,13 @@
             :key="index"
             :class="{ 'is-match': cell.passed }"
           >
-            <td class="metric-name">{{ cell.label }}</td>
-            <td class="metric-value">{{ cell.displayValue }}</td>
-            <td class="metric-threshold">{{ cell.thresholdLabel }}</td>
-            <td class="status-cell">
-              <span class="status-icon">{{ cell.passed ? '✓' : '✗' }}</span>
+            <td class="metric-name" :class="{ 'passed': cell.passed }">
+              {{ cell.label }}
             </td>
+            <td class="metric-value" :class="{ 'passed': cell.passed }">
+              {{ cell.displayValue }}
+            </td>
+            <td class="metric-threshold">{{ cell.thresholdLabel }}</td>
           </tr>
         </tbody>
       </table>
@@ -289,79 +289,78 @@ const summaryClass = computed(() => {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 32px;
-  background: #1E1E22;
-  border-radius: 12px;
-  overflow: hidden;
+  background: transparent;
+  border-radius: 0;
 }
 
 .checklist-table thead {
   background: #2A2A2E;
-  border-bottom: 2px solid #3B82F6;
 }
 
 .checklist-table th {
-  padding: 16px;
+  padding: 16px 20px;
   text-align: left;
   font-weight: 600;
   color: #E5E5E5;
   font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #3B82F6;
+  background: #2A2A2E;
 }
 
-.checklist-table td {
-  padding: 20px 16px;
+.checklist-table tbody tr {
   border-bottom: 1px solid #2A2A2E;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
-.checklist-table tr:last-child td {
+.checklist-table tbody tr:last-child {
   border-bottom: none;
 }
 
+.checklist-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.checklist-table td {
+  padding: 20px;
+  background: transparent;
+}
+
 .checklist-table tr.is-match {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.08);
+  border-bottom-color: rgba(59, 130, 246, 0.2);
 }
 
-.checklist-table tr.is-match td {
-  border-color: rgba(59, 130, 246, 0.2);
-}
-
-.cell-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+.checklist-table tr.is-match:hover {
+  background: rgba(59, 130, 246, 0.12);
 }
 
 .metric-name {
   font-size: 15px;
-  color: #9CA3AF;
+  color: #ef4444;
   font-weight: 500;
 }
 
-.status-icon {
-  font-size: 18px;
-  font-weight: bold;
-  color: #EF4444; /* Red X by default */
-}
-
-.checklist-table tr.is-match .status-icon {
-  color: #3B82F6; /* Blue Check */
-}
-
-.checklist-table tr.is-match .metric-name {
-  color: #E5E5E5;
+.metric-name.passed {
+  color: #10b981;
+  font-weight: 600;
 }
 
 .metric-value {
-  font-size: 28px; /* Larger font */
+  font-size: 24px;
   font-weight: 700;
-  color: #E5E5E5;
-  margin-bottom: 6px;
+  color: #ef4444;
+}
+
+.metric-value.passed {
+  color: #10b981;
 }
 
 .metric-threshold {
   font-size: 13px;
   color: #6B7280;
+  font-weight: 500;
 }
 
 .checklist-summary {
@@ -389,39 +388,39 @@ const summaryClass = computed(() => {
 }
 
 .summary-excellent {
-  border-color: #3B82F6;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
 }
 
 .summary-excellent h3, .summary-excellent .score {
-  color: #3B82F6;
+  color: #10b981;
 }
 
 .summary-good {
-  border-color: #60A5FA;
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%);
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
 }
 
 .summary-good h3, .summary-good .score {
-  color: #60A5FA;
+  color: #3b82f6;
 }
 
 .summary-mixed {
-  border-color: #F59E0B;
+  border-color: #f59e0b;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
 }
 
 .summary-mixed h3, .summary-mixed .score {
-  color: #F59E0B;
+  color: #f59e0b;
 }
 
 .summary-poor {
-  border-color: #EF4444;
+  border-color: #ef4444;
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
 }
 
 .summary-poor h3, .summary-poor .score {
-  color: #EF4444;
+  color: #ef4444;
 }
 
 .loading-state, .empty-state {
