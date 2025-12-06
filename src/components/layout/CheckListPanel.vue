@@ -66,13 +66,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { formatPercent, formatNumber } from '../../utils/formatters'
 import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch, getEpsSeriesFromBatch } from '../../services/financials/batchChartService'
 import { getGrowthRates } from '../../services/financials/growthService'
 import { getCashFlowFactsFromBatch } from '../../services/financials/batchTableService'
+import { trackCheckListView } from '../../services/analytics/gaService'
 
 const props = defineProps<{
   companyName?: string
@@ -103,28 +104,33 @@ const hasData = computed(() => {
   return !!latestRatio.value && !!latestIncome.value && !!latestBalance.value
 })
 
+// Helper function to calculate 5-year growth rate from series data
+// Returns decimal value (e.g., 0.153 for 15.3% growth) or null if insufficient data
+const calculateFiveYearGrowth = (series: Array<[number, number, ...any[]]>): number | null => {
+  if (!series || series.length === 0) return null
+  
+  // Convert SeriesPoint [timestamp, value, period, fiscalYear] to [timestamp, value]
+  const simpleSeries = series.map(([timestamp, value]) => [timestamp, value] as [number, number])
+  const growth = getGrowthRates(simpleSeries)
+  
+  // Convert from percentage to decimal (growth returns 15.3, we need 0.153)
+  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
+}
+
 // Metric Calculations - Reuse chart data and growth service
 const revenueGrowth = computed(() => {
   const revenueSeries = getRevenueSeriesFromBatch(batchData.value || null, 'annual')
-  // Convert SeriesPoint [timestamp, value, period, fiscalYear] to [timestamp, value]
-  const simpleSeries = revenueSeries.map(([timestamp, value]) => [timestamp, value] as [number, number])
-  const growth = getGrowthRates(simpleSeries)
-  // Convert from percentage to decimal (growth returns 15.3, we need 0.153)
-  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
+  return calculateFiveYearGrowth(revenueSeries)
 })
 
 const netIncomeGrowth = computed(() => {
   const netIncomeSeries = getNetIncomeSeriesFromBatch(batchData.value || null, 'annual')
-  const simpleSeries = netIncomeSeries.map(([timestamp, value]) => [timestamp, value] as [number, number])
-  const growth = getGrowthRates(simpleSeries)
-  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
+  return calculateFiveYearGrowth(netIncomeSeries)
 })
 
 const epsGrowth = computed(() => {
   const epsSeries = getEpsSeriesFromBatch(batchData.value || null, 'annual')
-  const simpleSeries = epsSeries.map(([timestamp, value]) => [timestamp, value] as [number, number])
-  const growth = getGrowthRates(simpleSeries)
-  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
+  return calculateFiveYearGrowth(epsSeries)
 })
 
 const fcfYield = computed(() => {
@@ -199,7 +205,7 @@ const getSparklineData = (id: string): number[] => {
     // Filter out invalid data points
     return data.filter(val => typeof val === 'number' && isFinite(val))
   } catch (error) {
-    console.error('Error generating sparkline data:', error)
+    // Silently fail - return empty array if data extraction fails
     return []
   }
 }
@@ -225,7 +231,7 @@ const getColorStatus = (value: number | null, threshold: number, checkFn: (v: nu
     const upperBound = threshold + tolerance
     return value <= upperBound ? 'yellow' : 'red'
   } else {
-    // For threshold = 0 (like shares outstanding), within ±20% of 0
+    // For threshold = 0, check if value is within ±20% tolerance
     return Math.abs(value) <= 0.20 ? 'yellow' : 'red'
   }
 }
@@ -289,17 +295,15 @@ const checkListCells = computed(() => {
       value: sharesOutstandingChange.value,
       displayValue: formatPercent(sharesOutstandingChange.value),
       sparkline: getSparklineData('shares'),
-      threshold: 0,
-      thresholdLabel: sharesOutstandingChange.value !== null && sharesOutstandingChange.value < 0 
-        ? 'Decreasing' 
-        : 'Increasing',
-      check: (v: number) => v < 0 // Negative growth means buybacks (good)
+      threshold: -0.05,
+      thresholdLabel: '< -5%',
+      check: (v: number) => v <= -0.05 // Shares should decrease by at least 5% (buybacks)
     },
     {
       id: 'altman_z',
       label: 'Altman Z-Score',
       value: altmanZScore.value,
-      displayValue: altmanZScore.value?.toFixed(2),
+      displayValue: altmanZScore.value !== null ? altmanZScore.value.toFixed(2) : 'N/A',
       sparkline: [],
       threshold: 2.99,
       thresholdLabel: '> 2.99',
@@ -307,11 +311,28 @@ const checkListCells = computed(() => {
     }
   ]
 
-  return cells.map(cell => ({
-    ...cell,
-    passed: cell.value != null && cell.check(cell.value),
-    colorStatus: getColorStatus(cell.value, cell.threshold, cell.check)
-  }))
+  return cells.map(cell => {
+    let colorStatus: 'green' | 'yellow' | 'red'
+    
+    // Special color logic for shares outstanding
+    if (cell.id === 'shares' && cell.value !== null) {
+      if (cell.value > 0) {
+        colorStatus = 'red' // Shares increasing - bad
+      } else if (cell.value > -0.05) {
+        colorStatus = 'yellow' // Between 0% and -5% - slight decrease
+      } else {
+        colorStatus = 'green' // -5% or less - significant buybacks
+      }
+    } else {
+      colorStatus = getColorStatus(cell.value, cell.threshold, cell.check)
+    }
+    
+    return {
+      ...cell,
+      passed: cell.value != null && cell.check(cell.value),
+      colorStatus
+    }
+  })
 })
 
 const score = computed(() => checkListCells.value.filter(c => c.passed).length)
@@ -330,6 +351,11 @@ const summaryMessage = computed(() => {
   return 'Fails many fundamental tests. Proceed with significant caution.'
 })
 
+// Sparkline visualization constants
+const SPARKLINE_MIN_HEIGHT = 20  // Minimum bar height percentage
+const SPARKLINE_MAX_HEIGHT = 100 // Maximum bar height percentage
+const SPARKLINE_RANGE = 80       // Range between min and max (100 - 20)
+
 // Generate bar heights for sparkline (normalized to 20-100% for better visual distinction)
 const getSparklineBars = (data: number[]): number[] => {
   if (!data || data.length === 0) return []
@@ -343,12 +369,12 @@ const getSparklineBars = (data: number[]): number[] => {
     const range = max - min || 1
     
     return validData.map(value => {
-      // Scale to 20-100% range for better visual differentiation
-      const normalized = ((value - min) / range) * 80 + 20
-      return Math.max(20, Math.min(100, normalized)) // Clamp between 20-100%
+      // Scale to SPARKLINE_MIN_HEIGHT-SPARKLINE_MAX_HEIGHT range for better visual differentiation
+      const normalized = ((value - min) / range) * SPARKLINE_RANGE + SPARKLINE_MIN_HEIGHT
+      return Math.max(SPARKLINE_MIN_HEIGHT, Math.min(SPARKLINE_MAX_HEIGHT, normalized))
     })
   } catch (error) {
-    console.error('Error generating sparkline bars:', error)
+    // Silently fail - return empty array if normalization fails
     return []
   }
 }
@@ -359,6 +385,16 @@ const summaryClass = computed(() => {
   if (score.value >= 3) return 'summary-mixed'
   return 'summary-poor'
 })
+
+// Track Check List view when data loads
+watch(() => checkListCells.value, (cells) => {
+  if (cells.length > 0 && !loading.value && hasData.value) {
+    const ticker = tickerStore.currentTicker
+    if (ticker) {
+      trackCheckListView(ticker)
+    }
+  }
+}, { immediate: true })
 
 </script>
 

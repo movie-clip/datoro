@@ -180,6 +180,23 @@ export const trackMacroOpen = (): void => {
 };
 
 /**
+ * Track Market Performance modal usage
+ */
+export const trackMarketPerformanceOpen = (): void => {
+  trackEvent('open_market_performance');
+};
+
+/**
+ * Track Check List panel view
+ * @param ticker - Stock symbol being analyzed
+ */
+export const trackCheckListView = (ticker: string): void => {
+  trackEvent('view_check_list', {
+    ticker_symbol: ticker.toUpperCase(),
+  });
+};
+
+/**
  * Track tab navigation
  * @param tabName - Name of the tab (e.g., 'valuation', 'performance', 'profitability', 'balance', 'insights')
  */

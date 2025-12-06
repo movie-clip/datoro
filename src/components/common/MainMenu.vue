@@ -409,7 +409,7 @@ import AccountSettings from './AccountSettings.vue'
 // import PricingPage from '../pages/PricingPage.vue' // Removed - pricing disabled
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 import BRAND from '../../config/brand'
-import { trackDcfCalculatorOpen, trackDeepFinderOpen, trackMacroOpen } from '../../services/analytics/gaService'
+import { trackDcfCalculatorOpen, trackDeepFinderOpen, trackMacroOpen, trackMarketPerformanceOpen } from '../../services/analytics/gaService'
 
 // Helper to get full icon URL for production compatibility
 const getIconUrl = (ticker) => {
@@ -517,6 +517,9 @@ function showMacro() {
 function showMarketPerformance() {
   isMarketPerformanceOpen.value = true
   emit('close') // Close the main menu
+  
+  // Track Market Performance opening
+  trackMarketPerformanceOpen()
 }
 
 function showFeedback() {

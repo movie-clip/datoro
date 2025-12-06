@@ -15,11 +15,13 @@
 | `search_ticker` | User searches/selects ticker | ticker_symbol, search_method |
 | `view_ticker_data` | Ticker data loads | ticker_symbol, load_time_ms |
 | `view_tab` | User switches tabs | tab_name |
+| `view_check_list` | Check List panel loads | ticker_symbol |
 | `add_to_watchlist` | Add to watchlist | ticker_symbol, is_authenticated |
 | `remove_from_watchlist` | Remove from watchlist | ticker_symbol |
 | `open_deep_finder` | Opens Deep Finder tool | - |
 | `open_dcf_calculator` | Opens DCF Calculator tool | - |
 | `open_macro_dashboard` | Opens Macro Dashboard tool | - |
+| `open_market_performance` | Opens Market Performance modal | - |
 | `sign_up` | User registration | method (email/google) |
 | `login` | User login | method (email/google) |
 | `verify_email` | Email verified | - |
