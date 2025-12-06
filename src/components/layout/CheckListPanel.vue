@@ -69,6 +69,7 @@ import { useTickerStore } from '../../stores/tickerStore'
 import { formatPercent, formatNumber } from '../../utils/formatters'
 import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch, getEpsSeriesFromBatch } from '../../services/financials/batchChartService'
 import { getGrowthRates } from '../../services/financials/growthService'
+import { getCashFlowFactsFromBatch } from '../../services/financials/batchTableService'
 
 const props = defineProps<{
   companyName?: string
@@ -124,13 +125,18 @@ const epsGrowth = computed(() => {
 })
 
 const fcfYield = computed(() => {
-  // Get current FCF Yield from latest metrics
-  return latestMetric.value?.freeCashFlowYield || null
+  // Get FCF Yield from calculated cash flow facts (same as health indicators)
+  const cashFlow = getCashFlowFactsFromBatch(batchData.value)
+  // fcfYield is a formatted string like "-87.7%" or "5.2%"
+  // Parse it to get the decimal value for threshold check
+  const parsed = parseFloat(cashFlow.fcfYield)
+  return !isNaN(parsed) ? parsed / 100 : null // Convert -87.7 to -0.877
 })
 
 const grossMargin = computed(() => {
-  // Get current gross margin
-  return latestIncome.value?.grossProfitRatio || latestRatio.value?.grossProfitMargin || null
+  // Get current gross margin - grossProfitMargin from ratios is in decimal (0.82)
+  // grossProfitRatio from income might be in percentage (82) or decimal - use ratios for consistency
+  return latestRatio.value?.grossProfitMargin || null
 })
 
 
@@ -206,12 +212,14 @@ const checkListCells = computed(() => {
     },
     {
       id: 'shares',
-      label: 'Share Buybacks (5Y)',
+      label: 'Shares Outstanding (5Y)',
       value: sharesOutstandingChange.value,
       displayValue: formatPercent(sharesOutstandingChange.value),
       threshold: 0,
-      thresholdLabel: 'Decreasing',
-      check: (v: number) => v < 0 // Negative growth means buybacks
+      thresholdLabel: sharesOutstandingChange.value !== null && sharesOutstandingChange.value < 0 
+        ? 'Decreasing' 
+        : 'Increasing',
+      check: (v: number) => v < 0 // Negative growth means buybacks (good)
     },
     {
       id: 'altman_z',
