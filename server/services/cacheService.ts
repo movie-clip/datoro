@@ -489,6 +489,14 @@ class CacheService {
   isMemoryOnly(): boolean {
     return !this.redisEnabled || !this.connected
   }
+
+  /**
+   * Get Redis client for advanced usage (e.g., rate limiting)
+   * Returns null if Redis is not available
+   */
+  getRedisClient(): Redis | null {
+    return this.redisEnabled && this.connected ? this.redis : null
+  }
 }
 
 // Re-export Redis TTL constants from centralized config

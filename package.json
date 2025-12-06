@@ -84,6 +84,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.10",
     "pinia": "^3.0.3",
+    "rate-limit-redis": "^4.3.1",
     "stripe": "^19.2.0",
     "tough-cookie": "^6.0.0",
     "tsx": "^4.20.6",

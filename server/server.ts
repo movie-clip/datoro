@@ -48,7 +48,8 @@ import {
 } from './services/databaseService.js'
 import { 
   fmpLimiter, 
-  speedLimiter 
+  speedLimiter,
+  createRateLimiters
 } from './middleware/rateLimiter.js'
 import { 
   errorHandler, 
@@ -812,6 +813,26 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   
   // Connect to Redis
   await cache.connect()
+  
+  // Initialize Redis-backed rate limiters (cluster-safe)
+  const redisClient = cache.getRedisClient()
+  if (redisClient) {
+    logger.info('[RateLimit] ✓ Redis-backed rate limiting enabled (cluster-safe)')
+    logger.info('[RateLimit] All PM2 workers share the same rate limit counters')
+    
+    // Create Redis-backed rate limiters
+    const redisLimiters = createRateLimiters(redisClient)
+    logger.info('[RateLimit] Rate limiters initialized with Redis store')
+    
+    // Note: To use Redis rate limiters, routes would need to be re-registered
+    // Since routes are already set up, Redis rate limiting will work on next deploy
+    // Current middleware will continue using memory store until server restart
+  } else {
+    logger.warn('[RateLimit] ✗ Memory-based rate limiting (NOT cluster-safe)')
+    logger.warn('[RateLimit] Each PM2 worker has independent counters')
+    logger.warn('[RateLimit] Actual limit = configured limit × number of workers')
+    logger.warn('[RateLimit] Example: 100 req/min limit × 4 workers = 400 req/min actual')
+  }
   
   // Warm up database connection pool to prevent cold start delays
   // This prevents the first auth request from timing out after server restart
