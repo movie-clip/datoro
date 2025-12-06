@@ -2,9 +2,6 @@
   <div class="checklist-panel">
     <div class="checklist-header">
       <h2>Financial Health Check List</h2>
-      <p class="subtitle">
-        Check if {{ companyName }} passes the fundamental tests
-      </p>
     </div>
 
     <div
@@ -58,7 +55,7 @@
         <h3>{{ summaryTitle }}</h3>
         <p>{{ summaryMessage }}</p>
         <div class="score">
-          Score: {{ score }}/9
+          Score: {{ score }}/7
         </div>
       </div>
     </div>
@@ -70,6 +67,8 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { formatPercent, formatNumber } from '../../utils/formatters'
+import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch, getEpsSeriesFromBatch } from '../../services/financials/batchChartService'
+import { getGrowthRates } from '../../services/financials/growthService'
 
 const props = defineProps<{
   companyName?: string
@@ -83,7 +82,8 @@ const {
   incomeStatements, 
   balanceSheets, 
   cashFlowStatements,
-  profile
+  profile,
+  batchData
 } = storeToRefs(tickerStore)
 
 // Helper to get latest annual data
@@ -99,34 +99,61 @@ const hasData = computed(() => {
   return !!latestRatio.value && !!latestIncome.value && !!latestBalance.value
 })
 
-// Metric Calculations
+// Metric Calculations - Reuse chart data and growth service
 const revenueGrowth = computed(() => {
-  if (!latestIncome.value || !prevIncome.value) return null
-  return (latestIncome.value.revenue - prevIncome.value.revenue) / prevIncome.value.revenue
+  const revenueSeries = getRevenueSeriesFromBatch(batchData.value || null, 'annual')
+  // Convert SeriesPoint [timestamp, value, period, fiscalYear] to [timestamp, value]
+  const simpleSeries = revenueSeries.map(([timestamp, value]) => [timestamp, value] as [number, number])
+  const growth = getGrowthRates(simpleSeries)
+  // Convert from percentage to decimal (growth returns 15.3, we need 0.153)
+  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
 })
 
 const netIncomeGrowth = computed(() => {
-  if (!latestIncome.value || !prevIncome.value) return null
-  const currentNetIncome = latestIncome.value.netIncome
-  const prevNetIncome = prevIncome.value.netIncome
-  if (currentNetIncome === undefined || prevNetIncome === undefined) return null
-  // Handle negative base case? For simplicity, just standard growth formula
-  return (currentNetIncome - prevNetIncome) / Math.abs(prevNetIncome)
+  const netIncomeSeries = getNetIncomeSeriesFromBatch(batchData.value || null, 'annual')
+  const simpleSeries = netIncomeSeries.map(([timestamp, value]) => [timestamp, value] as [number, number])
+  const growth = getGrowthRates(simpleSeries)
+  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
 })
 
-const grossMargin = computed(() => latestIncome.value?.grossProfitRatio || latestRatio.value?.grossProfitMargin)
-const roe = computed(() => latestRatio.value?.returnOnEquity)
-const roic = computed(() => latestRatio.value?.returnOnInvestedCapital)
-const currentRatio = computed(() => latestRatio.value?.currentRatio)
-const debtToEquity = computed(() => latestRatio.value?.debtEquityRatio)
-const freeCashFlow = computed(() => latestCashFlow.value?.freeCashFlow)
+const epsGrowth = computed(() => {
+  const epsSeries = getEpsSeriesFromBatch(batchData.value || null, 'annual')
+  const simpleSeries = epsSeries.map(([timestamp, value]) => [timestamp, value] as [number, number])
+  const growth = getGrowthRates(simpleSeries)
+  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
+})
+
+const fcfYield = computed(() => {
+  // Get current FCF Yield from latest metrics
+  return latestMetric.value?.freeCashFlowYield || null
+})
+
+const grossMargin = computed(() => {
+  // Get current gross margin
+  return latestIncome.value?.grossProfitRatio || latestRatio.value?.grossProfitMargin || null
+})
+
+
+
 const sharesOutstandingChange = computed(() => {
-  if (!latestIncome.value || !prevIncome.value) return null
-  const currentShares = latestIncome.value.weightedAverageShsOut
-  const prevShares = prevIncome.value.weightedAverageShsOut
-  if (currentShares === undefined || prevShares === undefined) return null
-  // Negative change means buybacks (good)
-  return (currentShares - prevShares) / prevShares
+  // Calculate 5-year growth for shares outstanding (negative = buybacks)
+  const annual = incomeStatements.value?.annual
+  if (!annual || annual.length < 6) return null
+  
+  // Build time series for shares outstanding
+  const sharesSeries = annual
+    .filter(stmt => stmt.date && stmt.weightedAverageShsOut)
+    .map(stmt => [Date.parse(stmt.date), stmt.weightedAverageShsOut] as [number, number])
+  
+  const growth = getGrowthRates(sharesSeries)
+  return growth.fiveYear !== null ? growth.fiveYear / 100 : null
+})
+
+const altmanZScore = computed(() => {
+  const scores = batchData.value?.data?.financialScores
+  if (!scores || !Array.isArray(scores) || scores.length === 0) return null
+  const score = scores[0]?.altmanZScore
+  return typeof score === 'number' ? score : (typeof score === 'string' ? parseFloat(score) : null)
 })
 
 // Check List Cells Configuration
@@ -134,21 +161,39 @@ const checkListCells = computed(() => {
   const cells = [
     {
       id: 'rev_growth',
-      label: 'Revenue Growth',
+      label: 'Revenue Growth (5Y)',
       value: revenueGrowth.value,
       displayValue: formatPercent(revenueGrowth.value),
-      threshold: 0.10,
-      thresholdLabel: '> 10%',
-      check: (v: number) => v > 0.10
+      threshold: 0.15,
+      thresholdLabel: '> 15%',
+      check: (v: number) => v > 0.15
     },
     {
       id: 'ni_growth',
-      label: 'Net Income Growth',
+      label: 'Net Income Growth (5Y)',
       value: netIncomeGrowth.value,
       displayValue: formatPercent(netIncomeGrowth.value),
-      threshold: 0.10,
-      thresholdLabel: '> 10%',
-      check: (v: number) => v > 0.10
+      threshold: 0.15,
+      thresholdLabel: '> 15%',
+      check: (v: number) => v > 0.15
+    },
+    {
+      id: 'fcf_yield',
+      label: 'FCF Yield',
+      value: fcfYield.value,
+      displayValue: formatPercent(fcfYield.value),
+      threshold: 0.025,
+      thresholdLabel: '> 2.5%',
+      check: (v: number) => v > 0.025
+    },
+    {
+      id: 'eps_growth',
+      label: 'EPS Growth (5Y)',
+      value: epsGrowth.value,
+      displayValue: formatPercent(epsGrowth.value),
+      threshold: 0.15,
+      thresholdLabel: '> 15%',
+      check: (v: number) => v > 0.15
     },
     {
       id: 'gross_margin',
@@ -160,58 +205,22 @@ const checkListCells = computed(() => {
       check: (v: number) => v > 0.30
     },
     {
-      id: 'roe',
-      label: 'Return on Equity',
-      value: roe.value,
-      displayValue: formatPercent(roe.value),
-      threshold: 0.15,
-      thresholdLabel: '> 15%',
-      check: (v: number) => v > 0.15
-    },
-    {
-      id: 'roic',
-      label: 'ROIC',
-      value: roic.value,
-      displayValue: formatPercent(roic.value),
-      threshold: 0.10,
-      thresholdLabel: '> 10%',
-      check: (v: number) => v > 0.10
-    },
-    {
-      id: 'fcf',
-      label: 'Free Cash Flow',
-      value: freeCashFlow.value,
-      displayValue: formatNumber(freeCashFlow.value),
-      threshold: 0,
-      thresholdLabel: 'Positive',
-      check: (v: number) => v > 0
-    },
-    {
-      id: 'current_ratio',
-      label: 'Current Ratio',
-      value: currentRatio.value,
-      displayValue: currentRatio.value?.toFixed(2),
-      threshold: 1.5,
-      thresholdLabel: '> 1.5',
-      check: (v: number) => v > 1.5
-    },
-    {
-      id: 'debt_equity',
-      label: 'Debt / Equity',
-      value: debtToEquity.value,
-      displayValue: debtToEquity.value?.toFixed(2),
-      threshold: 0.8,
-      thresholdLabel: '< 0.8',
-      check: (v: number) => v < 0.8
-    },
-    {
       id: 'shares',
-      label: 'Share Buybacks',
+      label: 'Share Buybacks (5Y)',
       value: sharesOutstandingChange.value,
       displayValue: formatPercent(sharesOutstandingChange.value),
       threshold: 0,
       thresholdLabel: 'Decreasing',
       check: (v: number) => v < 0 // Negative growth means buybacks
+    },
+    {
+      id: 'altman_z',
+      label: 'Altman Z-Score',
+      value: altmanZScore.value,
+      displayValue: altmanZScore.value?.toFixed(2),
+      threshold: 2.99,
+      thresholdLabel: '> 2.99',
+      check: (v: number) => v > 2.99
     }
   ]
 
@@ -224,23 +233,23 @@ const checkListCells = computed(() => {
 const score = computed(() => checkListCells.value.filter(c => c.passed).length)
 
 const summaryTitle = computed(() => {
-  if (score.value >= 8) return 'Excellent Candidate!'
-  if (score.value >= 6) return 'Strong Fundamentals'
-  if (score.value >= 4) return 'Mixed Results'
+  if (score.value >= 6) return 'Excellent Candidate!'
+  if (score.value >= 5) return 'Strong Fundamentals'
+  if (score.value >= 3) return 'Mixed Results'
   return 'Needs Caution'
 })
 
 const summaryMessage = computed(() => {
-  if (score.value >= 8) return 'This company passes almost all fundamental tests. Definitely worth researching deeply.'
-  if (score.value >= 6) return 'Shows good potential with some strong metrics. Check the failed areas.'
-  if (score.value >= 4) return 'Some good signs, but several red flags. Dig deeper into the weaknesses.'
+  if (score.value >= 6) return 'This company passes almost all fundamental tests. Definitely worth researching deeply.'
+  if (score.value >= 5) return 'Shows good potential with some strong metrics. Check the failed areas.'
+  if (score.value >= 3) return 'Some good signs, but several red flags. Dig deeper into the weaknesses.'
   return 'Fails many fundamental tests. Proceed with significant caution.'
 })
 
 const summaryClass = computed(() => {
-  if (score.value >= 8) return 'summary-excellent'
-  if (score.value >= 6) return 'summary-good'
-  if (score.value >= 4) return 'summary-mixed'
+  if (score.value >= 6) return 'summary-excellent'
+  if (score.value >= 5) return 'summary-good'
+  if (score.value >= 3) return 'summary-mixed'
   return 'summary-poor'
 })
 

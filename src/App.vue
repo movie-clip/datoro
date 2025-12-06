@@ -227,7 +227,7 @@ const tabs = computed<Tab[]>(() => [
   { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null, disabled: !hasActiveSubscription.value },
-  { id: 'checklist', label: 'Check List', icon: '/icons/dcf.png', badge: 'New', disabled: !hasActiveSubscription.value }
+  { id: 'checklist', label: 'Check List', icon: '/icons/dcf.png', badge: null, disabled: !hasActiveSubscription.value }
 ])
 
 // Save tab preference and track tab views
