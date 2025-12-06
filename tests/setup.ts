@@ -14,6 +14,15 @@ config({ path: join(__dirname, '..', '.env.local') })
 // Ensure test environment
 process.env.NODE_ENV = 'test'
 
+// Mock window object for tests (required for apiConfig and other browser-dependent code)
+global.window = {
+  location: {
+    origin: 'http://localhost:5173',
+    href: 'http://localhost:5173/',
+    pathname: '/'
+  }
+} as any
+
 // Suppress console logs during tests (optional - remove if you want to see logs)
 // global.console = {
 //   ...console,
