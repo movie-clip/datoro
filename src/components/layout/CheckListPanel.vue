@@ -1,9 +1,5 @@
 <template>
   <div class="checklist-panel">
-    <div class="checklist-header">
-      <h2>Financial Health Check List</h2>
-    </div>
-
     <div
       v-if="loading"
       class="loading-state"
@@ -24,23 +20,16 @@
       class="checklist-content"
     >
       <table class="checklist-table">
-        <thead>
-          <tr>
-            <th>Metric</th>
-            <th>Value</th>
-            <th>Target</th>
-          </tr>
-        </thead>
         <tbody>
           <tr 
             v-for="(cell, index) in checkListCells" 
             :key="index"
             :class="{ 'is-match': cell.passed }"
           >
-            <td class="metric-name" :class="{ 'passed': cell.passed }">
+            <td class="metric-name" :class="`status-${cell.colorStatus}`">
               {{ cell.label }}
             </td>
-            <td class="metric-value" :class="{ 'passed': cell.passed }">
+            <td class="metric-value" :class="`status-${cell.colorStatus}`">
               <div class="value-container">
                 <span class="value-text">{{ cell.displayValue }}</span>
                 <div 
@@ -51,7 +40,7 @@
                     v-for="(value, idx) in getSparklineBars(cell.sparkline)"
                     :key="idx"
                     class="bar"
-                    :class="{ 'trend-positive': cell.passed, 'trend-negative': !cell.passed }"
+                    :class="`bar-${cell.colorStatus}`"
                     :style="{ height: value + '%' }"
                   />
                 </div>
@@ -215,6 +204,32 @@ const getSparklineData = (id: string): number[] => {
   }
 }
 
+// Helper function to determine color status based on value proximity to target
+// Returns 'green' (passed), 'yellow' (within 20% of target), or 'red' (failed)
+const getColorStatus = (value: number | null, threshold: number, checkFn: (v: number) => boolean): 'green' | 'yellow' | 'red' => {
+  if (value === null) return 'red'
+  
+  // Check if it passes the threshold
+  if (checkFn(value)) return 'green'
+  
+  // Calculate 20% tolerance from threshold
+  const tolerance = Math.abs(threshold * 0.20)
+  const lowerBound = threshold - tolerance
+  
+  // Check if value is within 20% of target (yellow zone)
+  // For positive thresholds (e.g., FCF Yield > 2.5%), check if value >= lowerBound
+  // For negative thresholds (e.g., Shares < 0%), check if value <= upperBound
+  if (threshold > 0) {
+    return value >= lowerBound ? 'yellow' : 'red'
+  } else if (threshold < 0) {
+    const upperBound = threshold + tolerance
+    return value <= upperBound ? 'yellow' : 'red'
+  } else {
+    // For threshold = 0 (like shares outstanding), within ±20% of 0
+    return Math.abs(value) <= 0.20 ? 'yellow' : 'red'
+  }
+}
+
 // Check List Cells Configuration
 const checkListCells = computed(() => {
   const cells = [
@@ -224,9 +239,9 @@ const checkListCells = computed(() => {
       value: revenueGrowth.value,
       displayValue: formatPercent(revenueGrowth.value),
       sparkline: getSparklineData('rev_growth'),
-      threshold: 0.15,
-      thresholdLabel: '> 15%',
-      check: (v: number) => v > 0.15
+      threshold: 0.20,
+      thresholdLabel: '> 20%',
+      check: (v: number) => v > 0.20
     },
     {
       id: 'ni_growth',
@@ -234,9 +249,9 @@ const checkListCells = computed(() => {
       value: netIncomeGrowth.value,
       displayValue: formatPercent(netIncomeGrowth.value),
       sparkline: getSparklineData('ni_growth'),
-      threshold: 0.15,
-      thresholdLabel: '> 15%',
-      check: (v: number) => v > 0.15
+      threshold: 0.20,
+      thresholdLabel: '> 20%',
+      check: (v: number) => v > 0.20
     },
     {
       id: 'fcf_yield',
@@ -254,9 +269,9 @@ const checkListCells = computed(() => {
       value: epsGrowth.value,
       displayValue: formatPercent(epsGrowth.value),
       sparkline: getSparklineData('eps_growth'),
-      threshold: 0.15,
-      thresholdLabel: '> 15%',
-      check: (v: number) => v > 0.15
+      threshold: 0.20,
+      thresholdLabel: '> 20%',
+      check: (v: number) => v > 0.20
     },
     {
       id: 'gross_margin',
@@ -264,9 +279,9 @@ const checkListCells = computed(() => {
       value: grossMargin.value,
       displayValue: formatPercent(grossMargin.value),
       sparkline: getSparklineData('gross_margin'),
-      threshold: 0.30,
-      thresholdLabel: '> 30%',
-      check: (v: number) => v > 0.30
+      threshold: 0.50,
+      thresholdLabel: '> 50%',
+      check: (v: number) => v > 0.50
     },
     {
       id: 'shares',
@@ -294,7 +309,8 @@ const checkListCells = computed(() => {
 
   return cells.map(cell => ({
     ...cell,
-    passed: cell.value != null && cell.check(cell.value)
+    passed: cell.value != null && cell.check(cell.value),
+    colorStatus: getColorStatus(cell.value, cell.threshold, cell.check)
   }))
 })
 
@@ -348,9 +364,12 @@ const summaryClass = computed(() => {
 
 <style scoped>
 .checklist-panel {
-  padding: 24px;
-  background: #151518;
+  background: linear-gradient(135deg, #151518 0%, #1E1E22 100%);
+  border: 1px solid #2A2A2E;
   border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 24px;
+  transition: all 0.3s ease;
   color: #E5E5E5;
   width: 100%;
   margin: 0 auto;
@@ -402,7 +421,7 @@ const summaryClass = computed(() => {
 
 .checklist-table tbody tr {
   border-bottom: 1px solid #2A2A2E;
-  transition: background-color 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .checklist-table tbody tr:last-child {
@@ -410,7 +429,7 @@ const summaryClass = computed(() => {
 }
 
 .checklist-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02);
+  opacity: 0.9;
 }
 
 .checklist-table td {
@@ -418,34 +437,39 @@ const summaryClass = computed(() => {
   background: transparent;
 }
 
-.checklist-table tr.is-match {
-  background: rgba(59, 130, 246, 0.08);
-  border-bottom-color: rgba(59, 130, 246, 0.2);
-}
-
-.checklist-table tr.is-match:hover {
-  background: rgba(59, 130, 246, 0.12);
-}
-
 .metric-name {
   font-size: 16px;
-  color: #ef4444;
   font-weight: 600;
   letter-spacing: 0.3px;
 }
 
-.metric-name.passed {
+.metric-name.status-green {
   color: #10b981;
+}
+
+.metric-name.status-yellow {
+  color: #f59e0b;
+}
+
+.metric-name.status-red {
+  color: #ef4444;
 }
 
 .metric-value {
   font-size: 20px;
   font-weight: 700;
-  color: #ef4444;
 }
 
-.metric-value.passed {
+.metric-value.status-green {
   color: #10b981;
+}
+
+.metric-value.status-yellow {
+  color: #f59e0b;
+}
+
+.metric-value.status-red {
+  color: #ef4444;
 }
 
 .value-container {
@@ -474,14 +498,19 @@ const summaryClass = computed(() => {
   transition: all 0.2s ease;
 }
 
-.sparkline .bar.trend-positive {
+.sparkline .bar.bar-green {
   background: #10b981;
-  opacity: 0.9;
+  opacity: 0.8;
 }
 
-.sparkline .bar.trend-negative {
+.sparkline .bar.bar-yellow {
+  background: #f59e0b;
+  opacity: 0.8;
+}
+
+.sparkline .bar.bar-red {
   background: #ef4444;
-  opacity: 0.9;
+  opacity: 0.8;
 }
 
 .sparkline .bar:hover {

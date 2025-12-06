@@ -1050,7 +1050,7 @@ const handleSelectTicker = (ticker: string): void => {
 
 .price-target-section {
   max-width: 1400px;
-  margin: 0px auto 16px;
+  margin: 0px auto 0px;
   padding: 0 12px;
 }
 
@@ -1063,7 +1063,7 @@ const handleSelectTicker = (ticker: string): void => {
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   max-width: 1400px;
-  margin: 12px auto 24px;
+  margin: 12px auto 16px;
   padding: 0 12px;
 }
 
@@ -1116,8 +1116,7 @@ const handleSelectTicker = (ticker: string): void => {
 .checklist-container {
   width: 100%;
   max-width: 1400px;
-  margin: 12px auto 0;
-  padding: 0 12px;
+  margin: 12px auto 12px;
 }
 
 /* ============================================
