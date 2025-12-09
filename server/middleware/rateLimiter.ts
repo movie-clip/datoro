@@ -36,10 +36,27 @@ declare global {
  * @returns Object containing all rate limiters
  */
 export function createRateLimiters(redisClient: Redis | null = null) {
-  const store = createRedisStore(redisClient);
+  // Log Redis status once
+  if (redisClient) {
+    logger.info('[RateLimit] Using Redis store (cluster-safe, distributed across all workers)');
+  } else {
+    logger.warn('[RateLimit] Redis not available - using memory store (NOT cluster-safe)');
+    logger.warn('[RateLimit] Each PM2 worker has independent counters - rate limits can be bypassed!');
+  }
   
-  // General API rate limiter (100 req/min)
-  const generalLimiter = rateLimit({
+  // Create separate stores for each limiter (REQUIRED - cannot share stores)
+  return {
+    generalLimiter: createGeneralLimiter(redisClient),
+    fmpLimiter: createFmpLimiter(redisClient),
+    adminLimiter: createAdminLimiter(redisClient),
+    aiLimiter: createAiLimiter(redisClient),
+  };
+}
+
+// Factory functions for each rate limiter type
+function createGeneralLimiter(redisClient: Redis | null) {
+  const store = createRedisStore(redisClient, 'general');
+  return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.GENERAL_MAX,
     store,
@@ -59,17 +76,10 @@ export function createRateLimiters(redisClient: Redis | null = null) {
       });
     }
   });
-  
-  return {
-    generalLimiter,
-    fmpLimiter: createFmpLimiter(store),
-    adminLimiter: createAdminLimiter(store),
-    aiLimiter: createAiLimiter(store),
-  };
 }
 
-// Factory functions for each rate limiter type
-function createFmpLimiter(store?: any) {
+function createFmpLimiter(redisClient: Redis | null) {
+  const store = createRedisStore(redisClient, 'fmp');
   return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.FMP_PER_IP_MAX,
@@ -95,7 +105,8 @@ function createFmpLimiter(store?: any) {
   });
 }
 
-function createAdminLimiter(store?: any) {
+function createAdminLimiter(redisClient: Redis | null) {
+  const store = createRedisStore(redisClient, 'admin');
   return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.ADMIN_MAX,
@@ -117,7 +128,8 @@ function createAdminLimiter(store?: any) {
   });
 }
 
-function createAiLimiter(store?: any) {
+function createAiLimiter(redisClient: Redis | null) {
+  const store = createRedisStore(redisClient, 'ai');
   return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.AI_MAX,
@@ -228,55 +240,30 @@ export const aiLimiter = createAiLimiter();
  * Works across PM2 cluster workers for true distributed rate limiting
  * 
  * @param redisClient - ioredis client instance
+ * @param prefix - Unique prefix for this rate limiter (REQUIRED - cannot share stores)
  * @returns RedisStore instance or undefined (falls back to memory)
  */
-export function createRedisStore(redisClient: Redis | null) {
+export function createRedisStore(redisClient: Redis | null, prefix: string) {
   if (!redisClient) {
-    logger.warn('[RateLimit] Redis not available - using memory store (NOT cluster-safe)');
-    logger.warn('[RateLimit] Each PM2 worker has independent counters - rate limits can be bypassed!');
     return undefined; // Use default memory store
   }
 
-  logger.info('[RateLimit] Using Redis store (cluster-safe, distributed across all workers)');
-  
   try {
     return new RedisStore({
       // @ts-expect-error - rate-limit-redis types expect 'redis' client, but ioredis works fine
       sendCommand: (...args: string[]) => redisClient.call(...args),
-      prefix: 'rl:', // Rate limit keys prefix
+      prefix: `rl:${prefix}:`, // Each limiter MUST have unique prefix
     });
   } catch (error) {
-    logger.error('[RateLimit] Failed to create Redis store:', error);
-    logger.warn('[RateLimit] Falling back to memory store (NOT cluster-safe)');
+    logger.error(`[RateLimit] Failed to create Redis store for ${prefix}:`, error);
     return undefined;
   }
-}
-
-/**
- * Initialize rate limiters with Redis store
- * Call this function after Redis connection is established
- * 
- * @param redisClient - ioredis client instance
- */
-export function initializeRedisRateLimiters(redisClient: Redis | null) {
-  const store = createRedisStore(redisClient);
-  
-  if (!store) {
-    logger.warn('[RateLimit] Rate limiters using memory store - cluster mode will have per-worker limits');
-    return;
-  }
-  
-  // Update all rate limiters to use Redis store
-  // Note: This requires re-creating the limiters with the store option
-  // For now, this function prepares the store - actual integration happens in server.ts
-  logger.info('[RateLimit] Redis store ready for rate limiters');
 }
 
 export default {
   // Rate limiter factories
   createRateLimiters,
   createRedisStore,
-  initializeRedisRateLimiters,
   
   // Default memory-based limiters (NOT cluster-safe)
   generalLimiter,
