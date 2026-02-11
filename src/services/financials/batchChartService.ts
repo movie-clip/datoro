@@ -64,6 +64,15 @@ interface ExpensesDataPoint {
   fiscalYear?: string
 }
 
+interface SubscriberDataPoint {
+  date: number
+  streamingMembers: number | null  // Total streaming members (annual only)
+  paidMemberships: number | null   // Paid accounts/households
+  netAdds: number | null           // Net subscriber additions
+  period?: string
+  fiscalYear?: string
+}
+
 /**
  * Revenue segmentation result interface
  * Used by product and geographic category charts
@@ -914,6 +923,73 @@ export function getGeographicCategoriesFromBatch(batchData: BatchData | null): R
      
     console.error('[getGeographicCategoriesFromBatch] Error:', error)
     return { segments: [], series: {} }
+  }
+}
+
+/**
+ * Get subscriber series from batch data
+ * Used by: SubscribersChart
+ * Extracts subscriber metrics from income statements (as-reported fields)
+ * Fields: numberofstreamingmembers, numberofpaidmemberships, numberofpaidmembershipadditionslossesduringperiod
+ * Note: Not all companies report subscriber data - returns empty array if unavailable
+ */
+export function getSubscriberSeriesFromBatch(batchData: BatchData | null, period: Period = 'annual'): SubscriberDataPoint[] {
+  try {
+    // Use as-reported income statements which include operational metrics like subscriber counts
+    const statements = period === 'quarterly'
+      ? batchData?.data?.incomeAsReportedQuarter
+      : batchData?.data?.incomeAsReportedAnnual
+
+    if (!statements || !Array.isArray(statements)) {
+      return []
+    }
+
+    const result: SubscriberDataPoint[] = []
+
+    for (const row of statements) {
+      // Extract subscriber fields (as-reported data embedded in income statements)
+      // Type assertion needed because standard FMPIncomeStatement doesn't include these fields
+      const rowAny = row as any
+      
+      const streamingMembers = rowAny.numberofstreamingmembers 
+        ? Number(rowAny.numberofstreamingmembers) 
+        : null
+      
+      const paidMemberships = rowAny.numberofpaidmemberships 
+        ? Number(rowAny.numberofpaidmemberships) 
+        : null
+      
+      const netAdds = rowAny.numberofpaidmembershipadditionslossesduringperiod 
+        ? Number(rowAny.numberofpaidmembershipadditionslossesduringperiod) 
+        : null
+
+      // Only include data point if at least one subscriber metric exists
+      if (streamingMembers !== null || paidMemberships !== null || netAdds !== null) {
+        if (period === 'quarterly') {
+          result.push({
+            date: Date.parse(row.date),
+            streamingMembers,
+            paidMemberships,
+            netAdds,
+            period: row.period || '',
+            fiscalYear: row.calendarYear || ''
+          })
+        } else {
+          result.push({
+            date: Date.parse(row.date),
+            streamingMembers,
+            paidMemberships,
+            netAdds
+          })
+        }
+      }
+    }
+
+    return result
+  } catch (error) {
+     
+    console.error('[getSubscriberSeriesFromBatch] Error:', error)
+    return []
   }
 }
 

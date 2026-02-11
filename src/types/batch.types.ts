@@ -67,6 +67,12 @@ export interface BatchData {
     /** Quarterly cash flow statements */
     cashflowQuarter: FMPCashFlow[]
     
+    /** Annual as-reported income statements (includes operational metrics like subscriber counts) */
+    incomeAsReportedAnnual?: any[]
+    
+    /** Quarterly as-reported income statements */
+    incomeAsReportedQuarter?: any[]
+    
     /** Annual ratios (currentRatio, quickRatio, debtRatio, returnOnEquity, etc.) */
     ratiosAnnual?: FMPRatios[]
     

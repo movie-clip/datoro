@@ -82,6 +82,8 @@ const validationSchemas: Record<string, z.ZodSchema | null> = {
   priceTargetSummary: null,
   priceTargetConsensus: null,
   insiderTrading: null,
+  incomeAsReportedAnnual: null, // As-reported income statements (includes operational metrics)
+  incomeAsReportedQuarter: null,
 }
 
 /**
@@ -164,7 +166,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
   };
   
   // PHASE 2: Secondary endpoints (can be deferred)
-  // ~14 endpoints, fetched 500ms after Phase 1 starts
+  // ~16 endpoints, fetched 500ms after Phase 1 starts
   const secondaryEndpoints: Record<string, string> = {
     // Quarterly data (for detailed analysis)
     incomeQuarter: `/api/v3/income-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
@@ -172,6 +174,10 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     cashflowQuarter: `/api/v3/cash-flow-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     ratiosQuarter: `/api/v3/ratios/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     keyMetricsQuarter: `/api/v3/key-metrics/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
+    
+    // As-reported financial statements (includes operational metrics like subscriber counts)
+    incomeAsReportedAnnual: `/api/v3/financial-statement-full-as-reported/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
+    incomeAsReportedQuarter: `/api/v3/financial-statement-full-as-reported/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
     
     // Valuation models
     fmpDcf: `/api/v3/discounted-cash-flow/${t}?apikey=${fmpApiKey}`,

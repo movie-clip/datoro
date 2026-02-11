@@ -99,6 +99,9 @@ const RevenueChart = defineAsyncComponent(() =>
   import('./components/charts/RevenueByCategoryChart.vue')
 )
 const RevenueByCategoryChart = RevenueChart // Alias for backward compatibility
+const SubscribersChart = defineAsyncComponent(() =>
+  import('./components/charts/SubscribersChart.vue')
+)
 
 // Use Pinia stores
 const tickerStore = useTickerStore()
@@ -220,11 +223,30 @@ const hasActiveSubscription = computed(() => {
   return true // All features enabled for everyone
 })
 
+// Check if subscriber data is available for current ticker
+const hasSubscriberData = computed(() => {
+  const batchData = tickerStore.batchData
+  if (!batchData) return false
+  
+  const annual = batchData.data?.incomeAsReportedAnnual || []
+  const quarterly = batchData.data?.incomeAsReportedQuarter || []
+  
+  // Check if any period has subscriber fields (checking for non-null/non-zero values)
+  const hasData = [...annual, ...quarterly].some((row: any) => {
+    return (row.numberofstreamingmembers != null && row.numberofstreamingmembers !== 0) || 
+           (row.numberofpaidmemberships != null && row.numberofpaidmemberships !== 0) || 
+           (row.numberofpaidmembershipadditionslossesduringperiod != null)
+  })
+  
+  return hasData
+})
+
 // Tab configuration with PNG icon paths
 const tabs = computed<Tab[]>(() => [
   { id: 'valuation', label: 'Valuation', icon: '/icons/valuation.png', badge: null, disabled: false },
   { id: 'performance', label: 'Performance', icon: '/icons/performance.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'balance', label: 'Balance', icon: '/icons/balance.png', badge: null, disabled: !hasActiveSubscription.value },
+  { id: 'metrics', label: 'Metrics', icon: '/icons/performance.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'profitability', label: 'Returns', icon: '/icons/returns.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'checklist', label: 'Check List', icon: '/icons/dcf.png', badge: null, disabled: !hasActiveSubscription.value },
   { id: 'insights', label: 'AI Insights', icon: '/icons/ai.png', badge: null, disabled: !hasActiveSubscription.value }
@@ -575,6 +597,19 @@ const handleSelectTicker = (ticker: string): void => {
             </section>
             <section class="panel">
               <EpsChart />
+            </section>
+          </section>
+        </TabPanel>
+
+        <!-- Metrics Tab -->
+        <TabPanel 
+          id="metrics" 
+          :active="activeTab === 'metrics'"
+          :lazy-load="true"
+        >
+          <section v-if="hasSubscriberData" class="charts">
+            <section class="panel">
+              <SubscribersChart />
             </section>
           </section>
         </TabPanel>
