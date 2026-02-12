@@ -391,12 +391,42 @@ class CacheService {
     }
 
     try {
-      const keys = await this.redis.keys(pattern)
-      if (keys.length > 0) {
-        const deleted = await this.redis.del(...keys)
-        logger.debug(`[CacheService] Deleted ${deleted} keys matching pattern: ${pattern}`)
+      const matchedKeys: string[] = []
+      let cursor = '0'
+
+      do {
+        const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 500)
+        cursor = nextCursor
+        if (Array.isArray(keys) && keys.length > 0) {
+          matchedKeys.push(...keys)
+        }
+      } while (cursor !== '0')
+
+      // Also clear matching memory keys for consistency
+      const escapedPattern = pattern
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
+        .replace(/\?/g, '.')
+      const regex = new RegExp(`^${escapedPattern}$`)
+      for (const key of this.memoryCache.keys()) {
+        if (regex.test(key)) {
+          this.memoryCache.delete(key)
+        }
+      }
+
+      if (matchedKeys.length > 0) {
+        // Chunk deletes to avoid oversized Redis command payloads
+        let deleted = 0
+        const chunkSize = 500
+        for (let i = 0; i < matchedKeys.length; i += chunkSize) {
+          const chunk = matchedKeys.slice(i, i + chunkSize)
+          deleted += await this.redis.del(...chunk)
+        }
+
+        logger.debug(`[CacheService] Deleted ${deleted} keys matching pattern via SCAN: ${pattern}`)
         return deleted
       }
+
       return 0
     } catch (_error) {
       logger.error('[CacheService] Redis pattern delete error:', (_error as Error).message)

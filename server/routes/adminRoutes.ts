@@ -6,11 +6,13 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import { adminLimiter } from '../middleware/rateLimiter.js'
 import { requireAdminKey } from '../middleware/adminKey.js'
 import { getCacheService } from '../services/cacheService.js'
+import { getCacheWarmService } from '../services/cacheWarmService.js'
 import { getMonitoringService } from '../services/monitoringService.js'
 import logger from '../services/logger.js'
 
 const router = express.Router()
 const cache = getCacheService()
+const cacheWarm = getCacheWarmService()
 const monitoring = getMonitoringService()
 
 // Optional protection: some platforms expect readiness to be public.
@@ -88,6 +90,14 @@ router.get('/readiness', readinessAuth, asyncHandler(async (_req: Request, res: 
 router.get('/cache/stats', adminLimiter, requireAdminKey(), (_req: Request, res: Response) => {
   const stats = cache.getStats()
   res.json(stats)
+})
+
+/**
+ * GET /api/cache/warm-status
+ * Cache warm scheduler status (admin only)
+ */
+router.get('/cache/warm-status', adminLimiter, requireAdminKey(), (_req: Request, res: Response) => {
+  res.json(cacheWarm.getStatus())
 })
 
 /**

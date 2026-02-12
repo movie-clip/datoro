@@ -12,6 +12,7 @@ import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { getCacheService, CacheTTL } from './services/cacheService.js'
+import { getCacheWarmService } from './services/cacheWarmService.js'
 import { getMonitoringService } from './services/monitoringService.js'
 import logger from './services/logger.js'
 import * as sentryService from './services/sentryService.js'
@@ -66,6 +67,7 @@ config({ path: join(__dirname, '..', '.env.local'), override: true })
 
 // Initialize services
 const cache = getCacheService()
+const cacheWarm = getCacheWarmService()
 const monitoring = getMonitoringService()
 
 // Connect to Redis before registering routes so rate limiting is cluster-safe in production.
@@ -981,6 +983,15 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     }
     
     runCleanup()
+
+    // Start cache warm scheduler on a single worker only to avoid multiplied upstream costs.
+    cacheWarm.configure({
+      apiVersion: API_VERSION,
+      fmpApiKey: FMP_API_KEY
+    })
+    cacheWarm.start()
+  } else {
+    logger.info('[CacheWarm] Skipped on this worker (non-primary PM2 worker)')
   }
 })
 
@@ -997,6 +1008,10 @@ async function gracefulShutdown(signal: string): Promise<void> {
     // Stop monitoring service (clear intervals)
     monitoring.stop()
     logger.info('[SERVER] ✓ Monitoring service stopped')
+
+    // Stop cache warming scheduler
+    cacheWarm.stop()
+    logger.info('[SERVER] ✓ Cache warm service stopped')
     
     // Disconnect from Redis cache
     await cache.disconnect()

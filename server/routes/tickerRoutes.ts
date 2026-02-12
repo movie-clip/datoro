@@ -10,6 +10,7 @@ import type { TickerDataRequest, TickerDataResponse, ErrorResponse } from '../ty
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { fmpLimiter, globalFmpLimiter, decrementGlobalFmpCounter } from '../middleware/rateLimiter.js'
 import { getCacheService, CacheTTL } from '../services/cacheService.js'
+import { resolveQuoteTtlSeconds } from '../services/quoteTtlPolicyService.js'
 import { trackSearch, updateTickerCompanyName, trackApiRequest } from '../services/databaseService.js'
 import { fetchTickerBatch, fetchTickerPriority, fetchTickerQuote } from '../services/batchDataService.js'
 
@@ -42,6 +43,11 @@ interface PrefetchedBatchCache {
 }
 
 interface PrefetchedQuoteCache {
+  data: unknown
+  source: 'memory' | 'redis' | null
+}
+
+interface PrefetchedStaticCache {
   data: unknown
   source: 'memory' | 'redis' | null
 }
@@ -104,6 +110,28 @@ async function precheckQuoteCache(req: Request, _res: Response, next: NextFuncti
   const cached = await cache.get(cacheKey)
 
   ;(req as Request & { prefetchedQuoteCache?: PrefetchedQuoteCache }).prefetchedQuoteCache = {
+    data: cached.data,
+    source: cached.source
+  }
+  req.batchCacheHit = cached.data !== null
+
+  return next()
+}
+
+async function precheckStaticCache(req: Request, _res: Response, next: NextFunction) {
+  const { ticker } = req.params
+  const mode = (req.query.mode as string) || 'full'
+  const t = normalizeTicker(ticker)
+
+  if (!t || !/^[A-Z0-9.]{1,10}$/.test(t)) {
+    req.batchCacheHit = false
+    return next()
+  }
+
+  const cacheKey = cache.generateKey('batch-static', t, mode, API_VERSION)
+  const cached = await cache.get(cacheKey)
+
+  ;(req as Request & { prefetchedStaticCache?: PrefetchedStaticCache }).prefetchedStaticCache = {
     data: cached.data,
     source: cached.source
   }
@@ -241,17 +269,18 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
       batchTimestamp,
       cachedAtTimestamp,
       hasQuoteArray,
-      CacheTTL.QUOTE as number,
+      resolveQuoteTtlSeconds(),
       nowMs
     )
 
     if (shouldRefresh) {
       quoteRefreshMetrics.attempts += 1
       const quoteCacheKey = cache.generateKey('quote', t)
+      const quoteTtlSeconds = resolveQuoteTtlSeconds()
       const freshQuote = await cache.getOrFetch<unknown[] | null>(
         quoteCacheKey,
         () => fetchTickerQuote(t, FMP_API_KEY),
-        CacheTTL.QUOTE
+        quoteTtlSeconds
       )
 
       if (freshQuote && freshQuote.length > 0) {
@@ -374,7 +403,7 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
   res.json(result)
 }))
 
-router.get('/:ticker/static', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response<TickerDataResponse | ErrorResponse>) => {
+router.get('/:ticker/static', precheckStaticCache, fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Request, res: Response<TickerDataResponse | ErrorResponse>) => {
   const { ticker } = req.params
   const mode = (req.query.mode as string) || 'full'
   const t = normalizeTicker(ticker)
@@ -390,7 +419,10 @@ router.get('/:ticker/static', fmpLimiter, globalFmpLimiter, asyncHandler(async (
   }
 
   const staticCacheKey = cache.generateKey('batch-static', t, mode, API_VERSION)
-  const staticCached = await cache.get(staticCacheKey)
+  const prefetchedStatic = (req as Request & { prefetchedStaticCache?: PrefetchedStaticCache }).prefetchedStaticCache
+  const staticCached = prefetchedStatic?.data !== undefined
+    ? prefetchedStatic
+    : await cache.get(staticCacheKey)
   if (staticCached.data) {
     if (req.fmpCallTracked) {
       decrementGlobalFmpCounter(req)
@@ -410,7 +442,7 @@ router.get('/:ticker/static', fmpLimiter, globalFmpLimiter, asyncHandler(async (
       const quoteData = (full as any)?.data?.quote
       if (Array.isArray(quoteData) && quoteData.length > 0) {
         const quoteCacheKey = cache.generateKey('quote', t)
-        cache.setFast(quoteCacheKey, quoteData, CacheTTL.QUOTE)
+        cache.setFast(quoteCacheKey, quoteData, resolveQuoteTtlSeconds())
       }
 
       return toStaticBatchPayload(full)
@@ -458,7 +490,7 @@ router.get('/:ticker/dynamic', precheckQuoteCache, fmpLimiter, globalFmpLimiter,
   const quote = await cache.getOrFetch<unknown[] | null>(
     quoteCacheKey,
     () => fetchTickerQuote(t, FMP_API_KEY),
-    CacheTTL.QUOTE
+    resolveQuoteTtlSeconds()
   )
 
   if (!quote || quote.length === 0) {

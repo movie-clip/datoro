@@ -472,6 +472,26 @@ describe('Cache Service', () => {
       expect(deleted).toBe(0);
     });
 
+    it('should use SCAN for pattern delete and clear matching memory keys', async () => {
+      await cache.set('ticker:TSLA:profile', { name: 'Tesla' }, 3600);
+      await cache.set('ticker:TSLA:quote', { price: 200 }, 3600);
+      await cache.set('ticker:NVDA:profile', { name: 'NVIDIA' }, 3600);
+
+      const scanSpy = vi.spyOn(cache.redis, 'scan');
+
+      // Ensure keys are currently present in memory
+      expect(cache.memoryCache.get('ticker:TSLA:profile')).toBeDefined();
+      expect(cache.memoryCache.get('ticker:TSLA:quote')).toBeDefined();
+
+      const deleted = await cache.deletePattern('ticker:TSLA:*');
+
+      expect(deleted).toBe(2);
+      expect(scanSpy).toHaveBeenCalled();
+      expect(cache.memoryCache.get('ticker:TSLA:profile')).toBeUndefined();
+      expect(cache.memoryCache.get('ticker:TSLA:quote')).toBeUndefined();
+      expect(cache.memoryCache.get('ticker:NVDA:profile')).toBeDefined();
+    });
+
     it('should warn when pattern delete is used without Redis', async () => {
       const memoryOnlyCache = new CacheService({ redisUrl: undefined });
       vi.clearAllMocks(); // Clear any previous logger calls
