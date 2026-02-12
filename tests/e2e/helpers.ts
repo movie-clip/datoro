@@ -5,7 +5,7 @@
 //   import { checkServerRunning, createTestUser, loginTestUser } from './helpers'
 
 import request from 'supertest'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { getPrismaClient } from '../../server/services/databaseService.js'
 
 const BASE_URL = process.env.TEST_API_URL || 'http://localhost:7071'

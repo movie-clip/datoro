@@ -59,25 +59,25 @@ describe('batchChartService - Quarterly Data', () => {
       const result = getRevenueSeriesFromBatch(mockBatchData, 'annual')
       
       expect(result).toHaveLength(2)
-      expect(result[0][1]).toBe(383285000000)
-      expect(result[1][1]).toBe(394328000000)
+      expect(result[0]![1]).toBe(383285000000)
+      expect(result[1]![1]).toBe(394328000000)
     })
 
     it('should return quarterly revenue data when period is quarterly', () => {
       const result = getRevenueSeriesFromBatch(mockBatchData, 'quarterly')
       
       expect(result).toHaveLength(4)
-      expect(result[0][1]).toBe(85777000000)
-      expect(result[1][1]).toBe(90753000000)
-      expect(result[2][1]).toBe(119575000000)
-      expect(result[3][1]).toBe(89498000000)
+      expect(result[0]![1]).toBe(85777000000)
+      expect(result[1]![1]).toBe(90753000000)
+      expect(result[2]![1]).toBe(119575000000)
+      expect(result[3]![1]).toBe(89498000000)
     })
 
     it('should return timestamps as numbers', () => {
       const result = getRevenueSeriesFromBatch(mockBatchData, 'quarterly')
       
-      expect(typeof result[0][0]).toBe('number')
-      expect(result[0][0]).toBeGreaterThan(0)
+      expect(typeof result[0]![0]).toBe('number')
+      expect(result[0]![0]).toBeGreaterThan(0)
     })
   })
 
@@ -86,16 +86,16 @@ describe('batchChartService - Quarterly Data', () => {
       const result = getNetIncomeSeriesFromBatch(mockBatchData, 'annual')
       
       expect(result).toHaveLength(2)
-      expect(result[0][1]).toBe(96995000000)
-      expect(result[1][1]).toBe(99803000000)
+      expect(result[0]![1]).toBe(96995000000)
+      expect(result[1]![1]).toBe(99803000000)
     })
 
     it('should return quarterly net income when period is quarterly', () => {
       const result = getNetIncomeSeriesFromBatch(mockBatchData, 'quarterly')
       
       expect(result).toHaveLength(4)
-      expect(result[0][1]).toBe(21448000000)
-      expect(result[1][1]).toBe(23636000000)
+      expect(result[0]![1]).toBe(21448000000)
+      expect(result[1]![1]).toBe(23636000000)
     })
   })
 
@@ -104,18 +104,18 @@ describe('batchChartService - Quarterly Data', () => {
       const result = getEpsSeriesFromBatch(mockBatchData, 'annual')
       
       expect(result).toHaveLength(2)
-      expect(result[0][1]).toBe(6.13)
-      expect(result[1][1]).toBe(6.15)
+      expect(result[0]![1]).toBe(6.13)
+      expect(result[1]![1]).toBe(6.15)
     })
 
     it('should return quarterly EPS when period is quarterly', () => {
       const result = getEpsSeriesFromBatch(mockBatchData, 'quarterly')
       
       expect(result).toHaveLength(4)
-      expect(result[0][1]).toBe(1.40)
-      expect(result[1][1]).toBe(1.53)
-      expect(result[2][1]).toBe(2.18)
-      expect(result[3][1]).toBe(1.46)
+      expect(result[0]![1]).toBe(1.40)
+      expect(result[1]![1]).toBe(1.53)
+      expect(result[2]![1]).toBe(2.18)
+      expect(result[3]![1]).toBe(1.46)
     })
   })
 
@@ -124,9 +124,9 @@ describe('batchChartService - Quarterly Data', () => {
       const result = getFcfSeriesFromBatch(mockBatchData, 'quarterly')
       
       expect(result).toHaveLength(4)
-      expect(result[0].fcf).toBe(29264000000)
-      expect(result[0].sbc).toBe(2934000000)
-      expect(typeof result[0].date).toBe('number')
+      expect(result[0]!.fcf).toBe(29264000000)
+      expect(result[0]!.sbc).toBe(2934000000)
+      expect(typeof result[0]!.date).toBe('number')
     })
 
     it('should handle missing data gracefully', () => {
@@ -142,9 +142,9 @@ describe('batchChartService - Quarterly Data', () => {
       const result = getCashDebtSeriesFromBatch(mockBatchData, 'quarterly')
       
       expect(result).toHaveLength(4)
-      expect(result[0].cash).toBe(25565000000)
-      expect(result[0].debt).toBe(101304000000)
-      expect(typeof result[0].date).toBe('number')
+      expect(result[0]!.cash).toBe(25565000000)
+      expect(result[0]!.debt).toBe(101304000000)
+      expect(typeof result[0]!.date).toBe('number')
     })
 
     it('should return annual cash and debt when period is annual', () => {
@@ -161,7 +161,7 @@ describe('batchChartService - Quarterly Data', () => {
       const result = getCashDebtSeriesFromBatch(batchWithAnnual, 'annual')
       
       expect(result).toHaveLength(1)
-      expect(result[0].cash).toBe(29965000000)
+      expect(result[0]!.cash).toBe(29965000000)
     })
   })
 
@@ -188,7 +188,7 @@ describe('batchChartService - Quarterly Data', () => {
       const result = getRevenueSeriesFromBatch(mockBatchData)
       
       expect(result).toHaveLength(2)
-      expect(result[0][1]).toBe(383285000000) // Annual data
+      expect(result[0]![1]).toBe(383285000000) // Annual data
     })
   })
 })

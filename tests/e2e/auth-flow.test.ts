@@ -74,7 +74,7 @@ describe('Authentication Flow - E2E Tests', () => {
         where: { email: TEST_USER.email }
       })
       console.log('🧹 Cleaned up test user\n')
-    } catch (_error) {
+    } catch (error) {
       console.log('⚠️  Cleanup warning:', error)
     }
   })
@@ -264,7 +264,7 @@ describe('Authentication Flow - E2E Tests', () => {
       expect(response.body.message).toContain('Logged out')
       
       // Verify cookie is cleared
-      const cookies = response.headers['set-cookie']
+      const cookies = response.headers['set-cookie'] as string[] | undefined
       const clearedCookie = cookies?.find((c: string) => c.startsWith('authToken='))
       expect(clearedCookie).toBeTruthy()
       // Should have Max-Age=0 or Expires in the past

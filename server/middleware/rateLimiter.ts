@@ -12,6 +12,8 @@ declare global {
       fmpCallTracked?: boolean
       /** Redis key used for global FMP quota tracking (set by global limiter) */
       fmpGlobalKey?: string
+      /** True when ticker route precheck confirms response will be served from cache */
+      batchCacheHit?: boolean
     }
   }
 }
@@ -45,6 +47,10 @@ export function createRateLimiters(redisClient: Redis | null = null) {
     adminLimiter: createAdminLimiter(redisClient),
     aiLimiter: createAiLimiter(redisClient),
   };
+}
+
+export function shouldSkipFmpRateLimit(req: Request): boolean {
+  return req.batchCacheHit === true
 }
 
 // Factory functions for each rate limiter type
@@ -85,6 +91,7 @@ function createFmpLimiter(redisClient: Redis | null = null) {
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: false,
+    skip: shouldSkipFmpRateLimit,
     handler: (req: Request, res: Response) => {
       logger.warn(`[RateLimit] IP ${req.ip} exceeded FMP rate limit (${RATE_LIMIT.FMP_PER_IP_MAX} req/min)`);
       res.status(429).json({
@@ -181,6 +188,10 @@ let globalFmpWindowStart = Date.now()
 
 let globalFmpLimiterImpl: (req: Request, res: Response, next: NextFunction) => unknown =
   (req, res, next) => {
+    if (shouldSkipFmpRateLimit(req)) {
+      return next()
+    }
+
     const now = Date.now()
 
     // Reset counter if window expired
@@ -225,6 +236,10 @@ function createRedisGlobalFmpLimiter(redisClient: Redis) {
   const ttlSeconds = Math.ceil(RATE_LIMIT.WINDOW_MS / 1000)
 
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (shouldSkipFmpRateLimit(req)) {
+      return next()
+    }
+
     try {
       // Key per fixed window (minute) to support stable TTL/reset behavior.
       const windowId = Math.floor(Date.now() / RATE_LIMIT.WINDOW_MS)
@@ -271,7 +286,7 @@ function createRedisGlobalFmpDecrement(redisClient: Redis) {
 
 export function globalFmpLimiter(req: Request, res: Response, next: NextFunction) {
   // Delegate to the active implementation (memory or Redis)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+   
   return globalFmpLimiterImpl(req, res, next)
 }
 

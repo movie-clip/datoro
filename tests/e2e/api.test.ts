@@ -317,6 +317,24 @@ describe('API Endpoints - E2E Tests', () => {
 
       expect(response.body.error).toBeDefined()
     }, 10000) // Increase timeout for API call
+
+    it('should block non-allowlisted FMP proxy endpoints', async () => {
+      const response = await request(BASE_URL)
+        .get('/api/fmp/api/v3/this-endpoint-does-not-exist/AAPL')
+        .expect(403)
+
+      expect(response.body.error).toBeDefined()
+      expect(response.body.error.code).toBe('FMP_PROXY_DENIED')
+    }, 10000)
+
+    it('should reject suspicious FMP proxy paths', async () => {
+      const response = await request(BASE_URL)
+        .get('/api/fmp/..%2F..%2Fetc%2Fpasswd')
+        .expect(400)
+
+      expect(response.body.error).toBeDefined()
+      expect(response.body.error.code).toBe('FMP_PROXY_INVALID_PATH')
+    }, 10000)
   })
 
   describe('Monitoring Endpoints', () => {

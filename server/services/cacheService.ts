@@ -304,7 +304,7 @@ class CacheService {
    * - Request coalescing: Multiple simultaneous requests for same key share one fetch
    * - Probabilistic early expiration: Randomly refresh before TTL expires on popular keys
    */
-  async getOrFetch<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds = REDIS_TTL.DEFAULT): Promise<T> {
+  async getOrFetch<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds: number = REDIS_TTL.DEFAULT): Promise<T> {
     // Check if there's already a pending fetch for this key (request coalescing)
     const pendingFetch = this.pendingFetches.get(key)
     if (pendingFetch) {

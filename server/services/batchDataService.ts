@@ -133,7 +133,7 @@ async function fetchWithTimeout(url: string, options: FetchOptions = {}, timeout
 /**
  * Fetch ticker data with endpoint prioritization
  * Phase 1 (Critical): Essential data for initial render (~800ms)
- * Phase 2 (Secondary): Additional data fetched after Phase 1 completes (~500ms delay)
+ * Phase 2 (Secondary): Additional data fetched immediately after Phase 1 completes
  * 
  * @param ticker - Stock ticker symbol
  * @param fmpApiKey - FMP API key
@@ -166,7 +166,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
   };
   
   // PHASE 2: Secondary endpoints (can be deferred)
-  // ~16 endpoints, fetched 500ms after Phase 1 starts
+  // ~16 endpoints, fetched immediately after Phase 1 completes
   const secondaryEndpoints: Record<string, string> = {
     // Quarterly data (for detailed analysis)
     incomeQuarter: `/api/v3/income-statement/${t}?period=quarter&limit=40&apikey=${fmpApiKey}`,
@@ -230,13 +230,13 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
         
         const data = await res.json();
         if (key === 'quote') {
-          logger.info(`[BatchData] quote data received for ${t}:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+          logger.debug(`[BatchData] quote data received for ${t}:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
           if (Array.isArray(data) && data.length > 0) {
-            logger.info(`[BatchData] quote data sample:`, { sharesOutstanding: data[0].sharesOutstanding });
+            logger.debug(`[BatchData] quote data sample:`, { sharesOutstanding: data[0].sharesOutstanding });
           }
         }
         if (key === 'advancedDcf') {
-          logger.info(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
+          logger.debug(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
         }
         return [key, data];
       } catch (_error: any) {
@@ -248,17 +248,15 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     };
 
     // PHASE 1: Fetch critical endpoints immediately
-    logger.info(`[BatchData] ${t} - Starting Phase 1 (${Object.keys(criticalEndpoints).length} critical endpoints)`);
+    logger.debug(`[BatchData] ${t} - Starting Phase 1 (${Object.keys(criticalEndpoints).length} critical endpoints)`);
     const criticalResults = await Promise.allSettled(
       Object.entries(criticalEndpoints).map(([key, endpoint]) => fetchEndpoint(key, endpoint))
     );
 
-    // Wait 500ms before starting Phase 2 (allows critical data to be cached and rendered first)
-    logger.info(`[BatchData] ${t} - Phase 1 complete (${Date.now() - startTime}ms), starting Phase 2 after 500ms delay`);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    logger.debug(`[BatchData] ${t} - Phase 1 complete (${Date.now() - startTime}ms), starting Phase 2`);
 
     // PHASE 2: Fetch secondary endpoints
-    logger.info(`[BatchData] ${t} - Starting Phase 2 (${Object.keys(secondaryEndpoints).length} secondary endpoints)`);
+    logger.debug(`[BatchData] ${t} - Starting Phase 2 (${Object.keys(secondaryEndpoints).length} secondary endpoints)`);
     const secondaryResults = await Promise.allSettled(
       Object.entries(secondaryEndpoints).map(([key, endpoint]) => fetchEndpoint(key, endpoint))
     );
@@ -275,8 +273,9 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
       failures: [] // Track which endpoints failed
     };
 
+    const endpointKeys = Object.keys(allEndpoints)
     responses.forEach((__response, _index) => {
-      const key = Object.keys(allEndpoints)[_index];
+      const key = endpointKeys[_index] ?? 'unknown';
       if (__response.status === 'fulfilled') {
         const [dataKey, data] = __response.value;
         
@@ -294,7 +293,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
           result.data[dataKey] = [data]; // Wrap in array
         } else if ((dataKey === 'revenueGeographicSegments' || dataKey === 'revenueSegments') && data && !Array.isArray(data)) {
           // FMP revenue segmentation endpoints can return object instead of array
-          logger.info(`[BatchData] ${dataKey} returned object instead of array, wrapping in array`);
+          logger.debug(`[BatchData] ${dataKey} returned object instead of array, wrapping in array`);
           result.data[dataKey] = [data]; // Wrap in array for consistent parsing
         } else {
           result.data[dataKey] = data;
@@ -316,7 +315,7 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
       .sort((a, b) => b[1] - a[1]);
     
     if (slowEndpoints.length > 0) {
-      logger.info(`[Batch] ${t} - Slow endpoints (>500ms):`, 
+      logger.debug(`[Batch] ${t} - Slow endpoints (>500ms):`, 
         slowEndpoints.map(([key, duration]) => `${key}:${duration}ms`).join(', '));
     }
 
@@ -371,8 +370,9 @@ export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Pr
     data: {}
   };
 
+  const endpointKeys = Object.keys(endpoints)
   responses.forEach((__response, _index) => {
-    const key = Object.keys(endpoints)[_index];
+    const key = endpointKeys[_index] ?? 'unknown';
     if (__response.status === 'fulfilled') {
       const [dataKey, data] = __response.value;
       result.data[dataKey] = data;
@@ -384,10 +384,38 @@ export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Pr
   return result;
 }
 
+/**
+ * Fetch latest quote only (lightweight refresh path)
+ * Used to keep dynamic price data fresh without refetching full batch payload.
+ */
+export async function fetchTickerQuote(ticker: string, fmpApiKey: string): Promise<any[] | null> {
+  const t = ticker.toUpperCase().trim()
+  const baseUrl = 'https://financialmodelingprep.com'
+
+  try {
+    const res = await fetchWithTimeout(`${baseUrl}/api/v3/quote/${t}?apikey=${fmpApiKey}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    }, 8000)
+
+    if (!res.ok) {
+      logger.warn(`[BatchData Quote] ${t} failed: ${res.status}`)
+      return null
+    }
+
+    const data = await res.json()
+    return Array.isArray(data) ? data : null
+  } catch (_error: any) {
+    logger.warn(`[BatchData Quote] ${t} error: ${_error.message}`)
+    return null
+  }
+}
+
 // Helper: Get date X months ago in YYYY-MM-DD format
 function getDateMonthsAgo(months: number): string {
   const date = new Date();
   date.setMonth(date.getMonth() - months);
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split('T')[0] || '';
 }
 

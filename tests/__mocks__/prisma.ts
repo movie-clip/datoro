@@ -198,7 +198,7 @@ export function setupDefaultMocks(): void {
         ...data,
         lastLoginAt: data.lastLoginAt || new Date()
       }
-      return userStore[userIndex]
+      return userStore[userIndex]!
     }
     
     // Fallback for tests that don't use store
@@ -211,8 +211,8 @@ export function setupDefaultMocks(): void {
     }
   })
   
-  mockPrismaClient.user.findUnique.mockImplementation(async ({ where, include }: any): Promise<unknown> => {
-    const user: unknown = {
+  mockPrismaClient.user.findUnique.mockImplementation(async ({ where, include }: any): Promise<any> => {
+    const user: any = {
       id: `mock-user-${where.ipAddress}`,
       ipAddress: where.ipAddress,
       userAgent: 'Test Browser',
@@ -413,7 +413,7 @@ export function createMockApiRequest(overrides: Partial<Omit<MockApiRequest, 'id
 /**
  * Create mock popular ticker entry
  */
-export function createMockPopularTicker(overrides: unknown = {}): any {
+export function createMockPopularTicker(overrides: any = {}): any {
   return {
     ticker: 'AAPL',
     companyName: 'Apple Inc.',

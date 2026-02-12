@@ -55,7 +55,7 @@ export function getValuationFromBatch(batchData: BatchData | null): ValuationMet
     
     // Get most recent ratios
     if (ratiosAnnual && Array.isArray(ratiosAnnual) && ratiosAnnual.length > 0) {
-      const ratios = ratiosAnnual[0]
+      const ratios = (ratiosAnnual[0] ?? {}) as any
       
       if (ratios.priceEarningsRatio) {
         out.pe = Number(ratios.priceEarningsRatio).toFixed(2)
@@ -73,7 +73,7 @@ export function getValuationFromBatch(batchData: BatchData | null): ValuationMet
     
     // Try to get Forward P/E from keyMetrics
     if (keyMetrics && Array.isArray(keyMetrics) && keyMetrics.length > 0) {
-      const metrics = keyMetrics[0]
+      const metrics = (keyMetrics[0] ?? {}) as any
       
       // Check various possible field names for forward PE
       if (metrics.forwardPE) {
@@ -92,7 +92,7 @@ export function getValuationFromBatch(batchData: BatchData | null): ValuationMet
     
     // Try to get Forward P/E from quote (some APIs include it here)
     if (out.fpe === '—' && quote && Array.isArray(quote) && quote.length > 0) {
-      const q = quote[0]
+      const q = (quote[0] ?? {}) as any
       if (q.forwardPE) {
         out.fpe = Number(q.forwardPE).toFixed(2)
       } else if (q.eps && q.price) {
@@ -161,7 +161,7 @@ export function getCashFlowFactsFromBatch(batchData: BatchData | null): CashFlow
         out.sbcImpact = formatPercent(sbcImpactValue / 100, 2)
       }
     } else if (keyMetrics && Array.isArray(keyMetrics) && keyMetrics.length > 0) {
-      const metrics = keyMetrics[0]
+      const metrics = (keyMetrics[0] ?? {}) as any
       if (metrics.freeCashFlowYield) {
         // Fallback to key metrics
         out.fcfYield = formatPercent(Number(metrics.freeCashFlowYield), 2)
@@ -191,7 +191,7 @@ export function getMarginsGrowthFromBatch(batchData: BatchData | null): MarginsG
     // Note: Batch fetches annual ratios, but we need quarterly for latest margins
     // This is a limitation - for now use annual data
     if (ratiosAnnual && Array.isArray(ratiosAnnual) && ratiosAnnual.length > 0) {
-      const ratios = ratiosAnnual[0]
+      const ratios = (ratiosAnnual[0] ?? {}) as any
       
       if (ratios.netProfitMargin) {
         out.profitMargin = formatPercent(Number(ratios.netProfitMargin), 2)
@@ -268,7 +268,7 @@ export function getBalanceFromBatch(batchData: BatchData | null): BalanceMetrics
     
     // Process Altman Z-Score from financialScores
     if (financialScores && Array.isArray(financialScores) && financialScores.length > 0) {
-      const zScoreData = financialScores[0]
+      const zScoreData = (financialScores[0] ?? {}) as any
       if (zScoreData.altmanZScore) {
         const zScore = Number(zScoreData.altmanZScore)
         if (!isNaN(zScore)) {

@@ -24,7 +24,10 @@ export interface EurostatResponse {
   version: string
   class: string
   label: string
+  source?: string
   updated: string
+  id?: string[]
+  size?: number[]
   value: Record<string, number>
   dimension: Record<string, {
     category?: {
@@ -82,8 +85,8 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
     }
     
     const timeIndexMap = timeDim.category.index
-    const timeKeys = Object.keys(timeIndexMap).sort((a, b) => timeIndexMap[a] - timeIndexMap[b])
-    const timeSize = dimSizes[timeIndex]
+    const timeKeys = Object.keys(timeIndexMap).sort((a, b) => (timeIndexMap[a] ?? 0) - (timeIndexMap[b] ?? 0))
+    const timeSize = dimSizes[timeIndex] ?? 1
     
     // Find the first available value key to determine which series to extract
     const availableKeys = Object.keys(values).map(Number).sort((a, b) => a - b)
@@ -92,7 +95,7 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
       return []
     }
     
-    const firstKey = availableKeys[0]
+    const firstKey = availableKeys[0]!
     
     // Determine if time is the last (rightmost) dimension
     const isTimeLastDimension = timeIndex === dimNames.length - 1
@@ -117,7 +120,8 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
         // Find the last non-null value in this series
         for (let timeIdx = timeKeys.length - 1; timeIdx >= 0; timeIdx--) {
           const timeKey = timeKeys[timeIdx]
-          const timeMappedIdx = timeIndexMap[timeKey]
+          if (!timeKey) continue
+          const timeMappedIdx = timeIndexMap[timeKey] ?? -1
           const valueIdx = seriesBase + timeMappedIdx
           const value = values[valueIdx.toString()]
           
@@ -136,7 +140,7 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
       
       // Extract values from the best series
       for (const timeKey of timeKeys) {
-        const timeIdx = timeIndexMap[timeKey]
+        const timeIdx = timeIndexMap[timeKey] ?? 0
         const valueLinearIndex = bestSeriesBase + timeIdx
         const value = values[valueLinearIndex.toString()]
         
@@ -152,12 +156,13 @@ function parseEurostatData(data: EurostatResponse): EurostatDataPoint[] {
       // Calculate stride: product of all dimensions AFTER time
       let stride = 1
       for (let i = timeIndex + 1; i < dimNames.length; i++) {
-        stride *= dimSizes[i]
+        stride *= dimSizes[i] ?? 1
       }
       
       // Extract series by jumping by stride for each time period
       for (let timeIdx = 0; timeIdx < timeKeys.length; timeIdx++) {
         const timeKey = timeKeys[timeIdx]
+        if (!timeKey) continue
         const valueLinearIndex = (Math.floor(firstKey / timeSize) * timeSize) + (timeIdx * stride)
         const value = values[valueLinearIndex.toString()]
         

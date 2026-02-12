@@ -339,7 +339,7 @@ describe('Ticker Data Flow - E2E Tests', () => {
       const responses = await Promise.all(promises)
       
       // All requests should succeed
-      responses.forEach((__response, _index) => {
+      responses.forEach((response, index) => {
         expect(response.body.success).toBe(true)
         expect(response.body.data.ticker).toBe(tickers[index])
         validateBatchData(response.body.data)

@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import nock from 'nock'
-import { fetchTickerBatch, fetchTickerPriority } from '../../../server/services/batchDataService.js'
+import { fetchTickerBatch, fetchTickerPriority, fetchTickerQuote } from '../../../server/services/batchDataService.js'
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com'
 const TEST_API_KEY = 'test-api-key-123'
@@ -769,9 +769,59 @@ describe('Batch Data Service', () => {
       
       const timestamp = new Date(result.timestamp)
       const now = new Date()
-      const diffSeconds = (now - timestamp) / 1000
+      const diffSeconds = (now.getTime() - timestamp.getTime()) / 1000
       
       expect(diffSeconds).toBeLessThan(5) // Should be within 5 seconds
     }, 15000)
+  })
+
+  describe('fetchTickerQuote - Lightweight Quote Refresh', () => {
+    it('should fetch latest quote successfully', async () => {
+      nock(FMP_BASE_URL)
+        .get(`/api/v3/quote/${TEST_TICKER}`)
+        .query({ apikey: TEST_API_KEY })
+        .reply(200, mockQuote)
+
+      const result = await fetchTickerQuote(TEST_TICKER, TEST_API_KEY)
+
+      expect(result).toEqual(mockQuote)
+      expect(nock.isDone()).toBe(true)
+    })
+
+    it('should normalize ticker to uppercase for quote fetch', async () => {
+      nock(FMP_BASE_URL)
+        .get('/api/v3/quote/AAPL')
+        .query({ apikey: TEST_API_KEY })
+        .reply(200, mockQuote)
+
+      const result = await fetchTickerQuote('aapl', TEST_API_KEY)
+
+      expect(result).toEqual(mockQuote)
+      expect(nock.isDone()).toBe(true)
+    })
+
+    it('should return null on non-200 response', async () => {
+      nock(FMP_BASE_URL)
+        .get(`/api/v3/quote/${TEST_TICKER}`)
+        .query({ apikey: TEST_API_KEY })
+        .reply(404, { error: 'Not found' })
+
+      const result = await fetchTickerQuote(TEST_TICKER, TEST_API_KEY)
+
+      expect(result).toBeNull()
+      expect(nock.isDone()).toBe(true)
+    })
+
+    it('should return null when quote payload is not an array', async () => {
+      nock(FMP_BASE_URL)
+        .get(`/api/v3/quote/${TEST_TICKER}`)
+        .query({ apikey: TEST_API_KEY })
+        .reply(200, { symbol: TEST_TICKER, price: 123.45 })
+
+      const result = await fetchTickerQuote(TEST_TICKER, TEST_API_KEY)
+
+      expect(result).toBeNull()
+      expect(nock.isDone()).toBe(true)
+    })
   })
 })

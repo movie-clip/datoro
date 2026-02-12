@@ -1,19 +1,33 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  getRevenueSeriesFromBatch,
-  getRevenueSegmentsFromBatch,
-  getFcfSeriesFromBatch,
-  getNetIncomeSeriesFromBatch,
-  getEpsSeriesFromBatch,
-  getEbitdaSeriesFromBatch,
-  getCashDebtSeriesFromBatch,
-  getCapitalReturnedSeriesFromBatch,
-  getSharesSeriesFromBatch,
-  getExpensesSeriesFromBatch,
-  getDividendYieldSeriesFromBatch,
-  getInsiderTradingFromBatch,
-  getPriceSeriesFromBatch
+  getRevenueSeriesFromBatch as _getRevenueSeriesFromBatch,
+  getRevenueSegmentsFromBatch as _getRevenueSegmentsFromBatch,
+  getFcfSeriesFromBatch as _getFcfSeriesFromBatch,
+  getNetIncomeSeriesFromBatch as _getNetIncomeSeriesFromBatch,
+  getEpsSeriesFromBatch as _getEpsSeriesFromBatch,
+  getEbitdaSeriesFromBatch as _getEbitdaSeriesFromBatch,
+  getCashDebtSeriesFromBatch as _getCashDebtSeriesFromBatch,
+  getCapitalReturnedSeriesFromBatch as _getCapitalReturnedSeriesFromBatch,
+  getSharesSeriesFromBatch as _getSharesSeriesFromBatch,
+  getExpensesSeriesFromBatch as _getExpensesSeriesFromBatch,
+  getDividendYieldSeriesFromBatch as _getDividendYieldSeriesFromBatch,
+  getInsiderTradingFromBatch as _getInsiderTradingFromBatch,
+  getPriceSeriesFromBatch as _getPriceSeriesFromBatch
 } from '../../../src/services/financials/batchChartService.js';
+
+const getRevenueSeriesFromBatch = _getRevenueSeriesFromBatch as any;
+const getRevenueSegmentsFromBatch = _getRevenueSegmentsFromBatch as any;
+const getFcfSeriesFromBatch = _getFcfSeriesFromBatch as any;
+const getNetIncomeSeriesFromBatch = _getNetIncomeSeriesFromBatch as any;
+const getEpsSeriesFromBatch = _getEpsSeriesFromBatch as any;
+const getEbitdaSeriesFromBatch = _getEbitdaSeriesFromBatch as any;
+const getCashDebtSeriesFromBatch = _getCashDebtSeriesFromBatch as any;
+const getCapitalReturnedSeriesFromBatch = _getCapitalReturnedSeriesFromBatch as any;
+const getSharesSeriesFromBatch = _getSharesSeriesFromBatch as any;
+const getExpensesSeriesFromBatch = _getExpensesSeriesFromBatch as any;
+const getDividendYieldSeriesFromBatch = _getDividendYieldSeriesFromBatch as any;
+const getInsiderTradingFromBatch = _getInsiderTradingFromBatch as any;
+const getPriceSeriesFromBatch = _getPriceSeriesFromBatch as any;
 
 // Mock batch data fixtures
 const mockBatchData = {
@@ -609,12 +623,12 @@ describe('Batch Chart Service', () => {
       const result = getInsiderTradingFromBatch(mockBatchData);
 
       // November 2023 should have both buy and sell
-      const novBuys = result.buys.find(item => {
+      const novBuys = result.buys.find((item: any) => {
         const date = new Date(item[0]);
         return date.getMonth() === 10 && date.getFullYear() === 2023;
       });
 
-      const novSells = result.sells.find(item => {
+      const novSells = result.sells.find((item: any) => {
         const date = new Date(item[0]);
         return date.getMonth() === 10 && date.getFullYear() === 2023;
       });
@@ -636,7 +650,7 @@ describe('Batch Chart Service', () => {
     it('should calculate net shares correctly', () => {
       const result = getInsiderTradingFromBatch(mockBatchData);
 
-      const novNet = result.net.find(item => {
+      const novNet = result.net.find((item: any) => {
         const date = new Date(item[0]);
         return date.getMonth() === 10 && date.getFullYear() === 2023;
       });
@@ -1007,11 +1021,11 @@ describe('Batch Chart Service', () => {
         }
       }
 
-      const result = getPriceSeriesFromBatch(batchDataInvalidPrices)
+      const result = getPriceSeriesFromBatch(batchDataInvalidPrices as any)
 
       // Should only include the valid entry
       expect(result).toHaveLength(1)
-      expect(result[0][1]).toBe(184.0)
+      expect(result[0]![1]).toBe(184.0)
     })
 
     it('should sort data by timestamp ascending', () => {
@@ -1038,13 +1052,13 @@ describe('Batch Chart Service', () => {
         }
       }
 
-      const result = getPriceSeriesFromBatch(unsortedBatchData)
+      const result = getPriceSeriesFromBatch(unsortedBatchData as any)
 
       // Should be sorted oldest to newest
       expect(result).toHaveLength(3)
-      expect(result[0][1]).toBe(184.0)  // 2024-01-01
-      expect(result[1][1]).toBe(185.0)  // 2024-01-02
-      expect(result[2][1]).toBe(186.0)  // 2024-01-03
+      expect(result[0]![1]).toBe(184.0)  // 2024-01-01
+      expect(result[1]![1]).toBe(185.0)  // 2024-01-02
+      expect(result[2]![1]).toBe(186.0)  // 2024-01-03
     })
 
     it('should handle maxDays parameter to limit data range', () => {
@@ -1075,7 +1089,7 @@ describe('Batch Chart Service', () => {
       }
 
       // Get last 15 days only
-      const result = getPriceSeriesFromBatch(batchDataManyDays, 15)
+      const result = getPriceSeriesFromBatch(batchDataManyDays as any, 15)
 
       // Should exclude data older than 15 days
       expect(result.length).toBeLessThanOrEqual(2)
@@ -1108,7 +1122,7 @@ describe('Batch Chart Service', () => {
         }
       }
 
-      const result = getPriceSeriesFromBatch(realFMPStructure)
+      const result = getPriceSeriesFromBatch(realFMPStructure as any)
 
       expect(result).toHaveLength(1)
       expect(result[0]).toEqual([
@@ -1133,12 +1147,14 @@ describe('Batch Chart Service', () => {
         }
       }
 
-      const result = getPriceSeriesFromBatch(largePriceHistory)
+      const result = getPriceSeriesFromBatch(largePriceHistory as any)
 
       expect(result.length).toBeGreaterThan(7000)
-      expect(result[0]).toHaveLength(2)  // [timestamp, price]
-      expect(typeof result[0][0]).toBe('number')
-      expect(typeof result[0][1]).toBe('number')
+      const firstPoint = result[0]
+      expect(firstPoint).toBeDefined()
+      expect(firstPoint!).toHaveLength(2)  // [timestamp, price]
+      expect(typeof firstPoint![0]).toBe('number')
+      expect(typeof firstPoint![1]).toBe('number')
     })
   })
 });

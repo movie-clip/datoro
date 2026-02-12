@@ -29,7 +29,10 @@ import type {
 /**
  * Batch Data Structure
  * Contains all financial data for a ticker from the single batch endpoint
- * Endpoint: /api/ticker-data/:ticker?mode=full
+ * Endpoints:
+ * - /api/ticker-data/:ticker/static?mode=full|priority (preferred static payload)
+ * - /api/ticker-data/:ticker/dynamic (preferred dynamic quote payload)
+ * - /api/ticker-data/:ticker?mode=full|priority (legacy combined fallback)
  */
 export interface BatchData {
   /** Ticker symbol (e.g., 'AAPL') */

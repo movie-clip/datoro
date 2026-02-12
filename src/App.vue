@@ -607,7 +607,10 @@ const handleSelectTicker = (ticker: string): void => {
           :active="activeTab === 'metrics'"
           :lazy-load="true"
         >
-          <section v-if="hasSubscriberData" class="charts">
+          <section
+            v-if="hasSubscriberData"
+            class="charts"
+          >
             <section class="panel">
               <SubscribersChart />
             </section>

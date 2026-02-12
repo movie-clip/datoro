@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import type { EurostatResponse } from '../../server/types/eurostat.types'
+type EurostatResponse = any
 
 // Mock logger
 vi.mock('../../server/services/logger', () => ({

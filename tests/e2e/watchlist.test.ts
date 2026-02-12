@@ -12,7 +12,7 @@ import request from 'supertest'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { config } from 'dotenv'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { getPrismaClient } from '../../server/services/databaseService.js'
 
 // Load environment variables
@@ -57,7 +57,7 @@ async function createTestUser() {
 }
 
 // Helper: Login and get auth cookie
-async function loginTestUser() {
+async function loginTestUser(): Promise<string> {
   const response = await request(BASE_URL)
     .post('/api/auth/login')
     .send({
@@ -67,12 +67,22 @@ async function loginTestUser() {
     .expect(200)
   
   // Extract Set-Cookie header
-  const cookies = response.headers['set-cookie']
+  const cookies = response.headers['set-cookie'] as string[] | undefined
   if (!cookies || cookies.length === 0) {
     throw new Error('No auth cookie received')
   }
-  
-  return cookies[0].split(';')[0] // Get just the token=value part
+
+  const firstCookie = cookies[0]
+  if (!firstCookie) {
+    throw new Error('Invalid auth cookie payload')
+  }
+
+  const tokenCookie = firstCookie.split(';')[0]
+  if (!tokenCookie) {
+    throw new Error('Missing token in auth cookie payload')
+  }
+
+  return tokenCookie // Get just the token=value part
 }
 
 // Helper: Clean up test user's watchlist
@@ -427,10 +437,19 @@ describe('Watchlist API - E2E Tests', () => {
           emailVerified: true
         }
       })
+
+      const user2Watchlist = await prisma.watchlist.create({
+        data: {
+          userId: user2.id,
+          name: 'Default',
+          isDefault: true
+        }
+      })
       
       // Add AAPL to second user's watchlist
       await prisma.watchlistItem.create({
         data: {
+          watchlistId: user2Watchlist.id,
           userId: user2.id,
           ticker: 'AAPL'
         }
@@ -520,13 +539,21 @@ describe('Watchlist API - E2E Tests', () => {
           emailVerified: true
         }
       })
+
+      const tempUserWatchlist = await prisma.watchlist.create({
+        data: {
+          userId: tempUser.id,
+          name: 'Default',
+          isDefault: true
+        }
+      })
       
       // Add watchlist items
       await prisma.watchlistItem.create({
-        data: { userId: tempUser.id, ticker: 'AAPL' }
+        data: { watchlistId: tempUserWatchlist.id, userId: tempUser.id, ticker: 'AAPL' }
       })
       await prisma.watchlistItem.create({
-        data: { userId: tempUser.id, ticker: 'MSFT' }
+        data: { watchlistId: tempUserWatchlist.id, userId: tempUser.id, ticker: 'MSFT' }
       })
       
       // Verify items exist

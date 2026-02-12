@@ -23,6 +23,22 @@ const checks = {
   warnings: []
 };
 
+function parseCommandError(error) {
+  const stdout = error?.stdout ? String(error.stdout).trim() : '';
+  const stderr = error?.stderr ? String(error.stderr).trim() : '';
+  const combined = [stderr, stdout].filter(Boolean).join('\n');
+  if (!combined) return null;
+
+  // Keep output concise but useful
+  const lines = combined.split(/\r?\n/).filter(Boolean);
+  return lines.slice(-8).join('\n');
+}
+
+function runCommand(command, options = {}) {
+  const { cwd = rootDir, stdio = 'pipe' } = options;
+  return execSync(command, { cwd, stdio, encoding: 'utf-8' });
+}
+
 function check(name, condition, errorMsg) {
   if (condition) {
     checks.passed.push(name);
@@ -49,7 +65,8 @@ check(
 
 // Check 2: Node version
 const nodeVersion = process.version;
-const nodeOk = parseInt(nodeVersion.slice(1)) >= 18;
+const nodeMajor = Number.parseInt(nodeVersion.slice(1).split('.')[0], 10);
+const nodeOk = Number.isFinite(nodeMajor) && nodeMajor >= 18;
 check(
   'Node.js Version',
   nodeOk,
@@ -90,11 +107,12 @@ requiredFiles.forEach(file => {
 // Check 6: Build test
 console.log('\n📦 Testing Production Build...');
 try {
-  execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
+  runCommand('npm run build', { stdio: 'inherit' });
   checks.passed.push('Production Build');
   console.log('✅ Production Build successful');
-} catch {
-  checks.failed.push({ name: 'Production Build', error: 'Build failed' });
+} catch (error) {
+  const details = parseCommandError(error);
+  checks.failed.push({ name: 'Production Build', error: details ? `Build failed\n${details}` : 'Build failed' });
   console.log('❌ Production Build failed');
 }
 
@@ -102,76 +120,122 @@ try {
 console.log('\n🔍 TypeScript Type Checking...');
 try {
   console.log('   Checking frontend types...');
-  execSync('npm run type-check', { cwd: rootDir, stdio: 'pipe' });
+  runCommand('npm run type-check');
   checks.passed.push('TypeScript Frontend');
   console.log('✅ Frontend type-check passed');
-} catch {
-  checks.failed.push({ name: 'TypeScript Frontend', error: 'Type errors found in frontend' });
+} catch (error) {
+  const details = parseCommandError(error);
+  checks.failed.push({
+    name: 'TypeScript Frontend',
+    error: details ? `Type errors found in frontend\n${details}` : 'Type errors found in frontend'
+  });
   console.log('❌ Frontend type-check failed');
 }
 
 try {
   console.log('   Checking backend types...');
-  execSync('npm run type-check:server', { cwd: rootDir, stdio: 'pipe' });
+  runCommand('npm run type-check:server');
   checks.passed.push('TypeScript Backend');
   console.log('✅ Backend type-check passed');
 } catch (_error) {
   // Backend type errors are warnings if tests pass (route handler signatures)
-  warn('TypeScript Backend', 'Type errors found in backend. Verify tests pass to confirm runtime safety.');
+  const details = parseCommandError(_error);
+  warn(
+    'TypeScript Backend',
+    details
+      ? `Type errors found in backend. Verify tests pass to confirm runtime safety.\n${details}`
+      : 'Type errors found in backend. Verify tests pass to confirm runtime safety.'
+  );
+}
+
+try {
+  console.log('   Checking test project types...');
+  runCommand('npm run type-check:tests');
+  checks.passed.push('TypeScript Tests');
+  console.log('✅ Test type-check passed');
+} catch (_error) {
+  const details = parseCommandError(_error);
+  warn('TypeScript Tests', details ? `Type errors found in tests.\n${details}` : 'Type errors found in tests.');
 }
 
 // Check 6.6: Security audit
 console.log('\n🔒 Running Security Audit...');
 try {
-  execSync('npm run security:audit', { cwd: rootDir, stdio: 'pipe' });
+  runCommand('npm run security:audit');
   checks.passed.push('Security Audit');
   console.log('✅ Security audit passed - no hardcoded secrets detected');
 } catch (error) {
-  checks.failed.push({ name: 'Security Audit', error: 'Security vulnerabilities found' });
+  const details = parseCommandError(error);
+  checks.failed.push({
+    name: 'Security Audit',
+    error: details ? `Security audit failed\n${details}` : 'Security vulnerabilities found'
+  });
   console.log('❌ Security audit failed - hardcoded secrets detected');
 }
 
 // Check 6.7: ESLint validation
 console.log('\n🔧 Running ESLint Validation...');
 try {
-  execSync('npm run lint:check', { cwd: rootDir, stdio: 'pipe' });
+  runCommand('npm run lint:check');
   checks.passed.push('ESLint Validation');
   console.log('✅ ESLint validation passed - code quality standards met');
 } catch (error) {
-  // ESLint errors are warnings since they don't prevent deployment
-  warn('ESLint Validation', 'Code quality issues found. Run: npm run lint:fix');
+  const details = parseCommandError(error);
+  const summary = details || '';
+  const match = summary.match(/\((\d+) errors?,\s*(\d+) warnings?\)/i);
+  const errorCount = match ? Number.parseInt(match[1], 10) : NaN;
+
+  if (Number.isFinite(errorCount) && errorCount > 0) {
+    checks.failed.push({
+      name: 'ESLint Validation',
+      error: details
+        ? `Lint errors found. Run: npm run lint:fix\n${details}`
+        : 'Lint errors found. Run: npm run lint:fix'
+    });
+    console.log('❌ ESLint validation failed - lint errors detected');
+  } else {
+    // Warnings only (non-blocking)
+    warn(
+      'ESLint Validation',
+      details
+        ? `Lint warnings found. Run: npm run lint:fix\n${details}`
+        : 'Lint warnings found. Run: npm run lint:fix'
+    );
+  }
 }
 
 // Check 6.8: Run tests
 console.log('\n🧪 Running Tests...');
 try {
-  execSync('npm test', { cwd: rootDir, stdio: 'pipe' });
+  runCommand('npm test');
   checks.passed.push('Unit Tests');
   console.log('✅ All tests passed');
-} catch {
-  checks.failed.push({ name: 'Unit Tests', error: 'Tests failed' });
+} catch (error) {
+  const details = parseCommandError(error);
+  checks.failed.push({ name: 'Unit Tests', error: details ? `Tests failed\n${details}` : 'Tests failed' });
   console.log('❌ Tests failed');
 }
 
 // Check 7: Prisma schema
 console.log('\n🗄️  Checking Prisma Schema...');
 try {
-  execSync('npx prisma validate', { cwd: rootDir, stdio: 'pipe' });
+  runCommand('npx --no-install prisma validate');
   checks.passed.push('Prisma Schema');
   console.log('✅ Prisma Schema valid');
-} catch {
-  checks.failed.push({ name: 'Prisma Schema', error: 'Invalid schema' });
+} catch (error) {
+  const details = parseCommandError(error);
+  checks.failed.push({ name: 'Prisma Schema', error: details ? `Invalid schema\n${details}` : 'Invalid schema' });
   console.log('❌ Prisma Schema invalid');
 }
 
 // Check 7.5: Verify Prisma migrations are synced
 console.log('\n🔄 Checking Prisma Migrations...');
 try {
-  const migrationStatus = execSync('npx prisma migrate status', { cwd: rootDir, encoding: 'utf-8', stdio: 'pipe' });
-  if (migrationStatus.includes('Database schema is up to date')) {
+  const migrationStatus = runCommand('npx --no-install prisma migrate status', { stdio: 'pipe' });
+  if (/database schema is up to date/i.test(migrationStatus)) {
     checks.passed.push('Prisma Migrations');
     console.log('✅ Prisma migrations synced');
-  } else if (migrationStatus.includes('Following migration have not yet been applied')) {
+  } else if (/not yet been applied/i.test(migrationStatus)) {
     warn('Prisma Migrations', 'Pending migrations detected. Run: npx prisma migrate deploy');
   } else {
     checks.passed.push('Prisma Migrations');
@@ -200,6 +264,16 @@ if (existsSync(envExample)) {
       checks.passed.push(`Env Var: ${varName}`);
     } else {
       warn(`Env Var: ${varName}`, 'Not found in .env.example');
+    }
+  });
+
+  // Recommended (not required) for production hardening
+  const recommendedVars = ['ADMIN_API_KEY', 'READINESS_REQUIRE_ADMIN_KEY'];
+  recommendedVars.forEach(varName => {
+    if (!envContent.includes(varName)) {
+      warn(`Env Var: ${varName}`, 'Recommended for production ops/security. Consider documenting in .env.example');
+    } else {
+      checks.passed.push(`Env Var (recommended): ${varName}`);
     }
   });
 }

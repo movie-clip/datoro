@@ -26,10 +26,16 @@
             :key="index"
             :class="{ 'is-match': cell.passed }"
           >
-            <td class="metric-name" :class="`status-${cell.colorStatus}`">
+            <td
+              class="metric-name"
+              :class="`status-${cell.colorStatus}`"
+            >
               {{ cell.label }}
             </td>
-            <td class="metric-value" :class="`status-${cell.colorStatus}`">
+            <td
+              class="metric-value"
+              :class="`status-${cell.colorStatus}`"
+            >
               <div class="value-container">
                 <span class="value-text">{{ cell.displayValue }}</span>
                 <div 
@@ -46,7 +52,9 @@
                 </div>
               </div>
             </td>
-            <td class="metric-threshold">{{ cell.thresholdLabel }}</td>
+            <td class="metric-threshold">
+              {{ cell.thresholdLabel }}
+            </td>
           </tr>
         </tbody>
       </table>

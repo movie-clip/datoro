@@ -81,6 +81,45 @@ export interface TickerStoreState {
   setTimeframe: (timeframe: 'annual' | 'quarterly') => void
 }
 
+export async function fetchTickerDataWithSplit(
+  ticker: string,
+  mode: 'full' | 'lite',
+  apiBaseUrl: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<BatchData> {
+  const t = ticker.trim().toUpperCase()
+  if (!t) throw new Error('Ticker is required')
+
+  // Backend supports full|priority; keep lite as frontend alias for priority.
+  const apiMode = mode === 'lite' ? 'priority' : mode
+
+  // Preferred path: split static + dynamic for better cache correctness.
+  const staticResponse = await fetchImpl(`${apiBaseUrl}/api/ticker-data/${t}/static?mode=${apiMode}`)
+  if (!staticResponse.ok) {
+    throw new Error(`HTTP ${staticResponse.status}: ${staticResponse.statusText}`)
+  }
+
+  const data = await staticResponse.json() as BatchData
+
+  // Dynamic quote fetch is best-effort; keep static payload if quote endpoint fails.
+  try {
+    const dynamicResponse = await fetchImpl(`${apiBaseUrl}/api/ticker-data/${t}/dynamic`)
+    if (dynamicResponse.ok) {
+      const dynamicPayload = await dynamicResponse.json() as { timestamp?: string; quote?: FMPQuote[] }
+      if (Array.isArray(dynamicPayload.quote) && dynamicPayload.quote.length > 0) {
+        data.data.quote = dynamicPayload.quote
+        if (dynamicPayload.timestamp) {
+          data.timestamp = dynamicPayload.timestamp
+        }
+      }
+    }
+  } catch {
+    // Best-effort dynamic quote merge; static payload remains valid.
+  }
+
+  return data
+}
+
 export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   // State
   const currentTicker = ref('AAPL')
@@ -91,18 +130,9 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
 
   // Vue Query: Fetcher function
   const fetchTickerData = async (ticker: string, mode: 'full' | 'lite'): Promise<BatchData> => {
-    const t = ticker.trim().toUpperCase()
-    if (!t) throw new Error('Ticker is required')
-
     const startTime = performance.now()
-
-    const response = await fetch(`${API_BASE_URL}/api/ticker-data/${t}?mode=${mode}`)
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const data: BatchData = await response.json()
+    const t = ticker.trim().toUpperCase()
+    const data = await fetchTickerDataWithSplit(t, mode, API_BASE_URL, fetch)
 
     // Track successful load
     const duration = Math.round(performance.now() - startTime)

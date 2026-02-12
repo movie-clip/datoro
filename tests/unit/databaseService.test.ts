@@ -14,17 +14,28 @@ vi.mock('@prisma/client', () => ({
 
 // Import after mocking
 import {
-  getPrismaClient,
-  findOrCreateUser,
-  trackSearch,
-  updateTickerCompanyName,
-  trackApiRequest,
-  getPopularTickers,
-  getUserSearchHistory,
-  getApiRequestStats,
-  checkDatabaseHealth,
-  cleanupOldData
+  getPrismaClient as _getPrismaClient,
+  findOrCreateUser as _findOrCreateUser,
+  trackSearch as _trackSearch,
+  updateTickerCompanyName as _updateTickerCompanyName,
+  trackApiRequest as _trackApiRequest,
+  getPopularTickers as _getPopularTickers,
+  getUserSearchHistory as _getUserSearchHistory,
+  getApiRequestStats as _getApiRequestStats,
+  checkDatabaseHealth as _checkDatabaseHealth,
+  cleanupOldData as _cleanupOldData
 } from '../../server/services/databaseService.js'
+
+const getPrismaClient = _getPrismaClient as any
+const findOrCreateUser = _findOrCreateUser as any
+const trackSearch = _trackSearch as any
+const updateTickerCompanyName = _updateTickerCompanyName as any
+const trackApiRequest = _trackApiRequest as any
+const getPopularTickers = _getPopularTickers as any
+const getUserSearchHistory = _getUserSearchHistory as any
+const getApiRequestStats = _getApiRequestStats as any
+const checkDatabaseHealth = _checkDatabaseHealth as any
+const cleanupOldData = _cleanupOldData as any
 
 describe('Database Service', () => {
   const testIpAddress = '127.0.0.1'
@@ -61,7 +72,7 @@ describe('Database Service', () => {
 
   describe('User Management', () => {
     it('should create new user with IP and user agent', async () => {
-      const user: unknown = await findOrCreateUser(testIpAddress, testUserAgent)
+      const user: any = await findOrCreateUser(testIpAddress, testUserAgent)
       
       expect(user).toBeDefined()
       expect(user.id).toBeDefined()
@@ -73,9 +84,9 @@ describe('Database Service', () => {
     })
 
     it('should update lastLoginAt on existing user', async () => {
-      const user1: unknown = await findOrCreateUser(testIpAddress, testUserAgent)
+      const user1: any = await findOrCreateUser(testIpAddress, testUserAgent)
       await sleep(100) // Wait 100ms
-      const user2: unknown = await findOrCreateUser(testIpAddress, testUserAgent)
+      const user2: any = await findOrCreateUser(testIpAddress, testUserAgent)
       
       expect(user1.id).toBe(user2.id)
       // lastLoginAt should be updated on subsequent logins
@@ -119,7 +130,7 @@ describe('Database Service', () => {
       expect(history.length).toBeGreaterThanOrEqual(3)
       
       // Check that recent searches are included
-      const tickers = history.map(s => s.ticker)
+      const tickers = history.map((s: any) => s.ticker)
       expect(tickers).toContain('MSFT')
       expect(tickers).toContain('GOOGL')
       expect(tickers).toContain('TSLA')
@@ -163,7 +174,7 @@ describe('Database Service', () => {
       await trackApiRequest(requestData)
       
       // Verify by checking stats
-      const stats = await getApiRequestStats(24)
+      const stats: any = await getApiRequestStats(24)
       expect(stats).toBeDefined()
       expect(stats.total).toBeGreaterThan(0)
     })
@@ -181,7 +192,7 @@ describe('Database Service', () => {
       await trackApiRequest(requestData)
       
       // Verify by checking stats (void function, cacheHitRate is string like "50%")
-      const stats = await getApiRequestStats(24)
+      const stats: any = await getApiRequestStats(24)
       expect(stats.cacheHitRate).toBeDefined()
       expect(parseFloat(stats.cacheHitRate)).toBeGreaterThan(0)
     })
@@ -225,12 +236,12 @@ describe('Database Service', () => {
     })
 
     it('should limit results', async () => {
-      const tickers = await getPopularTickers(3, 7)
+      const tickers: any = await getPopularTickers(3, 7)
       expect(tickers.length).toBeLessThanOrEqual(3)
     })
 
     it('should respect days parameter', async () => {
-      const tickers = await getPopularTickers(10, 1)
+      const tickers: any = await getPopularTickers(10, 1)
       expect(Array.isArray(tickers)).toBe(true)
       // All searches should be within last day
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
@@ -278,7 +289,7 @@ describe('Database Service', () => {
 
   describe('API Request Statistics', () => {
     it('should get API request stats', async () => {
-      const stats = await getApiRequestStats(24)
+      const stats: any = await getApiRequestStats(24)
       
       expect(stats).toBeDefined()
       expect(stats.total).toBeDefined()
@@ -289,7 +300,7 @@ describe('Database Service', () => {
     })
 
     it('should calculate success rate correctly', async () => {
-      const stats = await getApiRequestStats(24)
+      const stats: any = await getApiRequestStats(24)
       
       if (stats.total > 0) {
         expect(stats.successRate).toMatch(/%$/) // Should end with %
@@ -300,7 +311,7 @@ describe('Database Service', () => {
     })
 
     it('should calculate cache hit rate correctly', async () => {
-      const stats = await getApiRequestStats(24)
+      const stats: any = await getApiRequestStats(24)
       
       if (stats.total > 0) {
         expect(stats.cacheHitRate).toMatch(/%$/) // Should end with %
@@ -311,8 +322,8 @@ describe('Database Service', () => {
     })
 
     it('should respect hours parameter', async () => {
-      const stats1h = await getApiRequestStats(1)
-      const stats24h = await getApiRequestStats(24)
+      const stats1h: any = await getApiRequestStats(1)
+      const stats24h: any = await getApiRequestStats(24)
       
       expect(stats1h).toBeDefined()
       expect(stats24h).toBeDefined()
@@ -323,7 +334,7 @@ describe('Database Service', () => {
 
   describe('Database Health Check', () => {
     it('should check database health', async () => {
-      const health = await checkDatabaseHealth()
+      const health: any = await checkDatabaseHealth()
       expect(typeof health).toBe('object')
       expect(health.status).toBe('healthy')
       expect(typeof health.latency).toBe('number')

@@ -180,7 +180,7 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     // Get TTM EPS, P/E ratio, and EPS growth
     // Priority 1: Use TTM data (most current)
     // Priority 2: Fall back to quote/annual data
-    const ratiosTTM = data.ratiosTTM?.[0] || null
+    const ratiosTTM = (data as any).ratiosTTM?.[0] || null
     
     // EPS from quote (already TTM)
     // Ensure we extract a number value, not an object

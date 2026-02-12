@@ -1,10 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getValuationFromBatch,
-  getCashFlowFactsFromBatch,
-  getMarginsGrowthFromBatch,
-  getBalanceFromBatch
+  getValuationFromBatch as _getValuationFromBatch,
+  getCashFlowFactsFromBatch as _getCashFlowFactsFromBatch,
+  getMarginsGrowthFromBatch as _getMarginsGrowthFromBatch,
+  getBalanceFromBatch as _getBalanceFromBatch
 } from '../../../src/services/financials/batchTableService.js';
+
+const getValuationFromBatch = _getValuationFromBatch as (batchData: any) => ReturnType<typeof _getValuationFromBatch>;
+const getCashFlowFactsFromBatch = _getCashFlowFactsFromBatch as (batchData: any) => ReturnType<typeof _getCashFlowFactsFromBatch>;
+const getMarginsGrowthFromBatch = _getMarginsGrowthFromBatch as (batchData: any) => ReturnType<typeof _getMarginsGrowthFromBatch>;
+const getBalanceFromBatch = _getBalanceFromBatch as (batchData: any) => ReturnType<typeof _getBalanceFromBatch>;
 
 // Mock batch data fixtures
 const mockBatchData = {
@@ -102,7 +107,7 @@ describe('Batch Table Service', () => {
             profile: [{ mktCap }]
           }
         };
-        const result = getValuationFromBatch(data);
+        const result = getValuationFromBatch(data as any);
         expect(result.marketCap).toBe(expected);
       });
     });
@@ -729,19 +734,19 @@ describe('Batch Table Service', () => {
         }
       };
       
-      expect(() => getValuationFromBatch(malformed)).not.toThrow();
-      expect(() => getCashFlowFactsFromBatch(malformed)).not.toThrow();
-      expect(() => getMarginsGrowthFromBatch(malformed)).not.toThrow();
-      expect(() => getBalanceFromBatch(malformed)).not.toThrow();
+      expect(() => getValuationFromBatch(malformed as any)).not.toThrow();
+      expect(() => getCashFlowFactsFromBatch(malformed as any)).not.toThrow();
+      expect(() => getMarginsGrowthFromBatch(malformed as any)).not.toThrow();
+      expect(() => getBalanceFromBatch(malformed as any)).not.toThrow();
     });
 
     it('should handle undefined data property', () => {
       const noData = { ticker: 'AAPL' };
       
-      const v = getValuationFromBatch(noData);
-      const c = getCashFlowFactsFromBatch(noData);
-      const m = getMarginsGrowthFromBatch(noData);
-      const b = getBalanceFromBatch(noData);
+      const v = getValuationFromBatch(noData as any);
+      const c = getCashFlowFactsFromBatch(noData as any);
+      const m = getMarginsGrowthFromBatch(noData as any);
+      const b = getBalanceFromBatch(noData as any);
       
       expect(v.marketCap).toBe('—');
       expect(c.fcfYield).toBe('—');
@@ -750,10 +755,10 @@ describe('Batch Table Service', () => {
     });
 
     it('should not throw on completely empty object', () => {
-      expect(() => getValuationFromBatch({})).not.toThrow();
-      expect(() => getCashFlowFactsFromBatch({})).not.toThrow();
-      expect(() => getMarginsGrowthFromBatch({})).not.toThrow();
-      expect(() => getBalanceFromBatch({})).not.toThrow();
+      expect(() => getValuationFromBatch({} as any)).not.toThrow();
+      expect(() => getCashFlowFactsFromBatch({} as any)).not.toThrow();
+      expect(() => getMarginsGrowthFromBatch({} as any)).not.toThrow();
+      expect(() => getBalanceFromBatch({} as any)).not.toThrow();
     });
   });
 
@@ -768,7 +773,7 @@ describe('Batch Table Service', () => {
       
       tests.forEach(({ value, expected }) => {
         const data = { data: { profile: [{ mktCap: value }] } };
-        const result = getValuationFromBatch(data);
+        const result = getValuationFromBatch(data as any);
         expect(result.marketCap).toBe(expected);
       });
     });
@@ -783,7 +788,7 @@ describe('Batch Table Service', () => {
       
       tests.forEach(({ value, expected }) => {
         const data = { data: { profile: [{ mktCap: value }] } };
-        const result = getValuationFromBatch(data);
+        const result = getValuationFromBatch(data as any);
         expect(result.marketCap).toBe(expected);
       });
     });
@@ -798,7 +803,7 @@ describe('Batch Table Service', () => {
       
       tests.forEach(({ value, expected }) => {
         const data = { data: { profile: [{ mktCap: value }] } };
-        const result = getValuationFromBatch(data);
+        const result = getValuationFromBatch(data as any);
         expect(result.marketCap).toBe(expected);
       });
     });
@@ -813,7 +818,7 @@ describe('Batch Table Service', () => {
       
       tests.forEach(({ value, expected }) => {
         const data = { data: { profile: [{ mktCap: value }] } };
-        const result = getValuationFromBatch(data);
+        const result = getValuationFromBatch(data as any);
         expect(result.marketCap).toBe(expected);
       });
     });
@@ -829,7 +834,7 @@ describe('Batch Table Service', () => {
         }
       };
       
-      const result = getBalanceFromBatch(negativeData);
+      const result = getBalanceFromBatch(negativeData as any);
       // Net = 50B - 200B = -150B
       expect(result.net).toBe('$-150.00B');
     });
@@ -846,8 +851,8 @@ describe('Batch Table Service', () => {
         }
       };
       
-      const valuation = getValuationFromBatch(zeroData);
-      const balance = getBalanceFromBatch(zeroData);
+      const valuation = getValuationFromBatch(zeroData as any);
+      const balance = getBalanceFromBatch(zeroData as any);
       
       // Zero market cap is treated as "not available" by the truthiness check
       expect(valuation.marketCap).toBe('—');
@@ -864,7 +869,7 @@ describe('Batch Table Service', () => {
         }
       };
       
-      const result = getValuationFromBatch(nanData);
+      const result = getValuationFromBatch(nanData as any);
       expect(result.marketCap).toBe('—');
     });
   });

@@ -211,6 +211,52 @@ const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
+// ============================================
+// FMP Proxy Allowlist (SECURITY)
+// ============================================
+// The /api/fmp proxy injects the server-side FMP API key.
+// This must be strict allowlist to prevent abuse/quota exhaustion.
+const FMP_PROXY_ALLOWED_METHODS = new Set(['GET', 'HEAD'])
+
+// IMPORTANT: these patterns match the upstream path portion only (no query string).
+// Keep them tight: no wildcards that allow arbitrary endpoints.
+const FMP_PROXY_ALLOWED_PATHS: RegExp[] = [
+  // v3 core
+  /^\/api\/v3\/profile\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/quote\/[A-Za-z0-9%.,^-]{1,200}$/,
+  /^\/api\/v3\/income-statement\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/balance-sheet-statement\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/cash-flow-statement\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/ratios\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/ratios-ttm\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/key-metrics\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/key-metrics-ttm\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/historical-price-full\/[A-Za-z0-9%.,^-]{1,200}$/,
+  /^\/api\/v3\/historical-price-full\/(stock_dividend|stock_split)\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/discounted-cash-flow\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/levered-discounted-cash-flow\/[A-Za-z0-9.]{1,15}$/,
+  /^\/api\/v3\/sector-performance$/,
+  /^\/api\/v3\/search$/,
+
+  // v4
+  /^\/api\/v4\/treasury$/,
+  /^\/api\/v4\/economic$/,
+  /^\/api\/v4\/score$/,
+  /^\/api\/v4\/revenue-product-segmentation$/,
+  /^\/api\/v4\/revenue-geographic-segmentation$/,
+  /^\/api\/v4\/price-target-summary$/,
+  /^\/api\/v4\/price-target-consensus$/,
+  /^\/api\/v4\/insider-trading$/,
+
+  // stable
+  /^\/stable\/insider-trading\/search$/,
+  /^\/stable\/market-risk-premium$/,
+]
+
+function isAllowedFmpProxyPath(pathname: string): boolean {
+  return FMP_PROXY_ALLOWED_PATHS.some((re) => re.test(pathname))
+}
+
 // Request deduplication: Track in-flight requests to FMP API
 // If multiple clients request the same data simultaneously, only make one API call
 const inFlightRequests = new Map<string, Promise<unknown>>()
@@ -373,6 +419,67 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     const subpath = req.url.replace(/^\/api\/fmp/, '')
     const [path, query] = subpath.split('?')
     const params = new URLSearchParams(query || '')
+
+    // Enforce allowlisted methods
+    const method = (req.method || 'GET').toUpperCase()
+    if (!FMP_PROXY_ALLOWED_METHODS.has(method)) {
+      return res.status(405).json({
+        error: {
+          message: 'Method not allowed for FMP proxy',
+          code: 'FMP_PROXY_METHOD_NOT_ALLOWED',
+          timestamp: new Date().toISOString(),
+          path: req.path
+        }
+      })
+    }
+
+    // Basic safety checks against path tricks
+    const lowerPath = String(path || '').toLowerCase()
+    if (
+      !path ||
+      !path.startsWith('/') ||
+      lowerPath.includes('..') ||
+      lowerPath.includes('\\') ||
+      lowerPath.includes('%2e') ||
+      lowerPath.includes('%5c')
+    ) {
+      return res.status(400).json({
+        error: {
+          message: 'Invalid proxy path',
+          code: 'FMP_PROXY_INVALID_PATH',
+          timestamp: new Date().toISOString(),
+          path: req.path
+        }
+      })
+    }
+
+    // Enforce strict allowlist of upstream endpoints
+    if (!isAllowedFmpProxyPath(path)) {
+      logger.warn('[FMP] Proxy request blocked (not allowlisted)', {
+        ip: req.ip,
+        method,
+        path
+      })
+      return res.status(403).json({
+        error: {
+          message: 'Endpoint not allowed via proxy',
+          code: 'FMP_PROXY_DENIED',
+          timestamp: new Date().toISOString(),
+          path: req.path,
+          details: 'This endpoint is not allowlisted by the server.'
+        }
+      })
+    }
+
+    // Cap common numeric params to reduce abuse
+    if (params.has('limit')) {
+      const raw = params.get('limit')
+      const n = raw ? Number.parseInt(raw, 10) : NaN
+      if (Number.isFinite(n)) {
+        const capped = Math.max(1, Math.min(500, n))
+        params.set('limit', String(capped))
+      }
+    }
     
     // ========== Inline Validation Based on Endpoint ==========
     try {
@@ -649,7 +756,6 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     // Forward all headers except host
     const headers = { ...req.headers as any, host: 'financialmodelingprep.com', 'user-agent': UA }
     delete headers.host
-    const method = req.method || 'GET'
     const options: any = { method, headers }
     if (method !== 'GET' && method !== 'HEAD') {
       options.body = req.body
