@@ -115,12 +115,43 @@ router.get('/monitoring/stats', adminLimiter, requireAdminKey(), (_req: Request,
 })
 
 /**
+ * GET /api/monitoring/cache-latency
+ * Cache-source latency breakdown for split ticker endpoints (admin only)
+ */
+router.get('/monitoring/cache-latency', adminLimiter, requireAdminKey(), (_req: Request, res: Response) => {
+  const metrics = monitoring.getMetrics()
+  const byCacheSource = metrics?.performance?.byCacheSource || {}
+
+  res.json({
+    generatedAt: new Date().toISOString(),
+    byCacheSource
+  })
+})
+
+/**
  * GET /api/monitoring/summary
  * Monitoring summary (public)
  */
 router.get('/monitoring/summary', (_req: Request, res: Response) => {
   const summary = monitoring.getSummary()
   res.json(summary)
+})
+
+/**
+ * GET /api/monitoring/alerts
+ * Operational alerts focused on Redis memory-only fallback
+ */
+router.get('/monitoring/alerts', (_req: Request, res: Response) => {
+  const metrics = monitoring.getMetrics()
+  const redis = metrics?.system?.redis || null
+
+  res.json({
+    ok: !redis?.alert,
+    alerts: {
+      redis
+    },
+    timestamp: new Date().toISOString()
+  })
 })
 
 /**

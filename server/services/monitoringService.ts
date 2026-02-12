@@ -1,5 +1,6 @@
 import logger from '../services/logger.js'
 import type { Request, Response } from 'express'
+import { getCacheService } from './cacheService.js'
 
 /**
  * Monitoring Service
@@ -35,6 +36,16 @@ interface EndpointPerformance {
   minResponseTime: number
 }
 
+type CacheSource = 'memory' | 'redis' | 'miss' | 'hit' | 'unknown'
+
+interface RedisHealth {
+  status: 'connected' | 'memory-only'
+  memoryOnlySince: string | null
+  memoryOnlyDurationSec: number
+  alert: boolean
+  alertThresholdSec: number
+}
+
 interface Metrics {
   requests: {
     total: number
@@ -54,6 +65,7 @@ interface Metrics {
     p95ResponseTime: number
     p99ResponseTime: number
     byEndpoint: Record<string, EndpointPerformance>  // Per-endpoint metrics
+    byCacheSource: Record<string, EndpointPerformance>
   }
   cache: {
     hits: number
@@ -76,14 +88,22 @@ interface Metrics {
     uptime: number
     memory: NodeJS.MemoryUsage
     cpu: any
+    redis: RedisHealth
   }
 }
 
 class MonitoringService {
   private metrics: Metrics
   private metricsInterval: NodeJS.Timeout | null
+  private readonly redisAlertThresholdSec: number
+  private redisMemoryOnlySinceMs: number | null
+  private redisAlertLogged: boolean
 
   constructor() {
+    this.redisAlertThresholdSec = Number(process.env.REDIS_MEMORY_ONLY_ALERT_SECONDS || 300)
+    this.redisMemoryOnlySinceMs = null
+    this.redisAlertLogged = false
+
     this.metrics = {
       requests: {
         total: 0,
@@ -102,7 +122,8 @@ class MonitoringService {
         avgResponseTime: 0,
         p95ResponseTime: 0,
         p99ResponseTime: 0,
-        byEndpoint: {}  // Initialize endpoint-specific performance tracking
+        byEndpoint: {},  // Initialize endpoint-specific performance tracking
+        byCacheSource: {}
       },
       cache: {
         hits: 0,
@@ -124,7 +145,14 @@ class MonitoringService {
       system: {
         uptime: Date.now(),
         memory: {} as NodeJS.MemoryUsage,
-        cpu: {}
+        cpu: {},
+        redis: {
+          status: 'connected',
+          memoryOnlySince: null,
+          memoryOnlyDurationSec: 0,
+          alert: false,
+          alertThresholdSec: this.redisAlertThresholdSec
+        }
       }
     }
 
@@ -183,6 +211,12 @@ class MonitoringService {
     
     // Track endpoint-specific performance
     this.trackEndpointPerformance(endpoint, duration)
+
+    // Track cache-source performance for ticker split endpoints
+    if (this.shouldTrackCacheSourceForEndpoint(endpoint)) {
+      const cacheSource = this.normalizeCacheSource(res.getHeader('X-Cache'))
+      this.trackCacheSourcePerformance(endpoint, cacheSource, duration)
+    }
 
     // Track slow queries (>2 seconds)
     if (duration > 2000) {
@@ -266,6 +300,58 @@ class MonitoringService {
       endpointMetrics.maxResponseTime = Math.round(sorted[len - 1])
       endpointMetrics.minResponseTime = Math.round(sorted[0])
     }
+  }
+
+  /**
+   * Track cache-source latency for selected endpoints
+   */
+  trackCacheSourcePerformance(endpoint: string, source: CacheSource, duration: number): void {
+    const key = `${endpoint}|${source}`
+
+    if (!this.metrics.performance.byCacheSource[key]) {
+      this.metrics.performance.byCacheSource[key] = {
+        count: 0,
+        responseTimes: [],
+        avgResponseTime: 0,
+        p50ResponseTime: 0,
+        p95ResponseTime: 0,
+        p99ResponseTime: 0,
+        maxResponseTime: 0,
+        minResponseTime: Infinity
+      }
+    }
+
+    const sourceMetrics = this.metrics.performance.byCacheSource[key]
+    sourceMetrics.count++
+    sourceMetrics.responseTimes.push(duration)
+
+    if (sourceMetrics.responseTimes.length > 200) {
+      sourceMetrics.responseTimes.shift()
+    }
+
+    const sorted = [...sourceMetrics.responseTimes].sort((a, b) => a - b)
+    const len = sorted.length
+    sourceMetrics.avgResponseTime = Math.round(sorted.reduce((a, b) => a + b, 0) / len)
+    sourceMetrics.p50ResponseTime = Math.round(sorted[Math.floor(len * 0.50)])
+    sourceMetrics.p95ResponseTime = Math.round(sorted[Math.floor(len * 0.95)])
+    sourceMetrics.p99ResponseTime = Math.round(sorted[Math.floor(len * 0.99)])
+    sourceMetrics.maxResponseTime = Math.round(sorted[len - 1])
+    sourceMetrics.minResponseTime = Math.round(sorted[0])
+  }
+
+  private shouldTrackCacheSourceForEndpoint(endpoint: string): boolean {
+    return endpoint.endsWith('/static') || endpoint.endsWith('/dynamic')
+  }
+
+  private normalizeCacheSource(cacheHeader: unknown): CacheSource {
+    const value = String(cacheHeader || '').toLowerCase().trim()
+
+    if (!value) return 'unknown'
+    if (value.includes('memory')) return 'memory'
+    if (value.includes('redis')) return 'redis'
+    if (value.includes('miss')) return 'miss'
+    if (value.includes('hit')) return 'hit'
+    return 'unknown'
   }
 
   /**
@@ -366,6 +452,49 @@ class MonitoringService {
       user: Math.round(cpuUsage.user / 1000), // ms
       system: Math.round(cpuUsage.system / 1000) // ms
     };
+
+    // Redis memory-only fallback monitoring (performance alert)
+    const cache = getCacheService()
+    const now = Date.now()
+    const memoryOnly = cache.isMemoryOnly()
+
+    if (memoryOnly && this.redisMemoryOnlySinceMs === null) {
+      this.redisMemoryOnlySinceMs = now
+    }
+
+    if (!memoryOnly && this.redisMemoryOnlySinceMs !== null) {
+      const fallbackDurationSec = Math.floor((now - this.redisMemoryOnlySinceMs) / 1000)
+      if (fallbackDurationSec >= 30) {
+        logger.info('[Monitoring] Redis recovered from memory-only fallback mode', {
+          durationSec: fallbackDurationSec
+        })
+      }
+      this.redisMemoryOnlySinceMs = null
+      this.redisAlertLogged = false
+    }
+
+    const memoryOnlyDurationSec = this.redisMemoryOnlySinceMs
+      ? Math.floor((now - this.redisMemoryOnlySinceMs) / 1000)
+      : 0
+    const redisAlert = memoryOnly && memoryOnlyDurationSec >= this.redisAlertThresholdSec
+
+    if (redisAlert && !this.redisAlertLogged) {
+      this.redisAlertLogged = true
+      logger.error('[Monitoring] Redis memory-only alert threshold exceeded', {
+        thresholdSec: this.redisAlertThresholdSec,
+        memoryOnlyDurationSec
+      })
+    }
+
+    this.metrics.system.redis = {
+      status: memoryOnly ? 'memory-only' : 'connected',
+      memoryOnlySince: this.redisMemoryOnlySinceMs
+        ? new Date(this.redisMemoryOnlySinceMs).toISOString()
+        : null,
+      memoryOnlyDurationSec,
+      alert: redisAlert,
+      alertThresholdSec: this.redisAlertThresholdSec
+    }
   }
 
   /**
@@ -401,9 +530,10 @@ class MonitoringService {
     const errorRate = totalRequests > 0 
       ? Number(((metrics.errors.total / totalRequests) * 100).toFixed(2))
       : 0;
+    const redisDegraded = Boolean(metrics.system?.redis?.alert)
 
     return {
-      status: errorRate > 5 ? 'degraded' : 'healthy',
+      status: errorRate > 5 || redisDegraded ? 'degraded' : 'healthy',
       uptime: metrics.system.uptimeFormatted,
       requests: {
         total: totalRequests,
@@ -417,6 +547,11 @@ class MonitoringService {
       cache: {
         hitRate: `${metrics.cache.hitRate}%`,
         bytesSaved: this.formatBytes(metrics.cache.bytesSaved)
+      },
+      redis: {
+        status: metrics.system?.redis?.status || 'unknown',
+        alert: Boolean(metrics.system?.redis?.alert),
+        memoryOnlyDurationSec: metrics.system?.redis?.memoryOnlyDurationSec || 0
       },
       errors: {
         total: metrics.errors.total,
@@ -469,7 +604,8 @@ class MonitoringService {
         avgResponseTime: 0,
         p95ResponseTime: 0,
         p99ResponseTime: 0,
-        byEndpoint: {}  // Reset endpoint-specific performance tracking
+        byEndpoint: {},  // Reset endpoint-specific performance tracking
+        byCacheSource: {}
       },
       cache: {
         hits: 0,
@@ -491,7 +627,18 @@ class MonitoringService {
       system: {
         uptime,
         memory: {} as any,
-        cpu: {}
+        cpu: {},
+        redis: {
+          status: this.redisMemoryOnlySinceMs ? 'memory-only' : 'connected',
+          memoryOnlySince: this.redisMemoryOnlySinceMs
+            ? new Date(this.redisMemoryOnlySinceMs).toISOString()
+            : null,
+          memoryOnlyDurationSec: this.redisMemoryOnlySinceMs
+            ? Math.floor((Date.now() - this.redisMemoryOnlySinceMs) / 1000)
+            : 0,
+          alert: false,
+          alertThresholdSec: this.redisAlertThresholdSec
+        }
       }
     };
   }
