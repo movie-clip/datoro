@@ -85,7 +85,7 @@ router.get('/:ticker', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
     
     // Decrement global FMP counter for cache hits (not actual API calls)
     if (req.fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     
     res.setHeader('X-Cache', cached.source || 'unknown')

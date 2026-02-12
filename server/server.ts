@@ -49,7 +49,7 @@ import {
 import { 
   fmpLimiter, 
   speedLimiter,
-  createRateLimiters
+  initializeRateLimiters
 } from './middleware/rateLimiter.js'
 import { 
   errorHandler, 
@@ -67,6 +67,13 @@ config({ path: join(__dirname, '..', '.env.local'), override: true })
 // Initialize services
 const cache = getCacheService()
 const monitoring = getMonitoringService()
+
+// Connect to Redis before registering routes so rate limiting is cluster-safe in production.
+// If Redis is unavailable, CacheService will fall back to memory-only mode.
+await cache.connect()
+
+// Initialize rate limiters (Redis-backed when available)
+initializeRateLimiters(cache.getRedisClient())
 
 // API Version - increment when FMP endpoints change to auto-invalidate caches
 // v2.3 - Added fmpDcf endpoint to batch data service
@@ -177,7 +184,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'If-None-Match'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'If-None-Match', 'X-Admin-Key'],
   exposedHeaders: ['X-Cache', 'X-Request-Id', 'ETag'],
   preflightContinue: false,
   optionsSuccessStatus: 204
@@ -810,29 +817,6 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   logger.info(`Access from network: http://<your-pc-ip>:${PORT}`)
   logger.info(`CORS allowed origin: ${DEV_ORIGIN}`)
   logger.info(`FMP API: ${FMP_API_KEY ? 'ENABLED' : 'DISABLED (set FMP_API_KEY)'}`)
-  
-  // Connect to Redis
-  await cache.connect()
-  
-  // Initialize Redis-backed rate limiters (cluster-safe)
-  const redisClient = cache.getRedisClient()
-  if (redisClient) {
-    logger.info('[RateLimit] ✓ Redis-backed rate limiting enabled (cluster-safe)')
-    logger.info('[RateLimit] All PM2 workers share the same rate limit counters')
-    
-    // Create Redis-backed rate limiters
-    const redisLimiters = createRateLimiters(redisClient)
-    logger.info('[RateLimit] Rate limiters initialized with Redis store')
-    
-    // Note: To use Redis rate limiters, routes would need to be re-registered
-    // Since routes are already set up, Redis rate limiting will work on next deploy
-    // Current middleware will continue using memory store until server restart
-  } else {
-    logger.warn('[RateLimit] ✗ Memory-based rate limiting (NOT cluster-safe)')
-    logger.warn('[RateLimit] Each PM2 worker has independent counters')
-    logger.warn('[RateLimit] Actual limit = configured limit × number of workers')
-    logger.warn('[RateLimit] Example: 100 req/min limit × 4 workers = 400 req/min actual')
-  }
   
   // Warm up database connection pool to prevent cold start delays
   // This prevents the first auth request from timing out after server restart

@@ -4,6 +4,7 @@
 import express, { type Request, type Response } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { adminLimiter } from '../middleware/rateLimiter.js'
+import { requireAdminKey } from '../middleware/adminKey.js'
 import { getCacheService } from '../services/cacheService.js'
 import { getMonitoringService } from '../services/monitoringService.js'
 import { getPrismaClient } from '../services/databaseService.js'
@@ -50,7 +51,7 @@ router.head('/', (_req: Request, res: Response) => {
  * - Warns about concerning metrics
  * - Worker-specific stats (PM2 cluster mode)
  */
-router.get('/database', asyncHandler(async (req: Request, res: Response) => {
+router.get('/database', adminLimiter, requireAdminKey(), asyncHandler(async (req: Request, res: Response) => {
   const prisma = getPrismaClient()
   
   // Test database connectivity with simple query

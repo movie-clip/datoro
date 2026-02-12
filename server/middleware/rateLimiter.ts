@@ -10,6 +10,8 @@ declare global {
   namespace Express {
     interface Request {
       fmpCallTracked?: boolean
+      /** Redis key used for global FMP quota tracking (set by global limiter) */
+      fmpGlobalKey?: string
     }
   }
 }
@@ -36,14 +38,6 @@ declare global {
  * @returns Object containing all rate limiters
  */
 export function createRateLimiters(redisClient: Redis | null = null) {
-  // Log Redis status once
-  if (redisClient) {
-    logger.info('[RateLimit] Using Redis store (cluster-safe, distributed across all workers)');
-  } else {
-    logger.warn('[RateLimit] Redis not available - using memory store (NOT cluster-safe)');
-    logger.warn('[RateLimit] Each PM2 worker has independent counters - rate limits can be bypassed!');
-  }
-  
   // Create separate stores for each limiter (REQUIRED - cannot share stores)
   return {
     generalLimiter: createGeneralLimiter(redisClient),
@@ -54,7 +48,7 @@ export function createRateLimiters(redisClient: Redis | null = null) {
 }
 
 // Factory functions for each rate limiter type
-function createGeneralLimiter(redisClient: Redis | null) {
+function createGeneralLimiter(redisClient: Redis | null = null) {
   const store = createRedisStore(redisClient, 'general');
   return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
@@ -78,7 +72,7 @@ function createGeneralLimiter(redisClient: Redis | null) {
   });
 }
 
-function createFmpLimiter(redisClient: Redis | null) {
+function createFmpLimiter(redisClient: Redis | null = null) {
   const store = createRedisStore(redisClient, 'fmp');
   return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
@@ -105,7 +99,7 @@ function createFmpLimiter(redisClient: Redis | null) {
   });
 }
 
-function createAdminLimiter(redisClient: Redis | null) {
+function createAdminLimiter(redisClient: Redis | null = null) {
   const store = createRedisStore(redisClient, 'admin');
   return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
@@ -128,7 +122,7 @@ function createAdminLimiter(redisClient: Redis | null) {
   });
 }
 
-function createAiLimiter(redisClient: Redis | null) {
+function createAiLimiter(redisClient: Redis | null = null) {
   const store = createRedisStore(redisClient, 'ai');
   return rateLimit({
     windowMs: RATE_LIMIT.WINDOW_MS,
@@ -150,76 +144,141 @@ function createAiLimiter(redisClient: Redis | null) {
   });
 }
 
-// Default memory-based limiters (for backwards compatibility)
-// WARNING: These are NOT cluster-safe - use createRateLimiters() instead
-export const generalLimiter = rateLimit({
-  windowMs: RATE_LIMIT.WINDOW_MS,
-  max: RATE_LIMIT.GENERAL_MAX,
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: '60 seconds'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req: Request, res: Response) => {
-    res.status(429).json({
-      error: 'Too many requests',
-      message: 'You have exceeded the rate limit. Please try again later.',
-      retryAfter: res.getHeader('Retry-After'),
-      limit: RATE_LIMIT.GENERAL_MAX,
-      window: '1 minute'
-    });
+// ============================================================
+// Runtime-initialized (cluster-safe) limiter exports
+//
+// These are delegating wrappers so we can swap the underlying
+// rate limit stores (memory -> Redis) during server bootstrap.
+// This avoids needing to re-register routes after Redis connects.
+// ============================================================
+
+type LimiterSet = ReturnType<typeof createRateLimiters>
+
+let activeLimiters: LimiterSet = createRateLimiters(null)
+
+// Default FMP limiter (delegates to active limiter)
+export const fmpLimiter = (req: Request, res: Response, next: NextFunction) =>
+  activeLimiters.fmpLimiter(req, res, next)
+
+// Default general limiter (delegates to active limiter)
+export const generalLimiter = (req: Request, res: Response, next: NextFunction) =>
+  activeLimiters.generalLimiter(req, res, next)
+
+// Default admin limiter (delegates to active limiter)
+export const adminLimiter = (req: Request, res: Response, next: NextFunction) =>
+  activeLimiters.adminLimiter(req, res, next)
+
+// Default AI limiter (delegates to active limiter)
+export const aiLimiter = (req: Request, res: Response, next: NextFunction) =>
+  activeLimiters.aiLimiter(req, res, next)
+
+// ============================================================
+// Global FMP quota limiter (cluster-safe when Redis is available)
+// ============================================================
+
+let globalFmpCounter = 0
+let globalFmpWindowStart = Date.now()
+
+let globalFmpLimiterImpl: (req: Request, res: Response, next: NextFunction) => unknown =
+  (req, res, next) => {
+    const now = Date.now()
+
+    // Reset counter if window expired
+    if (now - globalFmpWindowStart >= RATE_LIMIT.WINDOW_MS) {
+      globalFmpCounter = 0
+      globalFmpWindowStart = now
+    }
+
+    // Check global limit
+    if (globalFmpCounter >= RATE_LIMIT.FMP_GLOBAL_MAX) {
+      const timeUntilReset = Math.ceil((RATE_LIMIT.WINDOW_MS - (now - globalFmpWindowStart)) / 1000)
+      logger.warn(`[RateLimit] Global FMP limit reached (${RATE_LIMIT.FMP_GLOBAL_MAX}/min). Blocking request from ${req.ip}`)
+
+      return res.status(503).json({
+        error: 'Service temporarily unavailable',
+        message: 'The API quota is currently exhausted. Please try again in a moment.',
+        retryAfter: `${timeUntilReset} seconds`,
+        globalLimit: RATE_LIMIT.FMP_GLOBAL_MAX,
+        window: '1 minute'
+      })
+    }
+
+    // We'll decrement in the route handler if it's a cache hit
+    req.fmpCallTracked = true
+    globalFmpCounter++
+    next()
   }
-});
 
-// Default FMP limiter (memory-based, NOT cluster-safe)
-export const fmpLimiter = createFmpLimiter();
+let decrementGlobalFmpCounterImpl: (req?: Request) => void = () => {
+  if (globalFmpCounter > 0) globalFmpCounter--
+}
 
-// Global FMP limiter - tracks total API calls across ALL IPs
-// Prevents exhausting the 300 req/min FMP quota even with many users
-let globalFmpCounter = 0;
-let globalFmpWindowStart = Date.now();
+const INCR_WITH_EXPIRE_LUA = `
+local v = redis.call('INCR', KEYS[1])
+if v == 1 then
+  redis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]))
+end
+return v
+`
+
+function createRedisGlobalFmpLimiter(redisClient: Redis) {
+  const ttlSeconds = Math.ceil(RATE_LIMIT.WINDOW_MS / 1000)
+
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Key per fixed window (minute) to support stable TTL/reset behavior.
+      const windowId = Math.floor(Date.now() / RATE_LIMIT.WINDOW_MS)
+      const key = `rl:global-fmp:${windowId}`
+      req.fmpGlobalKey = key
+
+      const count = await redisClient.eval(INCR_WITH_EXPIRE_LUA, 1, key, String(ttlSeconds)) as number
+
+      if (count > RATE_LIMIT.FMP_GLOBAL_MAX) {
+        const ttl = await redisClient.ttl(key)
+        const timeUntilReset = ttl > 0 ? ttl : ttlSeconds
+        logger.warn(`[RateLimit] Global FMP limit reached (${RATE_LIMIT.FMP_GLOBAL_MAX}/min). Blocking request from ${req.ip}`)
+        return res.status(503).json({
+          error: 'Service temporarily unavailable',
+          message: 'The API quota is currently exhausted. Please try again in a moment.',
+          retryAfter: `${timeUntilReset} seconds`,
+          globalLimit: RATE_LIMIT.FMP_GLOBAL_MAX,
+          window: '1 minute'
+        })
+      }
+
+      req.fmpCallTracked = true
+      return next()
+    } catch (error) {
+      // Fail open to avoid taking down the API if Redis has a transient issue.
+      logger.error('[RateLimit] Redis global limiter error (falling back to allow):', error)
+      return next()
+    }
+  }
+}
+
+function createRedisGlobalFmpDecrement(redisClient: Redis) {
+  return async (req?: Request) => {
+    const key = req?.fmpGlobalKey
+    if (!key) return
+    try {
+      // Best-effort decrement. Ignore errors.
+      await redisClient.decr(key)
+    } catch {
+      // ignore
+    }
+  }
+}
 
 export function globalFmpLimiter(req: Request, res: Response, next: NextFunction) {
-  const now = Date.now();
-  
-  // Reset counter if window expired
-  if (now - globalFmpWindowStart >= RATE_LIMIT.WINDOW_MS) {
-    globalFmpCounter = 0;
-    globalFmpWindowStart = now;
-  }
-  
-  // Check global limit
-  if (globalFmpCounter >= RATE_LIMIT.FMP_GLOBAL_MAX) {
-    const timeUntilReset = Math.ceil((RATE_LIMIT.WINDOW_MS - (now - globalFmpWindowStart)) / 1000);
-    logger.warn(`[RateLimit] Global FMP limit reached (${RATE_LIMIT.FMP_GLOBAL_MAX}/min). Blocking request from ${req.ip}`);
-    
-    return res.status(503).json({
-      error: 'Service temporarily unavailable',
-      message: 'The API quota is currently exhausted. Please try again in a moment.',
-      retryAfter: `${timeUntilReset} seconds`,
-      globalLimit: RATE_LIMIT.FMP_GLOBAL_MAX,
-      window: '1 minute'
-    });
-  }
-  
-  // Increment counter only for actual API calls (not cached responses)
-  // We'll decrement in the route handler if it's a cache hit
-  req.fmpCallTracked = true;
-  globalFmpCounter++;
-  
-  next();
+  // Delegate to the active implementation (memory or Redis)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return globalFmpLimiterImpl(req, res, next)
 }
 
-// Helper to decrement global counter when serving from cache
-export function decrementGlobalFmpCounter() {
-  if (globalFmpCounter > 0) {
-    globalFmpCounter--;
-  }
+export function decrementGlobalFmpCounter(req?: Request) {
+  // Delegate to the active implementation (memory or Redis)
+  return decrementGlobalFmpCounterImpl(req)
 }
-
-// Default admin limiter (memory-based, NOT cluster-safe)
-export const adminLimiter = createAdminLimiter();
 
 // Speed limiter - slows down responses before blocking
 // Starts adding delay after 30 requests, increases by 500ms per request
@@ -232,8 +291,24 @@ export const speedLimiter = slowDown({
   skipSuccessfulRequests: false,
 });
 
-// Default AI limiter (memory-based, NOT cluster-safe)
-export const aiLimiter = createAiLimiter();
+/**
+ * Initialize (or update) the active rate limiters.
+ * Call this during server bootstrap after Redis is connected.
+ */
+export function initializeRateLimiters(redisClient: Redis | null) {
+  activeLimiters = createRateLimiters(redisClient)
+
+  if (redisClient) {
+    globalFmpLimiterImpl = createRedisGlobalFmpLimiter(redisClient)
+    decrementGlobalFmpCounterImpl = createRedisGlobalFmpDecrement(redisClient)
+    logger.info('[RateLimit] Using Redis store (cluster-safe, distributed across all workers)')
+    logger.info('[RateLimit] ✓ Active limiters swapped to Redis (cluster-safe)')
+  } else {
+    logger.warn('[RateLimit] Redis not available - using memory store (NOT cluster-safe)')
+    logger.warn('[RateLimit] Each PM2 worker has independent counters - rate limits can be bypassed!')
+    logger.warn('[RateLimit] ✗ Active limiters using memory store (NOT cluster-safe)')
+  }
+}
 
 /**
  * Create Redis store for rate limiting
@@ -264,8 +339,9 @@ export default {
   // Rate limiter factories
   createRateLimiters,
   createRedisStore,
+  initializeRateLimiters,
   
-  // Default memory-based limiters (NOT cluster-safe)
+  // Active limiters (cluster-safe if Redis connected)
   generalLimiter,
   fmpLimiter,
   adminLimiter,

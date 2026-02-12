@@ -4,6 +4,7 @@
 import express, { type Request, type Response } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { adminLimiter } from '../middleware/rateLimiter.js'
+import { requireAdminKey } from '../middleware/adminKey.js'
 import { validate } from '../middleware/validation.js'
 import { 
   validateAnalyticsPopular, 
@@ -71,7 +72,7 @@ router.get('/history', validate(validateAnalyticsHistory), asyncHandler(async (r
  * @param {number} hours - Hours to look back (default: 24, max: 168)
  * @returns {Object} - Comprehensive API usage statistics
  */
-router.get('/stats', adminLimiter, validate(validateAnalyticsStats), asyncHandler(async (req: Request, res: Response) => {
+router.get('/stats', adminLimiter, requireAdminKey(), validate(validateAnalyticsStats), asyncHandler(async (req: Request, res: Response) => {
   const { hours } = req.query as { hours?: number } // Already validated and converted by middleware
   const stats = await getApiRequestStats(hours)
   res.json({ success: true, data: stats })

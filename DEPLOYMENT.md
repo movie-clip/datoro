@@ -20,6 +20,30 @@ npm run type-check
 npm run type-check:server
 ```
 
+## Production Secrets / Security
+
+**Admin operations key (RECOMMENDED for production):**
+
+Some internal endpoints are protected by an admin header in production:
+
+- `GET /api/cache/stats`
+- `POST /api/cache/clear`
+- `GET /api/monitoring/stats`
+- `POST /api/monitoring/reset`
+- `GET /api/analytics/stats`
+- `GET /api/health/database`
+
+Set one of these environment variables in production:
+
+- `ADMIN_API_KEY` (preferred)
+- `ADMIN_KEY` (legacy alias)
+
+Call the endpoints with header `X-Admin-Key: <your secret>`.
+
+Optional: to require the admin key on `/api/readiness`, set:
+
+- `READINESS_REQUIRE_ADMIN_KEY=true`
+
 **Run validation scripts:**
 ```powershell
 node scripts/validate-seo.mjs

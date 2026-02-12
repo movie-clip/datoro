@@ -95,7 +95,7 @@ router.get('/treasury', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
   if (cached.data) {
     // Decrement global FMP counter for cache hits
     if ((req as any).fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Treasury → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
@@ -142,7 +142,7 @@ router.get('/economic', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
   const cached = await cache.get(cacheKey)
   if (cached.data) {
     if ((req as any).fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Economic/${name} → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
@@ -188,7 +188,7 @@ router.get('/spx', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Reques
   const cached = await cache.get(cacheKey)
   if (cached.data) {
     if ((req as any).fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] SPX → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
@@ -230,7 +230,7 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
   const cached = await cache.get(cacheKey)
   if (cached.data) {
     if ((req as any).fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Index Stats → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
@@ -317,7 +317,7 @@ router.get('/sectors', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
   const cached = await cache.get(cacheKey)
   if (cached.data) {
     if ((req as any).fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Sectors → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
@@ -357,7 +357,7 @@ router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (re
   const cached = await cache.get(cacheKey)
   if (cached.data) {
     if ((req as any).fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Risk Premium → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')
@@ -481,7 +481,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   const cached = await cache.get(cacheKey)
   if (cached.data) {
     if ((req as any).fmpCallTracked) {
-      decrementGlobalFmpCounter()
+      decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Batch → CACHE HIT (${cached.source})`)
     res.setHeader('X-Cache', cached.source || 'hit')

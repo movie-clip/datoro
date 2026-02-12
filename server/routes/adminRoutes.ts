@@ -1,9 +1,10 @@
 // server/routes/adminRoutes.ts
 // Administrative endpoints (cache, monitoring, readiness)
 
-import express, { type Request, type Response } from 'express'
+import express, { type Request, type Response, type NextFunction } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { adminLimiter } from '../middleware/rateLimiter.js'
+import { requireAdminKey } from '../middleware/adminKey.js'
 import { getCacheService } from '../services/cacheService.js'
 import { getMonitoringService } from '../services/monitoringService.js'
 import logger from '../services/logger.js'
@@ -11,6 +12,12 @@ import logger from '../services/logger.js'
 const router = express.Router()
 const cache = getCacheService()
 const monitoring = getMonitoringService()
+
+// Optional protection: some platforms expect readiness to be public.
+// If you want this endpoint private, set READINESS_REQUIRE_ADMIN_KEY=true.
+const readinessAuth = process.env.READINESS_REQUIRE_ADMIN_KEY === 'true'
+  ? requireAdminKey({ always: true })
+  : (_req: Request, _res: Response, next: NextFunction) => next()
 
 // Dependencies injected from server.mjs
 let isDatabaseAvailable = true
@@ -28,7 +35,7 @@ export function initAdminRoutes(deps: { isDatabaseAvailable: boolean }) {
  * Readiness check (validates database and Redis connectivity)
  * Use this for Docker/k8s health checks with longer timeout
  */
-router.get('/readiness', asyncHandler(async (_req: Request, res: Response) => {
+router.get('/readiness', readinessAuth, asyncHandler(async (_req: Request, res: Response) => {
   const checks: { server: string; database: string; redis: string } = {
     server: 'ok',
     database: 'unknown',
@@ -78,7 +85,7 @@ router.get('/readiness', asyncHandler(async (_req: Request, res: Response) => {
  * GET /api/cache/stats
  * Cache statistics (admin only)
  */
-router.get('/cache/stats', adminLimiter, (_req: Request, res: Response) => {
+router.get('/cache/stats', adminLimiter, requireAdminKey(), (_req: Request, res: Response) => {
   const stats = cache.getStats()
   res.json(stats)
 })
@@ -87,7 +94,7 @@ router.get('/cache/stats', adminLimiter, (_req: Request, res: Response) => {
  * POST /api/cache/clear
  * Manual cache flush (admin only)
  */
-router.post('/cache/clear', adminLimiter, asyncHandler(async (_req: Request, res: Response) => {
+router.post('/cache/clear', adminLimiter, requireAdminKey(), asyncHandler(async (_req: Request, res: Response) => {
   await cache.clear()
   cache.resetStats()
     logger.info('[Cache] Manual cache flush requested')
@@ -102,7 +109,7 @@ router.post('/cache/clear', adminLimiter, asyncHandler(async (_req: Request, res
  * GET /api/monitoring/stats
  * Comprehensive monitoring metrics (admin only)
  */
-router.get('/monitoring/stats', adminLimiter, (_req: Request, res: Response) => {
+router.get('/monitoring/stats', adminLimiter, requireAdminKey(), (_req: Request, res: Response) => {
   const metrics = monitoring.getMetrics()
   res.json(metrics)
 })
@@ -120,7 +127,7 @@ router.get('/monitoring/summary', (_req: Request, res: Response) => {
  * POST /api/monitoring/reset
  * Reset monitoring metrics (admin only)
  */
-router.post('/monitoring/reset', adminLimiter, (_req: Request, res: Response) => {
+router.post('/monitoring/reset', adminLimiter, requireAdminKey(), (_req: Request, res: Response) => {
   monitoring.reset()
   res.json({ message: 'Monitoring metrics reset successfully' })
 })

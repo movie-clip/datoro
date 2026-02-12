@@ -44,6 +44,11 @@ services:
       # Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
       - key: JWT_SECRET
         sync: false
+
+      # RECOMMENDED: Protect admin/ops endpoints (cache clear, monitoring reset, DB pool stats)
+      # Send requests with: X-Admin-Key: <value>
+      - key: ADMIN_API_KEY
+        sync: false
       
       - key: JWT_EXPIRES_IN
         value: 7d
