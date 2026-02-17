@@ -6,6 +6,18 @@
         v-if="!loading && priceData.length > 0"
         class="chart-info"
       >
+        <div class="range-presets">
+          <button
+            v-for="preset in rangePresets"
+            :key="preset.key"
+            type="button"
+            class="preset-button"
+            :class="{ active: selectedPreset === preset.key }"
+            @click="applyPresetRange(preset.key)"
+          >
+            {{ preset.label }}
+          </button>
+        </div>
         <span class="info-item">
           Range: {{ formatDate(selectedRange.start) }} - {{ formatDate(selectedRange.end) }}
         </span>
@@ -124,6 +136,18 @@ const rangePerformance = ref(0)
 const internalLoading = ref(false)
 const internalError = ref<string | null>(null)
 const debounceTimer = ref<number | null>(null)
+const dataZoomStart = ref(0)
+const dataZoomEnd = ref(100)
+const dataZoomStartValue = ref<number | null>(null)
+const dataZoomEndValue = ref<number | null>(null)
+const suppressDataZoomEventsUntil = ref(0)
+const selectedPreset = ref<'1M' | '6M' | '1Y' | null>(null)
+
+const rangePresets = [
+  { key: '1M' as const, label: '1M', days: 30 },
+  { key: '6M' as const, label: '6M', days: 183 },
+  { key: '1Y' as const, label: '1Y', days: 365 }
+]
 
 // Computed loading state (use prop or internal)
 const loading = computed(() => props.loading || internalLoading.value)
@@ -224,6 +248,127 @@ async function fetchPriceData() {
   }
 }
 
+function calculatePresetStartIndex(days: number): number {
+  if (!priceData.value || priceData.value.length === 0) return 0
+
+  const endPoint = priceData.value[priceData.value.length - 1]
+  if (!endPoint) return 0
+
+  const windowMs = days * 24 * 60 * 60 * 1000
+  const targetMs = endPoint.timestamp - windowMs
+
+  // Pick the earliest point that still falls inside the requested window.
+  // This avoids percentage rounding artifacts on very dense/long datasets.
+  let startIdx = priceData.value.length - 1
+  for (let i = priceData.value.length - 1; i >= 0; i--) {
+    const point = priceData.value[i]
+    if (!point) continue
+
+    if (point.timestamp >= targetMs) {
+      startIdx = i
+      continue
+    }
+
+    break
+  }
+
+  const endIdx = priceData.value.length - 1
+
+  // Ensure a non-zero range whenever we have at least two data points.
+  if (startIdx >= endIdx && endIdx > 0) {
+    startIdx = endIdx - 1
+  }
+
+  return Math.max(0, Math.min(startIdx, endIdx))
+}
+
+function applyZoomToChart(startPct: number, endPct: number, startValue: number, endValue: number) {
+  const chartComponent = chartRef.value as any
+  const chart = typeof chartComponent?.getEchartsInstance === 'function'
+    ? chartComponent.getEchartsInstance()
+    : chartComponent
+
+  if (!chart || typeof chart.dispatchAction !== 'function') {
+    return
+  }
+
+  try {
+    // Update both inside and slider dataZoom components deterministically.
+    chart.dispatchAction({
+      type: 'dataZoom',
+      dataZoomIndex: 0,
+      start: startPct,
+      end: endPct,
+      startValue,
+      endValue
+    })
+
+    chart.dispatchAction({
+      type: 'dataZoom',
+      dataZoomIndex: 1,
+      start: startPct,
+      end: endPct,
+      startValue,
+      endValue
+    })
+  } catch (err) {
+    console.warn('[SP500 Chart] Failed to apply preset zoom action', err)
+  }
+}
+
+function applyPresetRange(presetKey: '1M' | '6M' | '1Y') {
+  if (!priceData.value || priceData.value.length === 0) {
+    return
+  }
+
+  const preset = rangePresets.find(p => p.key === presetKey)
+  if (!preset) return
+
+  const total = priceData.value.length
+  const startIdx = calculatePresetStartIndex(preset.days)
+  const endIdx = total - 1
+
+  const denominator = Math.max(total - 1, 1)
+  const startPct = (startIdx / denominator) * 100
+  const endPct = 100
+
+  dataZoomStart.value = Math.max(0, Math.min(startPct, 100))
+  dataZoomEnd.value = Math.max(0, Math.min(endPct, 100))
+  dataZoomStartValue.value = priceData.value[startIdx]?.timestamp ?? null
+  dataZoomEndValue.value = priceData.value[endIdx]?.timestamp ?? null
+  selectedPreset.value = presetKey
+
+  const result = calculatePerformance(priceData.value, startIdx, endIdx)
+  if (!result) return
+
+  selectedRange.value = {
+    start: result.startDate,
+    end: result.endDate
+  }
+  rangePerformance.value = result.performance
+
+  if (debounceTimer.value !== null) {
+    window.clearTimeout(debounceTimer.value)
+    debounceTimer.value = null
+  }
+
+  // Suppress programmatic dataZoom events triggered by preset application.
+  suppressDataZoomEventsUntil.value = Date.now() + 1200
+
+  // Force chart viewport update immediately to reflect selected preset.
+  if (dataZoomStartValue.value !== null && dataZoomEndValue.value !== null) {
+    applyZoomToChart(
+      dataZoomStart.value,
+      dataZoomEnd.value,
+      dataZoomStartValue.value,
+      dataZoomEndValue.value
+    )
+  }
+
+  console.log(`[SP500 Chart] Applied preset ${presetKey}: ${result.startDate} -> ${result.endDate}`)
+  emit('rangeChange', { start: result.startDate, end: result.endDate })
+}
+
 // Handle dataZoom event from chart - only update when drag ends
 function handleDataZoom(event: any) {
   try {
@@ -248,6 +393,15 @@ function handleDataZoom(event: any) {
       return
     }
 
+    dataZoomStart.value = zoom.start
+    dataZoomEnd.value = zoom.end
+    dataZoomStartValue.value = typeof zoom.startValue === 'number' ? zoom.startValue : null
+    dataZoomEndValue.value = typeof zoom.endValue === 'number' ? zoom.endValue : null
+
+    if (Date.now() < suppressDataZoomEventsUntil.value) {
+      return
+    }
+
     // Calculate performance for UI display
     const result = calculatePerformance(priceData.value, details.startIdx, details.endIdx)
     
@@ -259,6 +413,9 @@ function handleDataZoom(event: any) {
     // Always update the performance label immediately for smooth feedback
     selectedRange.value = { start: result.startDate, end: result.endDate }
     rangePerformance.value = result.performance
+
+    // Manual drag should clear preset active state.
+    selectedPreset.value = null
     
     // Clear previous debounce timer
     if (debounceTimer.value !== null) {
@@ -350,15 +507,19 @@ const chartOption = computed<EChartsOption>(() => ({
   dataZoom: [
     {
       type: 'inside',
-      start: 0,
-      end: 100,
+      start: dataZoomStart.value,
+      end: dataZoomEnd.value,
+      startValue: dataZoomStartValue.value ?? undefined,
+      endValue: dataZoomEndValue.value ?? undefined,
       zoomOnMouseWheel: 'shift',
       throttle: 50 // Throttle drag events
     },
     {
       type: 'slider',
-      start: 0,
-      end: 100,
+      start: dataZoomStart.value,
+      end: dataZoomEnd.value,
+      startValue: dataZoomStartValue.value ?? undefined,
+      endValue: dataZoomEndValue.value ?? undefined,
       height: 30,
       bottom: 10,
       handleSize: '80%',
@@ -466,6 +627,37 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
   font-size: 12px;
+}
+
+.range-presets {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preset-button {
+  border: 1px solid #2A2A2E;
+  background: rgba(42, 42, 46, 0.35);
+  color: rgba(229, 229, 229, 0.75);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-button:hover {
+  color: #E5E5E5;
+  border-color: #3A3A40;
+  background: rgba(58, 58, 64, 0.5);
+}
+
+.preset-button.active {
+  color: #00C087;
+  border-color: rgba(0, 192, 135, 0.45);
+  background: rgba(0, 192, 135, 0.16);
 }
 
 .info-item {

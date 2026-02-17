@@ -3,13 +3,15 @@ import {
   getValuationFromBatch as _getValuationFromBatch,
   getCashFlowFactsFromBatch as _getCashFlowFactsFromBatch,
   getMarginsGrowthFromBatch as _getMarginsGrowthFromBatch,
-  getBalanceFromBatch as _getBalanceFromBatch
+  getBalanceFromBatch as _getBalanceFromBatch,
+  getEarningsFromBatch as _getEarningsFromBatch
 } from '../../../src/services/financials/batchTableService.js';
 
 const getValuationFromBatch = _getValuationFromBatch as (batchData: any) => ReturnType<typeof _getValuationFromBatch>;
 const getCashFlowFactsFromBatch = _getCashFlowFactsFromBatch as (batchData: any) => ReturnType<typeof _getCashFlowFactsFromBatch>;
 const getMarginsGrowthFromBatch = _getMarginsGrowthFromBatch as (batchData: any) => ReturnType<typeof _getMarginsGrowthFromBatch>;
 const getBalanceFromBatch = _getBalanceFromBatch as (batchData: any) => ReturnType<typeof _getBalanceFromBatch>;
+const getEarningsFromBatch = _getEarningsFromBatch as (batchData: any) => ReturnType<typeof _getEarningsFromBatch>;
 
 // Mock batch data fixtures
 const mockBatchData = {
@@ -722,6 +724,59 @@ describe('Batch Table Service', () => {
         expect(result.altmanZColor).toBe(expectedColor);
       });
     });
+  });
+
+  describe('getEarningsFromBatch', () => {
+    it('should return latest reports even when fiscal year differs from current year', () => {
+      const data = {
+        data: {
+          earningsCalendar: [
+            {
+              date: '2026-01-30',
+              fiscalDateEnding: '2025-12-31',
+              eps: 2.1,
+              epsEstimated: 2.0,
+              revenue: 100000000000,
+              revenueEstimated: 98000000000
+            },
+            {
+              date: '2025-10-30',
+              fiscalDateEnding: '2025-09-30',
+              eps: 1.8,
+              epsEstimated: 1.7,
+              revenue: 95000000000,
+              revenueEstimated: 94000000000
+            }
+          ]
+        }
+      }
+
+      const result = getEarningsFromBatch(data as any)
+
+      expect(result).toHaveLength(2)
+      expect(result[0]?.fiscalQuarter).toBe('Q4 2025')
+      expect(result[1]?.fiscalQuarter).toBe('Q3 2025')
+    })
+
+    it('should limit results to 4 most recent earnings reports', () => {
+      const data = {
+        data: {
+          earningsCalendar: [
+            { date: '2025-02-01', fiscalDateEnding: '2024-12-31', eps: 1.1, epsEstimated: 1.0, revenue: 10, revenueEstimated: 9 },
+            { date: '2024-11-01', fiscalDateEnding: '2024-09-30', eps: 1.0, epsEstimated: 0.9, revenue: 9, revenueEstimated: 8 },
+            { date: '2024-08-01', fiscalDateEnding: '2024-06-30', eps: 0.9, epsEstimated: 0.8, revenue: 8, revenueEstimated: 7 },
+            { date: '2024-05-01', fiscalDateEnding: '2024-03-31', eps: 0.8, epsEstimated: 0.7, revenue: 7, revenueEstimated: 6 },
+            { date: '2024-02-01', fiscalDateEnding: '2023-12-31', eps: 0.7, epsEstimated: 0.6, revenue: 6, revenueEstimated: 5 }
+          ]
+        }
+      }
+
+      const result = getEarningsFromBatch(data as any)
+
+      expect(result).toHaveLength(4)
+      expect(result[0]?.fiscalQuarter).toBe('Q4 2024')
+      expect(result[3]?.fiscalQuarter).toBe('Q1 2024')
+    })
   });
 
   describe('Error Handling', () => {

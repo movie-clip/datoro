@@ -22,7 +22,7 @@
       v-else-if="earnings.length === 0"
       class="earnings-empty"
     >
-      <p>No earnings data available for {{ currentYear }}</p>
+      <p>No earnings data available</p>
     </div>
 
     <!-- Earnings Grid -->
@@ -122,8 +122,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false
 })
-
-const currentYear = new Date().getFullYear()
 
 const earnings = computed(() => {
   return getEarningsFromBatch(props.batchData)

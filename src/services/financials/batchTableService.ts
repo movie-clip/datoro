@@ -316,20 +316,30 @@ export function getEarningsFromBatch(batchData: BatchData | null): EarningsRepor
   if (!batchData?.data?.earningsCalendar) return []
   
   try {
-    const currentYear = new Date().getFullYear()
-    
+    const toTimestamp = (value: string | undefined): number => {
+      if (!value) return 0
+      const ts = new Date(value).getTime()
+      return Number.isFinite(ts) ? ts : 0
+    }
+
     return batchData.data.earningsCalendar
-      // Filter to current year and only entries with actual data (eps not null)
+      // Keep reports with actual values and at least one usable date field
       .filter(e => {
-        if (!e.fiscalDateEnding || e.eps === null) return false
-        const fiscalYear = new Date(e.fiscalDateEnding).getFullYear()
-        return fiscalYear === currentYear
+        const hasActuals = e.eps !== null || e.revenue !== null
+        const hasDate = toTimestamp(e.fiscalDateEnding) > 0 || toTimestamp(e.date) > 0
+        return hasActuals && hasDate
       })
-      // Sort by fiscal date (oldest first)
-      .sort((a, b) => new Date(a.fiscalDateEnding).getTime() - new Date(b.fiscalDateEnding).getTime())
+      // Most recent first (fallback to report date when fiscal date is missing)
+      .sort((a, b) => {
+        const aTime = toTimestamp(a.fiscalDateEnding) || toTimestamp(a.date)
+        const bTime = toTimestamp(b.fiscalDateEnding) || toTimestamp(b.date)
+        return bTime - aTime
+      })
+      // Show latest 4 reports (roughly last year of quarters)
+      .slice(0, 4)
       // Transform to display format
       .map(e => {
-        const fiscalDate = new Date(e.fiscalDateEnding)
+        const fiscalDate = new Date(e.fiscalDateEnding || e.date)
         const reportDate = new Date(e.date)
         
         // Calculate quarter from fiscal date
