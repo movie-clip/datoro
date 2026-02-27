@@ -48,10 +48,8 @@ describe('fetchTickerDataWithSplit', () => {
     const result = await fetchTickerDataWithSplit('aapl', 'full', 'http://localhost:7071', fetchMock as typeof fetch)
 
     expect(calls.length).toBe(2)
-    expect(calls[0]).toBeDefined()
-    expect(calls[1]).toBeDefined()
-    expect(calls[0]!).toContain('/api/ticker-data/AAPL/static?mode=full')
-    expect(calls[1]!).toContain('/api/ticker-data/AAPL/dynamic')
+    expect(calls.some(url => url.includes('/api/ticker-data/AAPL/static?mode=full'))).toBe(true)
+    expect(calls.some(url => url.includes('/api/ticker-data/AAPL/dynamic'))).toBe(true)
     expect(result.data.quote.length).toBeGreaterThan(0)
     expect(result.data.quote[0]!.price).toBe(200)
     expect(result.timestamp).toBe('2026-02-12T00:05:00.000Z')
@@ -89,6 +87,7 @@ describe('fetchTickerDataWithSplit', () => {
       calls.push(url)
 
       if (url.includes('/static?mode=full')) return res({ error: true }, false, 500, 'Internal Server Error')
+      if (url.endsWith('/dynamic')) return res({ quote: [{ symbol: 'AAPL', price: 999 }] })
       throw new Error('unexpected url')
     }
 
@@ -96,8 +95,8 @@ describe('fetchTickerDataWithSplit', () => {
       fetchTickerDataWithSplit('AAPL', 'full', 'http://localhost:7071', fetchMock as typeof fetch)
     ).rejects.toThrow('HTTP 500: Internal Server Error')
 
-    expect(calls.length).toBe(1)
-    expect(calls[0]).toBeDefined()
-    expect(calls[0]!).toContain('/api/ticker-data/AAPL/static?mode=full')
+    expect(calls.length).toBe(2)
+    expect(calls.some(url => url.includes('/api/ticker-data/AAPL/static?mode=full'))).toBe(true)
+    expect(calls.some(url => url.includes('/api/ticker-data/AAPL/dynamic'))).toBe(true)
   })
 })

@@ -7,7 +7,7 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -21,6 +21,18 @@ const checks = {
   passed: [],
   failed: [],
   warnings: []
+};
+
+const testSummary = {
+  unitFilesPassed: null,
+  unitFilesTotal: null,
+  unitTestsPassed: null,
+  unitTestsTotal: null,
+  e2eFilesPassed: null,
+  e2eFilesTotal: null,
+  e2eTestsPassed: null,
+  e2eTestsTotal: null,
+  e2eStatus: 'not-run'
 };
 
 function parseCommandError(error) {
@@ -37,6 +49,53 @@ function parseCommandError(error) {
 function runCommand(command, options = {}) {
   const { cwd = rootDir, stdio = 'pipe' } = options;
   return execSync(command, { cwd, stdio, encoding: 'utf-8' });
+}
+
+function parseVitestSummary(output = '') {
+  const summary = {
+    filesPassed: null,
+    filesTotal: null,
+    testsPassed: null,
+    testsTotal: null
+  };
+
+  const filesMatch = output.match(/Test Files\s+(\d+)\s+passed\s*\((\d+)\)/i);
+  if (filesMatch) {
+    summary.filesPassed = Number.parseInt(filesMatch[1], 10);
+    summary.filesTotal = Number.parseInt(filesMatch[2], 10);
+  }
+
+  const testsMatch = output.match(/Tests\s+(\d+)\s+passed\s*\((\d+)\)/i);
+  if (testsMatch) {
+    summary.testsPassed = Number.parseInt(testsMatch[1], 10);
+    summary.testsTotal = Number.parseInt(testsMatch[2], 10);
+  }
+
+  return summary;
+}
+
+function parseVitestJsonReport(reportPath) {
+  if (!existsSync(reportPath)) return null;
+
+  try {
+    const raw = JSON.parse(readFileSync(reportPath, 'utf-8'));
+    const summary = {
+      filesPassed: Number.isFinite(raw?.numPassedTestSuites) ? raw.numPassedTestSuites : null,
+      filesTotal: Number.isFinite(raw?.numTotalTestSuites) ? raw.numTotalTestSuites : null,
+      testsPassed: Number.isFinite(raw?.numPassedTests) ? raw.numPassedTests : null,
+      testsTotal: Number.isFinite(raw?.numTotalTests) ? raw.numTotalTests : null
+    };
+
+    return summary;
+  } catch {
+    return null;
+  } finally {
+    try {
+      unlinkSync(reportPath);
+    } catch {
+      // no-op
+    }
+  }
 }
 
 function check(name, condition, errorMsg) {
@@ -207,13 +266,76 @@ try {
 // Check 6.8: Run tests
 console.log('\n🧪 Running Tests...');
 try {
-  runCommand('npm test');
+  // Required gate: unit tests
+  const unitReportPath = join(rootDir, '.vitest-predeploy-unit.json');
+  const unitOutput = runCommand(`npm test -- --reporter=json --outputFile=${unitReportPath}`);
+  const unitParsed = parseVitestJsonReport(unitReportPath) || parseVitestSummary(unitOutput);
+  testSummary.unitFilesPassed = unitParsed.filesPassed;
+  testSummary.unitFilesTotal = unitParsed.filesTotal;
+  testSummary.unitTestsPassed = unitParsed.testsPassed;
+  testSummary.unitTestsTotal = unitParsed.testsTotal;
+
   checks.passed.push('Unit Tests');
-  console.log('✅ All tests passed');
+  if (Number.isFinite(testSummary.unitTestsPassed) && Number.isFinite(testSummary.unitTestsTotal)) {
+    console.log(`✅ Unit tests passed (${testSummary.unitTestsPassed}/${testSummary.unitTestsTotal})`);
+  } else {
+    console.log('✅ Unit tests passed');
+  }
+
+  // Optional by default: e2e tests (can be made mandatory via env var)
+  const requireE2E = String(process.env.PREDEPLOY_REQUIRE_E2E || '').toLowerCase() === 'true';
+  try {
+    const e2eReportPath = join(rootDir, '.vitest-predeploy-e2e.json');
+    const e2eOutput = runCommand(`npm run test:e2e -- --reporter=json --outputFile=${e2eReportPath}`);
+    const e2eParsed = parseVitestJsonReport(e2eReportPath) || parseVitestSummary(e2eOutput);
+    testSummary.e2eFilesPassed = e2eParsed.filesPassed;
+    testSummary.e2eFilesTotal = e2eParsed.filesTotal;
+    testSummary.e2eTestsPassed = e2eParsed.testsPassed;
+    testSummary.e2eTestsTotal = e2eParsed.testsTotal;
+    testSummary.e2eStatus = 'passed';
+    checks.passed.push('E2E Tests');
+
+    if (Number.isFinite(testSummary.e2eTestsPassed) && Number.isFinite(testSummary.e2eTestsTotal)) {
+      console.log(`✅ E2E tests passed (${testSummary.e2eTestsPassed}/${testSummary.e2eTestsTotal})`);
+    } else {
+      console.log('✅ E2E tests passed');
+    }
+  } catch (e2eError) {
+    const e2eReportPath = join(rootDir, '.vitest-predeploy-e2e.json');
+    const e2eParsed = parseVitestJsonReport(e2eReportPath) || parseVitestSummary(String(e2eError?.stdout || ''));
+    testSummary.e2eFilesPassed = e2eParsed.filesPassed;
+    testSummary.e2eFilesTotal = e2eParsed.filesTotal;
+    testSummary.e2eTestsPassed = e2eParsed.testsPassed;
+    testSummary.e2eTestsTotal = e2eParsed.testsTotal;
+    testSummary.e2eStatus = 'failed';
+
+    const e2eDetails = parseCommandError(e2eError);
+    if (requireE2E) {
+      checks.failed.push({
+        name: 'E2E Tests',
+        error: e2eDetails ? `E2E tests failed (required)\n${e2eDetails}` : 'E2E tests failed (required)'
+      });
+      console.log('❌ E2E tests failed (required)');
+    } else {
+      warn(
+        'E2E Tests',
+        e2eDetails
+          ? `E2E tests failed (optional in local pre-deploy). Set PREDEPLOY_REQUIRE_E2E=true to enforce.\n${e2eDetails}`
+          : 'E2E tests failed (optional in local pre-deploy). Set PREDEPLOY_REQUIRE_E2E=true to enforce.'
+      );
+    }
+  }
 } catch (error) {
+  const unitReportPath = join(rootDir, '.vitest-predeploy-unit.json');
+  const parsed = parseVitestJsonReport(unitReportPath) || parseVitestSummary(String(error?.stdout || ''));
+  testSummary.unitFilesPassed = parsed.filesPassed;
+  testSummary.unitFilesTotal = parsed.filesTotal;
+  testSummary.unitTestsPassed = parsed.testsPassed;
+  testSummary.unitTestsTotal = parsed.testsTotal;
+
   const details = parseCommandError(error);
-  checks.failed.push({ name: 'Unit Tests', error: details ? `Tests failed\n${details}` : 'Tests failed' });
-  console.log('❌ Tests failed');
+  checks.failed.push({ name: 'Unit Tests', error: details ? `Unit tests failed\n${details}` : 'Unit tests failed' });
+  console.log('❌ Unit tests failed');
 }
 
 // Check 7: Prisma schema
@@ -406,9 +528,23 @@ if (existsSync(join(rootDir, 'render.yaml'))) {
 console.log('\n' + '='.repeat(60));
 console.log('📊 DEPLOYMENT READINESS SUMMARY');
 console.log('='.repeat(60));
-console.log(`✅ Passed: ${checks.passed.length}`);
+console.log(`✅ Checks Passed: ${checks.passed.length}`);
 console.log(`❌ Failed: ${checks.failed.length}`);
 console.log(`⚠️  Warnings: ${checks.warnings.length}`);
+if (Number.isFinite(testSummary.unitTestsPassed) && Number.isFinite(testSummary.unitTestsTotal)) {
+  console.log(`🧪 Unit Tests Passed: ${testSummary.unitTestsPassed}/${testSummary.unitTestsTotal}`);
+}
+if (Number.isFinite(testSummary.unitFilesPassed) && Number.isFinite(testSummary.unitFilesTotal)) {
+  console.log(`📁 Unit Test Files Passed: ${testSummary.unitFilesPassed}/${testSummary.unitFilesTotal}`);
+}
+if (testSummary.e2eStatus !== 'not-run') {
+  if (Number.isFinite(testSummary.e2eTestsPassed) && Number.isFinite(testSummary.e2eTestsTotal)) {
+    console.log(`🧪 E2E Tests Passed: ${testSummary.e2eTestsPassed}/${testSummary.e2eTestsTotal}`);
+  }
+  if (Number.isFinite(testSummary.e2eFilesPassed) && Number.isFinite(testSummary.e2eFilesTotal)) {
+    console.log(`📁 E2E Test Files Passed: ${testSummary.e2eFilesPassed}/${testSummary.e2eFilesTotal}`);
+  }
+}
 console.log('='.repeat(60));
 
 if (checks.failed.length > 0) {
@@ -427,13 +563,6 @@ if (checks.warnings.length > 0) {
 
 if (checks.failed.length === 0) {
   console.log('\n🎉 All critical checks passed! Ready to deploy to Render.com');
-  console.log('\n📝 Next Steps:');
-  console.log('   1. Commit and push to GitHub: git add . && git commit -m "Ready for deployment" && git push');
-  console.log('   2. Go to https://render.com and sign up/login');
-  console.log('   3. Click "New" → "Blueprint"');
-  console.log('   4. Select your GitHub repository');
-  console.log('   5. Render will auto-detect render.yaml and deploy!');
-  console.log('\n📖 Full guide: See RENDER_DEPLOYMENT.md');
 } else {
   console.log('\n⛔ Fix failed checks before deploying');
   process.exit(1);

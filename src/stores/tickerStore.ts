@@ -93,18 +93,22 @@ export async function fetchTickerDataWithSplit(
   // Backend supports full|priority; keep lite as frontend alias for priority.
   const apiMode = mode === 'lite' ? 'priority' : mode
 
-  // Preferred path: split static + dynamic for better cache correctness.
-  const staticResponse = await fetchImpl(`${apiBaseUrl}/api/ticker-data/${t}/static?mode=${apiMode}`)
+  // Preferred path: fire static + dynamic in parallel for lower latency.
+  // Dynamic fetch is best-effort and must never block static correctness.
+  const staticResponsePromise = fetchImpl(`${apiBaseUrl}/api/ticker-data/${t}/static?mode=${apiMode}`)
+  const dynamicResponsePromise = fetchImpl(`${apiBaseUrl}/api/ticker-data/${t}/dynamic`).catch(() => null)
+
+  const staticResponse = await staticResponsePromise
   if (!staticResponse.ok) {
     throw new Error(`HTTP ${staticResponse.status}: ${staticResponse.statusText}`)
   }
 
   const data = await staticResponse.json() as BatchData
 
-  // Dynamic quote fetch is best-effort; keep static payload if quote endpoint fails.
-  try {
-    const dynamicResponse = await fetchImpl(`${apiBaseUrl}/api/ticker-data/${t}/dynamic`)
-    if (dynamicResponse.ok) {
+  // Dynamic quote merge remains best-effort; keep static payload on any dynamic failure.
+  const dynamicResponse = await dynamicResponsePromise
+  if (dynamicResponse && dynamicResponse.ok) {
+    try {
       const dynamicPayload = await dynamicResponse.json() as { timestamp?: string; quote?: FMPQuote[] }
       if (Array.isArray(dynamicPayload.quote) && dynamicPayload.quote.length > 0) {
         data.data.quote = dynamicPayload.quote
@@ -112,9 +116,9 @@ export async function fetchTickerDataWithSplit(
           data.timestamp = dynamicPayload.timestamp
         }
       }
+    } catch {
+      // Ignore invalid dynamic payloads and return static payload.
     }
-  } catch {
-    // Best-effort dynamic quote merge; static payload remains valid.
   }
 
   return data

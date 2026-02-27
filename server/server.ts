@@ -690,8 +690,11 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     }
     // ========== End Validation ==========
     
-    // Generate cache key (without API key in the key)
-    const cacheKey = cache.generateKey('fmp', path, query || '')
+    // Generate cache key from normalized query params (exclude API key)
+    const cacheParams = new URLSearchParams(params)
+    cacheParams.delete('apikey')
+    cacheParams.sort()
+    const cacheKey = cache.generateKey('fmp', path, cacheParams.toString())
     
     // Determine TTL based on endpoint (optimized for paid plan - 7 days for most data)
     let ttl = CacheTTL.INCOME_STATEMENT // Default 7 days

@@ -8,7 +8,7 @@ Interactive financial data dashboard built with Vue 3, displaying equity price c
 
 ## Tech Stack
 
-- **Frontend:** Vue 3 (script setup), Vite, ECharts, Chart.js
+- **Frontend:** Vue 3 (script setup), Vite, ECharts
 - **Backend:** Express proxy server (Node 18+)
 - **Data Provider:** Financial Modeling Prep (FMP)
 
@@ -29,7 +29,7 @@ npm run server
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
+Open `http://localhost:3000` in your browser.
 
 ## Setup & Development
 
@@ -99,7 +99,7 @@ In a separate terminal:
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`
+The frontend will be available at `http://localhost:3000`
 
 ## Features
 
@@ -121,9 +121,9 @@ The frontend will be available at `http://localhost:5173`
 - `src/components/` - Vue components (charts, tables, ticker bar)
 - `src/composables/` - Data-fetching composables
 - `src/services/financials/` - FMP provider for financial data
-- `src/services/marketData/` - FMP provider for price data
+- `src/services/market/` - Market and macro data services
 - `src/services/ai/` - ChatGPT integration with caching
-- `server/server.mjs` - Express proxy server
+- `server/server.ts` - Express proxy server
 
 ## CI/CD
 

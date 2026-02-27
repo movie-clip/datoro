@@ -101,13 +101,13 @@ export default defineConfig(({ mode }) => {
       warmup: {
         // Pre-transform critical modules on server start (Vite 5+)
         clientFiles: [
-          './src/main.js',
+          './src/main.ts',
           './src/App.vue',
-          './src/stores/tickerStore.js',
-          './src/composables/usePriceSeries.js',
-          './src/composables/useNetIncomeSeries.js',
-          './src/services/financials/batchChartService.js',
-          './src/services/financials/batchTableService.js',
+          './src/stores/tickerStore.ts',
+          './src/composables/usePriceSeries.ts',
+          './src/composables/useNetIncomeSeries.ts',
+          './src/services/financials/batchChartService.ts',
+          './src/services/financials/batchTableService.ts',
           './src/styles/globals.css'
         ]
       },
