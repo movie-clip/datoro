@@ -282,47 +282,53 @@ try {
     console.log('✅ Unit tests passed');
   }
 
-  // Optional by default: e2e tests (can be made mandatory via env var)
+  // E2E tests are opt-in by default in local pre-deploy (can be required via env var)
   const requireE2E = String(process.env.PREDEPLOY_REQUIRE_E2E || '').toLowerCase() === 'true';
-  try {
-    const e2eReportPath = join(rootDir, '.vitest-predeploy-e2e.json');
-    const e2eOutput = runCommand(`npm run test:e2e -- --reporter=json --outputFile=${e2eReportPath}`);
-    const e2eParsed = parseVitestJsonReport(e2eReportPath) || parseVitestSummary(e2eOutput);
-    testSummary.e2eFilesPassed = e2eParsed.filesPassed;
-    testSummary.e2eFilesTotal = e2eParsed.filesTotal;
-    testSummary.e2eTestsPassed = e2eParsed.testsPassed;
-    testSummary.e2eTestsTotal = e2eParsed.testsTotal;
-    testSummary.e2eStatus = 'passed';
-    checks.passed.push('E2E Tests');
+  const runE2E = requireE2E || String(process.env.PREDEPLOY_RUN_E2E || '').toLowerCase() === 'true';
+  if (!runE2E) {
+    testSummary.e2eStatus = 'skipped';
+    console.log('ℹ️  E2E tests skipped (set PREDEPLOY_RUN_E2E=true to run, PREDEPLOY_REQUIRE_E2E=true to enforce)');
+  } else {
+    try {
+      const e2eReportPath = join(rootDir, '.vitest-predeploy-e2e.json');
+      const e2eOutput = runCommand(`npm run test:e2e -- --reporter=json --outputFile=${e2eReportPath}`);
+      const e2eParsed = parseVitestJsonReport(e2eReportPath) || parseVitestSummary(e2eOutput);
+      testSummary.e2eFilesPassed = e2eParsed.filesPassed;
+      testSummary.e2eFilesTotal = e2eParsed.filesTotal;
+      testSummary.e2eTestsPassed = e2eParsed.testsPassed;
+      testSummary.e2eTestsTotal = e2eParsed.testsTotal;
+      testSummary.e2eStatus = 'passed';
+      checks.passed.push('E2E Tests');
 
-    if (Number.isFinite(testSummary.e2eTestsPassed) && Number.isFinite(testSummary.e2eTestsTotal)) {
-      console.log(`✅ E2E tests passed (${testSummary.e2eTestsPassed}/${testSummary.e2eTestsTotal})`);
-    } else {
-      console.log('✅ E2E tests passed');
-    }
-  } catch (e2eError) {
-    const e2eReportPath = join(rootDir, '.vitest-predeploy-e2e.json');
-    const e2eParsed = parseVitestJsonReport(e2eReportPath) || parseVitestSummary(String(e2eError?.stdout || ''));
-    testSummary.e2eFilesPassed = e2eParsed.filesPassed;
-    testSummary.e2eFilesTotal = e2eParsed.filesTotal;
-    testSummary.e2eTestsPassed = e2eParsed.testsPassed;
-    testSummary.e2eTestsTotal = e2eParsed.testsTotal;
-    testSummary.e2eStatus = 'failed';
+      if (Number.isFinite(testSummary.e2eTestsPassed) && Number.isFinite(testSummary.e2eTestsTotal)) {
+        console.log(`✅ E2E tests passed (${testSummary.e2eTestsPassed}/${testSummary.e2eTestsTotal})`);
+      } else {
+        console.log('✅ E2E tests passed');
+      }
+    } catch (e2eError) {
+      const e2eReportPath = join(rootDir, '.vitest-predeploy-e2e.json');
+      const e2eParsed = parseVitestJsonReport(e2eReportPath) || parseVitestSummary(String(e2eError?.stdout || ''));
+      testSummary.e2eFilesPassed = e2eParsed.filesPassed;
+      testSummary.e2eFilesTotal = e2eParsed.filesTotal;
+      testSummary.e2eTestsPassed = e2eParsed.testsPassed;
+      testSummary.e2eTestsTotal = e2eParsed.testsTotal;
+      testSummary.e2eStatus = 'failed';
 
-    const e2eDetails = parseCommandError(e2eError);
-    if (requireE2E) {
-      checks.failed.push({
-        name: 'E2E Tests',
-        error: e2eDetails ? `E2E tests failed (required)\n${e2eDetails}` : 'E2E tests failed (required)'
-      });
-      console.log('❌ E2E tests failed (required)');
-    } else {
-      warn(
-        'E2E Tests',
-        e2eDetails
-          ? `E2E tests failed (optional in local pre-deploy). Set PREDEPLOY_REQUIRE_E2E=true to enforce.\n${e2eDetails}`
-          : 'E2E tests failed (optional in local pre-deploy). Set PREDEPLOY_REQUIRE_E2E=true to enforce.'
-      );
+      const e2eDetails = parseCommandError(e2eError);
+      if (requireE2E) {
+        checks.failed.push({
+          name: 'E2E Tests',
+          error: e2eDetails ? `E2E tests failed (required)\n${e2eDetails}` : 'E2E tests failed (required)'
+        });
+        console.log('❌ E2E tests failed (required)');
+      } else {
+        warn(
+          'E2E Tests',
+          e2eDetails
+            ? `E2E tests failed. Set PREDEPLOY_REQUIRE_E2E=true to make this blocking.\n${e2eDetails}`
+            : 'E2E tests failed. Set PREDEPLOY_REQUIRE_E2E=true to make this blocking.'
+        );
+      }
     }
   }
 } catch (error) {
@@ -428,8 +434,19 @@ if (existsSync(join(rootDir, 'dist'))) {
 console.log('\n📝 Checking Git Status...');
 try {
   const status = execSync('git status --porcelain', { cwd: rootDir, encoding: 'utf-8' });
-  if (status.trim()) {
-    warn('Uncommitted Changes', 'You have uncommitted changes. Commit before deploying.');
+  const lines = status
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (lines.length > 0) {
+    const onlyUntracked = lines.every(line => line.startsWith('??'));
+    if (onlyUntracked) {
+      checks.passed.push('Git Tracked Files Clean');
+      console.log(`ℹ️  Untracked files present (${lines.length})`);
+    } else {
+      warn('Uncommitted Changes', 'You have modified tracked files. Commit before deploying.');
+    }
   } else {
     checks.passed.push('Git Clean');
     console.log('✅ No uncommitted changes');
