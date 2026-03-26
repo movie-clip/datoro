@@ -52,15 +52,18 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       
-      # REQUIRED: Set manually in Render dashboard with external database URL
-      # Format: postgresql://user:pass@host.region-postgres.render.com:5432/dbname
+      # Database connection for Prisma migrations and runtime
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: datoro-db
+          property: connectionString
       
-      # REQUIRED: Set manually in Render dashboard with external Redis URL
-      # Get from Redis instance -> "External Connection String"
+      # Redis connection for cache and rate limiting
       - key: REDIS_URL
-        sync: false
+        fromService:
+          type: keyvalue
+          name: datoro-redis
+          property: connectionString
       
       # OPTIONAL: Set manually if using Sentry
       - key: SENTRY_DSN
