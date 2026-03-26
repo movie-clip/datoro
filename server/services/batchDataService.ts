@@ -13,7 +13,7 @@ interface BatchResult {
   ticker: string
   timestamp: string
   fetchDuration: number
-  data: Record<string, unknown>
+  data: Record<string, any>
   failures?: string[]
 }
 
@@ -93,7 +93,7 @@ const validationSchemas: Record<string, z.ZodSchema | null> = {
 /**
  * Validate FMP API response with schema
  */
-function validateResponse(dataKey: string, data: unknown): { valid: boolean; error?: string } {
+function validateResponse(dataKey: string, data: any): { valid: boolean; error?: string } {
   const schema = validationSchemas[dataKey]
   
   // Skip validation if no schema defined
@@ -104,9 +104,8 @@ function validateResponse(dataKey: string, data: unknown): { valid: boolean; err
   try {
     schema.parse(data)
     return { valid: true }
-  } catch (error: unknown) {
-    const zodError = error instanceof z.ZodError ? error : null
-    const errorMsg = zodError?.issues[0]?.message || (error instanceof Error ? error.message : 'Validation failed')
+  } catch (error: any) {
+    const errorMsg = error.errors?.[0]?.message || error.message
     logger.warn(`[BatchData] Validation failed for ${dataKey}:`, errorMsg)
     return { valid: false, error: errorMsg }
   }
@@ -126,9 +125,9 @@ async function fetchWithTimeout(url: string, options: FetchOptions = {}, timeout
     });
     clearTimeout(timeoutId);
     return response;
-  } catch (_error: unknown) {
+  } catch (_error: any) {
     clearTimeout(timeoutId);
-    if (_error instanceof Error && _error.name === 'AbortError') {
+    if (_error.name === 'AbortError') {
       throw new Error(`Request timeout after ${timeout}ms`);
     }
     throw _error;
@@ -215,7 +214,7 @@ export async function fetchTickerBatch(
   
   try {
     // Helper function to fetch a single endpoint with timeout and error handling
-    const fetchEndpoint = async (key: string, endpoint: string): Promise<[string, unknown]> => {
+    const fetchEndpoint = async (key: string, endpoint: string): Promise<[string, any]> => {
       const endpointStart = Date.now();
       try {
         // Fetch with 8 second timeout (reduced from 10 for faster failures)
@@ -252,10 +251,10 @@ export async function fetchTickerBatch(
           logger.debug(`[BatchData] advancedDcf data received:`, Array.isArray(data) ? `Array length: ${data.length}` : typeof data);
         }
         return [key, data];
-      } catch (_error: unknown) {
+      } catch (_error: any) {
         const duration = Date.now() - endpointStart;
         endpointTimings[key] = duration;
-        logger.warn(`[BatchData] ${key} error: ${_error instanceof Error ? _error.message : 'Unknown error'} (${duration}ms)`);
+        logger.warn(`[BatchData] ${key} error: ${_error.message} (${duration}ms)`);
         return [key, null];
       }
     };
@@ -365,7 +364,7 @@ export async function fetchTickerPriority(
   const startTime = Date.now();
   
   const responses = await Promise.allSettled(
-    Object.entries(endpoints).map(async ([key, endpoint]): Promise<[string, unknown]> => {
+    Object.entries(endpoints).map(async ([key, endpoint]): Promise<[string, any]> => {
       try {
         // Fetch with 10 second timeout
         const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
@@ -377,8 +376,8 @@ export async function fetchTickerPriority(
         if (!res.ok) return [key, null];
         const data = await res.json();
         return [key, data];
-      } catch (_error: unknown) {
-        logger.warn(`[BatchData Priority] ${key} error:`, _error instanceof Error ? _error.message : 'Unknown error');
+      } catch (_error: any) {
+        logger.warn(`[BatchData Priority] ${key} error:`, _error.message);
         return [key, null];
       }
     })
@@ -409,7 +408,7 @@ export async function fetchTickerPriority(
  * Fetch latest quote only (lightweight refresh path)
  * Used to keep dynamic price data fresh without refetching full batch payload.
  */
-export async function fetchTickerQuote(ticker: string, fmpApiKey: string): Promise<unknown[] | null> {
+export async function fetchTickerQuote(ticker: string, fmpApiKey: string): Promise<any[] | null> {
   const t = ticker.toUpperCase().trim()
   const baseUrl = 'https://financialmodelingprep.com'
 
@@ -427,8 +426,8 @@ export async function fetchTickerQuote(ticker: string, fmpApiKey: string): Promi
 
     const data = await res.json()
     return Array.isArray(data) ? data : null
-  } catch (_error: unknown) {
-    logger.warn(`[BatchData Quote] ${t} error: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
+  } catch (_error: any) {
+    logger.warn(`[BatchData Quote] ${t} error: ${_error.message}`)
     return null
   }
 }
@@ -439,3 +438,4 @@ function getDateMonthsAgo(months: number): string {
   date.setMonth(date.getMonth() - months);
   return date.toISOString().split('T')[0] || '';
 }
+
