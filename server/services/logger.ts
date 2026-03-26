@@ -18,6 +18,7 @@ if (!existsSync(logsDir)) {
 
 const environment = process.env.NODE_ENV || 'development'
 const isProduction = environment === 'production'
+const isTest = environment === 'test'
 
 interface LogMetadata {
   [key: string]: unknown
@@ -46,13 +47,14 @@ const prodFormat = winston.format.combine(
 // Configure transports
 const transports: winston.transport[] = []
 
-// Console transport (always enabled)
-transports.push(
-  new winston.transports.Console({
-    format: isProduction ? prodFormat : devFormat,
-    level: isProduction ? 'info' : 'debug'
-  })
-)
+if (!isTest || process.env.TEST_ENABLE_LOGGER === 'true') {
+  transports.push(
+    new winston.transports.Console({
+      format: isProduction ? prodFormat : devFormat,
+      level: isProduction ? 'info' : 'debug'
+    })
+  )
+}
 
 // File transports (production only)
 if (isProduction) {
@@ -80,7 +82,7 @@ if (isProduction) {
 
 // Create logger instance
 const logger = winston.createLogger({
-  level: isProduction ? 'info' : 'debug',
+  level: isTest ? 'silent' : (isProduction ? 'info' : 'debug'),
   transports,
   // Don't exit on uncaught exceptions (let PM2 handle restarts)
   exitOnError: false

@@ -1,140 +1,23 @@
-# AI Analysis Service
+# AI Insights Service
 
-## Overview
-This service loads pre-generated AI analysis from a static JSON bundle. AI insights are generated using the **AI Insights Tool** (located in `ai-insights-tool/`) and stored in `public/ai-insights.json`.
+The main app loads pre-generated AI insights from `public/ai-insights.json`.
 
-## Benefits
-- **Zero API costs**: No OpenAI/Ollama API calls at runtime
-- **Fast loading**: Static files served from CDN
-- **Predictable quality**: Pre-reviewed insights
-- **No rate limits**: Unlimited concurrent users
+Current behavior:
 
-## Response Format
-All AI insights follow a structured JSON format:
+- runtime loader: `src/services/ai/insightsService.ts`
+- source bundle: `public/ai-insights.json`
+- generation tool: `ai-insights-tool/`
 
-```json
-{
-  "ticker": "AAPL",
-  "companyName": "Apple Inc.",
-  "generated": "2025-01-15T10:30:00.000Z",
-  "version": "1.0",
-  "advantages": [
-    {
-      "title": "Brand Loyalty",
-      "description": "Apple has cultivated exceptional brand loyalty with a retention rate above 90%."
-    }
-  ],
-  "risks": [
-    {
-      "title": "China Dependence",
-      "description": "Over 20% of revenue from China creates geopolitical and economic risk."
-    }
-  ]
-}
-```
+This means:
 
-## Analysis Types
+- no runtime OpenAI or Ollama calls in the main app
+- no AI API keys required for the main frontend
+- missing insights fall back gracefully per ticker
 
-### Competitive Advantages
-Analyzes the company's competitive moats and strengths:
-- Brand loyalty and strength
-- Market position
-- Technology and innovation
-- Network effects
-- Switching costs
-- Unique assets
+To refresh the bundle:
 
-### Investment Risks
-Analyzes key risks to consider:
-- Competition
-- Regulatory concerns
-- Market dependence
-- Technological disruption
-- Cyclicality
-- Valuation concerns
+1. generate insights in `ai-insights-tool/`
+2. copy `ai-insights-tool/output/ai-insights.json` to `public/ai-insights.json`
+3. verify in local dev with `npm run dev`
 
-## Generating Insights
-
-### Using AI Insights Tool
-
-1. Navigate to the tool directory:
-```bash
-cd ai-insights-tool
-```
-
-2. Start the application:
-```bash
-npm run start:dev
-```
-
-3. Open http://localhost:5174 in your browser
-
-4. Enter tickers and generate insights
-
-5. Copy the generated `output/ai-insights.json` to `public/ai-insights.json`
-
-See `ai-insights-tool/README.md` for detailed instructions.
-
-## Usage Example
-
-```javascript
-import { getCompetitiveAdvantages, getInvestmentRisks } from './ai/chatgptService'
-
-// Fetch competitive advantages from static JSON
-const result = await getCompetitiveAdvantages('AAPL', 'Apple Inc.')
-
-// Result structure:
-{
-  data: {
-    success: true,
-    data: [
-      { title: "Brand Loyalty", description: "..." },
-      { title: "Ecosystem Lock-in", description: "..." }
-    ]
-  },
-  error: null,
-  cached: true  // All static files are considered "cached"
-}
-```
-
-## File Structure
-
-```
-public/
-  ai-insights.json     # Bundle with all AI insights (used by app)
-```
-
-The bundle format is optimized for size and performance:
-```json
-{
-  "AAPL": {
-    "advantages": [...],
-    "risks": [...],
-    "updated": "2025-10-17",
-    "provider": "ollama"
-  },
-  "MSFT": { ... }
-}
-```
-
-## Error Handling
-
-- Missing file: Shows "AI insights not available for {TICKER}"
-- Invalid JSON: Shows parse error with details
-- Network errors: Shows connection error message
-
-## Migrating to Static Approach
-
-If you previously used OpenAI/Ollama API:
-1. Use the AI Insights Tool (see above) to generate insights
-2. Review generated bundle in `ai-insights-tool/output/ai-insights.json`
-3. Copy to `public/ai-insights.json` for deployment
-4. No API keys or configuration needed at runtime!
-
-## Best Practices
-
-1. **Keep prompts concise**: Focus on 3-4 key points
-2. **Be specific**: Include example JSON format in prompts
-3. **Validate responses**: Use parseAIResponse() to ensure structure
-4. **Cache aggressively**: Minimize API costs and improve UX
-5. **Provide fallbacks**: Handle parsing errors gracefully
+Project-level setup docs live in `docs/development.md`.

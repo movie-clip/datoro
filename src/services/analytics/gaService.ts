@@ -5,6 +5,8 @@
  * Tracks user behavior for ad campaign optimization and ROI measurement.
  */
 
+const shouldLogMissingGtag = import.meta.env.DEV && process.env.NODE_ENV !== 'test' && process.env.TEST_SILENT_LOGS !== 'true'
+
 /**
  * Check if GA4 is initialized and ready
  */
@@ -22,10 +24,10 @@ export const trackEvent = (eventName: string, params?: Record<string, unknown>):
     window.gtag('event', eventName, params);
     
     // Development logging
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && process.env.NODE_ENV !== 'test') {
       console.info('[GA4 Event]', eventName, params);
     }
-  } else if (import.meta.env.DEV) {
+  } else if (shouldLogMissingGtag) {
     // Log warning in development if gtag is not available
     console.warn('[GA4] gtag not available, event not tracked:', eventName, params);
   }
@@ -219,7 +221,7 @@ export const updateAnalyticsConsent = (granted: boolean): void => {
       analytics_storage: granted ? 'granted' : 'denied',
     });
     
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && process.env.NODE_ENV !== 'test') {
       console.info('[GA4 Consent]', granted ? 'GRANTED' : 'DENIED');
     }
   }

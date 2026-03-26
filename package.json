@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18 <23"
+  },
   "scripts": {
     "dev": "vite",
     "server": "tsx server/server.ts",
@@ -33,6 +36,7 @@
     "pm2:status": "pm2 status",
     "validate": "npm run security:audit && npm run lint:check && npm test && npm run build",
     "validate:quick": "npm run lint:check && npm test",
+    "predeploy:check": "node scripts/pre-deploy-check.mjs",
     "security:audit": "node scripts/security-audit.mjs",
     "lint:check": "eslint . --ext .ts,.js,.vue,.mjs",
     "lint:fix": "eslint . --ext .ts,.js,.vue,.mjs --fix",

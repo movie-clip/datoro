@@ -37,13 +37,13 @@ python generate_voiceovers_naturalreader.py Valuation
 ### ElevenLabs (Voice cloning)
 ```bash
 cd scripts/voice-generation
-python generate_voiceovers_elevenlabs.py Valuation
+python generate_voiceovers.py Valuation
 ```
 
 ### OpenAI TTS ($15/1M chars)
 ```bash
 cd scripts/voice-generation
-python generate_voiceovers_openai.py Valuation
+python generate_rap_style.py Valuation
 ```
 
 ### Bark (Free, local)

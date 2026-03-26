@@ -159,7 +159,11 @@ async function precheckStaticCache(req: Request, _res: Response, next: NextFunct
   return next()
 }
 
-export function toStaticBatchPayload(payload: TickerDataResponse): StaticTickerDataResponse {
+export function toStaticBatchPayload<T>(payload: T): T extends TickerDataResponse ? StaticTickerDataResponse : T {
+  if (!payload || typeof payload !== 'object') {
+    return payload as T extends TickerDataResponse ? StaticTickerDataResponse : T
+  }
+
   const typedPayload = payload as TickerDataResponse & StaticBatchPayload & Record<string, unknown>
   const data = typedPayload.data && typeof typedPayload.data === 'object' ? typedPayload.data : {}
   const { quote: _quote, ...staticData } = data
@@ -168,7 +172,7 @@ export function toStaticBatchPayload(payload: TickerDataResponse): StaticTickerD
     ...typedPayload,
     data: staticData,
     splitMode: 'static'
-  }
+  } as T extends TickerDataResponse ? StaticTickerDataResponse : T
 }
 
 export function shouldRefreshQuote(
@@ -460,7 +464,7 @@ router.get('/:ticker/static', precheckStaticCache, fmpLimiter, globalFmpLimiter,
         ? await fetchTickerPriority(t, FMP_API_KEY, { includeQuote: false })
         : await fetchTickerBatch(t, FMP_API_KEY, { includeQuote: false })
 
-      return toStaticBatchPayload(full as TickerDataResponse)
+      return toStaticBatchPayload(full as TickerDataResponse) as TickerDataResponse
     },
     CacheTTL.COMPANY_PROFILE
   )

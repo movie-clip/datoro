@@ -39,9 +39,6 @@ export default defineConfig({
       statements: 70
     },
     
-    // Reporter configuration
-    reporters: ['verbose'],
-    
     // Run tests in sequence to avoid database conflicts
     sequence: {
       concurrent: false

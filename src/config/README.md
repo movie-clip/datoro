@@ -85,7 +85,7 @@ console.log(SERVICES.database.name) // "datoro-db"
 ## 🎯 Benefits
 
 ### Before (Scattered)
-Renaming "Factorly" → "Datoro" required changes in **100+ files**:
+Renaming the project brand required changes in **100+ files**:
 - 20+ frontend files (brand name hardcoded)
 - 6+ deployment files (service names hardcoded)
 - 4+ composables (storage keys hardcoded)

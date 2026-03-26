@@ -9,10 +9,14 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Load test environment variables
-config({ path: join(__dirname, '..', '.env.local') })
+config({ path: join(__dirname, '..', '.env.local'), quiet: true })
 
 // Ensure test environment
 process.env.NODE_ENV = 'test'
+
+declare global {
+  var __DATORO_TEST_SETUP_LOGGED__: boolean | undefined
+}
 
 // Mock window object for tests (required for apiConfig and other browser-dependent code)
 global.window = {
@@ -40,6 +44,9 @@ declare global {
 
 global.sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
-console.log('🧪 Test environment initialized')
-console.log(`📍 Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`)
-console.log(`🔑 FMP API Key: ${process.env.FMP_API_KEY ? 'Loaded' : 'Not configured'}`)
+if (!globalThis.__DATORO_TEST_SETUP_LOGGED__ && process.env.CI !== 'true') {
+  globalThis.__DATORO_TEST_SETUP_LOGGED__ = true
+  console.log('🧪 Test environment initialized')
+  console.log(`📍 Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`)
+  console.log(`🔑 FMP API Key: ${process.env.FMP_API_KEY ? 'Loaded' : 'Not configured'}`)
+}

@@ -42,7 +42,9 @@ describe('Database Service', () => {
   const testUserAgent = 'Vitest Test Runner'
   
   beforeAll(async () => {
-    console.log('\n🧪 Starting Database Service Tests...\n')
+    if (process.env.TEST_SILENT_LOGS !== 'true') {
+      console.log('\n🧪 Starting Database Service Tests...\n')
+    }
   })
 
   beforeEach(() => {
@@ -52,7 +54,9 @@ describe('Database Service', () => {
   })
 
   afterAll(async () => {
-    console.log('\n✅ Database Service Tests Complete\n')
+    if (process.env.TEST_SILENT_LOGS !== 'true') {
+      console.log('\n✅ Database Service Tests Complete\n')
+    }
   })
 
   describe('Prisma Client', () => {

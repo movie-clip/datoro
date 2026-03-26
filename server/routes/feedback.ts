@@ -121,7 +121,7 @@ IP: ${req.ip}
           service: 'gmail',
           auth: {
             user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
+            pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS
           }
         })
         
@@ -171,7 +171,7 @@ router.get('/test', asyncHandler(async (req: Request, res: Response) => {
   const configured = {
     emailService: !!nodemailer,
     smtpUser: !!process.env.SMTP_USER,
-    smtpPass: !!process.env.SMTP_PASS,
+    smtpPass: !!(process.env.SMTP_PASSWORD || process.env.SMTP_PASS),
     feedbackEmail: FEEDBACK_EMAIL
   }
   

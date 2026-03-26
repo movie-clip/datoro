@@ -343,7 +343,7 @@ describe('Batch Data Service', () => {
 
   afterEach(() => {
     // Verify all nock interceptors were used
-    if (!nock.isDone()) {
+    if (!nock.isDone() && process.env.TEST_SILENT_LOGS !== 'true') {
       console.warn('Not all nock interceptors were used:', nock.pendingMocks())
     }
     nock.cleanAll()

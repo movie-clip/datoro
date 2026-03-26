@@ -1,38 +1,27 @@
-# AI Insights Tool - Standalone Vue Application
+# AI Insights Tool
 
-A standalone Vue.js application for generating AI insights using local Ollama.
+Standalone app for generating the static AI insights bundle used by the main Datoro app.
 
 ## Setup
 
-1. **Install dependencies:**
 ```bash
 npm install
-```
-
-2. **Configure Ollama:**
-Make sure Ollama is running on http://localhost:11434
-
-3. **Start the backend server:**
-```bash
-npm run server
-```
-
-4. **Start the frontend (in a new terminal):**
-```bash
 npm run dev
 ```
 
-5. **Open the application:**
-Navigate to http://localhost:5174
-
-## Features
-
-- ✅ Check ticker status against existing bundle
-- 🤖 Generate AI insights using local Ollama
-- 📊 Real-time progress updates
-- 💾 Automatic bundle management
-- 🎨 Factorly-style UI (dark theme)
+Open `http://localhost:5174`.
 
 ## Output
 
-Generated insights are saved to `output/ai-insights.json`
+Generated insights are written to:
+
+- `output/ai-insights.json`
+
+To use them in the main app, copy that file to:
+
+- `public/ai-insights.json`
+
+## Notes
+
+- this tool is separate from the main app
+- the main app serves static AI insights and does not call AI providers at runtime

@@ -1,30 +1,92 @@
+# Deployment
 
-## Development
+This project is set up for Render. Use `render.yaml` as the deployment source of truth.
 
-start service:
-npm run start:dev
+## Before You Deploy
 
-start development server (both backend + frontend):
-npm run start:dev
+Run the main readiness check:
 
-## Pre-Deployment Checks
-
-Before pushing to production:
-
-**Run validation scripts:**
-```powershell
+```bash
 node scripts/pre-deploy-check.mjs
-npm run security:audit
+```
+
+Recommended checks:
+
+```bash
 npm run lint:check
 npm run type-check
 npm run type-check:server
+npm run type-check:tests
+npm test
+npm run build
 ```
 
-## Production Secrets / Security
+For CI-style validation:
 
-**Admin operations key (RECOMMENDED for production):**
+```bash
+npm run predeploy:check:ci
+```
 
-Some internal endpoints are protected by an admin header in production:
+## Required Production Environment Variables
+
+- `FMP_API_KEY`
+- `DATABASE_URL`
+- `REDIS_URL`
+- `JWT_SECRET`
+- `ALLOWED_ORIGINS`
+- `APP_URL`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_ID`
+- `VITE_API_BASE_URL` for the frontend service
+
+Common optional vars:
+
+- `ADMIN_API_KEY`
+- `READINESS_REQUIRE_ADMIN_KEY`
+- `SENTRY_DSN`
+
+Use `.env.example` as the env reference.
+
+## Render Services
+
+Defined in `render.yaml`:
+
+- `datoro-api` backend web service
+- `datoro` frontend static site
+- `datoro-redis` Redis instance
+- `datoro-db` PostgreSQL database
+
+## Deployment Steps
+
+1. Connect the repository to Render.
+2. Deploy from `render.yaml`.
+3. Set the required secrets in the Render dashboard.
+4. Confirm frontend `VITE_API_BASE_URL` points to the deployed API.
+5. Confirm `ALLOWED_ORIGINS` and `APP_URL` match the public frontend URL.
+6. Run Prisma migrations as part of the backend build.
+
+## Post-Deploy Checks
+
+Verify:
+
+- frontend loads successfully
+- backend health endpoint responds at `/api/health`
+- ticker requests work with a valid `FMP_API_KEY`
+- auth flows work with the configured `JWT_SECRET`
+- Redis-backed features work when `REDIS_URL` is set
+- Stripe webhook and checkout configuration match deployed URLs
+
+## Operational Security
+
+In production, protect operational endpoints with `ADMIN_API_KEY` and send requests with:
+
+```text
+X-Admin-Key: <your-secret>
+```
+
+Key endpoints:
 
 - `GET /api/cache/stats`
 - `POST /api/cache/clear`
@@ -33,55 +95,14 @@ Some internal endpoints are protected by an admin header in production:
 - `GET /api/analytics/stats`
 - `GET /api/health/database`
 
-Set one of these environment variables in production:
+To require the admin key for readiness checks too, set:
 
-- `ADMIN_API_KEY` (preferred)
-- `ADMIN_KEY` (legacy alias)
-
-Call the endpoints with header `X-Admin-Key: <your secret>`.
-
-Optional: to require the admin key on `/api/readiness`, set:
-
-- `READINESS_REQUIRE_ADMIN_KEY=true`
-
-**Run validation scripts:**
-```powershell
-node scripts/validate-seo.mjs
+```text
+READINESS_REQUIRE_ADMIN_KEY=true
 ```
 
+## CI Notes
 
-**Verify database migrations:**
-```powershell
-node scripts/verify-migration.mjs
-```
-
-**Run tests:**
-```powershell
-npm test
-```
-
-clear redis cache:
-node scripts/clear-cache-key.mjs AMZN
-
-stop node:
-Stop-Process -Name node -Force
-
-start docker:
-npm run docker:dev:up
-
-generate speech:
-python generate_voiceovers.py ASML
-
-
-local DB:
-npx prisma studio
-
-stress testing:
-
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User"); k6 run --env API_URL=http://localhost:7071 tests/load/mixed-workload.js
-
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User"); k6 run --env API_URL=http://localhost:7071 tests/load/cached-workload.js
-
-
-
-Write-Host "Starting server in background..." -ForegroundColor Cyan; Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd D:\projects\Vue\factorly; npm run server" -WindowStyle Normal
+- Workflow files live in `.github/workflows/`.
+- `ci.yml` and `pr-checks.yml` are the current GitHub Actions definitions.
+- Local dry runs use `act` via `npm run ci:local:dry`.
