@@ -11,8 +11,7 @@ services:
   - type: web
     name: datoro-api
     runtime: node
-    buildCommand: npm install && npx prisma generate
-    preDeployCommand: npx prisma migrate deploy
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy
     startCommand: npx tsx server/server.ts
     healthCheckPath: /api/health
     
