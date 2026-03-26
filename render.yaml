@@ -11,7 +11,7 @@ services:
   - type: web
     name: datoro-api
     runtime: node
-    buildCommand: npm ci && npx prisma generate
+    buildCommand: npm install && npx prisma generate
     startCommand: node --import tsx server/server.ts
     healthCheckPath: /api/health
     
@@ -57,11 +57,6 @@ services:
           name: datoro-db
           property: connectionString
 
-      # Optional direct database URL for Prisma Migrate if the pooled/main URL
-      # causes connection resets during deploys.
-      - key: DIRECT_DATABASE_URL
-        sync: false
-      
       # Redis connection for cache and rate limiting
       - key: REDIS_URL
         fromService:
@@ -114,7 +109,7 @@ services:
   - type: web
     name: datoro
     runtime: static
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     previews:
       generation: automatic
