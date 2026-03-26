@@ -12,7 +12,7 @@ services:
     name: datoro-api
     runtime: node
     buildCommand: npm ci && npx prisma generate
-    preDeployCommand: npx prisma migrate deploy
+    preDeployCommand: node scripts/render-migrate.mjs
     startCommand: node --import tsx server/server.ts
     healthCheckPath: /api/health
     
