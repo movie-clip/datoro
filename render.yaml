@@ -11,7 +11,6 @@ services:
   - type: web
     name: datoro-api
     runtime: node
-    plan: free # FREE: sleeps after 15min inactivity | STARTER ($7/mo): 24/7 uptime
     buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy
     startCommand: node --import tsx server/server.ts
     healthCheckPath: /api/health
