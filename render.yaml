@@ -11,8 +11,9 @@ services:
   - type: web
     name: datoro-api
     runtime: node
-    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy
-    startCommand: npx tsx server/server.ts
+    buildCommand: npm ci && npx prisma generate
+    preDeployCommand: npx prisma migrate deploy
+    startCommand: node --import tsx server/server.ts
     healthCheckPath: /api/health
     
     # Only rebuild backend when these files change
@@ -31,9 +32,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      
-      - key: PORT
-        value: 7071
       
       # REQUIRED: Set manually in Render dashboard
       - key: FMP_API_KEY
