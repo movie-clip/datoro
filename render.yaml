@@ -11,7 +11,6 @@ services:
   - type: web
     name: datoro-api
     runtime: node
-    region: frankfurt
     buildCommand: npm ci && npx prisma generate
     preDeployCommand: npx prisma migrate deploy
     startCommand: node --import tsx server/server.ts
@@ -102,7 +101,6 @@ services:
   # ==============================================
   - type: keyvalue
     name: datoro-redis
-    region: frankfurt
     maxmemoryPolicy: allkeys-lru # Auto-evict least recently used keys when full
     ipAllowList: [] # Empty = allow all Render services
 
@@ -161,7 +159,6 @@ services:
 # ==============================================
 databases:
   - name: datoro-db
-    region: frankfurt
     databaseName: datoro
     user: datoro
     ipAllowList: [] # Private-only database; use internal connection string from Render
