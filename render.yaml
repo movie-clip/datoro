@@ -6,13 +6,15 @@
 
 services:
   # ==============================================
-  # Backend API Server (Node.js + PM2)
+  # Backend API Server (Node.js)
   # ==============================================
   - type: web
     name: datoro-api
     runtime: node
+    region: frankfurt
     buildCommand: npm ci && npx prisma generate
-    startCommand: npm run server:render
+    preDeployCommand: npx prisma migrate deploy
+    startCommand: node --import tsx server/server.ts
     healthCheckPath: /api/health
     
     # Only rebuild backend when these files change
@@ -49,7 +51,9 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       
-      # Database connection for Prisma migrations and runtime
+      # Database connection for Prisma migrations and runtime.
+      # Keep this managed by Render via fromDatabase so the service uses
+      # the private-network connection string instead of a manual external URL.
       - key: DATABASE_URL
         fromDatabase:
           name: datoro-db
@@ -98,6 +102,7 @@ services:
   # ==============================================
   - type: keyvalue
     name: datoro-redis
+    region: frankfurt
     maxmemoryPolicy: allkeys-lru # Auto-evict least recently used keys when full
     ipAllowList: [] # Empty = allow all Render services
 
@@ -107,9 +112,10 @@ services:
   - type: web
     name: datoro
     runtime: static
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
-    pullRequestPreviewsEnabled: true # Auto-preview pull requests
+    previews:
+      generation: automatic
     
     # Environment Variables (injected during build)
     envVars:
@@ -155,9 +161,10 @@ services:
 # ==============================================
 databases:
   - name: datoro-db
+    region: frankfurt
     databaseName: datoro
     user: datoro
-    ipAllowList: [] # Empty = allow all Render services
+    ipAllowList: [] # Private-only database; use internal connection string from Render
 
 # ==============================================
 # DEPLOYMENT CHECKLIST
