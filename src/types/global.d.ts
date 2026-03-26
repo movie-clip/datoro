@@ -3,6 +3,7 @@
  */
 
 type GtagCommand = 'event' | 'config' | 'set' | 'consent'
+type FbqConsentAction = 'grant' | 'revoke'
 
 // Google Analytics gtag
 interface Window {
@@ -11,6 +12,7 @@ interface Window {
     targetId: string,
     config?: Record<string, unknown>
   ) => void
+  fbq?: (command: 'consent', action: FbqConsentAction) => void
   dataLayer: unknown[]
   GA_MEASUREMENT_ID?: string
 }

@@ -19,6 +19,10 @@ interface CheckoutSession {
   url: string
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback
+}
+
 export function useStripe() {
   const authStore = useAuthStore()
   const loading = ref(false)
@@ -49,9 +53,9 @@ export function useStripe() {
       }
 
       return await stripePromise
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Stripe] Initialization error:', err)
-      error.value = err.message || 'Failed to initialize Stripe'
+      error.value = getErrorMessage(err, 'Failed to initialize Stripe')
       return null
     }
   }
@@ -92,9 +96,9 @@ export function useStripe() {
       } else {
         throw new Error('No checkout URL returned')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Stripe] Checkout error:', err)
-      error.value = err.message || 'Failed to start checkout'
+      error.value = getErrorMessage(err, 'Failed to start checkout')
     } finally {
       loading.value = false
     }
@@ -131,9 +135,9 @@ export function useStripe() {
 
       // Redirect to Stripe Customer Portal
       window.location.href = url
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Stripe] Portal error:', err)
-      error.value = err.message || 'Failed to open customer portal'
+      error.value = getErrorMessage(err, 'Failed to open customer portal')
     } finally {
       loading.value = false
     }
@@ -170,9 +174,9 @@ export function useStripe() {
       await authStore.checkAuth()
 
       return true
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Stripe] Cancel error:', err)
-      error.value = err.message || 'Failed to cancel subscription'
+      error.value = getErrorMessage(err, 'Failed to cancel subscription')
       return false
     } finally {
       loading.value = false
@@ -210,9 +214,9 @@ export function useStripe() {
       await authStore.checkAuth()
 
       return true
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Stripe] Resume error:', err)
-      error.value = err.message || 'Failed to resume subscription'
+      error.value = getErrorMessage(err, 'Failed to resume subscription')
       return false
     } finally {
       loading.value = false

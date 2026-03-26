@@ -15,6 +15,17 @@ const cache = getCacheService()
 const cacheWarm = getCacheWarmService()
 const monitoring = getMonitoringService()
 
+interface ReadinessChecks {
+  server: string
+  database: string
+  redis: string
+  timestamp: string
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 // Optional protection: some platforms expect readiness to be public.
 // If you want this endpoint private, set READINESS_REQUIRE_ADMIN_KEY=true.
 const readinessAuth = process.env.READINESS_REQUIRE_ADMIN_KEY === 'true'
@@ -38,12 +49,12 @@ export function initAdminRoutes(deps: { isDatabaseAvailable: boolean }) {
  * Use this for Docker/k8s health checks with longer timeout
  */
 router.get('/readiness', readinessAuth, asyncHandler(async (_req: Request, res: Response) => {
-  const checks: { server: string; database: string; redis: string } = {
+  const checks: ReadinessChecks = {
     server: 'ok',
     database: 'unknown',
     redis: 'unknown',
     timestamp: new Date().toISOString()
-  } as any
+  }
 
   // Check database connectivity (with 2s timeout)
   if (isDatabaseAvailable) {
@@ -54,9 +65,9 @@ router.get('/readiness', readinessAuth, asyncHandler(async (_req: Request, res: 
       )
       await Promise.race([testDatabaseConnection(), dbTimeout])
       checks.database = 'connected'
-    } catch (_dbError: any) {
+    } catch (_dbError: unknown) {
       checks.database = 'disconnected'
-            logger.warn('[Health] Database check failed:', _dbError.message)
+      logger.warn('[Health] Database check failed:', getErrorMessage(_dbError))
     }
   } else {
     checks.database = 'disabled'
@@ -66,9 +77,9 @@ router.get('/readiness', readinessAuth, asyncHandler(async (_req: Request, res: 
   try {
     const isConnected = await cache.ping()
     checks.redis = isConnected ? 'connected' : 'disconnected'
-  } catch (_redisError: any) {
+  } catch (_redisError: unknown) {
     checks.redis = cache.isMemoryOnly() ? 'memory-fallback' : 'disconnected'
-        logger.warn('[Health] Redis check failed:', _redisError.message)
+    logger.warn('[Health] Redis check failed:', getErrorMessage(_redisError))
   }
 
   // Overall health status

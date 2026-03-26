@@ -160,6 +160,11 @@ import SP500PriceChart from '../charts/SP500PriceChart.vue'
 import { useMarketPerformance } from '../../composables/useMarketPerformance'
 import type { SectorData } from '../../services/market/marketPerformanceService'
 
+interface CustomRangeSectorResponse {
+  sector?: string
+  changesPercentage?: string | number
+}
+
 interface Props {
   modelValue: boolean
 }
@@ -269,8 +274,8 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
     
     // Convert API data to SectorData format
     // Note: Server handles caching with Redis (30min TTL)
-    const customSectors: SectorData[] = data
-      .map((sector: any) => {
+    const customSectors: SectorData[] = (data as CustomRangeSectorResponse[])
+      .map((sector) => {
         if (!sector.sector || !sector.changesPercentage) {
           return null
         }

@@ -94,6 +94,13 @@ interface ProjectedPrice {
   price: number
 }
 
+interface TooltipParam {
+  axisValue: number | string
+  color: string
+  value: number | null
+  seriesName: string
+}
+
 interface ScenarioData {
   projectedPrices: ProjectedPrice[]
   intrinsicValue?: number | null
@@ -180,9 +187,9 @@ const chartOptions = computed((): EChartsOption | null => {
         color: '#fff',
         fontSize: 13
       },
-      formatter: (params: any) => {
+      formatter: (params: TooltipParam[]) => {
         let tooltip = `<strong>${params[0].axisValue}</strong><br/>`
-        params.forEach((param: any) => {
+        params.forEach((param) => {
           const color = param.color
           const value = param.value !== null 
             ? `$${param.value.toFixed(2)}`

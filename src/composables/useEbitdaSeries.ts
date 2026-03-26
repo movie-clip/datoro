@@ -23,11 +23,21 @@ interface ViewModeOption {
 interface SegmentConfig {
   label: string
   sign: number
+  key: 'revenue' | 'costOfRevenue' | 'operatingExpenses' | 'depreciationAndAmortization'
 }
 
 interface SegmentData {
   segments: string[]
   series: Record<string, unknown>
+}
+
+interface EbitdaSeriesPoint extends FiscalQuarterData {
+  date: number
+  ebitda: number
+  revenue: number
+  costOfRevenue: number
+  operatingExpenses: number
+  depreciationAndAmortization: number
 }
 
 export interface UseEbitdaSeriesReturn {
@@ -68,10 +78,16 @@ export function useEbitdaSeries(): UseEbitdaSeriesReturn {
   const period = computed<Period>(() => timeframe.value)
 
   // Memoized raw data extraction - single source of truth
-  const rawData = computed(() => getEbitdaSeriesFromBatch(batchData.value, period.value))
+  const rawData = computed(() => getEbitdaSeriesFromBatch(batchData.value ?? null, period.value))
 
   const error = computed<string | null>(() => {
-    if (batchError.value) return batchError.value
+    if (batchError.value) {
+      return batchError.value instanceof Error
+        ? batchError.value.message
+        : typeof batchError.value === 'string'
+          ? batchError.value
+          : 'Failed to load EBITDA data'
+    }
     // Don't show error during initial loading
     if (loading.value) return null
     const t = (currentTicker.value || '').toUpperCase()
@@ -83,10 +99,10 @@ export function useEbitdaSeries(): UseEbitdaSeriesReturn {
 
   // Map segment keys to display names and data
   const segmentConfig: Record<string, SegmentConfig> = {
-    revenue: { label: 'Revenue', sign: 1 },
-    costOfRevenue: { label: 'Cost of Revenue', sign: -1 },
-    operatingExpenses: { label: 'Operating Expenses', sign: -1 },
-    depreciationAndAmortization: { label: 'D&A', sign: 1 }
+    revenue: { label: 'Revenue', sign: 1, key: 'revenue' },
+    costOfRevenue: { label: 'Cost of Revenue', sign: -1, key: 'costOfRevenue' },
+    operatingExpenses: { label: 'Operating Expenses', sign: -1, key: 'operatingExpenses' },
+    depreciationAndAmortization: { label: 'D&A', sign: 1, key: 'depreciationAndAmortization' }
   }
 
   // Helper function to create EBITDA data points with fiscal quarter info
@@ -110,8 +126,8 @@ export function useEbitdaSeries(): UseEbitdaSeriesReturn {
         const config = segmentConfig[segmentKey]
         result.push({
           name: config.label,
-          data: rawData.value.map((d: any) => 
-            toDataPoint(d.date, d[segmentKey] * config.sign, d as FiscalQuarterData)
+          data: rawData.value.map((d: EbitdaSeriesPoint) => 
+            toDataPoint(d.date, d[config.key] * config.sign, d as FiscalQuarterData)
           )
         })
       }

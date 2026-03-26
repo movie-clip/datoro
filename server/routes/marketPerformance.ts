@@ -13,6 +13,43 @@ const FMP_API_KEY = process.env.FMP_API_KEY
 const FMP_BASE_URL = 'https://financialmodelingprep.com'
 const CACHE_TTL = 5 * 60 // 5 minutes in seconds
 
+interface QuoteResponseItem {
+  symbol: string
+  name?: string
+  price?: number
+  change?: number
+  changesPercentage: number
+}
+
+interface HistoricalPricePoint {
+  date: string
+  close: number
+}
+
+interface HistoricalPriceResponse {
+  historical?: HistoricalPricePoint[]
+}
+
+interface SectorPerformanceResult {
+  sector: string
+  changesPercentage: string
+}
+
+interface Sp500PerformanceResult {
+  symbol: string
+  name: string
+  changesPercentage: string
+  price?: number
+}
+
+function isQuoteResponseItem(value: unknown): value is QuoteResponseItem {
+  return typeof value === 'object' && value !== null && 'symbol' in value && 'changesPercentage' in value
+}
+
+function isHistoricalPriceResponse(value: unknown): value is HistoricalPriceResponse {
+  return typeof value === 'object' && value !== null && 'historical' in value
+}
+
 /**
  * GET /api/market/sectors
  * Get S&P 500 sector index performance (not general market sectors)
@@ -58,9 +95,9 @@ router.get('/sectors', asyncHandler(async (req: Request, res: Response) => {
           return null
         }
         
-        const data: any = await response.json()
+        const data = await response.json()
         
-        if (!data || data.length === 0) {
+        if (!Array.isArray(data) || data.length === 0 || !isQuoteResponseItem(data[0])) {
           return null
         }
         
@@ -71,7 +108,7 @@ router.get('/sectors', asyncHandler(async (req: Request, res: Response) => {
       })
       
       const results = await Promise.all(sectorPromises)
-      const validResults = results.filter(r => r !== null)
+      const validResults = results.filter((r): r is SectorPerformanceResult => r !== null)
       
       // Cache the result
       await cache.set(cacheKey, validResults, CACHE_TTL)
@@ -103,9 +140,9 @@ router.get('/sectors', asyncHandler(async (req: Request, res: Response) => {
         return null
       }
       
-      const data: any = await response.json()
+      const data = await response.json()
       
-      if (!data || !data.historical || data.historical.length === 0) {
+      if (!isHistoricalPriceResponse(data) || !Array.isArray(data.historical) || data.historical.length === 0) {
         return null
       }
       
@@ -119,7 +156,7 @@ router.get('/sectors', asyncHandler(async (req: Request, res: Response) => {
     })
     
     const results = await Promise.all(sectorPromises)
-    const validResults = results.filter(r => r !== null)
+    const validResults = results.filter((r): r is SectorPerformanceResult => r !== null)
     
     // Cache the result
     await cache.set(cacheKey, validResults, CACHE_TTL * 2) // 10 minutes for historical
@@ -195,14 +232,14 @@ router.get('/sectors/custom-range', asyncHandler(async (req: Request, res: Respo
           return null
         }
         
-        const data: any = await response.json()
+        const data = await response.json()
         
-        if (!data || !data.historical || data.historical.length === 0) {
+        if (!isHistoricalPriceResponse(data) || !Array.isArray(data.historical) || data.historical.length === 0) {
           return null
         }
         
         // Calculate performance: (end price - start price) / start price * 100
-        const historicalData = data.historical.sort((a: any, b: any) => 
+        const historicalData = [...data.historical].sort((a, b) => 
           new Date(a.date).getTime() - new Date(b.date).getTime()
         )
         
@@ -221,7 +258,7 @@ router.get('/sectors/custom-range', asyncHandler(async (req: Request, res: Respo
     })
     
     const results = await Promise.all(sectorPromises)
-    const validResults = results.filter(r => r !== null)
+    const validResults = results.filter((r): r is SectorPerformanceResult => r !== null)
     
     // Cache the result (30 minutes for custom range - fire-and-forget)
     cache.setFast(cacheKey, validResults, CACHE_TTL * 6)
@@ -240,99 +277,6 @@ router.get('/sectors/custom-range', asyncHandler(async (req: Request, res: Respo
     })
   }
 }))
-
-/**
- * Calculate sector performance for a given period from historical data
- * Historical data format: { date: '2025-11-07', basicMaterialsChangesPercentage: 0.90489, ... }
- */
-function calculatePeriodPerformance(historicalData: any[], period: string): any[] {
-  if (!historicalData || historicalData.length === 0) {
-    return []
-  }
-
-  const now = new Date()
-  let startDate: Date
-  
-  // Determine start date based on period
-  switch (period) {
-    case '1W':
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      break
-    case '1M':
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      break
-    case 'YTD':
-      startDate = new Date(now.getFullYear(), 0, 1)
-      break
-    case '3Y':
-      startDate = new Date(now.getTime() - 3 * 365 * 24 * 60 * 60 * 1000)
-      break
-    case '5Y':
-      startDate = new Date(now.getTime() - 5 * 365 * 24 * 60 * 60 * 1000)
-      break
-    case '10Y':
-      startDate = new Date(now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000)
-      break
-    default:
-      startDate = now // Default to current
-  }
-  
-  // Filter data within the period
-  const periodData = historicalData.filter((item: any) => {
-    const itemDate = new Date(item.date)
-    return itemDate >= startDate && itemDate <= now
-  })
-  
-  if (periodData.length === 0) {
-    return []
-  }
-  
-  // Map FMP column names to sector names
-  const sectorMapping: Record<string, string> = {
-    'basicMaterialsChangesPercentage': 'Materials',
-    'communicationServicesChangesPercentage': 'Communication Services',
-    'consumerCyclicalChangesPercentage': 'Consumer Cyclical',
-    'consumerDefensiveChangesPercentage': 'Consumer Defensive',
-    'energyChangesPercentage': 'Energy',
-    'financialServicesChangesPercentage': 'Financials',
-    'healthcareChangesPercentage': 'Health Care',
-    'industrialsChangesPercentage': 'Industrials',
-    'realEstateChangesPercentage': 'Real Estate',
-    'technologyChangesPercentage': 'Information Technology',
-    'utilitiesChangesPercentage': 'Utilities'
-  }
-  
-  // Calculate average performance for each sector over the period
-  const sectorPerformances: Record<string, number[]> = {}
-  
-  periodData.forEach((day: any) => {
-    Object.entries(sectorMapping).forEach(([key, sectorName]) => {
-      if (day[key] !== undefined && day[key] !== null) {
-        if (!sectorPerformances[sectorName]) {
-          sectorPerformances[sectorName] = []
-        }
-        sectorPerformances[sectorName].push(Number(day[key]))
-      }
-    })
-  })
-  
-  // Calculate cumulative performance for each sector
-  const result: any[] = []
-  
-  Object.entries(sectorPerformances).forEach(([sector, performances]) => {
-    if (performances.length === 0) return
-    
-    // Sum all daily changes to get total performance over period
-    const totalPerformance = performances.reduce((sum, val) => sum + val, 0)
-    
-    result.push({
-      sector,
-      changesPercentage: `${totalPerformance.toFixed(2)}%`
-    })
-  })
-  
-  return result
-}
 
 /**
  * GET /api/market/sp500
@@ -363,9 +307,9 @@ router.get('/sp500', asyncHandler(async (req: Request, res: Response) => {
         throw new Error(`FMP API error: ${response.statusText}`)
       }
       
-      const data: any = await response.json()
+      const data = await response.json()
       
-      if (!data || data.length === 0) {
+      if (!Array.isArray(data) || data.length === 0 || !isQuoteResponseItem(data[0])) {
         throw new Error('No S&P 500 data received')
       }
       
@@ -406,9 +350,9 @@ router.get('/sp500', asyncHandler(async (req: Request, res: Response) => {
       throw new Error(`FMP API error: ${response.statusText}`)
     }
     
-    const data: any = await response.json()
+    const data = await response.json()
     
-    if (!data || !data.historical || data.historical.length === 0) {
+    if (!isHistoricalPriceResponse(data) || !Array.isArray(data.historical) || data.historical.length === 0) {
       throw new Error('No S&P 500 historical data received')
     }
     
@@ -465,14 +409,14 @@ router.get('/sp500/historical', asyncHandler(async (req: Request, res: Response)
       throw new Error(`FMP API error: ${response.statusText}`)
     }
     
-    const data: any = await response.json()
+    const data = await response.json()
     
-    if (!data || !data.historical || data.historical.length === 0) {
+    if (!isHistoricalPriceResponse(data) || !Array.isArray(data.historical) || data.historical.length === 0) {
       throw new Error('No S&P 500 historical data received')
     }
     
     // Sort by date ascending (oldest to newest)
-    const sortedData = data.historical.sort((a: any, b: any) => 
+    const sortedData = [...data.historical].sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     
@@ -507,7 +451,7 @@ router.get('/sp500/historical', asyncHandler(async (req: Request, res: Response)
  * Calculate S&P 500 performance for a given period from historical data
  * Historical data format: { date: '2025-11-07', close: 6728.81, changePercent: 0.48729, ... }
  */
-function calculateSP500PeriodPerformance(historicalData: any[], period: string): any {
+function calculateSP500PeriodPerformance(historicalData: HistoricalPricePoint[], period: string): Sp500PerformanceResult {
   if (!historicalData || historicalData.length === 0) {
     return { symbol: '^GSPC', name: 'S&P 500', changesPercentage: '0.00%' }
   }
@@ -541,11 +485,11 @@ function calculateSP500PeriodPerformance(historicalData: any[], period: string):
   
   // Filter data within the period and sort by date ascending
   const periodData = historicalData
-    .filter((item: any) => {
+    .filter(item => {
       const itemDate = new Date(item.date)
       return itemDate >= startDate && itemDate <= now
     })
-    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   
   if (periodData.length === 0) {
     return { symbol: '^GSPC', name: 'S&P 500', changesPercentage: '0.00%' }
@@ -663,12 +607,12 @@ router.get('/sectors/:sector/history', asyncHandler(async (req: Request, res: Re
  * Downsample daily data to monthly data points
  * Returns the last trading day of each month
  */
-function downsampleToMonthly(dailyData: any[]): any[] {
+function downsampleToMonthly(dailyData: HistoricalPricePoint[]): HistoricalPricePoint[] {
   if (!dailyData || dailyData.length === 0) {
     return []
   }
   
-  const monthlyMap = new Map<string, any>()
+  const monthlyMap = new Map<string, HistoricalPricePoint>()
   
   // Group by year-month and keep the last (most recent) entry for each month
   for (const item of dailyData) {

@@ -11,6 +11,13 @@ import { getPrismaClient } from '../services/databaseService.js'
 const router = express.Router()
 const monitoring = getMonitoringService()
 
+interface DatabasePoolStatsRow {
+  active_connections: number | string
+  idle_connections: number | string
+  total_connections: number | string
+  longest_query_ms: number | string | null
+}
+
 // Dependencies injected from server.mjs
 let _isDatabaseAvailable = true
 
@@ -66,9 +73,11 @@ router.get('/database', adminLimiter, requireAdminKey(), asyncHandler(async (req
       max(EXTRACT(EPOCH FROM (now() - query_start)) * 1000)::int as longest_query_ms
     FROM pg_stat_activity
     WHERE datname = current_database()
-  ` as any[]
+  ` as DatabasePoolStatsRow[]
   
   const stats = poolStats[0]
+  const totalConnections = Number(stats?.total_connections || 0)
+  const longestQueryMs = Number(stats?.longest_query_ms || 0)
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -77,9 +86,9 @@ router.get('/database', adminLimiter, requireAdminKey(), asyncHandler(async (req
     connections: {
       active: Number(stats.active_connections),
       idle: Number(stats.idle_connections),
-      total: Number(stats.total_connections)
+      total: totalConnections
     },
-    longest_query_ms: stats.longest_query_ms || 0,
+    longest_query_ms: longestQueryMs,
     warning: undefined as string | undefined
   }
   

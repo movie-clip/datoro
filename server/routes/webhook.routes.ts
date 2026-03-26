@@ -12,6 +12,25 @@ import logger from '../services/logger'
 
 const router = Router()
 
+type StripeCheckoutSessionWithSubscription = Stripe.Checkout.Session & {
+  subscription?: string | Stripe.Subscription | null
+}
+
+type StripeSubscriptionWithPeriods = Stripe.Subscription & {
+  current_period_end?: number
+  current_period_start?: number
+  cancel_at_period_end?: boolean
+}
+
+type StripeInvoiceWithRefs = Stripe.Invoice & {
+  subscription?: string | Stripe.Subscription | null
+  payment_intent?: string | Stripe.PaymentIntent | null
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 /**
  * POST /api/webhooks/stripe
  * Handle Stripe webhook events
@@ -69,9 +88,9 @@ router.post('/stripe', async (req: Request, res: Response) => {
 
     // Acknowledge receipt
     res.json({ received: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Webhook] Error processing webhook:', error)
-    res.status(400).json({ error: error.message || 'Webhook processing failed' })
+    res.status(400).json({ error: getErrorMessage(error) || 'Webhook processing failed' })
   }
 })
 
@@ -95,8 +114,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   try {
     // Get subscription ID from session
-    const sessionData = session as any
-    const subscriptionId = sessionData.subscription as string
+    const sessionData = session as StripeCheckoutSessionWithSubscription
+    const subscriptionId = typeof sessionData.subscription === 'string' ? sessionData.subscription : null
 
     if (!subscriptionId) {
       logger.warn('[Webhook] Checkout completed but no subscription ID')
@@ -133,7 +152,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   }
 
   try {
-    const stripeSubscription = subscription as any // Stripe API uses snake_case properties
+    const stripeSubscription = subscription as StripeSubscriptionWithPeriods
     
     await db.subscription.update({
       where: { userId },
@@ -198,15 +217,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     }
 
     // Access Stripe subscription properties safely
-    const stripeSubscription = subscription as any
+    const stripeSubscription = subscription as StripeSubscriptionWithPeriods
 
     await db.subscription.update({
       where: { userId },
       data: {
         status,
-        stripeCurrentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-        currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+        stripeCurrentPeriodEnd: stripeSubscription.current_period_end ? new Date(stripeSubscription.current_period_end * 1000) : null,
+        currentPeriodStart: stripeSubscription.current_period_start ? new Date(stripeSubscription.current_period_start * 1000) : null,
+        currentPeriodEnd: stripeSubscription.current_period_end ? new Date(stripeSubscription.current_period_end * 1000) : null,
         isInTrial: subscription.status === 'trialing',
         cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
       }
@@ -272,8 +291,8 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   const db = getPrismaClient()
-  const invoiceData = invoice as any
-  const subscriptionId = invoiceData.subscription as string
+  const invoiceData = invoice as StripeInvoiceWithRefs
+  const subscriptionId = typeof invoiceData.subscription === 'string' ? invoiceData.subscription : null
   
   if (!subscriptionId) {
     logger.warn('[Webhook] Payment succeeded but no subscription ID')
@@ -299,7 +318,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
         amount: invoice.amount_paid,
         currency: invoice.currency,
         status: PaymentStatus.SUCCEEDED,
-        stripePaymentIntentId: invoiceData.payment_intent as string,
+        stripePaymentIntentId: typeof invoiceData.payment_intent === 'string' ? invoiceData.payment_intent : null,
         stripeInvoiceId: invoice.id
       }
     })
@@ -316,8 +335,8 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
  */
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const db = getPrismaClient()
-  const invoiceData = invoice as any
-  const subscriptionId = invoiceData.subscription as string
+  const invoiceData = invoice as StripeInvoiceWithRefs
+  const subscriptionId = typeof invoiceData.subscription === 'string' ? invoiceData.subscription : null
   
   if (!subscriptionId) {
     logger.warn('[Webhook] Payment failed but no subscription ID')
@@ -343,7 +362,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
         amount: invoice.amount_due,
         currency: invoice.currency,
         status: PaymentStatus.FAILED,
-        stripePaymentIntentId: invoiceData.payment_intent as string,
+        stripePaymentIntentId: typeof invoiceData.payment_intent === 'string' ? invoiceData.payment_intent : null,
         stripeInvoiceId: invoice.id
       }
     })

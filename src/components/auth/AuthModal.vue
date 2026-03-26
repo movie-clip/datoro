@@ -273,6 +273,12 @@ const emit = defineEmits<Emits>()
 
 const authStore = useAuthStore()
 
+interface AuthModalError {
+  code?: string
+  email?: string
+  message?: string
+}
+
 const activeTab = ref<AuthTab>(props.defaultTab)
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -329,15 +335,16 @@ const handleSignIn = async (): Promise<void> => {
     } else {
       error.value = result.error || null
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     loading.value = false
+    const authError = err as AuthModalError
     
     // Check if it's an email not verified error
-    if (err.code === 'EMAIL_NOT_VERIFIED') {
+    if (authError.code === 'EMAIL_NOT_VERIFIED') {
       closeModal()
-      emit('show-verify-email', err.email || signInForm.value.email, 'pending')
+      emit('show-verify-email', authError.email || signInForm.value.email, 'pending')
     } else {
-      error.value = err.message || 'Login failed'
+      error.value = authError.message || 'Login failed'
     }
   }
 }

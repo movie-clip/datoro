@@ -46,6 +46,79 @@ interface RedisHealth {
   alertThresholdSec: number
 }
 
+interface CpuStats {
+  user: number
+  system: number
+}
+
+interface MemoryStats {
+  heapUsed: number
+  heapTotal: number
+  rss: number
+  external: number
+  arrayBuffers: number
+}
+
+interface NormalizedTrackedError {
+  message: string
+  code?: string
+  statusCode?: number
+}
+
+interface MetricsView extends Metrics {
+  system: Metrics['system'] & {
+    uptimeFormatted: string
+  }
+}
+
+interface MonitoringSummary {
+  status: 'healthy' | 'degraded'
+  uptime: string
+  requests: {
+    total: number
+    successRate: string
+  }
+  performance: {
+    avg: string
+    p95: string
+    p99: string
+  }
+  cache: {
+    hitRate: string
+    bytesSaved: string
+  }
+  redis: {
+    status: string
+    alert: boolean
+    memoryOnlyDurationSec: number
+  }
+  errors: {
+    total: number
+    rate: string
+  }
+}
+
+function normalizeTrackedError(error: unknown): NormalizedTrackedError {
+  if (error instanceof Error) {
+    return {
+      message: error.message
+    }
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const candidate = error as Record<string, unknown>
+    return {
+      message: typeof candidate.message === 'string' ? candidate.message : 'Unknown error',
+      code: typeof candidate.code === 'string' ? candidate.code : undefined,
+      statusCode: typeof candidate.statusCode === 'number' ? candidate.statusCode : undefined
+    }
+  }
+
+  return {
+    message: String(error)
+  }
+}
+
 interface Metrics {
   requests: {
     total: number
@@ -86,8 +159,8 @@ interface Metrics {
   }
   system: {
     uptime: number
-    memory: NodeJS.MemoryUsage
-    cpu: any
+    memory: MemoryStats
+    cpu: CpuStats
     redis: RedisHealth
   }
 }
@@ -144,8 +217,8 @@ class MonitoringService {
       },
       system: {
         uptime: Date.now(),
-        memory: {} as NodeJS.MemoryUsage,
-        cpu: {},
+        memory: { heapUsed: 0, heapTotal: 0, rss: 0, external: 0, arrayBuffers: 0 },
+        cpu: { user: 0, system: 0 },
         redis: {
           status: 'connected',
           memoryOnlySince: null,
@@ -396,11 +469,12 @@ class MonitoringService {
   /**
    * Track error
    */
-  trackError(error: any, req: Request): void {
+  trackError(error: unknown, req: Request): void {
     this.metrics.errors.total++
+    const normalizedError = normalizeTrackedError(error)
 
     // Track by error code
-    const code = error.code || 'UNKNOWN'
+    const code = normalizedError.code || 'UNKNOWN'
     this.metrics.errors.byCode[code] = (this.metrics.errors.byCode[code] || 0) + 1
 
     // Track by endpoint
@@ -410,11 +484,11 @@ class MonitoringService {
 
     // Store recent errors
     this.metrics.errors.recent.unshift({
-      message: error.message,
+      message: normalizedError.message,
       code,
       endpoint,
       timestamp: new Date().toISOString(),
-      statusCode: error.statusCode || 500
+      statusCode: normalizedError.statusCode || 500
     });
 
     // Keep only last 20 errors
@@ -441,8 +515,9 @@ class MonitoringService {
       heapUsed: Math.round(used.heapUsed / 1024 / 1024), // MB
       heapTotal: Math.round(used.heapTotal / 1024 / 1024), // MB
       rss: Math.round(used.rss / 1024 / 1024), // MB
-      external: Math.round(used.external / 1024 / 1024) // MB
-    } as any;
+      external: Math.round(used.external / 1024 / 1024), // MB
+      arrayBuffers: Math.round(used.arrayBuffers / 1024 / 1024) // MB
+    };
 
     this.metrics.system.uptime = Math.round((Date.now() - this.metrics.system.uptime) / 1000);
     
@@ -511,7 +586,7 @@ class MonitoringService {
   /**
    * Get all metrics
    */
-  getMetrics(): any {
+  getMetrics(): MetricsView {
     return {
       ...this.metrics,
       system: {
@@ -524,7 +599,7 @@ class MonitoringService {
   /**
    * Get summary
    */
-  getSummary(): any {
+  getSummary(): MonitoringSummary {
     const metrics = this.getMetrics();
     const totalRequests = metrics.requests.total;
     const errorRate = totalRequests > 0 
@@ -626,8 +701,8 @@ class MonitoringService {
       },
       system: {
         uptime,
-        memory: {} as any,
-        cpu: {},
+        memory: { heapUsed: 0, heapTotal: 0, rss: 0, external: 0, arrayBuffers: 0 },
+        cpu: { user: 0, system: 0 },
         redis: {
           status: this.redisMemoryOnlySinceMs ? 'memory-only' : 'connected',
           memoryOnlySince: this.redisMemoryOnlySinceMs

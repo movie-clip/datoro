@@ -101,7 +101,8 @@ import {
   calculatePerformance,
   getDataZoomDetails,
   formatDate as formatDateUtil,
-  type PriceDataPoint
+  type PriceDataPoint,
+  type DataZoomEventPayload
 } from '../../services/market/sp500CalculationService'
 import { validateHistoricalData } from '../../schemas/marketPerformanceSchemas'
 
@@ -118,6 +119,25 @@ use([
 interface Props {
   loading?: boolean
   error?: string | null
+}
+
+interface EChartsLikeInstance {
+  dispatchAction: (payload: {
+    type: 'dataZoom'
+    dataZoomIndex: number
+    start: number
+    end: number
+    startValue: number
+    endValue: number
+  }) => void
+}
+
+interface ChartComponentRef {
+  getEchartsInstance?: () => EChartsLikeInstance
+}
+
+interface TooltipAxisPoint {
+  value: [number, number]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -283,7 +303,7 @@ function calculatePresetStartIndex(days: number): number {
 }
 
 function applyZoomToChart(startPct: number, endPct: number, startValue: number, endValue: number) {
-  const chartComponent = chartRef.value as any
+  const chartComponent = chartRef.value as ChartComponentRef | EChartsLikeInstance | null
   const chart = typeof chartComponent?.getEchartsInstance === 'function'
     ? chartComponent.getEchartsInstance()
     : chartComponent
@@ -370,7 +390,7 @@ function applyPresetRange(presetKey: '1M' | '6M' | '1Y') {
 }
 
 // Handle dataZoom event from chart - only update when drag ends
-function handleDataZoom(event: any) {
+function handleDataZoom(event: DataZoomEventPayload) {
   try {
     // The event structure has start/end directly on the event object, not in a batch array
     const zoom = event.batch?.[0] || event
@@ -453,7 +473,7 @@ const chartOption = computed<EChartsOption>(() => ({
     borderColor: '#2A2A2E',
     borderWidth: 1,
     textStyle: { color: '#E5E5E5', fontSize: 12 },
-    formatter: (params: any) => {
+    formatter: (params: TooltipAxisPoint[]) => {
       const point = params[0]
       const date = new Date(point.value[0]).toLocaleDateString('en-US', { 
         month: 'short', 
@@ -469,7 +489,7 @@ const chartOption = computed<EChartsOption>(() => ({
   },
   xAxis: {
     type: 'time',
-    boundaryGap: false as any,
+    boundaryGap: false,
     axisLine: { lineStyle: { color: '#2A2A2E' } },
     axisLabel: { 
       color: 'rgba(229, 229, 229, 0.6)',

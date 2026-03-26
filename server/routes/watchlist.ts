@@ -21,6 +21,14 @@ import { watchlistService } from '../services/watchlistService.js'
 const router = express.Router()
 const prisma = getPrismaClient()
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function hasErrorCode(error: unknown, code: string): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === code
+}
+
 // Watchlist response types (specific to this route)
 interface WatchlistItem {
   ticker: string
@@ -117,9 +125,9 @@ router.put('/watchlist/reorder', generalLimiter, authenticate(), requireAuth, as
     `, userId, ...sanitizedTickers)
 
     res.json({ success: true })
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     logger.error('Error reordering watchlist:', _error)
-    res.status(500).json({ error: _error.message || 'Failed to reorder watchlist' })
+    res.status(500).json({ error: getErrorMessage(_error) || 'Failed to reorder watchlist' })
   }
 })
 
@@ -155,9 +163,9 @@ router.post('/watchlist/:ticker', generalLimiter, authenticate(), requireAuth, a
       ticker: watchlistItem.ticker,
       addedAt: watchlistItem.addedAt
     })
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     // Check for unique constraint violation (duplicate entry)
-    if (_error.code === 'P2002') {
+    if (hasErrorCode(_error, 'P2002')) {
       return res.status(409).json({ error: 'Ticker already in watchlist' })
     }
 

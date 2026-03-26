@@ -285,16 +285,20 @@ export function validate(schema: ValidationSchema) {
       }
 
       next();
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       // Joi validation error
-      if (_error.isJoi) {
+      if (typeof _error === 'object' && _error !== null && 'isJoi' in _error) {
+        const joiError = _error as unknown as {
+          details: Array<{ path: Array<string | number>; message: string; type: string }>
+        }
+
         return res.status(400).json({
           error: {
             message: 'Validation failed',
             code: 'E001',
             timestamp: new Date().toISOString(),
             path: req.path,
-            details: _error.details.map((detail: any) => ({
+            details: joiError.details.map((detail) => ({
               field: detail.path.join('.'),
               message: detail.message,
               type: detail.type
@@ -312,7 +316,7 @@ export function validate(schema: ValidationSchema) {
 /**
  * Sanitize string inputs to prevent XSS
  */
-export function sanitizeString(str: any): any {
+export function sanitizeString<T>(str: T): T | string {
   // Handle null/undefined - return empty string for safety
   if (str === null || str === undefined) {
     return '';
@@ -333,7 +337,7 @@ export function sanitizeString(str: any): any {
  * Validate and sanitize ticker
  * Used in services that bypass middleware
  */
-export function validateTicker(ticker: any): string {
+export function validateTicker(ticker: unknown): string {
   if (!ticker || typeof ticker !== 'string') {
     throw new Error('Ticker is required and must be a string');
   }
@@ -350,8 +354,11 @@ export function validateTicker(ticker: any): string {
 /**
  * Validate period parameter
  */
-export function validatePeriod(period: any): string {
+export function validatePeriod(period: unknown): string {
   if (!period) return 'annual'; // Default
+  if (typeof period !== 'string') {
+    throw new Error('Period must be a string')
+  }
   
   const cleaned = period.toLowerCase().trim();
   

@@ -25,6 +25,10 @@ import logger from '../services/logger.js'
 
 const router = Router()
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 // Ticker validation regex (1-10 uppercase letters, optional dot and suffix for international tickers)
 const TICKER_REGEX = /^[A-Z0-9]{1,10}(\.[A-Z]{1,5})?$/
 
@@ -82,7 +86,7 @@ router.get(
           }))
         }
       })
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlist Items] Error fetching items:', _error)
       res.status(500).json({
         success: false,
@@ -156,8 +160,8 @@ router.post(
             displayOrder: item.displayOrder
           }
         })
-      } catch (_error: any) {
-        if (_error.message === 'Ticker already in watchlist') {
+      } catch (_error: unknown) {
+        if (getErrorMessage(_error) === 'Ticker already in watchlist') {
           res.status(409).json({
             success: false,
             error: 'Ticker already in watchlist'
@@ -166,7 +170,7 @@ router.post(
         }
         throw _error
       }
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlist Items] Error adding item:', _error)
       res.status(500).json({
         success: false,
@@ -233,7 +237,7 @@ router.delete(
           removed: true
         }
       })
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlist Items] Error removing item:', _error)
       res.status(500).json({
         success: false,
@@ -310,7 +314,7 @@ router.put(
           reordered: true
         }
       })
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlist Items] Error reordering items:', _error)
       res.status(500).json({
         success: false,

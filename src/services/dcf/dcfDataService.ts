@@ -3,7 +3,7 @@
  * Extracts DCF-relevant financial data from ticker batch data
  */
 
-import type { BatchData } from '../../types'
+import type { BatchData, FMPRatiosTTM } from '../../types'
 
 /**
  * FCF history entry
@@ -107,34 +107,26 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     // Try multiple sources with defensive checks
     // Priority: quote > cashflow > calculated from marketCap and price
     let sharesOutstanding = 0
-    let sharesSource = 'none'
     
     // Try all available sources
     if (quote?.sharesOutstanding && Number(quote.sharesOutstanding) > 0) {
       sharesOutstanding = Number(quote.sharesOutstanding)
-      sharesSource = 'quote.sharesOutstanding'
     } else if (quote?.marketCap && quote?.price && quote.price > 0) {
       // Calculate from quote's marketCap and price
       sharesOutstanding = Number(quote.marketCap) / quote.price
-      sharesSource = 'calculated (quote.marketCap / quote.price)'
     } else if (latestCashflow?.weightedAverageShsOut && Number(latestCashflow.weightedAverageShsOut) > 0) {
       sharesOutstanding = Number(latestCashflow.weightedAverageShsOut)
-      sharesSource = 'cashflow.weightedAverageShsOut'
     } else if (latestCashflow?.weightedAverageShsOutDil && Number(latestCashflow.weightedAverageShsOutDil) > 0) {
       sharesOutstanding = Number(latestCashflow.weightedAverageShsOutDil)
-      sharesSource = 'cashflow.weightedAverageShsOutDil'
     } else if (latestKeyMetrics?.marketCap && quote?.price && quote.price > 0) {
       // Calculate shares from market cap and current price
       sharesOutstanding = Number(latestKeyMetrics.marketCap) / quote.price
-      sharesSource = 'calculated (keyMetrics.marketCap / quote.price)'
     } else if (latestKeyMetrics?.marketCap && profile?.price && profile.price > 0) {
       // Use profile price if quote price not available
       sharesOutstanding = Number(latestKeyMetrics.marketCap) / profile.price
-      sharesSource = 'calculated (keyMetrics.marketCap / profile.price)'
     } else if (profile?.mktCap && profile?.price && profile.price > 0) {
       // Last resort: use profile market cap and price
       sharesOutstanding = Number(profile.mktCap) / profile.price
-      sharesSource = 'calculated (profile.mktCap / profile.price)'
     }
     
     // Validation: Shares should be reasonable (> 1 million for any public company)
@@ -180,7 +172,7 @@ export function getDcfDataFromBatch(batchData: BatchData | null): CompanyDataFor
     // Get TTM EPS, P/E ratio, and EPS growth
     // Priority 1: Use TTM data (most current)
     // Priority 2: Fall back to quote/annual data
-    const ratiosTTM = (data as any).ratiosTTM?.[0] || null
+    const ratiosTTM = (data as BatchData['data'] & { ratiosTTM?: FMPRatiosTTM[] }).ratiosTTM?.[0] || null
     
     // EPS from quote (already TTM)
     // Ensure we extract a number value, not an object

@@ -197,6 +197,25 @@ import DcfForecastChart from '../dcf/DcfForecastChart.vue'
 import type { CompanyDataForDcf } from '../../services/dcf/dcfDataService'
 import type { AdvancedDcfResult, FmpDcfValueExtended } from '../../services/dcf/valuationMethodsService'
 
+interface ProjectedPrice {
+  year: number
+  price: number
+  futurePrice?: number
+  eps?: number
+}
+
+interface ScenarioResult {
+  intrinsicValue: number | null
+  projectedPrices: ProjectedPrice[]
+  upside: number | null
+}
+
+interface Scenarios {
+  best: ScenarioResult
+  average: ScenarioResult
+  worst: ScenarioResult
+}
+
 interface Props {
   modelValue: boolean
 }
@@ -231,7 +250,7 @@ const {
 // Type assertions for composable returns (composable is JS, we know the actual types)
 const typedCompanyData = companyData as Ref<CompanyDataForDcf | null>
 const typedAdvancedDcfValue = advancedDcfValue as Ref<AdvancedDcfResult | FmpDcfValueExtended | null>
-const typedScenarios = scenarios as any // scenarios is a computed ref
+const typedScenarios = scenarios as Ref<Scenarios>
 
 const handleClose = (): void => {
   emit('update:modelValue', false)

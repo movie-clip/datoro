@@ -139,8 +139,8 @@ export async function getInsights(ticker: string): Promise<InsightsResponse> {
  */
 export async function getCompetitiveAdvantages(
   ticker: string,
-  companyName: string | null = null,
-  clearCache: boolean = false
+  _companyName: string | null = null,
+  _clearCache: boolean = false
 ): Promise<InsightsApiResponse> {
   try {
     const insights = await getInsights(ticker)
@@ -201,8 +201,8 @@ export async function getCompetitiveAdvantages(
  */
 export async function getInvestmentRisks(
   ticker: string,
-  companyName: string | null = null,
-  clearCache: boolean = false
+  _companyName: string | null = null,
+  _clearCache: boolean = false
 ): Promise<InsightsApiResponse> {
   try {
     const insights = await getInsights(ticker)

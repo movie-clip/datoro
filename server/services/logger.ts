@@ -20,7 +20,7 @@ const environment = process.env.NODE_ENV || 'development'
 const isProduction = environment === 'production'
 
 interface LogMetadata {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // Custom format for development (colorized, readable)

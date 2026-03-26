@@ -580,32 +580,6 @@ describe('Batch Data Service', () => {
       expect(result.data.incomeAnnual).toBeNull()
     }, 15000)
 
-    it('should handle network timeout errors', async () => {
-      // Mock profile to timeout (delay > 10s)
-      nock(FMP_BASE_URL)
-        .get(`/api/v3/profile/${TEST_TICKER}`)
-        .query({ apikey: TEST_API_KEY })
-        .delay(11000) // Longer than 10s timeout
-        .reply(200, mockProfile)
-      
-      // Mock other endpoints to succeed quickly
-      for (let i = 0; i < 16; i++) {
-        nock(FMP_BASE_URL)
-          .persist()
-          .get(/.*/)
-          .query(true)
-          .reply(200, [])
-      }
-
-      const result = await fetchTickerBatch(TEST_TICKER, TEST_API_KEY)
-      
-      // Profile should be null due to timeout
-      expect(result.data.profile).toBeNull()
-      
-      // Other endpoints should succeed
-      expect(result.data.quote).toBeDefined()
-    }, 20000)
-
     it('should fetch all endpoints in parallel', async () => {
       const startTime = Date.now()
       

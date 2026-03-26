@@ -4,7 +4,7 @@
  */
 
 import { API_BASE_URL } from '../../utils/apiConfig'
-import type { BatchData } from '../../types'
+import type { BatchData, FMPDCF, FMPQuote } from '../../types'
 
 /**
  * Projection data for a single year
@@ -73,6 +73,39 @@ export interface FmpDcfValueExtended {
   error?: string
 }
 
+interface AdvancedDcfProjection {
+  symbol?: string
+  equityValuePerShare?: number
+  enterpriseValue?: number
+  terminalValue?: number
+  presentTerminalValue?: number
+  wacc?: number
+  longTermGrowthRate?: number
+  beta?: number
+  costOfEquity?: number
+  costofDebt?: number
+  year: number
+  revenue: number
+  ufcf: number
+  ebitda: number
+}
+
+interface AdvancedDcfBatchPayload {
+  advancedDcf?: AdvancedDcfProjection[]
+  quote?: FMPQuote[]
+}
+
+interface ScenarioProjection {
+  year: number
+  price: number
+}
+
+interface GeneratedScenario {
+  projectedPrices: ScenarioProjection[]
+  intrinsicValue: number
+  upside: number
+}
+
 /**
  * API response wrapper
  */
@@ -98,8 +131,8 @@ interface ApiResponse<T> {
  * @returns Valuation result with intrinsic value and model details
  */
 export function calculateAdvancedDcfValue(
-  batchData: any, 
-  inputs: Record<string, any> = {}
+  batchData: AdvancedDcfBatchPayload,
+  _inputs: Record<string, unknown> = {}
 ): AdvancedDcfResult | FmpDcfValueExtended {
   const advancedDcf = batchData?.advancedDcf
   const quote = batchData?.quote?.[0]
@@ -120,6 +153,12 @@ export function calculateAdvancedDcfValue(
 
   // Get the most recent projection (last item has summary values)
   const latestProjection = advancedDcf[advancedDcf.length - 1]
+  if (!latestProjection) {
+    return {
+      intrinsicValue: null,
+      error: 'DCF valuation data is incomplete or invalid for this ticker.'
+    }
+  }
   
   const intrinsicValue = latestProjection.equityValuePerShare
   const currentPrice = quote.price
@@ -151,7 +190,7 @@ export function calculateAdvancedDcfValue(
   const costOfDebt = latestProjection.costofDebt || null
 
   // Get projections (first 5 years for summary)
-  const projections: ProjectionYear[] = advancedDcf.slice(0, 5).reverse().map((year: any) => ({
+  const projections: ProjectionYear[] = advancedDcf.slice(0, 5).reverse().map((year: AdvancedDcfProjection) => ({
     year: year.year,
     revenue: year.revenue,
     freeCashFlow: year.ufcf,
@@ -198,12 +237,13 @@ export function calculateAdvancedDcfValue(
  * @param batchData - Batch data from ticker store
  * @returns FMP's DCF valuation or null
  */
-export function getFmpDcfFromBatch(batchData: BatchData | any): FmpDcfValue | null {
-  if (!batchData?.data?.fmpDcf) {
+export function getFmpDcfFromBatch(batchData: BatchData | { data?: { fmpDcf?: FMPDCF[] }; ticker?: string }): FmpDcfValue | null {
+  const dataWithDcf = batchData.data as (BatchData['data'] & { fmpDcf?: FMPDCF[] }) | undefined
+  if (!dataWithDcf?.fmpDcf) {
     return null
   }
 
-  const dcfData = batchData.data.fmpDcf
+  const dcfData = dataWithDcf.fmpDcf
   
   // FMP returns array with single object: [{ symbol, dcf, date }]
   if (!Array.isArray(dcfData) || dcfData.length === 0) {
@@ -211,11 +251,14 @@ export function getFmpDcfFromBatch(batchData: BatchData | any): FmpDcfValue | nu
   }
 
   const dcf = dcfData[0]
+  if (!dcf) {
+    return null
+  }
 
   return {
     intrinsicValue: dcf.dcf || null,
     date: dcf.date || null,
-    symbol: dcf.symbol || batchData.ticker
+    symbol: dcf.symbol || batchData.ticker || ''
   }
 }
 
@@ -328,7 +371,7 @@ export function generateScenariosFromAdvancedDcf(
   advancedDcfResult: AdvancedDcfResult | FmpDcfValueExtended,
   currentPrice: number,
   years: number = 5
-): { best: any; average: any; worst: any } | null {
+): { best: GeneratedScenario; average: GeneratedScenario; worst: GeneratedScenario } | null {
   // Check if it's a valid result with intrinsic value
   if (!advancedDcfResult || 'error' in advancedDcfResult || !advancedDcfResult.intrinsicValue) {
     return null

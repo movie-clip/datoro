@@ -6,6 +6,49 @@
 import type { EChartsOption } from 'echarts'
 import type { ChartOptionsParams, SliderConfig } from '../types/macro.types'
 
+interface TooltipSeriesParam {
+  data: [number, number]
+  seriesName: string
+}
+
+interface ChartLineSeries {
+  name: string
+  type: 'line'
+  data: [number, number][]
+  smooth: boolean
+  symbol: 'circle' | 'none'
+  symbolSize?: number
+  lineStyle: {
+    color: string
+    width: number
+    type?: 'dashed'
+  }
+  itemStyle: {
+    color: string
+    borderWidth?: number
+    borderColor?: string
+  }
+  areaStyle?: {
+    color: {
+      type: 'linear'
+      x: number
+      y: number
+      x2: number
+      y2: number
+      colorStops: Array<{ offset: number; color: string }>
+    }
+  }
+  emphasis?: {
+    focus: 'series'
+    itemStyle: {
+      borderWidth: number
+      borderColor: string
+    }
+  }
+  z?: number
+  animation?: boolean
+}
+
 /**
  * Default slider configuration for all charts
  */
@@ -105,10 +148,15 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
         color: '#FFF',
         fontSize: 13
       },
-      formatter: (params: any) => {
-        if (!params || params.length === 0) return ''
-        
-        const date = new Date(params[0].data[0])
+      formatter: (rawParams: unknown) => {
+        const params = Array.isArray(rawParams)
+          ? rawParams as TooltipSeriesParam[]
+          : [rawParams as TooltipSeriesParam]
+
+        const firstParam = params[0]
+        if (!firstParam) return ''
+
+        const date = new Date(firstParam.data[0])
         const dateStr = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short'
@@ -118,7 +166,7 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
           <div style="color: #999; font-size: 11px; margin-bottom: 4px;">${dateStr}</div>`
         
         // Show all visible series
-        params.forEach((param: any) => {
+        params.forEach((param) => {
           const value = tooltipFormatter(param.data[1])
           const seriesColor = param.seriesName === 'SMA 200' ? '#FBBF24' : color
           content += `
@@ -223,7 +271,7 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
             borderColor: '#fff'
           }
         }
-      } as any,
+      } as ChartLineSeries,
       // Add SMA line if requested
       ...(showAverage && smaData.length > 0 ? [{
         name: 'SMA 200',
@@ -241,7 +289,7 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
         },
         z: 10,
         animation: false
-      } as any] : [])
+      } as ChartLineSeries] : [])
     ],
     dataZoom: [
       {

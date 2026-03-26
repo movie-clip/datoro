@@ -2,7 +2,7 @@
 // Optimized chart data functions using batch endpoint data
 // Eliminates 15-20 API calls by extracting data from single batch endpoint
 
-import type { BatchData, FMPKeyMetrics } from '@/types'
+import type { BatchData, FMPKeyMetrics, FMPRatios, FMPIncomeStatement } from '@/types'
 
 // src/services/financials/batchChartService.ts
 /**
@@ -128,12 +128,10 @@ export function getRevenueSeriesFromBatch(batchData: BatchData | null, period: P
   }
 }
 
-/**
- * Revenue segment row structure from FMP API
- */
-interface RevenueSegmentRow {
-  date: string
-  data?: Record<string, number | string>
+interface SubscriberMetricsRow extends FMPIncomeStatement {
+  numberofstreamingmembers?: number | string | null
+  numberofpaidmemberships?: number | string | null
+  numberofpaidmembershipadditionslossesduringperiod?: number | string | null
 }
 
 /**
@@ -580,7 +578,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
     // For quarterly data, include fiscal quarter info
     if (period === 'quarterly' && batchData?.data?.keyMetricsQuarter?.length) {
       return data
-        .map((row: any) => {
+        .map((row: FMPKeyMetrics) => {
           if (!row.date) return null
           const yieldValue = Number(row.dividendYield) * 100 // Convert to percentage (0 if no dividend)
 
@@ -596,7 +594,7 @@ export function getDividendYieldSeriesFromBatch(batchData: BatchData | null, per
 
     // For annual data, simple 2-element array
     return data
-      .map((row: any) => {
+      .map((row: FMPRatios) => {
         if (!row.date) return null
         const yieldValue = Number(row.dividendYield) * 100 // Convert to percentage (0 if no dividend)
 
@@ -641,7 +639,7 @@ export function getValuationRatiosSeriesFromBatch(batchData: BatchData | null, p
     }
 
     return ratios
-      .map((r: any) => {
+      .map((r: FMPRatios) => {
         if (!r.date) return null
 
         const peRatio = Number(r.priceEarningsRatioTTM || r.priceEarningsRatio || 0)
@@ -949,7 +947,7 @@ export function getSubscriberSeriesFromBatch(batchData: BatchData | null, period
     for (const row of statements) {
       // Extract subscriber fields (as-reported data embedded in income statements)
       // Type assertion needed because standard FMPIncomeStatement doesn't include these fields
-      const rowAny = row as any
+      const rowAny = row as SubscriberMetricsRow
       
       const streamingMembers = rowAny.numberofstreamingmembers 
         ? Number(rowAny.numberofstreamingmembers) 

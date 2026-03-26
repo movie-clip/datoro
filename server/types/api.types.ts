@@ -125,6 +125,8 @@ export interface AuthUser {
 
 export interface AuthResponse {
   success: boolean
+  code?: string
+  email?: string
   data?: {
     user: AuthUser
     token?: string  // JWT token (optional - not included in /me endpoint)

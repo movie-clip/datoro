@@ -28,6 +28,15 @@ interface AuthResult {
   token: string
 }
 
+interface AuthTokenPayload extends jwt.JwtPayload {
+  userId?: string
+  email?: string
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 // Environment variables
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
@@ -96,14 +105,16 @@ export function generateToken(user: Partial<User>): string {
  * @param {string} token - JWT token
  * @returns {object|null} - Decoded payload or null if invalid
  */
-export function verifyToken(token: string): any | null {
+export function verifyToken(token: string): AuthTokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET as string, {
+    const decoded = jwt.verify(token, JWT_SECRET as string, {
       issuer: 'datoro',
       audience: 'datoro-users'
     })
-  } catch (_error: any) {
-    logger.error('[Auth] Token verification failed:', _error.message)
+
+    return typeof decoded === 'string' ? null : decoded as AuthTokenPayload
+  } catch (_error: unknown) {
+    logger.error('[Auth] Token verification failed:', getErrorMessage(_error))
     return null
   }
 }
@@ -198,7 +209,7 @@ export async function verifyEmailToken(token: string): Promise<{
       success: true,
       user: verifiedUser
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Auth] Email verification error:', error)
     return {
       success: false,
@@ -284,7 +295,7 @@ export async function resendVerificationEmail(email: string): Promise<{
     return {
       success: true
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Auth] Resend verification error:', error)
     return {
       success: false,
@@ -590,8 +601,8 @@ export async function loginWithGoogle(googleToken: string, ipAddress: string | n
     const { password: _, ...userWithoutPassword } = user
     return { user: userWithoutPassword, token }
     
-  } catch (_error: any) {
-    logger.error('[Auth] Google OAuth error:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Auth] Google OAuth error:', getErrorMessage(_error));
     throw new Error('Google authentication failed');
   }
 }

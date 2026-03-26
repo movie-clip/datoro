@@ -7,6 +7,24 @@ import Stripe from 'stripe'
 import { getPrismaClient } from './databaseService'
 import logger from './logger'
 
+interface StripeServiceErrorLike {
+  message?: string
+  type?: string
+  code?: string
+  statusCode?: number
+  raw?: unknown
+}
+
+function toStripeServiceError(error: unknown): StripeServiceErrorLike {
+  if (typeof error === 'object' && error !== null) {
+    return error as StripeServiceErrorLike
+  }
+
+  return {
+    message: String(error)
+  }
+}
+
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-10-29.clover',
@@ -159,15 +177,16 @@ export async function createCheckoutSession(
 
     logger.info(`[Stripe] Created checkout session ${session.id} for user ${userId}`)
     return session
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const stripeError = toStripeServiceError(error)
     logger.error('[Stripe] Error creating checkout session:', {
-      error: error.message,
-      type: error.type,
-      code: error.code,
-      statusCode: error.statusCode,
-      raw: error.raw
+      error: stripeError.message,
+      type: stripeError.type,
+      code: stripeError.code,
+      statusCode: stripeError.statusCode,
+      raw: stripeError.raw
     })
-    throw new Error(error.message || 'Failed to create checkout session')
+    throw new Error(stripeError.message || 'Failed to create checkout session')
   }
 }
 

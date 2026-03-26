@@ -13,9 +13,14 @@ import type {
   FMPIncomeStatement,
   FMPBalanceSheet,
   FMPCashFlow,
+  FMPRatios,
+  FMPKeyMetrics,
   FMPInsiderTrading,
   FMPHistoricalPrice,
-  FMPDividend
+  FMPDividend,
+  FMPFinancialScore,
+  FMPEarnings,
+  FMPRevenueProductSegment
 } from '../types'
 import { trackSearch, trackTickerView } from '../services/analytics/gaService'
 
@@ -66,14 +71,14 @@ export interface TickerStoreState {
   incomeStatements: ComputedRef<IncomeStatements>
   balanceSheets: ComputedRef<BalanceSheets>
   cashFlowStatements: ComputedRef<CashFlowStatements>
-  ratios: ComputedRef<any[]>
-  keyMetrics: ComputedRef<any[]>
+  ratios: ComputedRef<FMPRatios[]>
+  keyMetrics: ComputedRef<FMPKeyMetrics[]>
   priceHistory: ComputedRef<FMPHistoricalPrice[]>
-  revenueSegments: ComputedRef<any[]>
+  revenueSegments: ComputedRef<FMPRevenueProductSegment[]>
   dividendHistory: ComputedRef<FMPDividend[]>
-  financialScores: ComputedRef<any | null>
+  financialScores: ComputedRef<FMPFinancialScore | null>
   insiderTrading: ComputedRef<FMPInsiderTrading[]>
-  earningsCalendar: ComputedRef<any[]>
+  earningsCalendar: ComputedRef<FMPEarnings[]>
 
   // Actions
   setTicker: (ticker: string, mode?: 'full' | 'lite') => Promise<void>
@@ -208,9 +213,9 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   const revenueSegments = computed(() => batchData.value?.data?.revenueSegments || [])
   const dividendHistory = computed((): FMPDividend[] => batchData.value?.data?.dividendHistory?.historical || [])
 
-  const financialScores = computed((): any | null => {
+  const financialScores = computed((): FMPFinancialScore | null => {
     const scores = batchData.value?.data?.financialScores
-    return Array.isArray(scores) && scores.length > 0 ? scores[0] : null
+    return Array.isArray(scores) && scores.length > 0 ? scores[0] ?? null : null
   })
 
   const insiderTrading = computed((): FMPInsiderTrading[] => batchData.value?.data?.insiderTrading || [])

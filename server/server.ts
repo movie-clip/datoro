@@ -7,7 +7,7 @@ import express, { type Express, type Request, type Response } from 'express'
 import compression from 'compression'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import fetch from 'node-fetch'
+import fetch, { type HeadersInit, type RequestInit } from 'node-fetch'
 import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -263,7 +263,73 @@ function isAllowedFmpProxyPath(pathname: string): boolean {
 // If multiple clients request the same data simultaneously, only make one API call
 const inFlightRequests = new Map<string, Promise<unknown>>()
 
-async function fetchWithDeduplication<T = any>(key: string, fetchFn: () => Promise<T>): Promise<T> {
+interface ValidationErrorDetail {
+  path: Array<string | number>
+  message: string
+  context?: {
+    value?: unknown
+  }
+}
+
+interface JoiLikeError {
+  isJoi?: boolean
+  details?: ValidationErrorDetail[]
+  message?: string
+}
+
+type ProxyQuery = {
+  period?: string
+  limit?: string | number
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function isJoiLikeError(error: unknown): error is JoiLikeError {
+  return typeof error === 'object' && error !== null && 'isJoi' in error
+}
+
+function createProxyQuery(params: URLSearchParams): ProxyQuery {
+  return {
+    period: params.get('period') || undefined,
+    limit: params.get('limit') || undefined
+  }
+}
+
+function getCompanyNameFromArray(value: unknown): string | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null
+  }
+
+  const first = value[0]
+  if (!first || typeof first !== 'object' || !('companyName' in first)) {
+    return null
+  }
+
+  const companyName = (first as { companyName?: unknown }).companyName
+  return typeof companyName === 'string' ? companyName : null
+}
+
+function buildUpstreamHeaders(req: Request): HeadersInit {
+  const headers: Record<string, string> = { host: 'financialmodelingprep.com', 'user-agent': UA }
+
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (key === 'host') {
+      continue
+    }
+
+    if (typeof value === 'string') {
+      headers[key] = value
+    } else if (Array.isArray(value)) {
+      headers[key] = value.join(', ')
+    }
+  }
+
+  return headers
+}
+
+async function fetchWithDeduplication<T = unknown>(key: string, fetchFn: () => Promise<T>): Promise<T> {
   // If request is already in-flight, wait for it
   if (inFlightRequests.has(key)) {
     logger.info(`[Dedup] Waiting for in-flight request: ${key}`)
@@ -272,7 +338,7 @@ async function fetchWithDeduplication<T = any>(key: string, fetchFn: () => Promi
   
   // Start new request
   const promise = fetchFn()
-  inFlightRequests.set(key, promise as any)
+  inFlightRequests.set(key, promise)
   
   try {
     const result = await promise
@@ -401,8 +467,8 @@ app.get('/api/company-icon/:ticker', async (req: Request, res: Response) => {
     })
     res.send(buffer)
     
-  } catch (_error: any) {
-    logger.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, _error.message)
+  } catch (_error: unknown) {
+    logger.error(`[CompanyIcon] Error fetching icon for ${upperTicker}:`, getErrorMessage(_error))
     res.status(500).json({ error: 'Failed to fetch company icon' })
   }
 })
@@ -520,9 +586,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = incomeMatch[1]
         await validateIncomeStatement.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: any = {}
-          if (params.has('period')) query.period = params.get('period')
-          if (params.has('limit')) query.limit = params.get('limit')
+          const query = createProxyQuery(params)
           
           const validated = await validateIncomeStatement.query.validateAsync(query, { 
             stripUnknown: true, 
@@ -551,9 +615,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = balanceMatch[1]
         await validateBalanceSheet.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: any = {}
-          if (params.has('period')) query.period = params.get('period')
-          if (params.has('limit')) query.limit = params.get('limit')
+          const query = createProxyQuery(params)
           
           const validated = await validateBalanceSheet.query.validateAsync(query, {
             stripUnknown: true,
@@ -581,9 +643,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         ticker = cashflowMatch[1]
         await validateCashFlow.params.validateAsync({ ticker })
         if (params.has('period') || params.has('limit')) {
-          const query: any = {}
-          if (params.has('period')) query.period = params.get('period')
-          if (params.has('limit')) query.limit = params.get('limit')
+          const query = createProxyQuery(params)
           
           const validated = await validateCashFlow.query.validateAsync(query, {
             stripUnknown: true,
@@ -667,9 +727,9 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         if (validated.limit) params.set('limit', String(validated.limit))
       }
       
-    } catch (_validationError: any) {
+    } catch (_validationError: unknown) {
       // Joi validation error
-      if (_validationError.isJoi) {
+      if (isJoiLikeError(_validationError) && _validationError.isJoi) {
         logger.error('[FMP] Validation error:', _validationError.details)
         return res.status(400).json({
           error: {
@@ -677,7 +737,7 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
             code: 'E001',
             timestamp: new Date().toISOString(),
             path: req.path,
-            details: _validationError.details.map((detail: any) => ({
+            details: (_validationError.details || []).map((detail) => ({
               field: detail.path.join('.'),
               message: detail.message,
               value: detail.context?.value
@@ -719,15 +779,16 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         
         // Track search in database (in background) - skip if database offline
         if (isDatabaseAvailable && ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
-          trackSearch(req.ip!, ticker, req.headers['user-agent'] || '', 'direct').catch((err: any) => {
-            logger.error('[Database] Search tracking error:', err.message)
+          trackSearch(req.ip!, ticker, req.headers['user-agent'] || '', 'direct').catch((err: unknown) => {
+            logger.error('[Database] Search tracking error:', getErrorMessage(err))
             isDatabaseAvailable = false // Disable if database is down
           })
           
           // Update company name if this is a profile request
-          if (path.includes('/profile') && Array.isArray(cached.data) && cached.data[0]?.companyName) {
-            updateTickerCompanyName(ticker, cached.data[0].companyName).catch((err: any) => {
-              logger.error('[Database] Company name update error:', err.message)
+          const cachedCompanyName = path.includes('/profile') ? getCompanyNameFromArray(cached.data) : null
+          if (cachedCompanyName) {
+            updateTickerCompanyName(ticker, cachedCompanyName).catch((err: unknown) => {
+              logger.error('[Database] Company name update error:', getErrorMessage(err))
               isDatabaseAvailable = false // Disable if database is down
             })
           }
@@ -742,8 +803,8 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
             responseTime: Date.now() - startTime,
             cached: true,
             ipAddress: req.ip!
-          }).catch((err: any) => {
-            logger.error('[Database] API tracking error:', err.message)
+          }).catch((err: unknown) => {
+            logger.error('[Database] API tracking error:', getErrorMessage(err))
             isDatabaseAvailable = false // Disable if database is down
           })
         }
@@ -759,11 +820,10 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     logger.info(`[FMP] ${req.method} ${subpath} → ${upstream}`)
     
     // Forward all headers except host
-    const headers = { ...req.headers as any, host: 'financialmodelingprep.com', 'user-agent': UA }
-    delete headers.host
-    const options: any = { method, headers }
+    const headers = buildUpstreamHeaders(req)
+    const options: RequestInit = { method, headers }
     if (method !== 'GET' && method !== 'HEAD') {
-      options.body = req.body
+      options.body = JSON.stringify(req.body)
     }
     
     // Use deduplication for GET requests to prevent duplicate API calls
@@ -803,12 +863,12 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
     let data
     try {
       data = JSON.parse(bufferString)
-    } catch (_parseError: any) {
-      logger.error(`[FMP] JSON parse error for ${path}:`, _parseError.message)
+    } catch (_parseError: unknown) {
+      logger.error(`[FMP] JSON parse error for ${path}:`, getErrorMessage(_parseError))
       logger.error(`[FMP] Response (first 200 chars): ${bufferString.substring(0, 200)}`)
       return res.status(500).json({ 
         error: 'Failed to parse FMP API response',
-        details: _parseError.message 
+        details: getErrorMessage(_parseError) 
       })
     }
     
@@ -819,15 +879,16 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
       
       // Track search in database (in background) - skip if database offline
       if (isDatabaseAvailable && ticker && (path.includes('/profile') || path.includes('/income-statement') || path.includes('/balance-sheet') || path.includes('/cash-flow'))) {
-        trackSearch(req.ip!, ticker, req.headers['user-agent'] || '', 'direct').catch((err: any) => {
-          logger.error('[Database] Search tracking error:', err.message)
+        trackSearch(req.ip!, ticker, req.headers['user-agent'] || '', 'direct').catch((err: unknown) => {
+          logger.error('[Database] Search tracking error:', getErrorMessage(err))
           isDatabaseAvailable = false // Disable if database is down
         })
         
         // Update company name if this is a profile request
-        if (path.includes('/profile') && Array.isArray(data) && data[0]?.companyName) {
-          updateTickerCompanyName(ticker, data[0].companyName).catch((err: any) => {
-            logger.error('[Database] Company name update error:', err.message)
+        const companyName = path.includes('/profile') ? getCompanyNameFromArray(data) : null
+        if (companyName) {
+          updateTickerCompanyName(ticker, companyName).catch((err: unknown) => {
+            logger.error('[Database] Company name update error:', getErrorMessage(err))
             isDatabaseAvailable = false // Disable if database is down
           })
         }
@@ -842,15 +903,15 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
           responseTime: Date.now() - startTime,
           cached: false,
           ipAddress: req.ip!
-        }).catch((err: any) => {
-          logger.error('[Database] API tracking error:', err.message)
+        }).catch((err: unknown) => {
+          logger.error('[Database] API tracking error:', getErrorMessage(err))
           isDatabaseAvailable = false // Disable if database is down
         })
       }
     }
     
     res.send(data)
-  } catch (_e: any) {
+  } catch (_e: unknown) {
     logger.error('[FMP] Error:', _e)
     
     // Track failed API request in database (in background) - skip if database offline
@@ -863,13 +924,13 @@ app.use('/api/fmp', fmpLimiter, async (req, res) => {
         cached: false,
         errorCode: 'E005',
         ipAddress: req.ip!
-      }).catch((err: any) => {
-        logger.error('[Database] API tracking error:', err.message)
+      }).catch((err: unknown) => {
+        logger.error('[Database] API tracking error:', getErrorMessage(err))
         isDatabaseAvailable = false // Disable if database is down
       })
     }
     
-    res.status(500).json({ error: String(_e.message || _e) })
+    res.status(500).json({ error: getErrorMessage(_e) })
   }
 })
 
@@ -937,8 +998,8 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     // Simple query to establish connection
     await prisma.$queryRaw`SELECT 1`
     logger.info('[Database] ✓ Connection pool warmed up')
-  } catch (_error: any) {
-    logger.warn('[Database] ✗ Failed to warm up connection:', _error.message)
+  } catch (_error: unknown) {
+    logger.warn('[Database] ✗ Failed to warm up connection:', getErrorMessage(_error))
     logger.warn('[Database] First requests may be slower than usual')
   }
   
@@ -966,8 +1027,8 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         try {
           const count = await cleanupExpiredSessions()
           logger.info(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
-        } catch (_error: any) {
-          logger.error('[Auth] ✗ Cleanup failed:', _error.message)
+        } catch (_error: unknown) {
+          logger.error('[Auth] ✗ Cleanup failed:', getErrorMessage(_error))
         }
         
         // Schedule next run (24 hours)
@@ -976,8 +1037,8 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
           try {
             const count = await cleanupExpiredSessions()
             logger.info(`[Auth] ✓ Cleanup complete: ${count} expired sessions deleted`)
-          } catch (_error: any) {
-            logger.error('[Auth] ✗ Cleanup failed:', _error.message)
+          } catch (_error: unknown) {
+            logger.error('[Auth] ✗ Cleanup failed:', getErrorMessage(_error))
           }
         }, 24 * 60 * 60 * 1000) // 24 hours
       }, msUntilNextRun)
@@ -998,7 +1059,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   }
 })
 
-server.on('error', (err: any) => {
+server.on('error', (err: unknown) => {
   logger.error('[SERVER] Error:', err)
   process.exit(1)
 })
@@ -1037,7 +1098,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
       process.exit(1)
     }, 10000)
     
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     logger.error('[SERVER] Error during shutdown:', _error)
     process.exit(1)
   }

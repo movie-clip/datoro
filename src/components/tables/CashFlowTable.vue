@@ -35,6 +35,7 @@ import { calculateGrowthRates } from '../../utils/growthCalculator'
 import { COLORS, getFCFYieldColor } from '../../utils/colors'
 import type { Component } from 'vue'
 import { formatNumber } from '@/utils/formatters'
+import type { FMPIncomeStatement, FMPCashFlow } from '@/types'
 
 // Import chart components
 import RevenueChart from '../charts/RevenueByCategoryChart.vue'
@@ -118,7 +119,7 @@ const getLatestFCF = (batchData: BatchData | null): string => {
 
 // Calculate growth color based on 5-year growth rate
 const getGrowthColor = (batchData: BatchData | null, dataKey: string, dataSource = 'incomeAnnual'): string | null => {
-  const statements = batchData?.data?.[dataSource as keyof typeof batchData.data] as any[] | undefined
+  const statements = batchData?.data?.[dataSource as keyof typeof batchData.data] as Array<FMPIncomeStatement | FMPCashFlow> | undefined
   if (!statements || !Array.isArray(statements) || statements.length < 2) {
     return null
   }

@@ -7,6 +7,31 @@ import { ref, type Ref } from 'vue'
 import type { TimeRange } from '../types/macro.types'
 import type { UseMacroChartReturn } from './useMacroChart'
 
+type TimeSeriesPoint = [number, number] | [number, number, string, string]
+
+interface ChartSeriesLike {
+  data?: TimeSeriesPoint[]
+}
+
+interface ChartOptionLike {
+  series?: ChartSeriesLike[]
+}
+
+interface DataZoomEventPayload {
+  start?: number
+  end?: number
+  batch?: DataZoomEventPayload[]
+}
+
+interface EChartsInstanceLike {
+  getOption: () => ChartOptionLike
+  on: (event: 'datazoom', handler: (params: DataZoomEventPayload) => void) => void
+}
+
+interface ChartRefWithInstance {
+  chart?: EChartsInstanceLike
+}
+
 export interface UseChartSyncReturn {
   syncedTimeRange: Ref<TimeRange>
   isSyncing: Ref<boolean>
@@ -16,7 +41,7 @@ export interface UseChartSyncReturn {
 /**
  * Get the actual data range from a chart instance
  */
-function getChartDataRange(chartInstance: any): { min: number; max: number } | null {
+function getChartDataRange(chartInstance: EChartsInstanceLike): { min: number; max: number } | null {
   try {
     const option = chartInstance.getOption()
     const series = option.series?.[0]
@@ -25,7 +50,7 @@ function getChartDataRange(chartInstance: any): { min: number; max: number } | n
       return null
     }
     
-    const timestamps = series.data.map((point: any) => point[0])
+    const timestamps = series.data.map((point) => point[0])
     return {
       min: Math.min(...timestamps),
       max: Math.max(...timestamps)
@@ -93,19 +118,24 @@ export function useChartSync(): UseChartSyncReturn {
       return
     }
 
-    const instance = (sourceChart.chartRef.value as any).chart
+    const instance = (sourceChart.chartRef.value as unknown as ChartRefWithInstance).chart
     if (!instance) {
       return
     }
 
     // Listen for dataZoom events (this is the correct ECharts event name)
-    instance.on('datazoom', (params: any) => {
+    instance.on('datazoom', (params: DataZoomEventPayload) => {
       // Prevent infinite loops
       if (isSyncing.value) {
         return
       }
 
-      const { start, end } = params.batch?.[0] || params
+      const zoomEvent = params.batch?.[0] || params
+      if (typeof zoomEvent.start !== 'number' || typeof zoomEvent.end !== 'number') {
+        return
+      }
+
+      const { start, end } = zoomEvent
 
       // Update source chart zoom state
       sourceChart.isZoomed.value = start !== 0 || end !== 100
@@ -139,7 +169,7 @@ export function useChartSync(): UseChartSyncReturn {
           if (targetIndex === sourceIndex) return // Skip self
           if (!targetChart.isSynced.value) return // Skip unsynced charts
 
-          const targetInstance = (targetChart.chartRef.value as any)?.chart
+          const targetInstance = (targetChart.chartRef.value as unknown as ChartRefWithInstance | null)?.chart
           if (!targetInstance) return
 
           // Get target chart's data range

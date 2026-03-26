@@ -284,6 +284,10 @@ interface Constraint {
   max: number
 }
 
+function isScenarioValues(value: DcfInputs[keyof DcfInputs]): value is ScenarioValues {
+  return typeof value === 'object' && value !== null
+}
+
 const constraints: Record<keyof DcfInputs, Constraint | undefined> = {
   peRatio: DCF_BOUNDS.PE_RATIO,
   fcfGrowthRate: DCF_BOUNDS.FCF_GROWTH_RATE,
@@ -307,12 +311,12 @@ const updateField = (field: keyof DcfInputs, scenario: keyof ScenarioValues | nu
   if (scenario) {
     // Update scenario-based field
     const fieldValue = updated[field]
-    if (typeof fieldValue === 'object' && fieldValue !== null) {
-      updated[field] = { ...fieldValue, [scenario]: validatedValue } as any
+    if (isScenarioValues(fieldValue)) {
+      updated[field] = { ...fieldValue, [scenario]: validatedValue }
     }
   } else {
     // Update simple field (projectionYears)
-    updated[field] = validatedValue as any
+    updated.projectionYears = validatedValue
   }
   emit('update:modelValue', updated)
 }

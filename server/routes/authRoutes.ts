@@ -25,6 +25,19 @@ import logger from '../services/logger.js'
 
 const router = express.Router()
 
+type AuthRouteError = Error & {
+  code?: string
+  email?: string
+}
+
+function getAuthRouteError(error: unknown): AuthRouteError {
+  if (error instanceof Error) {
+    return error as AuthRouteError
+  }
+
+  return new Error('Unknown authentication error') as AuthRouteError
+}
+
 // ============================================
 // Register (Email + Password)
 // ============================================
@@ -69,11 +82,12 @@ router.post(
         data: { user, token }
       })
       
-    } catch (_error: any) {
-      logger.error('[Auth API] Register error:', _error)
+    } catch (_error: unknown) {
+      const authError = getAuthRouteError(_error)
+      logger.error('[Auth API] Register error:', authError)
       res.status(400).json({
         success: false,
-        error: _error.message
+        error: authError.message
       })
     }
   }
@@ -124,22 +138,23 @@ router.post(
         data: { user: user as AuthUser, token }
       })
       
-    } catch (_error: any) {
-      logger.error('[Auth API] Login error:', _error)
+    } catch (_error: unknown) {
+      const authError = getAuthRouteError(_error)
+      logger.error('[Auth API] Login error:', authError)
       
       // Handle email not verified error
-      if (_error.code === 'EMAIL_NOT_VERIFIED') {
+      if (authError.code === 'EMAIL_NOT_VERIFIED') {
         return res.status(403).json({
           success: false,
-          error: _error.message,
+          error: authError.message,
           code: 'EMAIL_NOT_VERIFIED',
-          email: _error.email
-        } as any)
+          email: authError.email
+        })
       }
       
       res.status(401).json({
         success: false,
-        error: _error.message
+        error: authError.message
       })
     }
   }
@@ -183,11 +198,12 @@ router.post(
         data: { user: user as AuthUser, token }
       })
       
-    } catch (_error: any) {
-      logger.error('[Auth API] Google login error:', _error)
+    } catch (_error: unknown) {
+      const authError = getAuthRouteError(_error)
+      logger.error('[Auth API] Google login error:', authError)
       res.status(401).json({
         success: false,
-        error: _error.message
+        error: authError.message
       })
     }
   }
@@ -238,7 +254,7 @@ router.post(
         message: 'Logged out successfully'
       })
       
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Auth API] Logout error:', _error)
       res.status(500).json({
         success: false,
@@ -267,7 +283,7 @@ router.post(
         message: 'Logged out from all devices'
       })
       
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Auth API] Logout all error:', _error)
       res.status(500).json({
         success: false,
@@ -323,7 +339,7 @@ router.get(
         data: { user: result.user as AuthUser }
       })
 
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Auth API] Verify email error:', _error)
       res.status(500).json({
         success: false,
@@ -377,7 +393,7 @@ router.post(
         message: 'Verification email sent! Please check your inbox.'
       })
 
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Auth API] Resend verification error:', _error)
       res.status(500).json({
         success: false,

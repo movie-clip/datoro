@@ -107,7 +107,7 @@ const hasData = computed(() => {
 
 // Helper function to calculate 5-year growth rate from series data
 // Returns decimal value (e.g., 0.153 for 15.3% growth) or null if insufficient data
-const calculateFiveYearGrowth = (series: Array<[number, number, ...any[]]>): number | null => {
+const calculateFiveYearGrowth = (series: Array<[number, number] | [number, number, string, string]>): number | null => {
   if (!series || series.length === 0) return null
   
   // Convert SeriesPoint [timestamp, value, period, fiscalYear] to [timestamp, value]

@@ -237,8 +237,8 @@ function applyPreferences() {
  */
 function enableGoogleAnalytics() {
   // Check if gtag is available
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('consent', 'update', {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('consent', 'update', {
       'analytics_storage': 'granted'
     })
     console.info('[Cookie Consent] Google Analytics enabled')
@@ -249,8 +249,8 @@ function enableGoogleAnalytics() {
  * Disable Google Analytics
  */
 function disableGoogleAnalytics() {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('consent', 'update', {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('consent', 'update', {
       'analytics_storage': 'denied'
     })
     console.info('[Cookie Consent] Google Analytics disabled')
@@ -261,8 +261,8 @@ function disableGoogleAnalytics() {
  * Enable Meta Pixel
  */
 function enableMetaPixel() {
-  if (typeof window !== 'undefined' && (window as any).fbq) {
-    (window as any).fbq('consent', 'grant')
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('consent', 'grant')
     console.info('[Cookie Consent] Meta Pixel enabled')
   }
 }
@@ -271,8 +271,8 @@ function enableMetaPixel() {
  * Disable Meta Pixel
  */
 function disableMetaPixel() {
-  if (typeof window !== 'undefined' && (window as any).fbq) {
-    (window as any).fbq('consent', 'revoke')
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('consent', 'revoke')
     console.info('[Cookie Consent] Meta Pixel disabled')
   }
 }

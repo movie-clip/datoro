@@ -232,7 +232,11 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
-import { useWatchlists } from '../../composables/useWatchlists'
+import { useWatchlists, type Watchlist } from '../../composables/useWatchlists'
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback
+}
 
 const {
   watchlists,
@@ -255,11 +259,11 @@ const modalMode = ref<'create' | 'rename'>('create')
 const modalInputValue = ref('')
 const modalError = ref('')
 const modalInput = ref<HTMLInputElement | null>(null)
-const watchlistToEdit = ref<unknown>(null)
+const watchlistToEdit = ref<Watchlist | null>(null)
 
 // Delete confirmation state
 const showDeleteConfirm = ref(false)
-const watchlistToDelete = ref<unknown>(null)
+const watchlistToDelete = ref<Watchlist | null>(null)
 const deleteError = ref('')
 
 // Computed
@@ -321,7 +325,7 @@ const startCreate = () => {
 }
 
 // Rename watchlist
-const startRename = (watchlist: any) => {
+const startRename = (watchlist: Watchlist) => {
   modalMode.value = 'rename'
   modalInputValue.value = watchlist.name
   modalError.value = ''
@@ -351,8 +355,8 @@ const confirmModal = async () => {
     showModal.value = false
     modalInputValue.value = ''
     watchlistToEdit.value = null
-  } catch (_error: any) {
-    modalError.value = error.message || 'Operation failed'
+  } catch (_error: unknown) {
+    modalError.value = getErrorMessage(_error, 'Operation failed')
   }
 }
 
@@ -364,7 +368,7 @@ const cancelModal = () => {
 }
 
 // Delete watchlist
-const confirmDelete = (watchlist: any) => {
+const confirmDelete = (watchlist: Watchlist) => {
   watchlistToDelete.value = watchlist
   deleteError.value = ''
   showDeleteConfirm.value = true
@@ -379,8 +383,8 @@ const executeDelete = async () => {
     await deleteWatchlist(watchlistToDelete.value.id)
     showDeleteConfirm.value = false
     watchlistToDelete.value = null
-  } catch (_error: any) {
-    deleteError.value = error.message || 'Failed to delete watchlist'
+  } catch (_error: unknown) {
+    deleteError.value = getErrorMessage(_error, 'Failed to delete watchlist')
   }
 }
 

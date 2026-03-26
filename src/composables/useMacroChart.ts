@@ -7,6 +7,21 @@ import { ref, type Ref } from 'vue'
 import type VChart from 'vue-echarts'
 import type { TimeRange } from '../types/macro.types'
 
+interface DataZoomAction {
+  type: 'dataZoom'
+  dataZoomIndex: number
+  start: number
+  end: number
+}
+
+interface EChartsInstanceLike {
+  dispatchAction: (action: DataZoomAction) => void
+}
+
+interface ChartRefWithInstance {
+  chart?: EChartsInstanceLike
+}
+
 export interface UseMacroChartOptions {
   id: string
   syncedByDefault?: boolean
@@ -38,7 +53,7 @@ export function useMacroChart(options: UseMacroChartOptions): UseMacroChartRetur
   const resetZoom = () => {
     if (!chartRef.value) return
 
-    const instance = (chartRef.value as any).chart
+    const instance = (chartRef.value as unknown as ChartRefWithInstance).chart
     if (instance) {
       instance.dispatchAction({
         type: 'dataZoom',
@@ -63,7 +78,7 @@ export function useMacroChart(options: UseMacroChartOptions): UseMacroChartRetur
   const setZoom = (range: TimeRange) => {
     if (!chartRef.value) return
 
-    const instance = (chartRef.value as any).chart
+    const instance = (chartRef.value as unknown as ChartRefWithInstance).chart
     if (instance) {
       instance.dispatchAction({
         type: 'dataZoom',

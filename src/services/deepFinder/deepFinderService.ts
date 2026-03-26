@@ -12,7 +12,7 @@ export interface DeepFinderStock {
   currentPrice: number
   ma200: number
   distance: number
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**
@@ -22,7 +22,7 @@ export interface DeepFinderResponse {
   stocks: DeepFinderStock[]
   timestamp?: number
   source?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**

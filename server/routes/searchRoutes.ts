@@ -11,6 +11,50 @@ import { getCacheService } from '../services/cacheService.js'
 const router = express.Router()
 const cache = getCacheService()
 
+interface SearchApiResult {
+  symbol?: string
+  name?: string
+  exchangeShortName?: string
+  stockExchange?: string
+}
+
+interface SearchResultItem {
+  symbol: string
+  name: string
+  exchange: string
+}
+
+interface QuoteResult {
+  symbol?: string
+  price?: number
+  name?: string
+  changesPercentage?: number
+}
+
+interface HistoricalPricePoint {
+  close: number
+}
+
+interface HistoricalPriceResponse {
+  historical?: HistoricalPricePoint[]
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function isSearchApiResult(value: unknown): value is SearchApiResult {
+  return typeof value === 'object' && value !== null
+}
+
+function isQuoteResult(value: unknown): value is QuoteResult {
+  return typeof value === 'object' && value !== null
+}
+
+function isHistoricalPriceResponse(value: unknown): value is HistoricalPriceResponse {
+  return typeof value === 'object' && value !== null && 'historical' in value
+}
+
 // Dependencies injected from server.mjs
 let FMP_API_KEY = ''
 let API_VERSION = 'v2.6'
@@ -101,16 +145,17 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
     throw new Error(`FMP API error: ${response.status}`)
   }
   
-  const data = await response.json() as any[]
+  const data = await response.json() as unknown[]
   
   // Optimize filtering and sorting with early termination
-  const results: unknown[] = []
-  const exactMatch: unknown[] = []
-  const startsWithMatch: unknown[] = []
-  const otherMatches: unknown[] = []
+  const results: SearchResultItem[] = []
+  const exactMatch: SearchResultItem[] = []
+  const startsWithMatch: SearchResultItem[] = []
+  const otherMatches: SearchResultItem[] = []
   
   // Single pass filtering and categorization
   for (const item of data || []) {
+    if (!isSearchApiResult(item)) continue
     if (!item.symbol || !item.name) continue
     
     const formatted = {
@@ -133,8 +178,8 @@ router.get('/search', fmpLimiter, asyncHandler(async (req: Request, res: Respons
   
   // Combine results in priority order
   results.push(...exactMatch)
-  results.push(...startsWithMatch.sort((a: any, b: any) => a.symbol.localeCompare(b.symbol)))
-  results.push(...otherMatches.sort((a: any, b: any) => a.symbol.localeCompare(b.symbol)))
+  results.push(...startsWithMatch.sort((a, b) => a.symbol.localeCompare(b.symbol)))
+  results.push(...otherMatches.sort((a, b) => a.symbol.localeCompare(b.symbol)))
   
   // Limit to 5 results
   const finalResults = results.slice(0, 5)
@@ -220,21 +265,22 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
   
   // OPTIMIZATION: Batch fetch all quotes in a single API call
   const quotesUrl = `${baseUrl}/api/v3/quote/${stockList.join(',')}?apikey=${FMP_API_KEY}`
-  const quotesMap = new Map<string, any>()
+  const quotesMap = new Map<string, QuoteResult>()
   
   try {
     const quotesRes = await fetch(quotesUrl)
     if (quotesRes.ok) {
-      const quotesData = await quotesRes.json() as any[]
-      quotesData.forEach((quote: any) => {
+      const quotesData = await quotesRes.json() as unknown[]
+      quotesData.forEach((quote) => {
+        if (!isQuoteResult(quote)) return
         if (quote && quote.symbol) {
           quotesMap.set(quote.symbol, quote)
         }
       })
       logger.info(`[DeepFinder] Fetched ${quotesMap.size} quotes in batch`)
     }
-  } catch (_error: any) {
-    logger.warn(`[DeepFinder] Batch quotes failed:`, _error.message)
+  } catch (_error: unknown) {
+    logger.warn(`[DeepFinder] Batch quotes failed:`, getErrorMessage(_error))
   }
   
   // Fetch historical data for each stock (can't be batched)
@@ -257,17 +303,19 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
           logger.warn(`[DeepFinder] History failed for ${ticker}: ${historyRes.status}`)
           return null
         }
-        const historyData = await historyRes.json() as any
+        const historyData = await historyRes.json()
         
         // Calculate MA200 from historical data
-        const historical = historyData.historical || []
+        const historical = isHistoricalPriceResponse(historyData) && Array.isArray(historyData.historical)
+          ? historyData.historical
+          : []
         if (historical.length < 200) {
           logger.warn(`[DeepFinder] Insufficient data for ${ticker}: ${historical.length} days`)
           return null
         }
         
         // Get last 200 close prices
-        const last200Prices = historical.slice(0, 200).map((h: any) => h.close)
+        const last200Prices = historical.slice(0, 200).map((h) => h.close)
         const ma200 = last200Prices.reduce((sum: number, price: number) => sum + price, 0) / 200
         
         // Calculate distance from MA200
@@ -281,8 +329,8 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
           distance: parseFloat(distance.toFixed(2)),
           change: quote.changesPercentage || 0
         }
-      } catch (_error: any) {
-        logger.warn(`[DeepFinder] Error processing ${ticker}:`, _error.message)
+      } catch (_error: unknown) {
+        logger.warn(`[DeepFinder] Error processing ${ticker}:`, getErrorMessage(_error))
         return null
       }
     })
@@ -290,9 +338,8 @@ router.get('/deep-finder', fmpLimiter, asyncHandler(async (req: Request, res: Re
   
   // Filter out failures and sort by distance (most negative first)
   const validStocks = results
-    .filter((r: any) => r.status === 'fulfilled' && r.value !== null)
-    .map((r: any) => r.value)
-    .sort((a: any, b: any) => a.distance - b.distance)
+    .flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
+    .sort((a, b) => a.distance - b.distance)
   
   const responseData = {
     stocks: validStocks,

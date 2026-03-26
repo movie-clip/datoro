@@ -3,6 +3,14 @@ import { getCacheService, CacheTTL } from './cacheService.js'
 import { getPopularTickers } from './databaseService.js'
 import { fetchTickerBatch, fetchTickerPriority } from './batchDataService.js'
 
+interface StaticBatchPayload {
+  data?: Record<string, unknown>
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 interface WarmTickerCandidate {
   ticker: string
   searchCount?: number
@@ -72,7 +80,7 @@ function parseTickerList(value: string | undefined, fallback: string[]): string[
   return list.length > 0 ? Array.from(new Set(list)) : fallback
 }
 
-function toStaticBatchPayload(payload: any): any {
+function toStaticBatchPayload<T extends StaticBatchPayload>(payload: T): T & { splitMode: 'static' } {
   if (!payload || typeof payload !== 'object') return payload
   const data = payload.data && typeof payload.data === 'object' ? payload.data : {}
   const { quote: _quote, ...staticData } = data
@@ -281,11 +289,11 @@ class CacheWarmService {
             const result = await this.warmTicker(ticker)
             if (result === 'hit') cycle.skippedHits += 1
             if (result === 'fetched') cycle.fetched += 1
-          } catch (_error: any) {
+          } catch (_error: unknown) {
             cycle.errors += 1
             logger.warn('[CacheWarm] Failed to warm ticker', {
               ticker,
-              error: _error?.message || String(_error)
+              error: getErrorMessage(_error)
             })
           }
         }
@@ -319,9 +327,9 @@ class CacheWarmService {
         const t = normalizeTicker(row?.ticker)
         if (t) fromDb.push(t)
       }
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.warn('[CacheWarm] Failed to load popular tickers, using fallback list', {
-        error: _error?.message || String(_error)
+        error: getErrorMessage(_error)
       })
     }
 
@@ -356,7 +364,7 @@ class CacheWarmService {
     const staticPayload = toStaticBatchPayload(fullPayload)
     await this.cache.set(cacheKey, staticPayload, CacheTTL.COMPANY_PROFILE)
 
-    const quoteData = (fullPayload as any)?.data?.quote
+    const quoteData = fullPayload.data?.quote
     if (Array.isArray(quoteData) && quoteData.length > 0) {
       const quoteKey = this.cache.generateKey('quote', t)
       this.cache.setFast(quoteKey, quoteData, CacheTTL.QUOTE)

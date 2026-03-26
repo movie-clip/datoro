@@ -53,6 +53,12 @@ export const CONNECTION_POOL_CONFIG = {
   }
 }
 
+type ProviderConfig = typeof CONNECTION_POOL_CONFIG.providers[keyof typeof CONNECTION_POOL_CONFIG.providers]
+
+function getProviderConfig(providerKey: string): ProviderConfig | null {
+  return CONNECTION_POOL_CONFIG.providers[providerKey as keyof typeof CONNECTION_POOL_CONFIG.providers] || null
+}
+
 /**
  * Detect database provider from connection URL
  */
@@ -83,7 +89,7 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
   
   // Detect provider
   const providerKey = providerOverride || process.env.DATABASE_PROVIDER || detectProvider(baseUrl)
-  const provider = (CONNECTION_POOL_CONFIG.providers as any)[providerKey]
+  const provider = getProviderConfig(providerKey)
   
   if (!provider) {
     logger.warn(`[Database] Unknown provider: ${providerKey}, using defaults`)
@@ -150,7 +156,11 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
 export function getPoolConfig() {
   const baseUrl = process.env.DATABASE_URL
   const providerKey = process.env.DATABASE_PROVIDER || detectProvider(baseUrl)
-  const provider = (CONNECTION_POOL_CONFIG.providers as any)[providerKey] || (CONNECTION_POOL_CONFIG.providers as any)[CONNECTION_POOL_CONFIG.defaultProvider]
+  const provider = getProviderConfig(providerKey) || getProviderConfig(CONNECTION_POOL_CONFIG.defaultProvider)
+
+  if (!provider) {
+    throw new Error('Default database provider configuration is missing')
+  }
   
   return {
     provider: providerKey,

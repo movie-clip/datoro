@@ -21,6 +21,93 @@ const router = express.Router()
 const FMP_BASE_URL = 'https://financialmodelingprep.com'
 const cache = getCacheService()
 
+interface TrackedFmpRequest extends Request {
+  fmpCallTracked?: boolean
+}
+
+interface HistoricalPricePoint {
+  date: string
+  close?: number
+}
+
+interface HistoricalPriceResponse {
+  historical?: HistoricalPricePoint[]
+}
+
+interface MacroIndexQuote {
+  symbol: string
+  changesPercentage?: number
+}
+
+interface MacroIndexStat {
+  symbol: string
+  '1D': number
+  '5D': number
+  '1M': number
+  '3M': number
+  '6M': number
+  ytd: number
+  '1Y': number
+  '3Y': number
+  '5Y': number
+  '10Y': number
+  max: number
+}
+
+interface HousingStartPoint {
+  date: string
+  value: unknown
+}
+
+interface MacroBatchData {
+  treasuryRates: unknown[]
+  federalFunds: unknown[]
+  consumerSentiment: unknown[]
+  retailSales: unknown[]
+  inflation: unknown[]
+  unemploymentRate: unknown[]
+  indexStats: MacroIndexStat[]
+  housingStarts: Array<{ date: string; value: unknown }>
+  timestamp: string
+}
+
+function hasTrackedFmpCall(req: Request): req is TrackedFmpRequest {
+  return Boolean((req as TrackedFmpRequest).fmpCallTracked)
+}
+
+function isHistoricalPriceResponse(data: unknown): data is HistoricalPriceResponse {
+  return typeof data === 'object' && data !== null && 'historical' in data
+}
+
+function isMacroIndexQuote(value: unknown): value is MacroIndexQuote {
+  return typeof value === 'object' && value !== null && 'symbol' in value
+}
+
+function isHousingStartPoint(value: unknown): value is HousingStartPoint {
+  return typeof value === 'object' && value !== null && 'date' in value && 'value' in value
+}
+
+function toUnknownArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : []
+}
+
+function toMacroIndexStat(quote: MacroIndexQuote): MacroIndexStat {
+  return {
+    symbol: quote.symbol,
+    '1D': quote.changesPercentage || 0,
+    '5D': 0,
+    '1M': 0,
+    '3M': 0,
+    '6M': 0,
+    ytd: 0,
+    '1Y': 0,
+    '3Y': 0,
+    '5Y': 0,
+    '10Y': 0,
+    max: 0
+  }
+}
+
 // Dependencies injected from server.ts (secure pattern)
 let FMP_API_KEY = ''
 
@@ -94,7 +181,7 @@ router.get('/treasury', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
   const cached = await cache.get(cacheKey)
   if (cached.data) {
     // Decrement global FMP counter for cache hits
-    if ((req as any).fmpCallTracked) {
+    if (hasTrackedFmpCall(req)) {
       decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Treasury → CACHE HIT (${cached.source})`)
@@ -117,7 +204,7 @@ router.get('/treasury', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
   })
   
   // Cache for 7 days (historical treasury data doesn't change)
-  await cache.set(cacheKey, data, REDIS_TTL.MACRO_HISTORICAL as any)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_HISTORICAL)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -141,7 +228,7 @@ router.get('/economic', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
   // Check cache first
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    if ((req as any).fmpCallTracked) {
+    if (hasTrackedFmpCall(req)) {
       decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Economic/${name} → CACHE HIT (${cached.source})`)
@@ -163,7 +250,7 @@ router.get('/economic', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: R
   })
   
   // Cache for 7 days (economic indicators update monthly/quarterly)
-  await cache.set(cacheKey, data, REDIS_TTL.MACRO_LONG as any)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_LONG)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -187,7 +274,7 @@ router.get('/spx', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Reques
   // Check cache first
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    if ((req as any).fmpCallTracked) {
+    if (hasTrackedFmpCall(req)) {
       decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] SPX → CACHE HIT (${cached.source})`)
@@ -206,11 +293,11 @@ router.get('/spx', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Reques
     }
     
     const data = await response.json()
-    return (data as any).historical || []
+    return isHistoricalPriceResponse(data) && Array.isArray(data.historical) ? data.historical : []
   })
   
   // Cache for 7 days (historical price data doesn't change)
-  await cache.set(cacheKey, historical, REDIS_TTL.MACRO_HISTORICAL as any)
+  await cache.set(cacheKey, historical, REDIS_TTL.MACRO_HISTORICAL)
   
   res.setHeader('X-Cache', 'miss')
   res.json(historical)
@@ -229,7 +316,7 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
   // Check cache first
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    if ((req as any).fmpCallTracked) {
+    if (hasTrackedFmpCall(req)) {
       decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Index Stats → CACHE HIT (${cached.source})`)
@@ -267,26 +354,16 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
     const quotes = Array.isArray(json) ? json : [json]
     
     // Transform quote data to match IndexStats interface
-    const data = quotes.map((quote: any) => {
-      if (quote && typeof quote === 'object' && 'symbol' in quote && 'changesPercentage' in quote) {
-        return {
-          symbol: quote.symbol,
-          '1D': quote.changesPercentage || 0,
-          '5D': 0, // Not available in quote endpoint
-          '1M': 0,
-          '3M': 0,
-          '6M': 0,
-          ytd: 0,
-          '1Y': 0,
-          '3Y': 0,
-          '5Y': 0,
-          '10Y': 0,
-          max: 0
+    const data = quotes
+      .map(quote => {
+        if (isMacroIndexQuote(quote)) {
+          return toMacroIndexStat(quote)
         }
-      }
-      logger.warn('[Macro] Invalid index stats response:', quote)
-      return null
-    }).filter((d: any) => d !== null)
+
+        logger.warn('[Macro] Invalid index stats response:', quote)
+        return null
+      })
+      .filter((d): d is MacroIndexStat => d !== null)
     
     if (data.length === 0) {
       logger.error('[Macro] No valid index stats data received')
@@ -298,7 +375,7 @@ router.get('/index-stats', fmpLimiter, globalFmpLimiter, asyncHandler(async (req
   })
   
   // Cache for 15 minutes (reasonable delay for macro dashboard)
-  await cache.set(cacheKey, validData, REDIS_TTL.MACRO_QUOTE as any)
+  await cache.set(cacheKey, validData, REDIS_TTL.MACRO_QUOTE)
   
   res.setHeader('X-Cache', 'miss')
   res.json(validData)
@@ -316,7 +393,7 @@ router.get('/sectors', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
   // Check cache first
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    if ((req as any).fmpCallTracked) {
+    if (hasTrackedFmpCall(req)) {
       decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Sectors → CACHE HIT (${cached.source})`)
@@ -338,7 +415,7 @@ router.get('/sectors', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Re
   })
   
   // Cache for 15 minutes (reasonable delay for macro dashboard)
-  await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_QUOTE)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -356,7 +433,7 @@ router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (re
   // Check cache first
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    if ((req as any).fmpCallTracked) {
+    if (hasTrackedFmpCall(req)) {
       decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Risk Premium → CACHE HIT (${cached.source})`)
@@ -385,7 +462,7 @@ router.get('/risk-premium', fmpLimiter, globalFmpLimiter, asyncHandler(async (re
   }
   
   // Cache for 1 hour (derived from treasury data)
-  await cache.set(cacheKey, data, REDIS_TTL.MACRO_CALCULATED as any)
+  await cache.set(cacheKey, data, REDIS_TTL.MACRO_CALCULATED)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -429,7 +506,7 @@ router.get('/eu-batch', asyncHandler(async (req: Request, res: Response) => {
           `${FMP_BASE_URL}/api/v3/stock-price-change/${symbol}?apikey=${FMP_API_KEY}`
         )
         if (!response.ok) return null
-        const indexData = await response.json() as any[]
+        const indexData = await response.json() as unknown[]
         return indexData[0] || null
       } catch (error) {
         logger.error(`[Macro] Failed to fetch index stats for ${symbol}:`, error)
@@ -480,7 +557,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   // Check cache first
   const cached = await cache.get(cacheKey)
   if (cached.data) {
-    if ((req as any).fmpCallTracked) {
+    if (hasTrackedFmpCall(req)) {
       decrementGlobalFmpCounter(req)
     }
     logger.info(`[Macro] Batch → CACHE HIT (${cached.source})`)
@@ -520,7 +597,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
     ])
     
     // Process results
-    const batchData: any = {
+    const batchData: MacroBatchData = {
       treasuryRates: [],
       federalFunds: [],
       consumerSentiment: [],
@@ -534,24 +611,24 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
     
     // Treasury rates
     if (treasuryRes.status === 'fulfilled' && treasuryRes.value.ok) {
-      batchData.treasuryRates = await treasuryRes.value.json()
+      batchData.treasuryRates = toUnknownArray(await treasuryRes.value.json())
     }
     
     // Economic indicators
     if (fedFundsRes.status === 'fulfilled' && fedFundsRes.value.ok) {
-      batchData.federalFunds = await fedFundsRes.value.json()
+      batchData.federalFunds = toUnknownArray(await fedFundsRes.value.json())
     }
     if (consumerSentimentRes.status === 'fulfilled' && consumerSentimentRes.value.ok) {
-      batchData.consumerSentiment = await consumerSentimentRes.value.json()
+      batchData.consumerSentiment = toUnknownArray(await consumerSentimentRes.value.json())
     }
     if (retailSalesRes.status === 'fulfilled' && retailSalesRes.value.ok) {
-      batchData.retailSales = await retailSalesRes.value.json()
+      batchData.retailSales = toUnknownArray(await retailSalesRes.value.json())
     }
     if (inflationRes.status === 'fulfilled' && inflationRes.value.ok) {
-      batchData.inflation = await inflationRes.value.json()
+      batchData.inflation = toUnknownArray(await inflationRes.value.json())
     }
     if (unemploymentRes.status === 'fulfilled' && unemploymentRes.value.ok) {
-      batchData.unemploymentRate = await unemploymentRes.value.json()
+      batchData.unemploymentRate = toUnknownArray(await unemploymentRes.value.json())
     }
     
     // Index stats (transform batch quotes to IndexStats format)
@@ -559,25 +636,9 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       const json = await indexQuotesRes.value.json()
       const quotes = Array.isArray(json) ? json : [json]
       
-      const indexStats = quotes.map((quote: any) => {
-        if (quote && typeof quote === 'object' && 'symbol' in quote && 'changesPercentage' in quote) {
-          return {
-            symbol: quote.symbol,
-            '1D': quote.changesPercentage || 0,
-            '5D': 0,
-            '1M': 0,
-            '3M': 0,
-            '6M': 0,
-            ytd: 0,
-            '1Y': 0,
-            '3Y': 0,
-            '5Y': 0,
-            '10Y': 0,
-            max: 0
-          }
-        }
-        return null
-      }).filter((q: any) => q !== null)
+      const indexStats = quotes
+        .map(quote => (isMacroIndexQuote(quote) ? toMacroIndexStat(quote) : null))
+        .filter((q): q is MacroIndexStat => q !== null)
       
       batchData.indexStats = indexStats
     }
@@ -589,7 +650,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
       // Stable endpoint returns array with 'name' field: [{name, date, value}, ...]
       // Transform to match EconomicIndicator interface: [{date, value}, ...]
       batchData.housingStarts = Array.isArray(housingData) 
-        ? housingData.map((item: any) => ({ date: item.date, value: item.value }))
+        ? housingData.filter(isHousingStartPoint).map(item => ({ date: item.date, value: item.value }))
         : []
     } else {
       logger.info('[Macro] Housing Starts fetch failed. Status:', housingStartsRes.status, 
@@ -605,7 +666,7 @@ router.get('/batch', fmpLimiter, globalFmpLimiter, asyncHandler(async (req: Requ
   logger.info(`[Macro] Batch → housingStarts array length: ${data.housingStarts?.length || 0}`)
   
   // Cache for 15 minutes (fire-and-forget - don't block response)
-  cache.setFast(cacheKey, data, REDIS_TTL.MACRO_QUOTE as any)
+  cache.setFast(cacheKey, data, REDIS_TTL.MACRO_QUOTE)
   
   res.setHeader('X-Cache', 'miss')
   res.json(data)
@@ -623,37 +684,6 @@ function getDateMonthsAgo(months: number): string {
 
 function getTodayDate(): string {
   return new Date().toISOString().split('T')[0] || ''
-}
-
-/**
- * Calculate inflation rate (YoY % change) from CPI index values
- * CPI is the index level (e.g., 324.36), inflation is % change from 12 months ago
- */
-function calculateInflationFromCPI(cpiData: Array<{ date: string; value: number }>): Array<{ date: string; value: number }> {
-  if (!Array.isArray(cpiData) || cpiData.length < 13) {
-    return []
-  }
-
-  // Sort by date (oldest first) to ensure correct calculation
-  const sorted = [...cpiData].sort((a, b) => a.date.localeCompare(b.date))
-  
-  const inflationData: Array<{ date: string; value: number }> = []
-  
-  // Calculate YoY change for each month (starting from month 13 since we need 12 months prior)
-  for (let i = 12; i < sorted.length; i++) {
-    const current = sorted[i]
-    const yearAgo = sorted[i - 12]
-    
-    if (current && yearAgo && current.value && yearAgo.value) {
-      const inflationRate = ((current.value - yearAgo.value) / yearAgo.value) * 100
-      inflationData.push({
-        date: current.date,
-        value: inflationRate
-      })
-    }
-  }
-  
-  return inflationData
 }
 
 // Export both router and initialization function for consistency with other routes

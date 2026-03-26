@@ -35,7 +35,7 @@
       />
       <v-chart 
         v-else-if="hasChartData"
-        :ref="(el: any) => chart.chartRef.value = el"
+        :ref="(el) => setChartRef(chart, el as InstanceType<typeof VChart> | null)"
         :option="chartOption"
         :class="{ 'loading-chart': loading }"
         autoresize
@@ -59,6 +59,16 @@ import VChart from 'vue-echarts'
 import type { EChartsOption } from 'echarts'
 import SkeletonLoader from '../common/SkeletonLoader.vue'
 import type { UseMacroChartReturn } from '../../composables/useMacroChart'
+
+type ChartSeriesPoint = [number, number] | [number, number, string, string]
+
+interface ChartSeriesLike {
+  data?: ChartSeriesPoint[]
+}
+
+function setChartRef(chart: UseMacroChartReturn, el: InstanceType<typeof VChart> | null): void {
+  chart.chartRef.value = el
+}
 
 const props = defineProps({
   title: {
@@ -85,7 +95,10 @@ const props = defineProps({
 const hasChartData = computed(() => {
   const series = props.chartOption?.series
   if (!series || !Array.isArray(series)) return false
-  return series.some((s: any) => s.data && Array.isArray(s.data) && s.data.length > 0)
+  return series.some((s) => {
+    const chartSeries = s as ChartSeriesLike
+    return Array.isArray(chartSeries.data) && chartSeries.data.length > 0
+  })
 })
 </script>
 

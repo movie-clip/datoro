@@ -13,14 +13,16 @@ declare global {
       id?: string
     }
   }
-  var Sentry: any
+  var Sentry: {
+    setTag?: (key: string, value: string) => void
+  } | undefined
 }
 
 // Custom error class
 export class AppError extends Error {
   statusCode: number
   code: string
-  details: any
+  details: unknown
   isOperational: boolean
 
   constructor(message: string, statusCode = 500, code = 'INTERNAL_ERROR', details: unknown = null) {
@@ -58,7 +60,7 @@ export const ErrorCodes = {
 
 // Error factory functions
 export const createError = {
-  invalidInput: (message: string, details?: any) => 
+  invalidInput: (message: string, details?: unknown) => 
     new AppError(message, 400, ErrorCodes.INVALID_INPUT, details),
   
   tickerNotFound: (ticker: string) => 
@@ -81,8 +83,44 @@ export const createError = {
  * Monitoring Service interface for error tracking
  */
 interface MonitoringService {
-  trackError(error: any, req: Request): void
+  trackError(error: unknown, req: Request): void
   trackRequest(req: Request, res: Response, duration: number): void
+}
+
+interface NormalizedError {
+  message: string
+  stack?: string
+  statusCode?: number
+  code?: string
+  isOperational?: boolean
+  details?: unknown
+}
+
+function normalizeError(err: unknown): NormalizedError {
+  if (err instanceof AppError) {
+    return err
+  }
+
+  if (err instanceof Error) {
+    return err
+  }
+
+  if (err && typeof err === 'object') {
+    const candidate = err as Record<string, unknown>
+
+    return {
+      message: typeof candidate.message === 'string' ? candidate.message : 'Unknown error',
+      stack: typeof candidate.stack === 'string' ? candidate.stack : undefined,
+      statusCode: typeof candidate.statusCode === 'number' ? candidate.statusCode : undefined,
+      code: typeof candidate.code === 'string' ? candidate.code : undefined,
+      isOperational: typeof candidate.isOperational === 'boolean' ? candidate.isOperational : undefined,
+      details: candidate.details
+    }
+  }
+
+  return {
+    message: typeof err === 'string' ? err : 'Unknown error'
+  }
 }
 
 /**
@@ -91,11 +129,13 @@ interface MonitoringService {
  * Can accept monitoring service for tracking
  */
 export function errorHandler(monitoringService: MonitoringService | null = null): ErrorRequestHandler {
-  return (err: any, req: Request, res: Response, _next: NextFunction) => {
+  return (err: unknown, req: Request, res: Response, _next: NextFunction) => {
+    const normalizedError = normalizeError(err)
+
     // Default to 500 if not specified
-    const statusCode = err.statusCode || 500;
-    const code = err.code || ErrorCodes.INTERNAL_ERROR;
-    const isOperational = err.isOperational || false;
+    const statusCode = normalizedError.statusCode || 500;
+    const code = normalizedError.code || ErrorCodes.INTERNAL_ERROR;
+    const isOperational = normalizedError.isOperational || false;
 
     // Track in monitoring service if provided
     if (monitoringService) {
@@ -105,7 +145,7 @@ export function errorHandler(monitoringService: MonitoringService | null = null)
     // Log error with request ID (will be captured by Sentry if initialized)
     const logData = {
       requestId: req.id,
-      message: err.message,
+      message: normalizedError.message,
       code,
       path: req.path,
       method: req.method,
@@ -116,11 +156,11 @@ export function errorHandler(monitoringService: MonitoringService | null = null)
     if (statusCode >= 500) {
       logger.error('[ERROR]', {
         ...logData,
-        stack: err.stack
+        stack: normalizedError.stack
       });
       
       // Add request ID to Sentry context
-      if (req.id && global.Sentry) {
+      if (req.id && global.Sentry?.setTag) {
         global.Sentry.setTag('request_id', req.id);
       }
     } else {
@@ -139,12 +179,12 @@ export function errorHandler(monitoringService: MonitoringService | null = null)
         timestamp: string
         path: string
         requestId?: string
-        details?: any
+        details?: unknown
         stack?: string[]
       }
     } = {
       error: {
-        message: shouldHideDetails ? 'Internal server error' : err.message,
+        message: shouldHideDetails ? 'Internal server error' : normalizedError.message,
         code,
         timestamp: new Date().toISOString(),
         path: req.path,
@@ -153,8 +193,8 @@ export function errorHandler(monitoringService: MonitoringService | null = null)
     };
 
     // Add details if available (and not in production for non-operational errors)
-    if (err.details && !shouldHideDetails) {
-      errorResponse.error.details = err.details;
+    if (normalizedError.details && !shouldHideDetails) {
+      errorResponse.error.details = normalizedError.details;
     }
 
     // Stack traces should NEVER be sent to client (security risk)

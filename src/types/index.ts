@@ -23,7 +23,8 @@ export type {
   FMPFinancialScore,
   FMPPriceTargetSummary,
   FMPPriceTargetConsensus,
-  FMPDCF
+  FMPDCF,
+  FMPEarnings
 } from './fmp.types'
 
 // Batch Data Types

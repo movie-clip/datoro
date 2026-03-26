@@ -2,12 +2,39 @@ import type { EChartsOption } from 'echarts'
 import { getTooltipConfig } from '../../composables/useTooltipFormatter'
 import { createSeriesConfig, type SeriesDataObject } from '../../utils/chartSeriesFactory'
 import { createXAxisConfig, createYAxisConfig } from '../../utils/chartAxisFactory'
-import type { CategoryData } from './chartDataTransformer'
+import type { CategoryData, ChartDataSeries } from './chartDataTransformer'
+
+type TimeSeriesPoint = [number, number] | [number, number, string, string]
+
+interface SliderConfig {
+    borderColor?: string
+    fillerColor?: string
+    handleColor?: string
+    textColor?: string
+    dataBackgroundLine?: string
+    dataBackgroundArea?: string
+    moveHandleSize?: number
+    [key: string]: unknown
+}
+
+interface LegendSeries {
+    name: string
+}
+
+interface BuiltSeriesItem extends SeriesDataObject {
+    type?: string
+    yAxisIndex?: number
+    symbol?: string
+    z?: number
+    animation?: boolean
+}
+
+type ChartSeriesInput = ChartDataSeries[] | TimeSeriesPoint[] | SeriesDataObject[] | Record<string, unknown>
 
 export interface ChartOptionBuilderParams {
     title: string
-    series: any
-    compactSeries?: any
+    series: ChartSeriesInput
+    compactSeries?: ChartSeriesInput | null
     kind: 'line' | 'bar'
     yFormat: 'int' | 'currency' | 'percent' | 'short' | 'price' | 'decimal' | 'ratio'
     smooth: number
@@ -21,7 +48,7 @@ export interface ChartOptionBuilderParams {
     stacked: boolean
     useLegend: boolean
     dualAxis: boolean
-    rightAxisType: 'symmetric' | 'percentage'
+    rightAxisType: 'default' | 'percentage'
     alignZero: boolean
     ticker: string | null
     timeframe: 'annual' | 'quarterly'
@@ -30,10 +57,14 @@ export interface ChartOptionBuilderParams {
     categoryData: CategoryData
     // New options for Macro Charts
     color?: string
-    areaStyle?: any
+    areaStyle?: Record<string, unknown>
     showAverage?: boolean // SMA 200
-    sliderConfig?: any
+    sliderConfig?: SliderConfig
     dataZoomType?: 'inside' | 'slider'
+}
+
+function hasLegendSeriesName(value: unknown): value is LegendSeries {
+    return typeof value === 'object' && value !== null && typeof (value as LegendSeries).name === 'string'
 }
 
 /**
@@ -105,8 +136,9 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
 
     // Build legend selection
     const legendSelected: Record<string, boolean> = {}
-    if (useLegend && Array.isArray(rawSeries) && rawSeries.length > 0 && (rawSeries[0] as any)?.name) {
-        rawSeries.forEach((s: any, idx: number) => {
+        if (useLegend && Array.isArray(rawSeries) && rawSeries.length > 0 && hasLegendSeriesName(rawSeries[0])) {
+        rawSeries.forEach((s, idx: number) => {
+            if (!hasLegendSeriesName(s)) return
             legendSelected[s.name] = idx === 0 // Only first item selected
         })
     }
@@ -123,7 +155,7 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
     const hasSMA = smaData.length > 0
 
     // DataZoom Configuration
-    let dataZoom: any[] | undefined = undefined
+    let dataZoom: EChartsOption['dataZoom'] = undefined
     if (kind === 'line' && (isLarge || enableZoom)) {
         if (dataZoomType === 'slider' && sliderConfig) {
             dataZoom = [
@@ -246,7 +278,7 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
         yAxis: createYAxisConfig({
             dualAxis,
             yFormat,
-            rightAxisType: rightAxisType as any,
+            rightAxisType,
             alignZero,
             isLarge,
             isMobile,
@@ -262,7 +294,7 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
             title,
             yearsList: timeframe === 'quarterly' ? timestamps : yearsList,
             barMaxWidth,
-            smooth: smooth as any,
+            smooth: Boolean(smooth),
             isLarge,
             color,
             areaStyle
@@ -270,8 +302,8 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
     )
 
     // Add SMA series if needed
-    if (showAverage && hasSMA) {
-        series.push({
+    if (showAverage && hasSMA && Array.isArray(series)) {
+        ;(series as BuiltSeriesItem[]).push({
             name: 'SMA 200',
             type: 'line',
             data: smaData,
@@ -287,12 +319,12 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
             },
             z: 10,
             animation: false
-        } as any)
+        })
     }
 
     // CRITICAL: Ensure yAxisIndex consistency with axis configuration
     if (dualAxis && Array.isArray(series)) {
-        series = series.map((s: any) => {
+        series = (series as BuiltSeriesItem[]).map((s) => {
             if (s.type === 'line') {
                 return { ...s, yAxisIndex: 1 }
             } else {
@@ -300,7 +332,7 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
             }
         })
     } else if (!dualAxis && Array.isArray(series)) {
-        series = series.map((s: any) => {
+        series = (series as BuiltSeriesItem[]).map((s) => {
             const { yAxisIndex, ...cleanSeries } = s
             return cleanSeries
         })

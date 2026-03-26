@@ -15,6 +15,11 @@ import { safeParseNewsResponse } from '../schemas/newsSchemas.js'
 const router = express.Router()
 const cache = getCacheService()
 
+interface NewsItemLike {
+  publishedDate?: string
+  date?: string
+}
+
 let FMP_API_KEY = ''
 
 /**
@@ -160,7 +165,7 @@ router.get(
           })
 
       // Sort by published date (most recent first)
-      const sortedNews = tickerNews.sort((a: any, b: any) => {
+      const sortedNews = tickerNews.sort((a: NewsItemLike, b: NewsItemLike) => {
         const dateA = new Date(a.publishedDate || a.date || 0).getTime()
         const dateB = new Date(b.publishedDate || b.date || 0).getTime()
         return dateB - dateA

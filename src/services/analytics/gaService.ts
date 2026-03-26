@@ -17,7 +17,7 @@ export const isGA4Ready = (): boolean => {
  * @param eventName - GA4 event name (e.g., 'search_ticker', 'sign_up')
  * @param params - Event parameters (custom dimensions/metrics)
  */
-export const trackEvent = (eventName: string, params?: Record<string, any>): void => {
+export const trackEvent = (eventName: string, params?: Record<string, unknown>): void => {
   if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
     window.gtag('event', eventName, params);
     

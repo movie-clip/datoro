@@ -65,7 +65,7 @@ export function calculateIntrinsicValue(inputs: DcfInputs, companyData: CompanyD
   const {
     fcfGrowthRate = 10,      // Using as EPS growth rate
     peRatio = 20,
-    discountRate = 10,       // Using as expected return benchmark
+    discountRate: _discountRate = 10,       // Using as expected return benchmark
     projectionYears = 10
   } = inputs
 
@@ -94,7 +94,6 @@ export function calculateIntrinsicValue(inputs: DcfInputs, companyData: CompanyD
 
   // Convert percentages to decimals
   const growthRate = fcfGrowthRate / 100
-  const expectedReturn = discountRate / 100
 
   // Step 1: Project future EPS based on growth rate
   // Future EPS = Current EPS × (1 + Growth Rate)^Years

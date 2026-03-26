@@ -31,6 +31,8 @@ interface User {
 
 interface AuthResponse {
   success: boolean
+  code?: string
+  email?: string
   data?: {
     user: User
   }
@@ -41,6 +43,11 @@ interface AuthResponse {
 interface AuthResult {
   success: boolean
   error?: string
+}
+
+type EmailNotVerifiedError = Error & {
+  code: 'EMAIL_NOT_VERIFIED'
+  email?: string
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -222,10 +229,10 @@ export const useAuthStore = defineStore('auth', () => {
       
       if (!response.ok) {
         // Check for email not verified error (403)
-        if (response.status === 403 && (data as any).code === 'EMAIL_NOT_VERIFIED') {
-          const unverifiedError: any = new Error('Please verify your email address before logging in')
+        if (response.status === 403 && data.code === 'EMAIL_NOT_VERIFIED') {
+          const unverifiedError = new Error('Please verify your email address before logging in') as EmailNotVerifiedError
           unverifiedError.code = 'EMAIL_NOT_VERIFIED'
-          unverifiedError.email = (data as any).email
+          unverifiedError.email = data.email
           throw unverifiedError
         }
         

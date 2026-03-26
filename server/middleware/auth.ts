@@ -78,7 +78,7 @@ export function authenticate(requireAuth = true) {
       
       next()
       
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Auth Middleware] Error:', _error)
       
       if (requireAuth) {

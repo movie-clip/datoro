@@ -2,8 +2,8 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { calculateIntrinsicValue, getRecommendation } from '../services/dcf/dcfCalculator'
-import { getDcfDataFromBatch, validateDcfData } from '../services/dcf/dcfDataService'
-import { calculateAdvancedDcfValue, generateScenariosFromAdvancedDcf } from '../services/dcf/valuationMethodsService'
+import { getDcfDataFromBatch, validateDcfData, type CompanyDataForDcf, type ValidationResult } from '../services/dcf/dcfDataService'
+import { calculateAdvancedDcfValue, generateScenariosFromAdvancedDcf, type AdvancedDcfResult, type FmpDcfValueExtended } from '../services/dcf/valuationMethodsService'
 
 interface ScenarioInputs {
   best: number
@@ -21,7 +21,7 @@ interface DcfInputs {
 
 interface ScenarioResult {
   intrinsicValue: number | null
-  projectedPrices: unknown[]
+  projectedPrices: ProjectedPrice[]
   upside: number | null
 }
 
@@ -36,22 +36,39 @@ interface Recommendation {
   color: string
 }
 
+interface ProjectedPrice {
+  year: number
+  price: number
+  futurePrice?: number
+  eps?: number
+}
+
+type AdvancedDcfValue = AdvancedDcfResult | FmpDcfValueExtended
+
+function hasAdvancedDcfError(value: AdvancedDcfValue | null): value is FmpDcfValueExtended & { error: string } {
+  return value !== null && 'error' in value && typeof value.error === 'string'
+}
+
+function isAdvancedDcfSuccess(value: AdvancedDcfValue | null): value is AdvancedDcfResult {
+  return value !== null && !hasAdvancedDcfError(value)
+}
+
 export type ValuationModel = 'peg' | 'advancedDcf'
 
 export interface UseDcfCalculatorReturn {
   inputs: Ref<DcfInputs>
   intrinsicValue: Ref<number | null>
-  projectedPrices: Ref<unknown[]>
+  projectedPrices: Ref<ProjectedPrice[]>
   upside: Ref<number | null>
   recommendation: Ref<Recommendation | null>
   scenarios: Ref<Scenarios>
-  advancedDcfValue: Ref<unknown>
+  advancedDcfValue: Ref<AdvancedDcfValue | null>
   pegError: Ref<string | null>
   selectedModel: Ref<ValuationModel>
   availableModels: ComputedRef<{ peg: boolean; advancedDcf: boolean }>
   selectModel: (model: ValuationModel) => void
-  companyData: ComputedRef<unknown>
-  dataValidation: ComputedRef<{ valid: boolean; missingFields: string[] }>
+  companyData: ComputedRef<CompanyDataForDcf | null>
+  dataValidation: ComputedRef<ValidationResult>
   loading: Ref<boolean>
   error: ComputedRef<string | null>
   ticker: Ref<string>
@@ -70,17 +87,17 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
   
   // Extract DCF data from batch (like other composables extract chart data)
-  const companyData = computed<unknown>(() => {
+  const companyData = computed<CompanyDataForDcf | null>(() => {
     if (!batchData.value) return null
     return getDcfDataFromBatch(batchData.value)
   })
   
   // Validation state
-  const dataValidation = computed(() => {
+  const dataValidation = computed<ValidationResult>(() => {
     if (!batchData.value) {
       return { valid: false, missingFields: ['No data loaded'], details: {} }
     }
-    return validateDcfData(batchData.value) as { valid: boolean; missingFields: string[]; details: Record<string, string> }
+    return validateDcfData(batchData.value)
   })
   
   // Error state (follows project pattern)
@@ -100,8 +117,7 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
   
   // Default input values with scenario-based structure
   const baseGrowth = computed(() => {
-    const data = companyData.value as any
-    return data?.historicalGrowthRate || 10
+    return companyData.value?.historicalGrowthRate || 10
   })
   
   const inputs = ref<DcfInputs>({
@@ -129,7 +145,7 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
   })
   
   // Watch for company data changes and update FCF growth rate scenarios
-  watch(companyData, (newData: any) => {
+  watch(companyData, (newData: CompanyDataForDcf | null) => {
     if (newData && newData.historicalGrowthRate) {
       const growth = newData.historicalGrowthRate
       inputs.value.fcfGrowthRate = {
@@ -144,12 +160,12 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
   const selectedModel = ref<ValuationModel>('peg')
   const availableModels = computed(() => ({
     peg: pegError.value === null,
-    advancedDcf: advancedDcfValue.value !== null && !('error' in (advancedDcfValue.value as any))
+    advancedDcf: isAdvancedDcfSuccess(advancedDcfValue.value)
   }))
 
   // Calculation results
   const intrinsicValue = ref<number | null>(null)
-  const projectedPrices = ref<unknown[]>([])
+  const projectedPrices = ref<ProjectedPrice[]>([])
   const upside = ref<number | null>(null)
   const recommendation = ref<Recommendation | null>(null)
   const pegError = ref<string | null>(null)
@@ -174,7 +190,7 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
   })
 
   // Alternative valuation methods
-  const advancedDcfValue = ref<unknown>(null)
+  const advancedDcfValue = ref<AdvancedDcfValue | null>(null)
 
   // Calculate DCF whenever inputs change
   const calculate = (): void => {
@@ -209,7 +225,7 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
           projectionYears: inputs.value.projectionYears
         }
 
-        const results = calculateIntrinsicValue(scenarioInputs, companyData.value as any)
+        const results = calculateIntrinsicValue(scenarioInputs, companyData.value)
         
         // Capture error from average scenario
         if (scenario === 'average' && results.error) {
@@ -224,7 +240,7 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
         
         const lastPrice = lastProjectedPrice?.price ?? results.intrinsicValue
         
-        const currentPrice = (companyData.value as any)?.quote?.price
+        const currentPrice = companyData.value?.currentPrice
         const lastPriceUpside = lastPrice && currentPrice
           ? ((lastPrice - currentPrice) / currentPrice) * 100
           : results.upside
@@ -241,7 +257,7 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
       
       // If PEG failed, auto-switch to Advanced DCF if available
       if (capturedError && selectedModel.value === 'peg') {
-        if (advancedDcfValue.value && !('error' in (advancedDcfValue.value as any))) {
+        if (isAdvancedDcfSuccess(advancedDcfValue.value)) {
           selectedModel.value = 'advancedDcf'
         }
       }
@@ -259,8 +275,8 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
       }
 
       // Advanced DCF calculated separately via watch
-    } catch (_error) {
-      console.error('[DCF Calculator] Calculation error:', error)
+    } catch (_error: unknown) {
+      console.error('[DCF Calculator] Calculation error:', _error)
       // Reset on error
       intrinsicValue.value = null
       projectedPrices.value = []
@@ -287,15 +303,15 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
       return
     }
 
-    const result = calculateAdvancedDcfValue((batchData.value as any).data)
+    const result = calculateAdvancedDcfValue(batchData.value.data)
     advancedDcfValue.value = result
 
     // Generate Advanced DCF scenarios for chart
-    const currentPriceValue = (companyData.value as any)?.currentPrice || (companyData.value as any)?.quote?.price
+    const currentPriceValue = companyData.value?.currentPrice
     
-    if (result && !('error' in result) && result.intrinsicValue && currentPriceValue) {
+    if (isAdvancedDcfSuccess(result) && result.intrinsicValue && currentPriceValue) {
       const advDcfScenarios = generateScenariosFromAdvancedDcf(
-        result as any,
+        result,
         currentPriceValue,
         inputs.value.projectionYears
       )

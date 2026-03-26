@@ -16,6 +16,10 @@ import logger from '../services/logger'
 
 const router = Router()
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 /**
  * GET /api/subscription/config
  * Get Stripe publishable key for frontend
@@ -53,9 +57,9 @@ router.post('/checkout', authenticate(true), async (req: Request, res: Response)
       sessionId: session.id,
       url: session.url
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Subscription] Checkout error:', error)
-    res.status(500).json({ error: error.message || 'Failed to create checkout session' })
+    res.status(500).json({ error: getErrorMessage(error) || 'Failed to create checkout session' })
   }
 })
 
@@ -74,9 +78,9 @@ router.post('/portal', authenticate(true), async (req: Request, res: Response) =
 
     logger.info(`[Subscription] Created portal session for user ${userId}`)
     res.json({ url })
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Subscription] Portal error:', error)
-    res.status(500).json({ error: error.message || 'Failed to create portal session' })
+    res.status(500).json({ error: getErrorMessage(error) || 'Failed to create portal session' })
   }
 })
 
@@ -93,9 +97,9 @@ router.post('/cancel', authenticate(true), async (req: Request, res: Response) =
 
     logger.info(`[Subscription] User ${userId} canceled subscription`)
     res.json({ message: 'Subscription will be canceled at the end of the billing period' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Subscription] Cancel error:', error)
-    res.status(500).json({ error: error.message || 'Failed to cancel subscription' })
+    res.status(500).json({ error: getErrorMessage(error) || 'Failed to cancel subscription' })
   }
 })
 
@@ -112,9 +116,9 @@ router.post('/resume', authenticate(true), async (req: Request, res: Response) =
 
     logger.info(`[Subscription] User ${userId} resumed subscription`)
     res.json({ message: 'Subscription resumed successfully' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Subscription] Resume error:', error)
-    res.status(500).json({ error: error.message || 'Failed to resume subscription' })
+    res.status(500).json({ error: getErrorMessage(error) || 'Failed to resume subscription' })
   }
 })
 

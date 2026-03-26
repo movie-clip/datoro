@@ -24,7 +24,40 @@ interface ErrorLogData {
   userAgent?: string
   authenticatedUserId?: string
   severity?: string
-  context?: any
+  context?: unknown
+}
+
+interface SearchHistoryItem {
+  ticker: string
+  query: string | null
+  source: string
+  createdAt: Date
+}
+
+interface DailyAnalyticsRecord {
+  date: Date
+  totalRequests: number
+  uniqueUsers: number
+  cacheHitRate: number
+  avgResponseTime: number
+  errorRate: number
+  topTicker: string | null
+  topEndpoint: string | null
+  updatedAt: Date
+}
+
+interface ErrorSummary {
+  errorCode: string
+  message: string
+  endpoint: string | null
+  ticker: string | null
+  count: number
+  firstSeen: Date
+  lastSeen: Date
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 /**
@@ -98,7 +131,7 @@ export function getPrismaClient(): PrismaClient {
       logger.info('[Database] Prisma client initialized');
       logger.info(`[Database] Worker PID: ${process.pid}`);
       
-      const poolConfig = getPoolConfig() as any
+      const poolConfig = getPoolConfig()
       logger.info('[Database] Connection pool:')
       logger.info(`  - Provider: ${poolConfig.provider}`)
       logger.info(`  - Per worker: ${poolConfig.connectionsPerWorker}`)
@@ -156,9 +189,9 @@ async function _executeWithTimeout(queryFn: (db: PrismaClient) => Promise<unknow
     // Set transaction-level timeout
     await db.$executeRaw`SET LOCAL statement_timeout = ${timeoutMs}`;
     return await queryFn(db);
-  } catch (_error: any) {
-    if (_error.message?.includes('statement timeout')) {
-      logger.error(`[Database] Query timeout after ${timeoutMs}ms:`, _error.message);
+  } catch (_error: unknown) {
+    if (getErrorMessage(_error).includes('statement timeout')) {
+      logger.error(`[Database] Query timeout after ${timeoutMs}ms:`, getErrorMessage(_error));
       throw new Error(`Database query exceeded ${timeoutMs}ms timeout. Try optimizing the query or adding indexes.`);
     }
     throw _error;
@@ -223,7 +256,7 @@ export async function findOrCreateUser(ipAddress: string, userAgent: string | nu
           }
         });
         return newUser;
-      } catch (_createError: any) {
+      } catch (_createError: unknown) {
         // If creation fails (duplicate), try finding again
         // This handles edge case where another transaction created the user
         const retryUser = await tx.user.findFirst({
@@ -245,8 +278,8 @@ export async function findOrCreateUser(ipAddress: string, userAgent: string | nu
     });
     
     return user;
-  } catch (_error: any) {
-    logger.error('[Database] Error finding/creating user:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error finding/creating user:', getErrorMessage(_error));
     throw _error;
   }
 }
@@ -314,8 +347,8 @@ export async function trackSearch(
     });
     
     logger.info(`[Database] Tracked search: ${normalizedTicker} from ${authenticatedUserId ? 'authenticated user' : ipAddress}`);
-  } catch (_error: any) {
-    logger.error('[Database] Error tracking search:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error tracking search:', getErrorMessage(_error));
     // Don't throw - tracking failures shouldn't break app
   }
 }
@@ -327,7 +360,7 @@ export async function trackSearch(
  * @param {number} limit - Number of results (default 10)
  * @returns {Promise<Array>} Recent searches
  */
-export async function getUserSearchHistory(ipAddress: string, limit = 10): Promise<any[]> {
+export async function getUserSearchHistory(ipAddress: string, limit = 10): Promise<SearchHistoryItem[]> {
   const db = getPrismaClient();
   
   try {
@@ -353,8 +386,8 @@ export async function getUserSearchHistory(ipAddress: string, limit = 10): Promi
     });
     
     return user?.searches || [];
-  } catch (_error: any) {
-    logger.error('[Database] Error fetching search history:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error fetching search history:', getErrorMessage(_error));
     return [];
   }
 }
@@ -392,8 +425,8 @@ export async function getPopularTickers(limit = 10, daysAgo = 30): Promise<unkno
         lastSearched: true
       }
     });
-  } catch (_error: any) {
-    logger.error('[Database] Error fetching popular tickers:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error fetching popular tickers:', getErrorMessage(_error));
     return [];
   }
 }
@@ -418,8 +451,8 @@ export async function updateTickerCompanyName(ticker: string, companyName: strin
         searchCount: 0 // Will be incremented by trackSearch
       }
     });
-  } catch (_error: any) {
-    logger.error('[Database] Error updating company name:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error updating company name:', getErrorMessage(_error));
   }
 }
 
@@ -473,8 +506,8 @@ export async function trackApiRequest(data: ApiRequestData): Promise<void> {
         errorCode: data.errorCode || null
       }
     });
-  } catch (_error: any) {
-    logger.error('[Database] Error tracking API request:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error tracking API request:', getErrorMessage(_error));
     // Don't throw - tracking failures shouldn't break app
   }
 }
@@ -524,8 +557,8 @@ export async function getApiRequestStats(hours = 24): Promise<unknown> {
       errorRate: total > 0 ? ((errors / total) * 100).toFixed(2) + '%' : '0%',
       avgResponseTime: avgResponseTime + 'ms'
     };
-  } catch (_error: any) {
-    logger.error('[Database] Error fetching API stats:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error fetching API stats:', getErrorMessage(_error));
     return null;
   }
 }
@@ -585,7 +618,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
       endpointCounts[r.endpoint] = (endpointCounts[r.endpoint] || 0) + 1;
     });
     const topEndpoint = (Object.entries(endpointCounts)
-      .sort((_a: any, _b: any) => _b[1] - _a[1])[0]?.[0] as string) || null;
+      .sort((a, b) => b[1] - a[1])[0]?.[0] as string) || null;
     
     // Find top ticker
     const searches = await db.search.findMany({
@@ -603,7 +636,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
       tickerCounts[s.ticker] = (tickerCounts[s.ticker] || 0) + 1;
     });
     const topTicker = (Object.entries(tickerCounts)
-      .sort((_a: any, _b: any) => _b[1] - _a[1])[0]?.[0] as string) || null;
+      .sort((a, b) => b[1] - a[1])[0]?.[0] as string) || null;
     
     // Upsert daily analytics
     await db.dailyAnalytics.upsert({
@@ -631,8 +664,8 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
     });
     
     logger.info(`[Database] Updated daily analytics for ${startOfDay.toDateString()}`);
-  } catch (_error: any) {
-    logger.error('[Database] Error updating daily analytics:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error updating daily analytics:', getErrorMessage(_error));
   }
 }
 
@@ -642,7 +675,7 @@ export async function updateDailyAnalytics(date: Date = new Date()): Promise<voi
  * @param {number} days - Number of days (default 30)
  * @returns {Promise<Array>} Daily analytics
  */
-export async function getDailyAnalytics(days = 30): Promise<any[]> {
+export async function getDailyAnalytics(days = 30): Promise<DailyAnalyticsRecord[]> {
   const db = getPrismaClient();
   
   try {
@@ -656,8 +689,8 @@ export async function getDailyAnalytics(days = 30): Promise<any[]> {
       },
       orderBy: { date: 'desc' }
     });
-  } catch (_error: any) {
-    logger.error('[Database] Error fetching daily analytics:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error fetching daily analytics:', getErrorMessage(_error));
     return [];
   }
 }
@@ -717,8 +750,8 @@ export async function logError(data: ErrorLogData): Promise<void> {
         }
       });
     }
-  } catch (_error: any) {
-    logger.error('[Database] Error logging error:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error logging error:', getErrorMessage(_error));
     // Don't throw - error logging failures shouldn't break app
   }
 }
@@ -730,7 +763,7 @@ export async function logError(data: ErrorLogData): Promise<void> {
  * @param {boolean} unresolvedOnly - Only unresolved errors (default true)
  * @returns {Promise<Array>} Recent errors
  */
-export async function getRecentErrors(limit = 20, unresolvedOnly = true): Promise<any[]> {
+export async function getRecentErrors(limit = 20, unresolvedOnly = true): Promise<ErrorSummary[]> {
   const db = getPrismaClient();
   
   try {
@@ -748,8 +781,8 @@ export async function getRecentErrors(limit = 20, unresolvedOnly = true): Promis
         lastSeen: true
       }
     });
-  } catch (_error: any) {
-    logger.error('[Database] Error fetching recent errors:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error fetching recent errors:', getErrorMessage(_error));
     return [];
   }
 }
@@ -780,8 +813,8 @@ export async function resolveError(errorCode: string, endpoint: string | null = 
     });
     
     logger.info(`[Database] Resolved error: ${errorCode}`);
-  } catch (_error: any) {
-    logger.error('[Database] Error tracking search:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error tracking search:', getErrorMessage(_error));
   }
 }
 
@@ -802,9 +835,9 @@ export async function checkDatabaseHealth(): Promise<unknown> {
     await db.$queryRaw`SELECT 1`;
     const latency = Date.now() - start
     return { status: 'healthy', latency };
-  } catch (_error: any) {
-    logger.error('[Database] Health check failed:', _error.message);
-    return { status: 'unhealthy', latency: 0, error: _error.message };
+  } catch (_error: unknown) {
+    logger.error('[Database] Health check failed:', getErrorMessage(_error));
+    return { status: 'unhealthy', latency: 0, error: getErrorMessage(_error) };
   }
 }
 
@@ -862,8 +895,8 @@ export async function cleanupOldData(daysToKeep = 90): Promise<unknown> {
       apiRequests: deletedRequests.count,
       errors: deletedErrors.count
     };
-  } catch (_error: any) {
-    logger.error('[Database] Error during cleanup:', _error.message);
+  } catch (_error: unknown) {
+    logger.error('[Database] Error during cleanup:', getErrorMessage(_error));
     return { searchHistory: 0, apiRequests: 0, errors: 0 };
   }
 }

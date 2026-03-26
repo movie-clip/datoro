@@ -38,9 +38,9 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
   const { batchData, loading, currentTicker, error: batchError } = storeToRefs(tickerStore)
 
   // Memoized data extraction - single source of truth
-  const insiderData = computed(() => getInsiderTradingFromBatch(batchData.value))
+  const insiderData = computed(() => getInsiderTradingFromBatch(batchData.value ?? null))
   
-  const priceData = computed(() => getPriceSeriesFromBatch(batchData.value))
+  const priceData = computed(() => getPriceSeriesFromBatch(batchData.value ?? null))
 
   // Compute series for ECharts (price line + insider bars)
   const series = computed<SeriesItem[]>(() => {
@@ -58,7 +58,7 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
         smooth: true,
         lineStyle: { width: 2 },
         showSymbol: false,
-        tooltip: { show: false } as any // Hide price from tooltip
+        tooltip: { show: false } // Hide price from tooltip
       })
     }
     
@@ -103,7 +103,11 @@ export function useInsiderTradingSeries(): UseInsiderTradingSeriesReturn {
       // Keep original title, show error in message
       title.value = 'Price & Insider Trading'
       message.value = 'Failed to load data'
-      error.value = batchError.value
+      error.value = batchError.value instanceof Error
+        ? batchError.value.message
+        : typeof batchError.value === 'string'
+          ? batchError.value
+          : 'Failed to load data'
     } else if (!priceData.value.length && !insiderData.value.net?.length && !loading.value) {
       title.value = `Price & Insider Trading — ${t}`
       message.value = '' // Use emptyDataMessage instead

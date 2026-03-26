@@ -72,6 +72,12 @@ import VChart from 'vue-echarts'
 import type { HeatmapNode } from '../../composables/useMarketPerformance'
 import type { SP500Performance } from '../../services/market/marketPerformanceService'
 
+interface TreemapTooltipParams {
+  name: string
+  value: number
+  data: HeatmapNode
+}
+
 // Register ECharts components
 use([
   CanvasRenderer,
@@ -104,7 +110,7 @@ const chartOption = computed(() => {
   return {
     tooltip: {
       trigger: 'item',
-      formatter: (params: any) => {
+      formatter: (params: TreemapTooltipParams) => {
         const { name, value, data } = params
         const performance = data.performance || 0
         const perfStr = performance >= 0 ? `+${performance.toFixed(2)}%` : `${performance.toFixed(2)}%`
@@ -153,7 +159,7 @@ const chartOption = computed(() => {
         label: {
           show: true,
           position: 'inside',
-          formatter: (params: any) => {
+          formatter: (params: TreemapTooltipParams) => {
             const { name, data } = params
             const performance = data.performance || 0
             const perfStr = performance >= 0 ? `+${performance.toFixed(1)}%` : `${performance.toFixed(1)}%`

@@ -191,6 +191,11 @@ interface MetricRow {
   rawValue: number | null
 }
 
+interface MetricRowClickPayload {
+  metricKey: string
+  component: Component
+}
+
 // Build table rows from metrics
 const metricsRows = computed(() => {
   if (!batchData.value) return []
@@ -205,7 +210,7 @@ const metricsRows = computed(() => {
   } as MetricRow))
 })
 
-const handleRowClick = (row: any): void => {
+const handleRowClick = (row: MetricRowClickPayload): void => {
   selectedMetric.value = {
     key: row.metricKey,
     component: row.component

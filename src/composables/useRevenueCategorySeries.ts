@@ -20,6 +20,14 @@ interface SeriesDataPoint {
   itemStyle: {
     color: string
   }
+  yAxisIndex?: number
+  type?: 'line'
+  smooth?: boolean
+  showSymbol?: boolean
+  lineStyle?: {
+    width: number
+    color: string
+  }
 }
 
 export interface UseRevenueCategorySeriesReturn {
@@ -276,8 +284,16 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
         stack: '',
         itemStyle: {
           color: '#9333ea' // Purple color
+        },
+        type: 'line',
+        yAxisIndex: 1,
+        smooth: true,
+        showSymbol: false,
+        lineStyle: {
+          width: 3,
+          color: '#9333ea'
         }
-      } as any)
+      })
     }
 
     return result

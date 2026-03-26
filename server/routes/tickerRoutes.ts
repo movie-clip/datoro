@@ -52,6 +52,25 @@ interface PrefetchedStaticCache {
   source: 'memory' | 'redis' | null
 }
 
+interface StaticBatchPayload {
+  data?: Record<string, unknown>
+  timestamp?: string
+}
+
+type StaticTickerDataResponse = TickerDataResponse & { splitMode: 'static' }
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function getCompanyNameFromProfile(profile: unknown): string | null {
+  if (!Array.isArray(profile) || profile.length === 0) return null
+  const first = profile[0]
+  if (!first || typeof first !== 'object' || !('companyName' in first)) return null
+  const companyName = (first as { companyName?: unknown }).companyName
+  return typeof companyName === 'string' ? companyName : null
+}
+
 function isCachedBatchEntry(value: unknown): value is CachedBatchEntry {
   if (!value || typeof value !== 'object') return false
   const v = value as Record<string, unknown>
@@ -140,13 +159,13 @@ async function precheckStaticCache(req: Request, _res: Response, next: NextFunct
   return next()
 }
 
-export function toStaticBatchPayload(payload: any): any {
-  if (!payload || typeof payload !== 'object') return payload
-  const data = payload.data && typeof payload.data === 'object' ? payload.data : {}
+export function toStaticBatchPayload(payload: TickerDataResponse): StaticTickerDataResponse {
+  const typedPayload = payload as TickerDataResponse & StaticBatchPayload & Record<string, unknown>
+  const data = typedPayload.data && typeof typedPayload.data === 'object' ? typedPayload.data : {}
   const { quote: _quote, ...staticData } = data
 
   return {
-    ...payload,
+    ...typedPayload,
     data: staticData,
     splitMode: 'static'
   }
@@ -260,7 +279,7 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
 
     // Keep dynamic quote data fresh while preserving long-lived static batch cache.
     // If cached batch is older than quote TTL, refresh quote only (cheap call) instead of full batch.
-    const batchPayload = cacheEntry.data as any
+    const batchPayload = cacheEntry.data as StaticBatchPayload
     const batchTimestamp = batchPayload?.timestamp ? Date.parse(batchPayload.timestamp) : NaN
     const cachedAtTimestamp = Date.parse(cacheEntry.cachedAt)
     const hasQuoteArray = Array.isArray(batchPayload?.data?.quote)
@@ -284,6 +303,7 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
       )
 
       if (freshQuote && freshQuote.length > 0) {
+        batchPayload.data = batchPayload.data || {}
         batchPayload.data.quote = freshQuote
         batchPayload.timestamp = new Date().toISOString()
         quoteRefreshed = true
@@ -328,8 +348,8 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
     // Track in database (truly async - don't block response)
     if (isDatabaseAvailable) {
       setImmediate(() => {
-        trackSearch(req.ip!, t, req.headers['user-agent'] || '', 'batch').catch((err: any) => {
-          logger.error('[Database] Search tracking error:', err.message)
+        trackSearch(req.ip!, t, req.headers['user-agent'] || '', 'batch').catch((err: unknown) => {
+          logger.error('[Database] Search tracking error:', getErrorMessage(err))
         })
       })
     }
@@ -360,7 +380,7 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
     CacheTTL.COMPANY_PROFILE
   )
 
-  const result = cachedEntry.data as any
+  const result = cachedEntry.data as TickerDataResponse
   const dataHash = cachedEntry.etag
   const etag = `"${API_VERSION}-${dataHash}"`
   logger.debug(`[Batch] ${t} (${mode}) → Cached with key: ${cacheKey}, TTL: ${CacheTTL.COMPANY_PROFILE}s`)
@@ -375,14 +395,15 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
   // Track in database (truly async - use setImmediate to not block response)
   if (isDatabaseAvailable) {
     setImmediate(() => {
-      trackSearch(req.ip!, t, req.headers['user-agent'] || '', 'batch').catch((err: any) => {
-        logger.error('[Database] Search tracking error:', err.message)
+      trackSearch(req.ip!, t, req.headers['user-agent'] || '', 'batch').catch((err: unknown) => {
+        logger.error('[Database] Search tracking error:', getErrorMessage(err))
       })
       
       // Update company name if available
-      if (result.data.profile && Array.isArray(result.data.profile) && result.data.profile[0]?.companyName) {
-        updateTickerCompanyName(t, result.data.profile[0].companyName).catch((err: any) => {
-          logger.error('[Database] Company name update error:', err.message)
+      const companyName = getCompanyNameFromProfile(result.data.profile)
+      if (companyName) {
+        updateTickerCompanyName(t, companyName).catch((err: unknown) => {
+          logger.error('[Database] Company name update error:', getErrorMessage(err))
         })
       }
       
@@ -394,8 +415,8 @@ router.get('/:ticker', precheckTickerCache, fmpLimiter, globalFmpLimiter, asyncH
         responseTime: Date.now() - startTime,
         cached: false,
         ipAddress: req.ip!
-      }).catch((err: any) => {
-        logger.error('[Database] API tracking error:', err.message)
+      }).catch((err: unknown) => {
+        logger.error('[Database] API tracking error:', getErrorMessage(err))
       })
     })
   }
@@ -439,7 +460,7 @@ router.get('/:ticker/static', precheckStaticCache, fmpLimiter, globalFmpLimiter,
         ? await fetchTickerPriority(t, FMP_API_KEY, { includeQuote: false })
         : await fetchTickerBatch(t, FMP_API_KEY, { includeQuote: false })
 
-      return toStaticBatchPayload(full)
+      return toStaticBatchPayload(full as TickerDataResponse)
     },
     CacheTTL.COMPANY_PROFILE
   )

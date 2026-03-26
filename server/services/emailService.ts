@@ -15,6 +15,10 @@ import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 import logger from './logger.js'
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 // Email configuration from environment
 const EMAIL_CONFIG = {
   provider: process.env.EMAIL_PROVIDER || 'smtp', // 'smtp', 'sendgrid', 'ses'
@@ -318,11 +322,11 @@ export async function sendVerificationEmail(
       messageId: info.messageId
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[Email] Failed to send verification email:', error)
     return {
       success: false,
-      error: error.message
+      error: getErrorMessage(error)
     }
   }
 }

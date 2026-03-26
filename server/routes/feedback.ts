@@ -18,19 +18,39 @@ import logger from '../services/logger.js'
 
 const router = express.Router()
 
+interface MailTransport {
+  sendMail(options: {
+    from?: string
+    to: string
+    replyTo: string
+    subject: string
+    text: string
+  }): Promise<unknown>
+}
+
+interface MailerLike {
+  createTransport(options: {
+    service: string
+    auth: {
+      user?: string
+      pass?: string
+    }
+  }): MailTransport
+}
+
 // Email configuration (injected from server.ts)
 let FEEDBACK_EMAIL = 'datoro.info@gmail.com'
-let nodemailer: any = null
+let nodemailer: MailerLike | null = null
 
 /**
  * Initialize route with dependencies
  */
 function initFeedbackRoutes(deps: { 
   feedbackEmail?: string
-  emailService?: any
+  emailService?: MailerLike
 }) {
   FEEDBACK_EMAIL = deps.feedbackEmail || 'datoro@gmail.com'
-  nodemailer = deps.emailService
+  nodemailer = deps.emailService || null
 }
 
 /**
@@ -130,7 +150,7 @@ IP: ${req.ip}
         message: 'Feedback submitted successfully. Thank you!' 
       })
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('[Feedback] Failed to send email:', error)
       
       // Still return success to user (don't expose email errors)

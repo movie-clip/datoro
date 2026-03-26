@@ -24,7 +24,7 @@ let initialized = false
 
 interface CaptureContext {
   tags?: Record<string, string>
-  extra?: Record<string, any>
+  extra?: Record<string, unknown>
   level?: Sentry.SeverityLevel
 }
 
@@ -77,7 +77,7 @@ export function initSentry(): void {
         
         // Don't send certain error types in development
         if (environment === 'development' && hint.originalException) {
-          const error = hint.originalException as any
+          const error = hint.originalException as Record<string, unknown>
           if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
             return null // Don't send connection errors in dev
           }
@@ -136,11 +136,13 @@ export function tracingHandler() {
 export function errorHandler(): ErrorRequestHandler {
   // Return no-op middleware if not initialized
   if (!initialized) {
-    return (err: any, req: Request, res: Response, next: NextFunction) => next(err)
+    return (err: unknown, req: Request, res: Response, next: NextFunction) => next(err)
   }
   
   // Use Sentry's Express error handler
-  return (err: any, req: Request, res: Response, next: NextFunction) => {
+  return (err: unknown, req: Request, res: Response, next: NextFunction) => {
+    const normalizedError = err && typeof err === 'object' ? err as Record<string, unknown> : {}
+
     // Capture error in Sentry
     Sentry.captureException(err, {
       tags: {
@@ -148,8 +150,8 @@ export function errorHandler(): ErrorRequestHandler {
         method: req.method,
       },
       extra: {
-        statusCode: err.statusCode || 500,
-        errorCode: err.code,
+        statusCode: typeof normalizedError.statusCode === 'number' ? normalizedError.statusCode : 500,
+        errorCode: typeof normalizedError.code === 'string' ? normalizedError.code : undefined,
       },
     })
     
@@ -191,7 +193,7 @@ export function captureMessage(
 /**
  * Add breadcrumb for debugging
  */
-export function addBreadcrumb(message: string, category: string, data: Record<string, any> = {}): void {
+export function addBreadcrumb(message: string, category: string, data: Record<string, unknown> = {}): void {
   if (!initialized) return
   
   Sentry.addBreadcrumb({
@@ -228,7 +230,7 @@ export function setTags(tags: Record<string, string>): void {
 /**
  * Start a transaction for performance monitoring
  */
-export function startTransaction(_name: string, _op: string): any | null {
+export function startTransaction(_name: string, _op: string): unknown | null {
   if (!initialized) return null
   
   // In newer versions of Sentry, use startSpan instead

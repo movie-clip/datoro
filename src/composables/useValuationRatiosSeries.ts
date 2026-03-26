@@ -1,6 +1,7 @@
 import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
+import type { FMPRatios, FMPKeyMetrics } from '../types'
 
 type Period = 'annual' | 'quarterly'
 
@@ -13,6 +14,21 @@ interface SeriesItem {
   lineStyle?: { width?: number; color?: string }
   itemStyle?: { color: string }
   showSymbol?: boolean
+}
+
+interface RawRatioPoint {
+  date: number
+  peRatio: number
+  psRatio: number
+  roic: number
+  grossMargin: number
+  netMargin: number
+}
+
+function getErrorMessage(error: unknown): string | null {
+  if (typeof error === 'string') return error
+  if (error instanceof Error) return error.message
+  return null
 }
 
 type RatioKey = 'pe' | 'ps' | 'roic' | 'grossMargin' | 'netMargin'
@@ -59,27 +75,27 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
     if (!ratios || !Array.isArray(ratios)) return []
 
     return ratios
-      .map((r: any) => {
+      .map((r: FMPRatios): RawRatioPoint | null => {
         if (!r.date) return null
         
         // Find matching keyMetrics entry for ROIC
-        const matchingMetrics = keyMetrics?.find((m: any) => m.date === r.date)
+        const matchingMetrics = keyMetrics?.find((m: FMPKeyMetrics) => m.date === r.date)
         
         return {
           date: new Date(r.date).getTime(),
           peRatio: Number(r.priceEarningsRatioTTM || r.priceEarningsRatio || 0),
           psRatio: Number(r.priceToSalesRatioTTM || r.priceToSalesRatio || 0),
-          roic: Number((matchingMetrics as any)?.roic || 0) * 100, // ROIC as percentage
+          roic: Number(matchingMetrics?.roic || 0) * 100, // ROIC as percentage
           grossMargin: Number(r.grossProfitMargin || 0) * 100, // Convert to percentage
           netMargin: Number(r.netProfitMargin || 0) * 100 // Convert to percentage
         }
       })
-      .filter((point): point is any => point !== null)
+      .filter((point): point is RawRatioPoint => point !== null)
       .sort((a, b) => a.date - b.date)
   })
 
   const error = computed<string | null>(() => {
-    if (batchError.value) return batchError.value
+    if (batchError.value) return getErrorMessage(batchError.value)
     // Don't show error during initial loading
     if (loading.value) return null
     const t = (currentTicker.value || '').toUpperCase()
@@ -102,10 +118,7 @@ export function useValuationRatiosSeries(): UseValuationRatiosSeriesReturn {
     }
     
     const result: SeriesItem[] = []
-    
-    // Find the earliest date across all data to align all series
-    const earliestDate = rawData.value.length > 0 ? rawData.value[0].date : 0
-    
+
     for (const ratioKey of selectedRatios.value) {
       const config = ratioConfig[ratioKey]
       const data = rawData.value

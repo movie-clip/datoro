@@ -25,6 +25,13 @@ import { VALIDATION } from '../config/constants.js'
 
 const router = Router()
 
+interface WatchlistRouteItem {
+  id: string
+  ticker: string
+  addedAt: Date
+  displayOrder: number | null
+}
+
 /**
  * GET /api/watchlists
  * Get all watchlists for authenticated user
@@ -53,7 +60,7 @@ router.get(
             isDefault: w.isDefault,
             createdAt: w.createdAt,
             updatedAt: w.updatedAt,
-            items: (w.items || []).map((item: any) => ({
+            items: (w.items || []).map((item: WatchlistRouteItem) => ({
               id: item.id,
               ticker: item.ticker,
               addedAt: item.addedAt,
@@ -62,7 +69,7 @@ router.get(
           }))
         }
       })
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlists] Error fetching watchlists:', _error)
       res.status(500).json({
         success: false,
@@ -135,7 +142,7 @@ router.post(
           }
         }
       })
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlists] Error creating watchlist:', _error)
       res.status(500).json({
         success: false,
@@ -217,7 +224,7 @@ router.put(
           }
         }
       })
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlists] Error updating watchlist:', _error)
       res.status(500).json({
         success: false,
@@ -287,7 +294,7 @@ router.delete(
           watchlistId: id
         }
       })
-    } catch (_error: any) {
+    } catch (_error: unknown) {
       logger.error('[Watchlists] Error deleting watchlist:', _error)
       res.status(500).json({
         success: false,

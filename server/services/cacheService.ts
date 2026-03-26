@@ -31,12 +31,13 @@ interface CacheResult<T> {
 }
 
 type FetchFunction<T> = () => Promise<T>
+type CacheValue = string | number | boolean | object
 
 /**
  * Fast hash function for cache keys (faster than JSON.stringify + MD5)
  * Uses simple string concatenation with separator for simple objects
  */
-function _fastHash(value: any): string {
+function _fastHash(value: unknown): string {
   if (typeof value === 'string') {
     return value
   }
@@ -49,8 +50,9 @@ function _fastHash(value: any): string {
       return value.map(_fastHash).join('|')
     }
     // Sort keys for consistent hashing
-    const keys = Object.keys(value).sort()
-    return keys.map(k => `${k}:${_fastHash(value[k])}`).join('|')
+    const record = value as Record<string, unknown>
+    const keys = Object.keys(record).sort()
+    return keys.map(k => `${k}:${_fastHash(record[k])}`).join('|')
   }
   return String(value)
 }
@@ -80,11 +82,11 @@ class CacheService {
   private redisEnabled: boolean
   private redis: Redis | null
   private connected: boolean
-  private memoryCache: LRUCache<string, any>
+  private memoryCache: LRUCache<string, CacheValue>
   public stats: CacheStats
   
   // Request coalescing to prevent cache stampede
-  private pendingFetches: Map<string, Promise<any>>
+  private pendingFetches: Map<string, Promise<CacheValue>>
 
   constructor(options: CacheServiceOptions = {}) {
     this.redisUrl = options.redisUrl || process.env.REDIS_URL || null
@@ -97,7 +99,7 @@ class CacheService {
     this.memoryCache = new LRUCache({
       max: options.maxMemoryItems || 500,
       maxSize: options.maxMemorySize || MEMORY_LIMITS.CACHE_SIZE,
-      sizeCalculation: (value: any) => {
+      sizeCalculation: (value: CacheValue) => {
         return JSON.stringify(value).length
       },
       ttl: options.memoryTtl || CACHE_TTL.MEMORY,
@@ -178,7 +180,7 @@ class CacheService {
   /**
    * Generate hash for complex objects (for cache keys)
    */
-  hashObject(obj: any): string {
+  hashObject(obj: unknown): string {
     const str = JSON.stringify(obj)
     return crypto.createHash('md5').update(str).digest('hex').substring(0, 8)
   }
@@ -186,7 +188,7 @@ class CacheService {
   /**
    * Get from cache (checks L1 memory, then L2 Redis)
    */
-  async get<T = any>(key: string): Promise<CacheResult<T>> {
+  async get<T = unknown>(key: string): Promise<CacheResult<T>> {
     this.stats.totalRequests++
 
     // Layer 1: Memory cache (fast)
@@ -194,7 +196,7 @@ class CacheService {
     if (memValue !== undefined) {
       this.stats.hits.memory++
       this.stats.hits.total++
-      return { data: memValue, source: 'memory' }
+      return { data: memValue as T, source: 'memory' }
     }
 
     // Layer 2: Redis cache (slower but persistent)
@@ -205,11 +207,13 @@ class CacheService {
           const parsed = JSON.parse(redisValue)
           
           // Promote to L1 cache
-          this.memoryCache.set(key, parsed)
+          if (parsed !== null && parsed !== undefined) {
+            this.memoryCache.set(key, parsed as CacheValue)
+          }
           
           this.stats.hits.redis++
           this.stats.hits.total++
-          return { data: parsed, source: 'redis' }
+          return { data: parsed as T, source: 'redis' }
         }
       } catch (_error) {
         logger.error('[CacheService] Redis GET error:', (_error as Error).message)
@@ -226,11 +230,13 @@ class CacheService {
    * Set in cache with TTL-based conditional writes
    * Skips write if key exists and has > 50% TTL remaining (reduces Redis writes)
    */
-  async set<T = any>(key: string, value: T, ttlSeconds: number = REDIS_TTL.DEFAULT): Promise<void> {
+  async set<T = unknown>(key: string, value: T, ttlSeconds: number = REDIS_TTL.DEFAULT): Promise<void> {
     this.stats.sets++
 
     // Layer 1: Memory cache (store raw data)
-    this.memoryCache.set(key, value)
+    if (value !== null && value !== undefined) {
+      this.memoryCache.set(key, value as CacheValue)
+    }
 
     // Layer 2: Redis cache with conditional write
     if (this.redisEnabled && this.connected && this.redis) {
@@ -263,11 +269,13 @@ class CacheService {
    * Use this for cache writes that shouldn't block request response
    * Skips TTL check - always writes to avoid extra Redis network call
    */
-  setFast<T = any>(key: string, value: T, ttlSeconds: number = REDIS_TTL.DEFAULT): void {
+  setFast<T = unknown>(key: string, value: T, ttlSeconds: number = REDIS_TTL.DEFAULT): void {
     this.stats.sets++
 
     // Layer 1: Memory cache (instant)
-    this.memoryCache.set(key, value)
+    if (value !== null && value !== undefined) {
+      this.memoryCache.set(key, value as CacheValue)
+    }
 
     // Layer 2: Redis cache (fire-and-forget - don't block caller)
     if (this.redisEnabled && this.connected && this.redis) {
@@ -290,7 +298,7 @@ class CacheService {
   /**
    * Generate ETag from data (MD5 hash)
    */
-  generateETag(data: any): string {
+  generateETag(data: unknown): string {
     return crypto.createHash('md5')
       .update(JSON.stringify(data))
       .digest('hex')
@@ -304,12 +312,12 @@ class CacheService {
    * - Request coalescing: Multiple simultaneous requests for same key share one fetch
    * - Probabilistic early expiration: Randomly refresh before TTL expires on popular keys
    */
-  async getOrFetch<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds: number = REDIS_TTL.DEFAULT): Promise<T> {
+  async getOrFetch<T = unknown>(key: string, fetchFn: FetchFunction<T>, ttlSeconds: number = REDIS_TTL.DEFAULT): Promise<T> {
     // Check if there's already a pending fetch for this key (request coalescing)
     const pendingFetch = this.pendingFetches.get(key)
     if (pendingFetch) {
       logger.debug(`[CacheService] Coalescing request for key: ${key}`)
-      return pendingFetch
+      return pendingFetch as Promise<T>
     }
     
     const cached = await this.get<T>(key)
@@ -346,7 +354,7 @@ class CacheService {
     })()
     
     // Store pending fetch for coalescing
-    this.pendingFetches.set(key, fetchPromise)
+    this.pendingFetches.set(key, fetchPromise as Promise<CacheValue>)
     
     return fetchPromise
   }
@@ -354,7 +362,7 @@ class CacheService {
   /**
    * Refresh cache in background (for probabilistic early expiration)
    */
-  private async refreshInBackground<T = any>(key: string, fetchFn: FetchFunction<T>, ttlSeconds: number): Promise<void> {
+  private async refreshInBackground<T = unknown>(key: string, fetchFn: FetchFunction<T>, ttlSeconds: number): Promise<void> {
     try {
       const freshData = await fetchFn()
       if (freshData !== null && freshData !== undefined) {

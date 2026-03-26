@@ -67,6 +67,17 @@ import { useRevenueCategorySeries } from '../../composables/useRevenueCategorySe
 import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
+interface SeriesWithOptionalAxis {
+  name?: string
+  data?: Array<[number, number] | [number, number, string, string]>
+  yAxisIndex?: number
+  [key: string]: unknown
+}
+
+interface ColorCallbackParams {
+  dataIndex: number
+}
+
 interface Props {
   forceExpanded?: boolean
 }
@@ -121,7 +132,7 @@ const displaySeries = computed(() => {
     // Ensure series are clean - no yAxisIndex properties
     return series.value.map(s => {
       if (typeof s === 'object' && s !== null && !Array.isArray(s)) {
-        const { yAxisIndex, ...cleanSeries } = s as any
+        const { yAxisIndex, ...cleanSeries } = s as SeriesWithOptionalAxis
         return cleanSeries
       }
       return s
@@ -147,9 +158,9 @@ const displaySeries = computed(() => {
       yAxisIndex: 0,
       itemStyle: {
         // Color each bar based on corresponding gross margin value
-        color: (params: any) => {
+        color: (params: ColorCallbackParams) => {
           const idx = params.dataIndex
-          const marginPoint = (marginSeries.data as any)[idx]
+          const marginPoint = marginSeries.data[idx]
           const marginPercent = marginPoint ? marginPoint[1] : 0
           return getQualityColor(marginPercent)
         }
@@ -179,7 +190,7 @@ const compactDisplaySeries = computed(() => {
     // Ensure compact series are clean - no yAxisIndex properties
     return compactSeries.value.map(s => {
       if (typeof s === 'object' && s !== null && !Array.isArray(s)) {
-        const { yAxisIndex, ...cleanSeries } = s as any
+        const { yAxisIndex, ...cleanSeries } = s as SeriesWithOptionalAxis
         return cleanSeries
       }
       return s

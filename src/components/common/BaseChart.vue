@@ -236,12 +236,12 @@ interface ViewModeOption {
 interface SeriesDataPoint {
   data?: Array<[number, number] | [number, number, string, string]>  // [timestamp, value] or [timestamp, value, fiscalPeriod, fiscalYear]
   name?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface Props {
   title?: string
-  series?: Array<[number, number] | [number, number, string, string]> | SeriesDataPoint[] | Record<string, any>
+  series?: Array<[number, number] | [number, number, string, string]> | SeriesDataPoint[] | Record<string, unknown>
   compactSeries?: Array<[number, number] | [number, number, string, string]> | SeriesDataPoint[] | null
   kind?: ChartKind
   yFormat?: YFormat

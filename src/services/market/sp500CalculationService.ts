@@ -10,6 +10,19 @@ export interface PriceDataPoint {
   price: number
 }
 
+export interface HistoricalPriceRecord {
+  date: string
+  close: number
+}
+
+export interface DataZoomEventPayload {
+  start?: number
+  end?: number
+  startValue?: number
+  endValue?: number
+  batch?: DataZoomEventPayload[]
+}
+
 export interface DateRange {
   start: string // ISO date format YYYY-MM-DD
   end: string
@@ -37,7 +50,7 @@ export interface DataZoomIndices {
  * @param historicalData FMP API response data
  * @returns Array of [timestamp, price] tuples in chronological order
  */
-export function convertToChartFormat(historicalData: any[]): PriceDataPoint[] {
+export function convertToChartFormat(historicalData: HistoricalPriceRecord[]): PriceDataPoint[] {
   if (!historicalData || historicalData.length === 0) {
     return []
   }

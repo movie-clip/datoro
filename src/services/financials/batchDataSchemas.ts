@@ -488,6 +488,26 @@ export type IncomeStatementType = z.infer<typeof IncomeStatementSchema>
 export type BalanceSheetType = z.infer<typeof BalanceSheetSchema>
 export type CashFlowStatementType = z.infer<typeof CashFlowStatementSchema>
 
+interface BatchDataFallbackMeta {
+  ticker?: string
+  timestamp?: number
+  fetchDuration?: number
+}
+
+function getBatchDataFallbackMeta(data: unknown): BatchDataFallbackMeta {
+  if (!data || typeof data !== 'object') {
+    return {}
+  }
+
+  const candidate = data as Record<string, unknown>
+
+  return {
+    ticker: typeof candidate.ticker === 'string' ? candidate.ticker : undefined,
+    timestamp: typeof candidate.timestamp === 'number' ? candidate.timestamp : undefined,
+    fetchDuration: typeof candidate.fetchDuration === 'number' ? candidate.fetchDuration : undefined
+  }
+}
+
 /**
  * Validate and sanitize batch data
  * Returns validated data or throws with detailed error information
@@ -497,8 +517,10 @@ export function validateBatchData(data: unknown): BatchDataType {
     return BatchDataSchema.parse(data)
   } catch (_error) {
     if (_error instanceof z.ZodError) {
+      const fallbackMeta = getBatchDataFallbackMeta(data)
+
       console.error('[BatchDataValidation] Validation failed:', {
-        ticker: (data as any)?.ticker,
+        ticker: fallbackMeta.ticker,
         errors: _error.issues.map((e: z.ZodIssue) => ({
           path: e.path.join('.'),
           message: e.message,
@@ -508,11 +530,11 @@ export function validateBatchData(data: unknown): BatchDataType {
       
       // Return a safe default structure instead of throwing
       // This prevents crashes while logging validation issues
-      const ticker = (data as any)?.ticker || 'UNKNOWN'
+      const ticker = fallbackMeta.ticker || 'UNKNOWN'
       return {
         ticker,
-        timestamp: (data as any)?.timestamp || Date.now(),
-        fetchDuration: (data as any)?.fetchDuration || 0,
+        timestamp: fallbackMeta.timestamp || Date.now(),
+        fetchDuration: fallbackMeta.fetchDuration || 0,
         data: {
           profile: [],
           quote: [],
@@ -545,10 +567,11 @@ export function validateBatchData(data: unknown): BatchDataType {
  */
 export function safeParseBatchData(data: unknown) {
   const result = BatchDataSchema.safeParse(data)
+  const fallbackMeta = getBatchDataFallbackMeta(data)
   
   if (!result.success) {
     console.warn('[BatchDataValidation] Safe parse failed:', {
-      ticker: (data as any)?.ticker,
+      ticker: fallbackMeta.ticker,
       errorCount: result.error?.issues?.length || 0
     })
   }

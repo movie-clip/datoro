@@ -78,6 +78,18 @@ import { DEEP_FINDER_CONFIG } from '../../config/deepFinderStocks'
 import { API_ABSOLUTE_URL } from '../../utils/apiConfig'
 import { DEBOUNCE } from '../../config/constants'
 
+interface RichLabelStyle {
+  backgroundColor: {
+    image: string
+  }
+  height: number
+  width: number
+}
+
+interface BarLabelParams {
+  dataIndex: number
+}
+
 // Helper to get full icon URL (ECharts needs absolute URLs in production)
 const getIconUrl = (ticker: string): string => {
   return `${API_ABSOLUTE_URL}/api/company-icon/${ticker}`
@@ -193,7 +205,7 @@ const chartOption = computed<EChartsOption>(() => {
             width: 16 // Reduced from 18 to 16
           }
           return acc
-        }, {} as Record<string, any>)
+        }, {} as Record<string, RichLabelStyle>)
       },
       axisLine: {
         lineStyle: {
@@ -213,7 +225,7 @@ const chartOption = computed<EChartsOption>(() => {
         label: {
           show: true,
           position: 'right',
-          formatter: (params: any) => {
+          formatter: (params: BarLabelParams) => {
             const stock = stocks.value[params.dataIndex]
             if (!stock) return ''
             return `${stock.distance > 0 ? '+' : ''}${stock.distance.toFixed(1)}%`

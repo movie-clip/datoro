@@ -3,10 +3,28 @@ import { getGrowthRates } from '../../services/financials/growthService'
 import { getAllDataPoints, extractYearsFromSeries } from '../../utils/chartDataTransformers'
 import { buildFiscalQuarterMap, formatFiscalQuarter, calculateCalendarQuarter } from '../../utils/fiscalQuarterUtils'
 
+type TimeSeriesPoint = [number, number] | [number, number, string, string]
+
 export interface ChartDataSeries {
-    data?: Array<[number, number] | [number, number, string, string]>
+    data?: TimeSeriesPoint[]
     name?: string
-    [key: string]: any
+    [key: string]: unknown
+}
+
+type ChartSeriesInput = TimeSeriesPoint[] | ChartDataSeries[] | ChartDataSeries | null | undefined
+
+function isChartSeriesObject(value: unknown): value is ChartDataSeries {
+    return typeof value === 'object' && value !== null
+}
+
+function isChartSeriesPoint(value: unknown): value is TimeSeriesPoint {
+    return Array.isArray(value)
+        && typeof value[0] === 'number'
+        && typeof value[1] === 'number'
+}
+
+function hasSeriesDataArray(value: unknown): value is ChartDataSeries & { data: TimeSeriesPoint[] } {
+    return isChartSeriesObject(value) && Array.isArray(value.data)
 }
 
 export interface CategoryData {
@@ -20,7 +38,7 @@ export interface CategoryData {
  * Checks if the chart data is effectively empty
  */
 export function isChartDataEmpty(
-    series: ChartDataSeries[] | ChartDataSeries | any,
+    series: ChartSeriesInput,
     loading: boolean,
     error: string | null | undefined
 ): boolean {
@@ -31,9 +49,8 @@ export function isChartDataEmpty(
 
     if (Array.isArray(series)) {
         if (series.length === 0) return true
-        return series.every((s: any) =>
-            !s?.data || (Array.isArray(s.data) && s.data.length === 0)
-        )
+        if (isChartSeriesPoint(series[0])) return false
+        return series.every((s) => !isChartSeriesObject(s) || !Array.isArray(s.data) || s.data.length === 0)
     }
 
     return false
@@ -43,7 +60,7 @@ export function isChartDataEmpty(
  * Calculates growth rates for the chart data
  */
 export function calculateChartGrowth(
-    series: any,
+    series: ChartSeriesInput,
     ticker: string | null,
     customGrowthData: GrowthRates | null,
     stacked: boolean = false
@@ -53,19 +70,19 @@ export function calculateChartGrowth(
     let dataToAnalyze: Array<[number, number]> = []
 
     if (Array.isArray(series)) {
-        if (series.length > 0 && Array.isArray(series[0])) {
+        if (series.length > 0 && isChartSeriesPoint(series[0])) {
             // Simple array of [timestamp, value] pairs
-            dataToAnalyze = series as Array<[number, number]>
-        } else if (series.length > 0 && (series[0] as any)?.data) {
+            dataToAnalyze = (series as TimeSeriesPoint[]).map(([timestamp, value]) => [timestamp, value] as [number, number])
+        } else if (series.length > 0 && hasSeriesDataArray(series[0])) {
             // Multi-series
             if (stacked && series.length > 1) {
                 // Sum all series values at each timestamp
                 const dateMap = new Map<number, number>()
-                series.forEach((s: any) => {
-                    if (s.data && Array.isArray(s.data)) {
-                        s.data.forEach((point: any) => {
-                            const date = Array.isArray(point) ? point[0] : point
-                            const value = Array.isArray(point) ? point[1] : 0
+                series.forEach((s) => {
+                    if (hasSeriesDataArray(s)) {
+                        s.data.forEach((point) => {
+                            const date = point[0]
+                            const value = point[1]
                             dateMap.set(date, (dateMap.get(date) || 0) + value)
                         })
                     }
@@ -73,13 +90,10 @@ export function calculateChartGrowth(
                 dataToAnalyze = Array.from(dateMap.entries()).sort((a, b) => a[0] - b[0])
             } else {
                 // Use first series
-                const firstSeries = (series[0] as any).data || []
-                dataToAnalyze = firstSeries.map((point: any) => {
-                    if (Array.isArray(point)) {
-                        return [point[0], point[1]] as [number, number]
-                    }
-                    return point
-                })
+                const firstSeries = hasSeriesDataArray(series[0])
+                    ? series[0].data
+                    : []
+                dataToAnalyze = firstSeries.map(([timestamp, value]) => [timestamp, value] as [number, number])
             }
         }
     }
@@ -98,7 +112,7 @@ export function calculateChartGrowth(
  * Generates category data (timestamps, labels) for the X-axis
  */
 export function generateCategoryData(
-    series: any,
+    series: ChartSeriesInput,
     kind: 'line' | 'bar',
     timeframe: 'annual' | 'quarterly'
 ): CategoryData {
@@ -111,7 +125,7 @@ export function generateCategoryData(
         const dataSource = series
 
         if (Array.isArray(dataSource)) {
-            const allDataPoints = getAllDataPoints(dataSource as any)
+            const allDataPoints = getAllDataPoints(dataSource as TimeSeriesPoint[] | Array<{ name: string; data: TimeSeriesPoint[] }>)
 
             if (allDataPoints.length > 0) {
                 if (timeframe === 'quarterly') {
