@@ -118,7 +118,7 @@ const imageError = ref(false)
 
 // Use shared Pinia store (same data source as all other components)
 const tickerStore = useTickerStore()
-const { batchData, loading, profile, quote } = storeToRefs(tickerStore)
+const { loading, profile, quote } = storeToRefs(tickerStore)
 
 // Get next earnings date from quote data (simpler than parsing calendar)
 const nextEarningsDate = computed(() => {
@@ -166,14 +166,6 @@ const formatEarningsDate = (dateString: string): string => {
   }
 }
 
-const formatMarketCap = (mktCap: number | null | undefined): string => {
-  if (!mktCap) return 'N/A'
-  const num = Number(mktCap)
-  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`
-  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`
-  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`
-  return `$${num.toLocaleString()}`
-}
 </script>
 
 <style scoped>

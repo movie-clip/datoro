@@ -3,8 +3,6 @@
  * Centralized types for macro economic charts and dashboard components
  */
 
-import type { EChartsOption } from 'echarts'
-
 /**
  * Chart metadata configuration
  */

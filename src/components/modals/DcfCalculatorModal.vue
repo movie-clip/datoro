@@ -189,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
+import { ref, watch, onMounted, onUnmounted, type Ref } from 'vue'
 import { useDcfCalculator } from '../../composables/useDcfCalculator'
 import DcfInputs from '../dcf/DcfInputs.vue'
 import DcfResults from '../dcf/DcfResults.vue'
@@ -225,8 +225,7 @@ const {
   companyData,
   dataValidation,
   loading,
-  error,
-  ticker
+  error
 } = useDcfCalculator()
 
 // Type assertions for composable returns (composable is JS, we know the actual types)
@@ -261,11 +260,6 @@ const handleEscKey = (event: KeyboardEvent): void => {
 const handleImageError = (event: Event): void => {
   const target = event.target as HTMLImageElement
   target.style.display = 'none'
-}
-
-// Format price with commas
-const formatPrice = (price: number): string => {
-  return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // Focus overlay when modal opens for ESC key handling

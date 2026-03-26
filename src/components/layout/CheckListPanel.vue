@@ -77,7 +77,7 @@
 import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
-import { formatPercent, formatNumber } from '../../utils/formatters'
+import { formatPercent } from '../../utils/formatters'
 import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch, getEpsSeriesFromBatch } from '../../services/financials/batchChartService'
 import { getGrowthRates } from '../../services/financials/growthService'
 import { getCashFlowFactsFromBatch } from '../../services/financials/batchTableService'
@@ -91,22 +91,15 @@ const tickerStore = useTickerStore()
 const { 
   loading, 
   ratios, 
-  keyMetrics, 
   incomeStatements, 
   balanceSheets, 
-  cashFlowStatements,
-  profile,
   batchData
 } = storeToRefs(tickerStore)
 
 // Helper to get latest annual data
 const latestRatio = computed(() => ratios.value?.[0])
-const latestMetric = computed(() => keyMetrics.value?.[0])
 const latestIncome = computed(() => incomeStatements.value?.annual?.[0])
-const prevIncome = computed(() => incomeStatements.value?.annual?.[1])
 const latestBalance = computed(() => balanceSheets.value?.annual?.[0])
-const latestCashFlow = computed(() => cashFlowStatements.value?.annual?.[0])
-const prevCashFlow = computed(() => cashFlowStatements.value?.annual?.[1])
 
 const hasData = computed(() => {
   return !!latestRatio.value && !!latestIncome.value && !!latestBalance.value

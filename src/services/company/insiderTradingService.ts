@@ -2,6 +2,12 @@ import { handleServiceError, type ServiceResponse } from '../shared'
 
 const BASE = '/api/fmp/api/v4'
 
+interface InsiderTrade {
+  acquistionOrDisposition?: string
+  transactionDate?: string
+  securitiesTransacted?: number | string | null
+}
+
 /**
  * Aggregated insider trading data by month
  */
@@ -26,7 +32,7 @@ export async function getInsiderTradingAggregated(ticker: string): Promise<Servi
     const res = await fetch(`${BASE}/insider-trading?symbol=${encodeURIComponent(t)}&limit=500`)
     if (!res.ok) return { data: [], error: `HTTP ${res.status}` }
     
-    const trades = await res.json()
+    const trades = await res.json() as unknown
     if (!Array.isArray(trades) || !trades.length) {
       return { data: [], error: 'No insider trading data' }
     }
@@ -35,7 +41,7 @@ export async function getInsiderTradingAggregated(ticker: string): Promise<Servi
     // A = Acquisition (buy), D = Disposition (sell)
     const monthlyData = new Map<number, { buys: number; sells: number }>()
     
-    trades.forEach((trade: any) => {
+    trades.forEach((trade: InsiderTrade) => {
       // Skip if no valid acquisition/disposition
       if (!trade.acquistionOrDisposition || !trade.transactionDate) {
         return

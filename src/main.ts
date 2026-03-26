@@ -34,7 +34,6 @@ app.config.errorHandler = (err, instance, info) => {
 // Catch mount errors
 try {
   app.mount('#app')
-  console.log('App mounted successfully')
 } catch (err) {
   console.error('Failed to mount app:', err)
   // Show error to user

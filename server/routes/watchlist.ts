@@ -13,7 +13,7 @@ import type {
 } from '../types/api.types.js'
 import { randomUUID } from 'crypto'
 import { authenticate } from '../middleware/auth.js'
-import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
+import { requireAuth } from '../middleware/requireAuth.js'
 import { getPrismaClient } from '../services/databaseService.js'
 import { generalLimiter } from '../middleware/rateLimiter.js'
 import { watchlistService } from '../services/watchlistService.js'
@@ -41,12 +41,6 @@ interface AddWatchlistResponse {
 interface DeleteWatchlistResponse {
   success: boolean
   ticker: string
-}
-
-interface ReorderWatchlistRequest extends AuthenticatedRequest {
-  body: {
-    tickers: string[]
-  }
 }
 
 interface ReorderWatchlistResponse {

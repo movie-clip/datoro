@@ -5,22 +5,20 @@ import express, { type Request, type Response } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { adminLimiter } from '../middleware/rateLimiter.js'
 import { requireAdminKey } from '../middleware/adminKey.js'
-import { getCacheService } from '../services/cacheService.js'
 import { getMonitoringService } from '../services/monitoringService.js'
 import { getPrismaClient } from '../services/databaseService.js'
 
 const router = express.Router()
-const cache = getCacheService()
 const monitoring = getMonitoringService()
 
 // Dependencies injected from server.mjs
-let isDatabaseAvailable = true
+let _isDatabaseAvailable = true
 
 /**
  * Initialize health routes with dependencies
  */
 export function initHealthRoutes(deps: { isDatabaseAvailable: boolean }) {
-  isDatabaseAvailable = deps.isDatabaseAvailable
+  _isDatabaseAvailable = deps.isDatabaseAvailable
   return router
 }
 

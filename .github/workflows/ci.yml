@@ -31,7 +31,7 @@ jobs:
       - name: Run linter (ESLint)
         run: |
           if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
-            npm run lint || echo "No lint script found, skipping..."
+            npm run lint:check || echo "No lint script found, skipping..."
           else
             echo "ESLint not configured, skipping..."
           fi

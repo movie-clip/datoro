@@ -2,7 +2,7 @@
 // Type definitions for Vue composables return types
 
 import type { Ref, ComputedRef } from 'vue'
-import type { BatchData, SeriesDataPoint, ChartSeriesData, DataStatus } from './batch.types'
+import type { BatchData, SeriesDataPoint, ChartSeriesData } from './batch.types'
 
 /**
  * useTickerData Composable

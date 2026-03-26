@@ -154,7 +154,7 @@ export function requireActiveSubscription() {
  * Use requireActiveSubscription() instead
  * @param {string[]} allowedTiers - Array of allowed tiers ['free', 'premium', 'enterprise']
  */
-export function requireSubscription(allowedTiers: string[] = ['premium', 'enterprise']) {
+export function requireSubscription(_allowedTiers: string[] = ['premium', 'enterprise']) {
   // Redirect to new single-tier middleware
   return requireActiveSubscription()
 }

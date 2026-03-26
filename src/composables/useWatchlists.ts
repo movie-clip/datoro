@@ -15,9 +15,9 @@
  * TODO: After DB migration, this will seamlessly work with Prisma (Task #14)
  */
 
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, type ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
-import { CACHE_TTL as CLIENT_CACHE_TTL, VALIDATION } from '../config/constants'
+import { CACHE_TTL as CLIENT_CACHE_TTL } from '../config/constants'
 import { STORAGE_KEYS } from '../config/storage'
 import { setItemAsync } from '../utils/asyncStorage'
 
@@ -104,7 +104,7 @@ export function useWatchlists(): UseWatchlistsReturn {
         const data = await response.json()
         watchlistsCache.value = data.data.watchlists || []
         
-        console.log('[Watchlists] Initialized, fetched:', watchlistsCache.value.length, 'watchlists')
+        console.info('[Watchlists] Initialized, fetched:', watchlistsCache.value.length, 'watchlists')
         
         // Set active watchlist (preference: saved > default > first)
         if (watchlistsCache.value.length > 0) {
@@ -210,7 +210,7 @@ export function useWatchlists(): UseWatchlistsReturn {
       // Invalidate cache timestamp to force refresh on next init
       lastFetchTime.value = 0
       
-      console.log('[Watchlists] Created watchlist, total now:', watchlistsCache.value.length)
+      console.info('[Watchlists] Created watchlist, total now:', watchlistsCache.value.length)
       
       return { success: true }
     } catch (_error) {

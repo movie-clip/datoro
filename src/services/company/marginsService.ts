@@ -1,6 +1,20 @@
 import { handleServiceError, type ServiceResponse } from '../shared'
 import { formatPercent } from '@/utils/formatters'
 
+interface MetricResponse {
+  metric?: Record<string, unknown>
+}
+
+type FinancialRow = Record<string, unknown> & {
+  period?: string
+  netIncome?: number | string | null
+  revenue?: number | string | null
+}
+
+interface FinancialsResponse {
+  data?: FinancialRow[]
+}
+
 /**
  * Margins and growth metrics
  */
@@ -38,7 +52,7 @@ export async function fetchMarginsGrowth(ticker: string): Promise<ServiceRespons
 
   try {
     // 1) TTM margins from metric
-    const m = (await j(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&metric=all`))?.metric || {}
+    const m = ((await j(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&metric=all`)) as MetricResponse).metric || {}
     const pm = Number(m.netProfitMarginTTM ?? m.profitMarginTTM)
     const om = Number(m.operatingMarginTTM ?? m.operatingMargin)
     
@@ -46,18 +60,18 @@ export async function fetchMarginsGrowth(ticker: string): Promise<ServiceRespons
     if (Number.isFinite(om)) out.operatingMargin = formatPercent(om / 100, 2)
 
     // 2) Quarterly YoY (income statement)
-    const ic = await j(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&statement=ic&freq=quarterly`)
-    const rows = Array.isArray(ic?.data) ? ic.data : []
+    const ic = await j(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&statement=ic&freq=quarterly`) as FinancialsResponse
+    const rows = Array.isArray(ic.data) ? ic.data : []
     
     if (rows.length >= 5) {
       // ensure sorted desc by period
-      rows.sort((a: any, b: any) => String(b?.period || '').localeCompare(String(a?.period || '')))
+      rows.sort((a: FinancialRow, b: FinancialRow) => String(b?.period || '').localeCompare(String(a?.period || '')))
       const cur = rows[0]
       
       // find matching quarter 1 year earlier: same month/day but year-1; fallback rows[4]
       const curPeriod = String(cur?.period || '') // e.g., "2025-06-30"
       const targetY = curPeriod.slice(5) // "-06-30"
-      const prev = rows.find((r: any) => String(r?.period || '').endsWith(targetY) && String(r?.period || '') !== curPeriod) || rows[4]
+      const prev = rows.find((r: FinancialRow) => String(r?.period || '').endsWith(targetY) && String(r?.period || '') !== curPeriod) || rows[4]
       
       // Use netIncome and revenue fields
       const ni0 = Number(cur?.netIncome)

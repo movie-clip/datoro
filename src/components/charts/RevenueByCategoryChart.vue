@@ -89,7 +89,6 @@ const {
   series, 
   compactSeries, 
   revenueWithMargin,
-  grossMarginData,
   title, 
   message, 
   loading, 

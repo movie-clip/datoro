@@ -215,13 +215,6 @@ const upsidePercentage = computed(() => {
   return ((targetConsensus.value - currentPrice.value) / currentPrice.value) * 100
 })
 
-const upsideClass = computed(() => {
-  const upside = upsidePercentage.value
-  if (upside > 15) return 'positive'
-  if (upside < -15) return 'negative'
-  return 'neutral'
-})
-
 const analysisClass = computed(() => {
   const upside = upsidePercentage.value
   if (upside > 20) return 'undervalued'

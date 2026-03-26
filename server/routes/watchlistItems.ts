@@ -18,7 +18,7 @@
 import { Router, type Request, type Response } from 'express'
 import { body, param, validationResult } from 'express-validator'
 import { authenticate } from '../middleware/auth.js'
-import { requireAuth, type AuthenticatedRequest } from '../middleware/requireAuth.js'
+import { requireAuth } from '../middleware/requireAuth.js'
 import { generalLimiter } from '../middleware/rateLimiter.js'
 import { watchlistService } from '../services/watchlistService.js'
 import logger from '../services/logger.js'

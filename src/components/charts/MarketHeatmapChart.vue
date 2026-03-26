@@ -92,11 +92,6 @@ const props = withDefaults(defineProps<Props>(), {
   sp500: null
 })
 
-// Parse percentage string to number for calculations
-function parsePercentage(percentageStr: string): number {
-  return parseFloat(percentageStr.replace('%', ''))
-}
-
 // ECharts treemap configuration
 const chartOption = computed(() => {
   if (!props.data || props.data.length === 0) {

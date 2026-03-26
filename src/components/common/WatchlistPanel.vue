@@ -1,6 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useTickerStore } from '../../stores/tickerStore'
+import { ref, watch } from 'vue'
 import { API_BASE_URL } from '../../utils/apiConfig.js'
 import StarIcon from './StarIcon.vue'
 
@@ -13,7 +12,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'toggle-watchlist', 'select-ticker'])
 
-const tickerStore = useTickerStore()
 const watchlist = ref([])
 const loading = ref(false)
 const error = ref(null)

@@ -401,7 +401,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useWatchlists } from '../../composables/useWatchlists'
-import { useAuthStore } from '../../stores/authStore'
 import WatchlistDropdown from './WatchlistDropdown.vue'
 import DcfCalculatorModal from '../modals/DcfCalculatorModal.vue'
 import MarketPerformanceModal from '../modals/MarketPerformanceModal.vue'
@@ -436,12 +435,11 @@ const isMarketPerformanceOpen = ref(false)
 // const isPricingPageOpen = ref(false) // Removed - pricing disabled
 
 // Check subscription status
-const authStore = useAuthStore()
 const hasActiveSubscription = computed(() => {
   // FEATURE GATE DISABLED - All features available to all users
   // To re-enable subscription checks, uncomment the code below:
   /*
-  const user = authStore.user
+  const user = getCurrentUser()
   if (!user?.subscription) return false
   const sub = user.subscription
   // Active if in trial (not expired) OR paid subscription is active

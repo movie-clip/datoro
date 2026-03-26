@@ -1,8 +1,30 @@
 // src/services/company/kpiService.ts
 // Cash Flow + Margins & Growth KPIs via Finnhub (server proxy: /api/finnhub/*)
 
-import { type ServiceResponse } from '../shared'
 import { formatPercent } from '@/utils/formatters'
+
+interface FinnhubQuote {
+  c?: number | string | null
+}
+
+interface FinnhubProfile {
+  shareOutstanding?: number | string | null
+  sharesOutstanding?: number | string | null
+}
+
+interface FinnhubMetricAll {
+  metric?: Record<string, unknown>
+}
+
+type FinancialRow = Record<string, unknown> & {
+  period?: string
+  reportDate?: string
+  date?: string
+}
+
+interface FinnhubFinancials {
+  data?: FinancialRow[]
+}
 
 /**
  * Cash flow KPIs
@@ -25,7 +47,7 @@ export interface MarginsGrowthKpis {
 /**
  * Pick first valid number from object using candidate keys
  */
-function pick(obj: any, keys: string[] = []): number {
+function pick(obj: Record<string, unknown> | null | undefined, keys: string[] = []): number {
   for (const k of keys) {
     const v = Number(obj?.[k])
     if (Number.isFinite(v)) return v
@@ -36,7 +58,7 @@ function pick(obj: any, keys: string[] = []): number {
 /**
  * Finnhub sometimes returns "billions" for some aggregates; normalize to absolute USD
  */
-function toUSD(x: any): number {
+function toUSD(x: unknown): number {
   const n = Number(x)
   if (!Number.isFinite(n)) return NaN
   return n < 1e6 ? n * 1e9 : n
@@ -54,29 +76,29 @@ async function jget(url: string): Promise<unknown> {
 /**
  * Get quote data
  */
-async function getQuote(t: string): Promise<unknown> {
-  return jget(`/api/finnhub/quote?symbol=${encodeURIComponent(t)}`)
+async function getQuote(t: string): Promise<FinnhubQuote> {
+  return await jget(`/api/finnhub/quote?symbol=${encodeURIComponent(t)}`) as FinnhubQuote
 }
 
 /**
  * Get company profile
  */
-async function getProfile(t: string): Promise<unknown> {
-  return jget(`/api/finnhub/stock/profile2?symbol=${encodeURIComponent(t)}`)
+async function getProfile(t: string): Promise<FinnhubProfile> {
+  return await jget(`/api/finnhub/stock/profile2?symbol=${encodeURIComponent(t)}`) as FinnhubProfile
 }
 
 /**
  * Get all metrics
  */
-async function getMetricAll(t: string): Promise<unknown> {
-  return jget(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&metric=all`)
+async function getMetricAll(t: string): Promise<FinnhubMetricAll> {
+  return await jget(`/api/finnhub/stock/metric?symbol=${encodeURIComponent(t)}&metric=all`) as FinnhubMetricAll
 }
 
 /**
  * Get financial statements
  */
-async function getFinancials(t: string, statement: string, freq: string): Promise<unknown> {
-  return jget(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=${statement}&freq=${freq}`)
+async function getFinancials(t: string, statement: string, freq: string): Promise<FinnhubFinancials> {
+  return await jget(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=${statement}&freq=${freq}`) as FinnhubFinancials
 }
 
 /* -----------------------------------------------
@@ -110,9 +132,9 @@ export async function fetchCashFlowKpis(ticker: string): Promise<CashFlowKpis> {
   let fcf = NaN, cfo = NaN, capex = NaN, sbc = NaN
   try {
     const cf = await getFinancials(t, 'cf', 'annual')
-    const rows = Array.isArray(cf?.data) ? cf.data : []
+    const rows = Array.isArray(cf.data) ? cf.data : []
     // most recent with usable fields
-    const latest = rows.find((r: any) => r) || {}
+    const latest = rows.find((row): row is FinancialRow => Boolean(row)) || {}
     // Try direct FCF, else compute CFO - CapEx
     fcf = pick(latest, ['freeCashFlow', 'freeCashFlowTtm'])
     cfo = pick(latest, ['cashFlowFromOperations', 'netCashProvidedByOperatingActivities', 'operatingCashFlow'])
@@ -129,7 +151,7 @@ export async function fetchCashFlowKpis(ticker: string): Promise<CashFlowKpis> {
   if (!Number.isFinite(shares)) {
     try {
       const metric = await getMetricAll(t)
-      const m = metric?.metric || {}
+      const m = metric.metric || {}
       const mc = toUSD(m.marketCapitalization)
       if (Number.isFinite(mc) && Number.isFinite(price) && price > 0) {
         shares = mc / price
@@ -180,7 +202,7 @@ export async function fetchMarginsGrowth(ticker: string): Promise<MarginsGrowthK
   let pm = NaN, om = NaN
   try {
     const m = await getMetricAll(t)
-    const met = m?.metric || {}
+    const met = m.metric || {}
     pm = Number(met.netProfitMarginTTM ?? met.netMarginTTM ?? met.netProfitMarginAnnual)
     om = Number(met.operatingMarginTTM ?? met.operatingMarginAnnual)
   } catch {}
@@ -189,7 +211,7 @@ export async function fetchMarginsGrowth(ticker: string): Promise<MarginsGrowthK
   if (!Number.isFinite(pm) || !Number.isFinite(om)) {
     try {
       const ic = await getFinancials(t, 'ic', 'annual')
-      const rows = Array.isArray(ic?.data) ? ic.data : []
+      const rows = Array.isArray(ic.data) ? ic.data : []
       const latest = rows[0] || {}
       const revenue = pick(latest, ['revenue', 'totalRevenue', 'salesRevenueNet'])
       const netInc = pick(latest, ['netIncome', 'netIncomeCommonStockholders'])
@@ -206,13 +228,13 @@ export async function fetchMarginsGrowth(ticker: string): Promise<MarginsGrowthK
   // Quarterly YoY growth for earnings (net income) and revenue
   try {
     const icQ = await getFinancials(t, 'ic', 'quarterly')
-    const rowsQ = (Array.isArray(icQ?.data) ? icQ.data : []).slice().sort((a: any, b: any) => {
+    const rowsQ = (Array.isArray(icQ.data) ? icQ.data : []).slice().sort((a: FinancialRow, b: FinancialRow) => {
       const da = Date.parse(a?.period || a?.reportDate || a?.date || '')
       const db = Date.parse(b?.period || b?.reportDate || b?.date || '')
       return db - da
     })
     const cur = rowsQ[0] || {}
-    const prevYear = rowsQ.find((r: any) => {
+    const prevYear = rowsQ.find((r: FinancialRow) => {
       const d0 = Date.parse(cur?.period || cur?.reportDate || cur?.date || '')
       const d1 = Date.parse(r?.period || r?.reportDate || r?.date || '')
       if (!Number.isFinite(d0) || !Number.isFinite(d1)) return false

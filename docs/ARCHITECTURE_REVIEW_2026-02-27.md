@@ -200,13 +200,14 @@ Recommendation:
 
 ## 31–60 days
 - ✅ Implement parallel static+dynamic client fetch strategy.
-- Introduce static-only backend fetch profile (no quote endpoint).
+- ✅ Introduce static-only backend fetch profile (no quote endpoint).
 - ✅ Canonicalize proxy cache key generation.
 
 ## Execution status update (continued 2026-02-27)
 - Frontend split ticker fetch now starts static and dynamic requests in parallel, while preserving static-first correctness and best-effort dynamic merge behavior.
 - Added/updated split-fetch unit assertions to validate parallel-request behavior and static-failure handling.
 - FMP proxy cache key now uses sorted canonical query params (excluding `apikey`) to reduce cache fragmentation from query-order variance.
+- Static ticker route now fetches without quote (`includeQuote: false`) to avoid unnecessary upstream quote requests on static cache misses.
 - Validation after changes:
   - `npm run test -- tests/unit/stores/tickerStoreSplitFetch.test.ts` ✅ (workspace test suite green)
   - `npm run type-check:server` ✅

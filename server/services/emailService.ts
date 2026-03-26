@@ -331,9 +331,9 @@ export async function sendVerificationEmail(
  * Send password reset email (future implementation)
  */
 export async function sendPasswordResetEmail(
-  email: string,
-  userName: string,
-  resetToken: string
+  _email: string,
+  _userName: string,
+  _resetToken: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // TODO: Implement password reset email
   logger.warn('[Email] Password reset email not yet implemented')
@@ -348,7 +348,7 @@ export async function sendPasswordResetEmail(
  */
 export async function sendWelcomeEmail(
   email: string,
-  userName: string
+  _userName: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // TODO: Implement welcome email
   logger.info(`[Email] Welcome email would be sent to ${email}`)

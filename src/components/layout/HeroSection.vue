@@ -292,7 +292,6 @@ const data = computed(() => {
 // Health indicators using centralized service with caching
 // This prevents duplicate growth calculations and improves performance
 const healthIndicators = computed<HealthIndicator[]>(() => {
-  const valuation = getValuationFromBatch(batchData.value)
   const cashFlow = getCashFlowFactsFromBatch(batchData.value)
   const balance = getBalanceFromBatch(batchData.value)
   

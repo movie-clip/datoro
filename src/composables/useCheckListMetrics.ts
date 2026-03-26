@@ -3,7 +3,7 @@ import { getRevenueSeriesFromBatch, getNetIncomeSeriesFromBatch, getEpsSeriesFro
 import { getGrowthRates } from '../services/financials/growthService'
 import { getCashFlowFactsFromBatch } from '../services/financials/batchTableService'
 import type { BatchData } from '../types/batch.types'
-import type { FMPRatiosTTM, FMPIncomeStatement, FMPBalanceSheet, FMPCashFlow } from '../types/fmp.types'
+import type { FMPRatiosTTM, FMPIncomeStatement } from '../types/fmp.types'
 
 interface CheckListMetricsInput {
   batchData: ComputedRef<BatchData | null>

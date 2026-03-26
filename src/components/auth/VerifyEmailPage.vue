@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { trackEmailVerification } from '../../services/analytics/gaService'
 
@@ -209,7 +209,7 @@ const verifyEmail = async () => {
         userEmail.value = authStore.user?.email || ''
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Verification error:', error)
     status.value = 'error'
     errorMessage.value = 'Network error. Please try again.'

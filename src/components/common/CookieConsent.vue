@@ -229,7 +229,7 @@ function applyPreferences() {
     disableMetaPixel()
   }
 
-  console.log('[Cookie Consent] Preferences applied:', preferences.value)
+  console.info('[Cookie Consent] Preferences applied:', preferences.value)
 }
 
 /**
@@ -241,7 +241,7 @@ function enableGoogleAnalytics() {
     (window as any).gtag('consent', 'update', {
       'analytics_storage': 'granted'
     })
-    console.log('[Cookie Consent] Google Analytics enabled')
+    console.info('[Cookie Consent] Google Analytics enabled')
   }
 }
 
@@ -253,7 +253,7 @@ function disableGoogleAnalytics() {
     (window as any).gtag('consent', 'update', {
       'analytics_storage': 'denied'
     })
-    console.log('[Cookie Consent] Google Analytics disabled')
+    console.info('[Cookie Consent] Google Analytics disabled')
   }
 }
 
@@ -263,7 +263,7 @@ function disableGoogleAnalytics() {
 function enableMetaPixel() {
   if (typeof window !== 'undefined' && (window as any).fbq) {
     (window as any).fbq('consent', 'grant')
-    console.log('[Cookie Consent] Meta Pixel enabled')
+    console.info('[Cookie Consent] Meta Pixel enabled')
   }
 }
 
@@ -273,7 +273,7 @@ function enableMetaPixel() {
 function disableMetaPixel() {
   if (typeof window !== 'undefined' && (window as any).fbq) {
     (window as any).fbq('consent', 'revoke')
-    console.log('[Cookie Consent] Meta Pixel disabled')
+    console.info('[Cookie Consent] Meta Pixel disabled')
   }
 }
 
@@ -286,15 +286,6 @@ function acceptAll() {
     analytics: true,
     advertising: true
   }
-  savePreferencesToStorage()
-  applyPreferences()
-  showBanner.value = false
-}
-
-/**
- * Save current preferences
- */
-function savePreferences() {
   savePreferencesToStorage()
   applyPreferences()
   showBanner.value = false

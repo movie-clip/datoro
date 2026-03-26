@@ -5,15 +5,6 @@
  * Tracks user behavior for ad campaign optimization and ROI measurement.
  */
 
-// Extend Window interface for gtag
-declare global {
-  interface Window {
-    dataLayer: any[];
-    gtag: (...args: any[]) => void;
-    GA_MEASUREMENT_ID?: string;
-  }
-}
-
 /**
  * Check if GA4 is initialized and ready
  */
@@ -32,7 +23,7 @@ export const trackEvent = (eventName: string, params?: Record<string, any>): voi
     
     // Development logging
     if (import.meta.env.DEV) {
-      console.log('[GA4 Event]', eventName, params);
+      console.info('[GA4 Event]', eventName, params);
     }
   } else if (import.meta.env.DEV) {
     // Log warning in development if gtag is not available
@@ -229,7 +220,7 @@ export const updateAnalyticsConsent = (granted: boolean): void => {
     });
     
     if (import.meta.env.DEV) {
-      console.log('[GA4 Consent]', granted ? 'GRANTED' : 'DENIED');
+      console.info('[GA4 Consent]', granted ? 'GRANTED' : 'DENIED');
     }
   }
 };

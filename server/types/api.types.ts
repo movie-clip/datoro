@@ -3,7 +3,7 @@
  * Type-safe interfaces for all API endpoints
  */
 
-import type { Request, Response } from 'express'
+import type { Request } from 'express'
 import type { User } from '@prisma/client'
 
 // ============================================

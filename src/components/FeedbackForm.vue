@@ -180,24 +180,13 @@ const submitFeedback = async () => {
 
     submitted.value = true
     emit('submitted')
-    console.log('[Feedback] Submitted successfully')
-  } catch (err: any) {
+    console.info('[Feedback] Submitted successfully')
+  } catch (err: unknown) {
     console.error('[Feedback] Submission failed:', err)
-    error.value = err.message || 'Failed to submit feedback. Please try again.'
+    error.value = err instanceof Error ? err.message : 'Failed to submit feedback. Please try again.'
   } finally {
     loading.value = false
   }
-}
-
-const resetForm = () => {
-  formData.value = {
-    name: '',
-    email: '',
-    category: 'general',
-    message: ''
-  }
-  submitted.value = false
-  error.value = null
 }
 </script>
 

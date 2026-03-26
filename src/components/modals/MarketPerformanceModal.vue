@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, toRef } from 'vue'
+import { ref, onMounted, onUnmounted, watch, toRef } from 'vue'
 import MarketHeatmapChart from '../charts/MarketHeatmapChart.vue'
 import SP500PriceChart from '../charts/SP500PriceChart.vue'
 import { useMarketPerformance } from '../../composables/useMarketPerformance'
@@ -184,15 +184,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071
 const { 
   heatmapData,
   sp500Data,
-  summary, 
   loading,
   customLoading,
   error,
   customError,
-  lastUpdate,
-  currentPeriod,
-  isCustomRange,
-  fetchData,
   updateWithCustomRange
 } = useMarketPerformance({ enabled: toRef(props, 'modelValue') })
 
@@ -302,7 +297,7 @@ async function handleCustomRangeChange(range: { start: string; end: string }) {
     
     // Update heatmap with custom range data
     updateWithCustomRange(customSectors)
-    console.log(`[Market Performance Modal] Updated heatmap with ${customSectors.length} sectors for range ${range.start} to ${range.end}`)
+    console.info(`[Market Performance Modal] Updated heatmap with ${customSectors.length} sectors for range ${range.start} to ${range.end}`)
     
     customLoading.value = false
   } catch (err) {

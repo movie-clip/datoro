@@ -58,7 +58,6 @@ import {
   BrushComponent,
   ToolboxComponent
 } from 'echarts/components'
-import VChart from 'vue-echarts'
 import { fetchAllMacroData, fetchIndexStats, type MacroData, type EUMacroData, type EconomicIndicator, type Region, type IndexStats } from '../services/macro/macroDataService'
 import { useMacroChart } from '../composables/useMacroChart'
 import { useChartSync } from '../composables/useChartSync'
@@ -68,7 +67,6 @@ import { CACHE_TTL } from '../config/constants'
 import type { ChartConfig } from '../types/macro.types'
 import MacroChart from './macro/MacroChart.vue'
 import MacroHeader from './macro/MacroHeader.vue'
-import SkeletonLoader from './common/SkeletonLoader.vue'
 
 // Register ECharts components
 use([
@@ -219,8 +217,8 @@ function getChartOption(config: ChartConfig) {
       })
     }
 
-    const dataKey = getDataKeyForRegion(config.dataKey) as keyof (MacroData & EUMacroData)
-    const rawData = (macroData.value as any)[dataKey] as EconomicIndicator[] | undefined
+    const dataKey = getDataKeyForRegion(config.dataKey)
+    const rawData = (macroData.value as Record<string, EconomicIndicator[] | undefined>)[dataKey]
     const chartData = convertToChartData(rawData)
 
     return createChartOptions({
@@ -234,18 +232,6 @@ function getChartOption(config: ChartConfig) {
       showAverage: false // DISABLED: SMA200 feature (set to true to enable for inflation: config.id === 'inflation')
     })
   })
-}
-
-/**
- * Check if a chart has data to display
- */
-function hasChartData(config: ChartConfig): boolean {
-  if (!macroData.value) return false
-  
-  const dataKey = getDataKeyForRegion(config.dataKey) as keyof (MacroData & EUMacroData)
-  const rawData = (macroData.value as any)[dataKey] as EconomicIndicator[] | undefined
-  
-  return rawData !== undefined && rawData !== null && rawData.length > 0
 }
 
 /**
@@ -277,8 +263,8 @@ async function loadIndexData() {
           change: stat['1D'] || 0
         }))
     }
-  } catch (err: any) {
-    indexError.value = err.message || 'Failed to load market indices'
+  } catch (err: unknown) {
+    indexError.value = err instanceof Error ? err.message : 'Failed to load market indices'
   } finally {
     indexLoading.value = false
   }
@@ -307,7 +293,7 @@ const setupSyncForAllCharts = async () => {
       }
       
       // Remove old listeners by getting fresh instance
-      const instance = (chart.chartRef.value as any).chart
+      const instance = (chart.chartRef.value as { chart?: { off: (event: string) => void } }).chart
       if (instance) {
         // Remove all previous datazoom listeners to avoid duplicates
         instance.off('datazoom')
@@ -346,8 +332,8 @@ const loadData = async () => {
     
     // Re-setup sync after loading fresh data
     setupSyncForAllCharts()
-  } catch (err: any) {
-    error.value = err.message || 'Failed to load macro data'
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Failed to load macro data'
   } finally {
     macroLoading.value = false
   }

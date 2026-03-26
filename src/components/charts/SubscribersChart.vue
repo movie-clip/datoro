@@ -20,9 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
 import { useSubscriberSeries } from '../../composables/useSubscriberSeries'
-import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
 interface Props {
@@ -32,10 +30,6 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
-
-// Use Pinia store for timeframe
-const tickerStore = useTickerStore()
-const { timeframe } = storeToRefs(tickerStore)
 
 // Get subscriber data from composable
 const { 

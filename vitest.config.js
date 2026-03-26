@@ -18,7 +18,7 @@ export default defineConfig({
     testTimeout: 5000,
     
     // Setup files to run before tests
-    setupFiles: ['./tests/setup.js'],
+    setupFiles: ['./tests/setup.ts'],
     
     // Coverage configuration
     coverage: {

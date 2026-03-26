@@ -1,4 +1,4 @@
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, type ComputedRef } from 'vue'
 import { API_BASE_URL } from '../utils/apiConfig'
 import { trackWatchlistAdd, trackWatchlistRemove } from '../services/analytics/gaService'
 

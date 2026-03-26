@@ -228,7 +228,7 @@ export function setTags(tags: Record<string, string>): void {
 /**
  * Start a transaction for performance monitoring
  */
-export function startTransaction(name: string, op: string): any | null {
+export function startTransaction(_name: string, _op: string): any | null {
   if (!initialized) return null
   
   // In newer versions of Sentry, use startSpan instead

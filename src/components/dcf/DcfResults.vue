@@ -212,7 +212,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 
 type ValuationModel = 'peg' | 'advancedDcf'
 
@@ -262,10 +261,6 @@ const getUpsideClass = (upsideValue: number | null | undefined): string => {
   return 'neutral'
 }
 
-const upsideClass = computed(() => {
-  return getUpsideClass(props.upside)
-})
-
 // Function to determine value class based on comparison to current price
 const getDcfValueClass = (value: number | null | undefined): string => {
   if (value === null || value === undefined || props.currentPrice === null || props.currentPrice === undefined) return ''
@@ -311,9 +306,6 @@ WACC: ${wacc}%
 Terminal Growth: ${terminalGrowth}%`
 }
 
-const getCurrentPriceTooltip = (): string => {
-  return `Market Price: $${formatNumber(props.currentPrice)} • Latest stock price from the market`
-}
 </script>
 
 <style scoped>

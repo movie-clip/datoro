@@ -3,8 +3,8 @@
 // Replaces custom caching with industry standard server state management
 
 import { defineStore } from 'pinia'
-import { ref, computed, type Ref, type ComputedRef, watch } from 'vue'
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { API_BASE_URL } from '../utils/apiConfig'
 import type {
   BatchData,
@@ -129,8 +129,6 @@ export const useTickerStore = defineStore('ticker', (): TickerStoreState => {
   const currentTicker = ref('AAPL')
   const timeframe = ref<'annual' | 'quarterly'>('annual')
   const currentMode = ref<'full' | 'lite'>('full')
-
-  const queryClient = useQueryClient()
 
   // Vue Query: Fetcher function
   const fetchTickerData = async (ticker: string, mode: 'full' | 'lite'): Promise<BatchData> => {

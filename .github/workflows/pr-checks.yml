@@ -30,7 +30,19 @@ jobs:
           NODE_ENV: test
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      
+
+      - name: Run linter
+        run: npm run lint:check
+
+      - name: Check frontend types
+        run: npm run type-check
+
+      - name: Check backend types
+        run: npm run type-check:server
+
+      - name: Check test types
+        run: npm run type-check:tests
+
       - name: Check build
         run: npm run build
       

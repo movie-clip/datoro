@@ -133,7 +133,7 @@ export default [
       // TypeScript-specific rules (more lenient for Vue components)
       '@typescript-eslint/no-unused-vars': ['warn', { 
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
+        varsIgnorePattern: '^_|^(props|emit)$',
         caughtErrors: 'none',
         destructuredArrayIgnorePattern: '^_',
         ignoreRestSiblings: true
@@ -248,14 +248,8 @@ export default [
       'no-unused-vars': 'off',
       
       // TypeScript-specific rules (more lenient for tests)
-      '@typescript-eslint/no-unused-vars': ['warn', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrors: 'none',
-        destructuredArrayIgnorePattern: '^_',
-        ignoreRestSiblings: true
-      }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       
@@ -268,6 +262,23 @@ export default [
       
       // Allow empty catch blocks
       'no-empty': ['error', { allowEmptyCatch: true }]
+    }
+  },
+
+  // Type definition files often model flexible external payloads
+  {
+    files: ['src/types/**/*.ts', 'server/types/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off'
+    }
+  },
+
+  // Frontend logger intentionally wraps console methods
+  {
+    files: ['src/utils/logger.ts'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-explicit-any': 'off'
     }
   }
 ];

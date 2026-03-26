@@ -127,7 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
               const data: AuthResponse = await retryResponse.json()
               user.value = data.data?.user || null
               token.value = 'cookie'
-              console.log('[Auth] ✅ Retry successful - user authenticated')
+              console.info('[Auth] Retry successful - user authenticated')
             }
           } catch (_retryErr) {
             // Silent fail on retry - user can manually login
@@ -186,7 +186,7 @@ export const useAuthStore = defineStore('auth', () => {
       trackSignup('email')
       setUserId(user.value?.id || null)
       
-      console.log('[Auth] ✓ Registration successful:', user.value?.email)
+      console.info('[Auth] Registration successful:', user.value?.email)
       return { success: true }
       
     } catch (_err) {
@@ -208,7 +208,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     
     try {
-      console.log('[Auth] 🔐 Attempting login...')
+      console.info('[Auth] Attempting login...')
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -263,13 +263,15 @@ export const useAuthStore = defineStore('auth', () => {
       trackLogin('email')
       setUserId(user.value?.id || null)
       
-      console.log('[Auth] ✓ Login successful:', user.value?.email)
+      console.info('[Auth] Login successful:', user.value?.email)
       
       // Check if cookie was set
-      console.log('[Auth] 🍪 Checking cookies after login...')
-      console.log('[Auth] 🍪 All cookies:', document.cookie || '(none visible - HttpOnly cookies won\'t show here)')
-      console.log('[Auth] 🍪 Note: authToken cookie is HttpOnly, so JavaScript cannot see it')
-      console.log('[Auth] 🍪 To verify: Open DevTools → Application → Cookies → http://192.168.18.3:5173')
+      if (import.meta.env.DEV) {
+        console.info('[Auth] Checking cookies after login...')
+        console.info('[Auth] All cookies:', document.cookie || '(none visible - HttpOnly cookies won\'t show here)')
+        console.info('[Auth] Note: authToken cookie is HttpOnly, so JavaScript cannot see it')
+        console.info('[Auth] To verify: Open DevTools -> Application -> Cookies -> http://192.168.18.3:5173')
+      }
       
       return { success: true }
       

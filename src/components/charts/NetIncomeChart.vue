@@ -28,19 +28,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useNetIncomeSeries } from '../../composables/useNetIncomeSeries'
-import { useTickerStore } from '../../stores/tickerStore'
 import BaseChart from '../common/BaseChart.vue'
 
 interface Props {
   forceExpanded?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
 
 // No ticker prop - using Pinia store
-const tickerStore = useTickerStore()
 const { netIncomeWithMargin, title, message, loading, error, period, viewModeOptions, ticker, dataType } = useNetIncomeSeries()
 
 // Helper to determine quality color based on net margin
@@ -71,7 +69,7 @@ const colorCodedSeries = computed(() => {
       yAxisIndex: 0,
       itemStyle: {
         // Color each bar based on corresponding margin value
-        color: (params: any) => {
+        color: (params: { dataIndex: number }) => {
           const idx = params.dataIndex
           const marginPoint = marginSeries.data[idx]
           const marginPercent = marginPoint ? marginPoint[1] : 0

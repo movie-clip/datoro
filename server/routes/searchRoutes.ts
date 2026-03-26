@@ -6,7 +6,7 @@ import express, { type Request, type Response } from 'express'
 import fetch from 'node-fetch'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { fmpLimiter } from '../middleware/rateLimiter.js'
-import { getCacheService, CacheTTL } from '../services/cacheService.js'
+import { getCacheService } from '../services/cacheService.js'
 
 const router = express.Router()
 const cache = getCacheService()

@@ -32,7 +32,7 @@ interface Props {
   forceExpanded?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
 
@@ -42,7 +42,6 @@ const { timeframe } = storeToRefs(tickerStore)
 const { 
   compactSeries: rawSeries,
   marginData, 
-  title, 
   message, 
   loading, 
   error
@@ -73,7 +72,7 @@ const ebitdaSeries = computed(() => {
       yAxisIndex: 0,
       itemStyle: {
         // Color each bar based on corresponding margin value
-        color: (params: any) => {
+        color: (params: { dataIndex: number }) => {
           const idx = params.dataIndex
           const marginPoint = marginData.value[idx]
           const marginPercent = marginPoint ? marginPoint[1] : 0

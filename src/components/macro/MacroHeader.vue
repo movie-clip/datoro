@@ -67,7 +67,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { PropType } from 'vue'
 import type { IndexData } from '../../types/macro.types'
 import type { Region } from '../../services/macro/macroDataService'

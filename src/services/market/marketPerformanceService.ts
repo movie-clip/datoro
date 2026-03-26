@@ -35,7 +35,7 @@ export interface SP500Performance {
 export async function fetchSectorPerformance(period: string = '1D'): Promise<FMPSectorPerformance[]> {
   try {
     const url = `${API_BASE_URL}/api/market/sectors?period=${encodeURIComponent(period)}`
-    console.log(`[Service] Fetching S&P 500 sectors from: ${url}`)
+    console.info(`[Service] Fetching S&P 500 sectors from: ${url}`)
     const response = await fetch(url)
 
     if (!response.ok) {
@@ -43,7 +43,7 @@ export async function fetchSectorPerformance(period: string = '1D'): Promise<FMP
     }
 
     const data = await response.json()
-    console.log(`[Service] Received ${data.length} S&P 500 sectors for period ${period}:`, data.slice(0, 2))
+    console.info(`[Service] Received ${data.length} S&P 500 sectors for period ${period}:`, data.slice(0, 2))
 
     return data
   } catch (error) {
@@ -59,7 +59,7 @@ export async function fetchSectorPerformance(period: string = '1D'): Promise<FMP
 export async function fetchSP500Performance(period: string = '1D'): Promise<SP500Performance> {
   try {
     const url = `${API_BASE_URL}/api/market/sp500?period=${encodeURIComponent(period)}`
-    console.log(`[Service] Fetching S&P 500 from: ${url}`)
+    console.info(`[Service] Fetching S&P 500 from: ${url}`)
     const response = await fetch(url)
 
     if (!response.ok) {
@@ -67,7 +67,7 @@ export async function fetchSP500Performance(period: string = '1D'): Promise<SP50
     }
 
     const data = await response.json()
-    console.log(`[Service] Received S&P 500 data for period ${period}:`, data)
+    console.info(`[Service] Received S&P 500 data for period ${period}:`, data)
 
     return data
   } catch (error) {

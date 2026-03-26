@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted, type Ref } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import CompanyHeader from './CompanyHeader.vue'
 import { useTickerSearch } from '../../composables/useTickerSearch'
 import { useRecentSearch } from '../../composables/useRecentSearch'

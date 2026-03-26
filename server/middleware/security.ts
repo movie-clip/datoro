@@ -16,6 +16,42 @@ import type { Request, Response, NextFunction } from 'express'
  * - X-XSS-Protection: Legacy XSS protection
  */
 export function securityHeaders() {
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  const scriptSrc = isProduction
+    ? [
+        "'self'",
+        "'unsafe-inline'",
+        "data:",
+        'https://www.googletagmanager.com',
+        'https://www.google-analytics.com'
+      ]
+    : [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "'wasm-unsafe-eval'",
+        'data:',
+        'https://www.googletagmanager.com',
+        'https://www.google-analytics.com'
+      ]
+
+  const connectSrc = isProduction
+    ? [
+        "'self'",
+        'https://financialmodelingprep.com',
+        'https://*.google-analytics.com',
+        'https://*.analytics.google.com'
+      ]
+    : [
+        "'self'",
+        'https://financialmodelingprep.com',
+        'https://*.google-analytics.com',
+        'https://*.analytics.google.com',
+        'http://localhost:*',
+        'ws://localhost:*'
+      ]
+
   return helmet({
     // Content Security Policy - controls what resources can load
     contentSecurityPolicy: {
@@ -28,15 +64,7 @@ export function securityHeaders() {
         // 'unsafe-inline' needed for inline styles/scripts
         // 'data:' needed for Vite's base64-encoded module preloads
         // Google Analytics requires googletagmanager.com
-        scriptSrc: [
-          "'self'", 
-          "'unsafe-inline'", 
-          "'unsafe-eval'",
-          "'wasm-unsafe-eval'",
-          "data:",
-          "https://www.googletagmanager.com",
-          "https://www.google-analytics.com"
-        ],
+        scriptSrc,
         
         // Allow inline styles (common in Vue components)
         styleSrc: ["'self'", "'unsafe-inline'"],
@@ -45,14 +73,7 @@ export function securityHeaders() {
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         
         // Allow connections to FMP API, Google Analytics (all regions), and local backend
-        connectSrc: [
-          "'self'",
-          "https://financialmodelingprep.com",
-          "https://*.google-analytics.com",
-          "https://*.analytics.google.com",
-          "http://localhost:*",
-          "ws://localhost:*"  // WebSocket for HMR in development
-        ],
+        connectSrc,
         
         // Allow web fonts
         fontSrc: ["'self'", "data:"],
@@ -64,7 +85,7 @@ export function securityHeaders() {
         frameSrc: ["'none'"],
         
         // Upgrade insecure requests to HTTPS in production
-        upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+        upgradeInsecureRequests: isProduction ? [] : null
       }
     },
     
@@ -86,7 +107,7 @@ export function securityHeaders() {
     xssFilter: true,
     
     // HSTS - Force HTTPS in production (31536000 = 1 year)
-    hsts: process.env.NODE_ENV === 'production' ? {
+    hsts: isProduction ? {
       maxAge: 31536000,
       includeSubDomains: true,
       preload: true

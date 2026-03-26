@@ -274,7 +274,7 @@ export function createChartOptions(params: ChartOptionsParams): EChartsOption {
 /**
  * Creates an empty chart configuration (for loading/error states)
  */
-function createEmptyChartOptions(title: string): EChartsOption {
+function createEmptyChartOptions(_title: string): EChartsOption {
   return {
     backgroundColor: 'transparent',
     title: {

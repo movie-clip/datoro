@@ -2,12 +2,11 @@
 // Composable for managing market performance data and heatmap state
 
 import { ref, computed, type Ref, watch } from 'vue'
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useQuery } from '@tanstack/vue-query'
 import {
   getAllSectorsData,
   fetchSP500Performance,
-  type SectorData,
-  type SP500Performance
+  type SectorData
 } from '../services/market/marketPerformanceService'
 
 export interface HeatmapNode {
@@ -25,7 +24,6 @@ interface UseMarketPerformanceOptions {
 }
 
 export function useMarketPerformance(options: UseMarketPerformanceOptions = {}) {
-  const queryClient = useQueryClient()
   const currentPeriod = ref<string>('1D')
   const isCustomRange = ref(false)
   const customSectorsData = ref<SectorData[]>([])

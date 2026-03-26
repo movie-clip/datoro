@@ -168,7 +168,7 @@ export function createDualYAxisConfig(options: DualYAxisOptions = {}) {
     rightAxisType = 'default',
     isLarge = false,
     isMobile = false,
-    alignZero = false
+    alignZero: _alignZero = false
   } = options
 
   // If alignZero is enabled, use alignTicks to synchronize the zero line position

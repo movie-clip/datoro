@@ -79,8 +79,14 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
   const productCategories = computed(() => rawRevenueData.value.product)
   const geographicCategories = computed(() => rawRevenueData.value.geographic)
 
-  const error = computed(() => {
-    if (batchError.value) return batchError.value
+  const error = computed<string | null>(() => {
+    if (batchError.value) {
+      return batchError.value instanceof Error
+        ? batchError.value.message
+        : typeof batchError.value === 'string'
+          ? batchError.value
+          : 'Failed to load revenue data'
+    }
     if (loading.value) return null
     
     // Don't show error while still loading
@@ -187,18 +193,15 @@ export function useRevenueCategorySeries(): UseRevenueCategorySeriesReturn {
 
       // Check if current mode has data
       let hasData = true
-      let modeName = 'Total'
       let fallbackMessage = ''
       
       if (mode === 'product') {
         hasData = product && product.segments && product.segments.length > 0
-        modeName = 'Product'
         fallbackMessage = hasData 
           ? '' 
           : `${ticker.toUpperCase()} does not report product revenue breakdown. Showing total revenue instead.`
       } else if (mode === 'geographic') {
         hasData = geo && geo.segments && geo.segments.length > 0
-        modeName = 'Geographic'
         fallbackMessage = hasData 
           ? '' 
           : `${ticker.toUpperCase()} does not report geographic revenue breakdown. Showing total revenue instead.`

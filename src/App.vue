@@ -55,9 +55,6 @@ import CookieConsent from './components/common/CookieConsent.vue'
 // Email verification page
 import VerifyEmailPage from './components/auth/VerifyEmailPage.vue'
 
-// PriceChart is used in HeroSection (always visible), so import it statically
-import PriceChart from './components/charts/PriceChart.vue'
-
 // Lazy load other chart components (only load when tab is opened)
 const PriceTargetBar = defineAsyncComponent(() =>
   import('./components/charts/PriceTargetBar.vue')
@@ -227,12 +224,18 @@ const hasActiveSubscription = computed(() => {
 const hasSubscriberData = computed(() => {
   const batchData = tickerStore.batchData
   if (!batchData) return false
+
+  interface SubscriberMetricRow {
+    numberofstreamingmembers?: number | null
+    numberofpaidmemberships?: number | null
+    numberofpaidmembershipadditionslossesduringperiod?: number | null
+  }
   
   const annual = batchData.data?.incomeAsReportedAnnual || []
   const quarterly = batchData.data?.incomeAsReportedQuarter || []
   
   // Check if any period has subscriber fields (checking for non-null/non-zero values)
-  const hasData = [...annual, ...quarterly].some((row: any) => {
+  const hasData = [...annual, ...quarterly].some((row: SubscriberMetricRow) => {
     return (row.numberofstreamingmembers != null && row.numberofstreamingmembers !== 0) || 
            (row.numberofpaidmemberships != null && row.numberofpaidmemberships !== 0) || 
            (row.numberofpaidmembershipadditionslossesduringperiod != null)
@@ -301,7 +304,7 @@ const closeAuthModal = (): void => {
 }
 
 const handleAuthSuccess = (): void => {
-  console.log('[App] User authenticated:', authStore.user)
+  console.info('[App] User authenticated:', authStore.user)
   // Could show a success toast here
 }
 
@@ -339,10 +342,6 @@ const toggleFeedback = (): void => {
 
 const handleFeedbackSubmitted = (): void => {
   feedbackSubmitted.value = true
-}
-
-const toggleWatchlistPanel = (): void => {
-  showWatchlistPanel.value = !showWatchlistPanel.value
 }
 
 const handleToggleWatchlist = async (ticker: string): Promise<void> => {

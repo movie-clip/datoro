@@ -8,21 +8,16 @@ import type {
   FMPBalanceSheet,
   FMPCashFlow,
   FMPKeyMetrics,
-  FMPRatiosTTM,
   FMPRatios,
-  FMPEnterpriseValue,
-  FMPFinancialGrowth,
   FMPInsiderTrading,
   FMPStockSplit,
   FMPDividend,
   FMPHistoricalPrice,
-  FMPPriceTarget,
   FMPRevenueProductSegment,
   FMPRevenueGeographicSegment,
   FMPFinancialScore,
   FMPPriceTargetSummary,
   FMPPriceTargetConsensus,
-  FMPDCF,
   FMPEarnings
 } from './fmp.types'
 

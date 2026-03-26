@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../../stores/tickerStore'
 import { getValuationFromBatch } from '../../services/financials/batchTableService'
@@ -48,9 +48,6 @@ const { refresh: retry } = tickerStore
 
 // Mobile detection for collapsible behavior
 const { isMobile } = useIsMobile()
-
-// Get current ticker
-const currentTicker = computed(() => tickerStore.currentTicker)
 
 // Process batch data into valuation metrics
 const data = computed(() => getValuationFromBatch(batchData.value))

@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useTickerStore } from '../stores/tickerStore'
 import { calculateIntrinsicValue, getRecommendation } from '../services/dcf/dcfCalculator'
 import { getDcfDataFromBatch, validateDcfData } from '../services/dcf/dcfDataService'
-import { calculateAdvancedDcfValue, getValuationRecommendation, generateScenariosFromAdvancedDcf } from '../services/dcf/valuationMethodsService'
+import { calculateAdvancedDcfValue, generateScenariosFromAdvancedDcf } from '../services/dcf/valuationMethodsService'
 
 interface ScenarioInputs {
   best: number
@@ -85,7 +85,13 @@ export function useDcfCalculator(): UseDcfCalculatorReturn {
   
   // Error state (follows project pattern)
   const error = computed<string | null>(() => {
-    if (batchError.value) return batchError.value
+    if (batchError.value) {
+      return batchError.value instanceof Error
+        ? batchError.value.message
+        : typeof batchError.value === 'string'
+          ? batchError.value
+          : 'Failed to load DCF data'
+    }
     if (!dataValidation.value.valid) {
       return `Missing data: ${dataValidation.value.missingFields.join(', ')}`
     }

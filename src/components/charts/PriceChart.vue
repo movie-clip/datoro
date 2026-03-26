@@ -28,12 +28,12 @@ interface Props {
   forceExpanded?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   forceExpanded: false
 })
 
 // No ticker prop needed - using Pinia store
-const { tfKey, series, title, message, loading, error, retry, growthData } = usePriceSeries()
+const { tfKey, series, title, message, loading, error, growthData } = usePriceSeries()
 
 const timeframeOptions = computed(() => 
   TF_ORDER.map(key => ({ label: key, value: key }))

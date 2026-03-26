@@ -14,8 +14,6 @@ import type { Request, Response, NextFunction } from 'express'
 import logger from '../services/logger.js'
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
-const CANONICAL_DOMAIN = 'datoro.onrender.com'
-
 /**
  * Normalize URLs to prevent duplicate content
  * 

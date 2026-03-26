@@ -17,6 +17,10 @@ interface BatchResult {
   failures?: string[]
 }
 
+interface BatchFetchOptions {
+  includeQuote?: boolean
+}
+
 // Basic validation schemas for FMP responses
 const FMPProfileSchema = z.array(z.object({
   symbol: z.string(),
@@ -139,16 +143,20 @@ async function fetchWithTimeout(url: string, options: FetchOptions = {}, timeout
  * @param fmpApiKey - FMP API key
  * @returns BatchResult with all data
  */
-export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promise<BatchResult> {
+export async function fetchTickerBatch(
+  ticker: string,
+  fmpApiKey: string,
+  options: BatchFetchOptions = {}
+): Promise<BatchResult> {
   const t = ticker.toUpperCase().trim();
   const baseUrl = 'https://financialmodelingprep.com';
+  const includeQuote = options.includeQuote ?? true
   
   // PHASE 1: Critical endpoints (needed for initial render)
   // ~10 endpoints, typically completes in 800-1200ms
   const criticalEndpoints: Record<string, string> = {
     // Core company data
     profile: `/api/v3/profile/${t}?apikey=${fmpApiKey}`,
-    quote: `/api/v3/quote/${t}?apikey=${fmpApiKey}`,
     
     // Financial statements (annual only for speed)
     incomeAnnual: `/api/v3/income-statement/${t}?period=annual&limit=20&apikey=${fmpApiKey}`,
@@ -164,6 +172,10 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
     // Price data (essential for charts)
     priceHistory: `/api/v3/historical-price-full/${t}?from=${getDateMonthsAgo(360)}&apikey=${fmpApiKey}`,
   };
+
+  if (includeQuote) {
+    criticalEndpoints.quote = `/api/v3/quote/${t}?apikey=${fmpApiKey}`
+  }
   
   // PHASE 2: Secondary endpoints (can be deferred)
   // ~16 endpoints, fetched immediately after Phase 1 completes
@@ -329,17 +341,25 @@ export async function fetchTickerBatch(ticker: string, fmpApiKey: string): Promi
 /**
  * Fetch minimal data for quick initial load (Priority 1 only)
  */
-export async function fetchTickerPriority(ticker: string, fmpApiKey: string): Promise<BatchResult> {
+export async function fetchTickerPriority(
+  ticker: string,
+  fmpApiKey: string,
+  options: BatchFetchOptions = {}
+): Promise<BatchResult> {
   const t = ticker.toUpperCase().trim();
   const baseUrl = 'https://financialmodelingprep.com';
+  const includeQuote = options.includeQuote ?? true
   
   // Only fetch critical data for instant display
   const endpoints: Record<string, string> = {
     profile: `/api/v3/profile/${t}?apikey=${fmpApiKey}`,
-    quote: `/api/v3/quote/${t}?apikey=${fmpApiKey}`,
     incomeQuarter: `/api/v3/income-statement/${t}?period=quarter&limit=4&apikey=${fmpApiKey}`,
     priceHistory: `/api/v3/historical-price-full/${t}?from=${getDateMonthsAgo(12)}&apikey=${fmpApiKey}`,
   };
+
+  if (includeQuote) {
+    endpoints.quote = `/api/v3/quote/${t}?apikey=${fmpApiKey}`
+  }
 
   const startTime = Date.now();
   

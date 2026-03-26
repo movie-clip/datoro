@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { ref, onErrorCaptured, computed } from 'vue'
+import { ref, onErrorCaptured } from 'vue'
 import { useIsMobile } from '../../composables/useIsMobile'
+
+type SentryWindow = Window & {
+  Sentry?: {
+    captureException: (error: Error, context: unknown) => void
+  }
+}
 
 const error = ref<Error | null>(null)
 const errorInfo = ref<string>('')
@@ -25,8 +31,9 @@ onErrorCaptured((err: Error, instance, info: string) => {
   })
   
   // Send to monitoring service if available
-  if (typeof window !== 'undefined' && (window as any).Sentry) {
-    (window as any).Sentry.captureException(err, {
+  const sentryWindow = window as SentryWindow
+  if (typeof window !== 'undefined' && sentryWindow.Sentry) {
+    sentryWindow.Sentry.captureException(err, {
       contexts: {
         vue: {
           componentName: instance?.$options?.name,

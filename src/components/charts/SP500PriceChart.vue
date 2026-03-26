@@ -159,13 +159,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071
 // Fetch S&P 500 historical data (always 20 years)
 // Note: Server handles caching with Redis (1 hour TTL)
 async function fetchPriceData() {
-  console.log(`[SP500 Chart] Fetching 20-year historical data`)
+  console.info(`[SP500 Chart] Fetching 20-year historical data`)
   internalLoading.value = true
   internalError.value = null
   
   try {
     const url = `${API_BASE_URL}/api/market/sp500/historical`
-    console.log(`[SP500 Chart] Fetching from API: ${url}`)
+    console.info(`[SP500 Chart] Fetching from API: ${url}`)
     
     const response = await fetch(url, { 
       signal: AbortSignal.timeout(30000) // Increased to 30 seconds
@@ -197,7 +197,7 @@ async function fetchPriceData() {
       console.warn(`[SP500 Chart] Only one data point available - performance calculation not possible`)
     }
     
-    console.log(`[SP500 Chart] Received and validated data:`, {
+    console.info(`[SP500 Chart] Received and validated data:`, {
       symbol: validatedData.symbol,
       dataPoints: validatedData.historical.length,
       firstDate: validatedData.historical[0]?.date,
@@ -207,7 +207,7 @@ async function fetchPriceData() {
     // Convert to ECharts format using service
     priceData.value = convertToChartFormat(validatedData.historical)
     
-    console.log(`[SP500 Chart] Converted ${priceData.value.length} data points for chart`)
+    console.info(`[SP500 Chart] Converted ${priceData.value.length} data points for chart`)
     
     // Initialize selected range to full period
     if (priceData.value.length > 0) {
@@ -218,7 +218,7 @@ async function fetchPriceData() {
           end: result.endDate
         }
         rangePerformance.value = result.performance
-        console.log(`[SP500 Chart] Initial range: ${result.startDate} to ${result.endDate}, Performance: ${result.performance.toFixed(2)}%`)
+        console.info(`[SP500 Chart] Initial range: ${result.startDate} to ${result.endDate}, Performance: ${result.performance.toFixed(2)}%`)
         
         // Emit initial range so heatmap can load sector data for the full 20-year period
         emit('rangeChange', { start: result.startDate, end: result.endDate })
@@ -365,7 +365,7 @@ function applyPresetRange(presetKey: '1M' | '6M' | '1Y') {
     )
   }
 
-  console.log(`[SP500 Chart] Applied preset ${presetKey}: ${result.startDate} -> ${result.endDate}`)
+  console.info(`[SP500 Chart] Applied preset ${presetKey}: ${result.startDate} -> ${result.endDate}`)
   emit('rangeChange', { start: result.startDate, end: result.endDate })
 }
 
@@ -424,7 +424,7 @@ function handleDataZoom(event: any) {
     
     // Debounce the API call for sector data (1000ms delay to wait for drag end)
     debounceTimer.value = window.setTimeout(() => {
-      console.log(`[SP500 Chart] Range updated: ${result.startDate} to ${result.endDate}, Performance: ${result.performance.toFixed(2)}%`)
+      console.info(`[SP500 Chart] Range updated: ${result.startDate} to ${result.endDate}, Performance: ${result.performance.toFixed(2)}%`)
       emit('rangeChange', { start: result.startDate, end: result.endDate })
     }, 1000) // Increased to 1s to better wait for user to finish adjusting
   } catch (err) {

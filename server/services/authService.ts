@@ -23,8 +23,6 @@ interface LoginData {
   password: string
 }
 
-interface UserWithoutPassword extends Omit<User, 'password'> {}
-
 interface AuthResult {
   user: Partial<User>
   token: string

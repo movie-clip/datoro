@@ -63,7 +63,7 @@
     >
       <tbody>
         <tr
-          v-for="(row, index) in displayedRows"
+          v-for="row in displayedRows"
           :key="row.label"
           :class="{ 'clickable-row': clickable }"
           @click="clickable ? $emit('row-click', row) : null"

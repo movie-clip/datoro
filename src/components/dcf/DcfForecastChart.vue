@@ -126,15 +126,6 @@ const props = withDefaults(defineProps<Props>(), {
   selectedModel: 'peg'
 })
 
-// Create unique key based on actual data values, not just length
-// This ensures chart re-renders when assumption values change
-const chartKey = computed(() => {
-  const avgPrices = props.scenarios.average.projectedPrices.map(p => p.price).join(',')
-  const bestPrices = props.scenarios.best.projectedPrices.map(p => p.price).join(',')
-  const worstPrices = props.scenarios.worst.projectedPrices.map(p => p.price).join(',')
-  return `${props.selectedModel}-${avgPrices}-${bestPrices}-${worstPrices}`
-})
-
 const chartOptions = computed((): EChartsOption | null => {
   // Check if we have data for at least one scenario
   const hasData = props.scenarios.average?.projectedPrices?.length > 0

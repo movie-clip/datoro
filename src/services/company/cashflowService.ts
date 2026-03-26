@@ -6,6 +6,14 @@
 import { handleServiceError, type ServiceResponse } from '../shared'
 import { formatNumber } from '@/utils/formatters'
 
+type FinancialRow = Record<string, unknown> & {
+  period?: string
+}
+
+interface FinancialsResponse {
+  data?: FinancialRow[]
+}
+
 /**
  * Cash flow facts result
  */
@@ -26,7 +34,7 @@ async function getJson(url: string): Promise<unknown> {
 /**
  * Get first valid number from object using candidate keys
  */
-function firstNumber(obj: any, keys: string[]): number {
+function firstNumber(obj: Record<string, unknown> | null | undefined, keys: string[]): number {
   for (const k of keys) {
     const v = Number(obj?.[k])
     if (Number.isFinite(v)) return v
@@ -37,7 +45,7 @@ function firstNumber(obj: any, keys: string[]): number {
 /**
  * Sum values across TTM (4 quarters)
  */
-function sumTTM(rows: unknown[], candidates: string[]): number {
+function sumTTM(rows: FinancialRow[], candidates: string[]): number {
   let s = 0
   let found = false
   for (const r of rows) {
@@ -62,9 +70,9 @@ export async function fetchCashFlowFacts(ticker: string): Promise<ServiceRespons
 
   try {
     // 4 most recent quarters
-    const cf = await getJson(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=cf&freq=quarterly`)
-    const rows = (Array.isArray(cf?.data) ? cf.data : [])
-      .sort((a: any, b: any) => String(b?.period || '').localeCompare(String(a?.period || '')))
+    const cf = await getJson(`/api/finnhub/stock/financials?symbol=${encodeURIComponent(t)}&statement=cf&freq=quarterly`) as FinancialsResponse
+    const rows = (Array.isArray(cf.data) ? cf.data : [])
+      .sort((a: FinancialRow, b: FinancialRow) => String(b?.period || '').localeCompare(String(a?.period || '')))
       .slice(0, 4)
 
     if (!rows.length) return { data: out, error: 'No cash flow data found' }

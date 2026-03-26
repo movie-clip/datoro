@@ -74,7 +74,6 @@ export function buildChartOption(params: ChartOptionBuilderParams, isLarge: bool
         yFormat,
         smooth,
         barMaxWidth,
-        loading,
         showLegend,
         useLegend,
         dualAxis,

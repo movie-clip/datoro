@@ -21,19 +21,19 @@
         class="view-mode-buttons"
       >
         <button
-          v-for="option in viewModeOptions"
-          :key="option.value"
+          v-for="viewOption in viewModeOptions"
+          :key="viewOption.value"
           :class="[
             'view-mode-btn', 
             { 
               active: selectedSegments 
-                ? selectedSegments.includes(option.value) 
-                : viewMode === option.value 
+                ? selectedSegments.includes(viewOption.value) 
+                : viewMode === viewOption.value 
             }
           ]"
-          @click.stop="selectedSegments ? toggleSegment(option.value) : updateViewMode(option.value)"
+          @click.stop="selectedSegments ? toggleSegment(viewOption.value) : updateViewMode(viewOption.value)"
         >
-          {{ option.label }}
+          {{ viewOption.label }}
         </button>
       </div>
       <!-- Custom controls slot for additional buttons -->
@@ -132,19 +132,19 @@
           class="view-mode-buttons"
         >
           <button
-            v-for="option in viewModeOptions"
-            :key="option.value"
+            v-for="viewOption in viewModeOptions"
+            :key="viewOption.value"
             :class="[
               'view-mode-btn', 
               { 
                 active: selectedSegments 
-                  ? selectedSegments.includes(option.value) 
-                  : viewMode === option.value 
+                  ? selectedSegments.includes(viewOption.value) 
+                  : viewMode === viewOption.value 
               }
             ]"
-            @click.stop="selectedSegments ? toggleSegment(option.value) : updateViewMode(option.value)"
+            @click.stop="selectedSegments ? toggleSegment(viewOption.value) : updateViewMode(viewOption.value)"
           >
-            {{ option.label }}
+            {{ viewOption.label }}
           </button>
         </div>
         <!-- Custom controls slot for additional buttons -->
@@ -179,7 +179,7 @@ import type { EChartsOption } from 'echarts'
 import ChartModal from './ChartModal.vue'
 import SkeletonLoader from './SkeletonLoader.vue'
 import GrowthLabels from './GrowthLabels.vue'
-import { formatGrowth as formatGrowthUtil, type GrowthRates } from '../../utils/growthCalculator.js'
+import { type GrowthRates } from '../../utils/growthCalculator.js'
 import { useIsMobile } from '../../composables/useIsMobile.js'
 import { useTickerStore } from '../../stores/tickerStore'
 import { 
@@ -375,13 +375,6 @@ const growthData = computed((): GrowthRates | null => {
   return calculateChartGrowth(props.series, props.ticker, props.customGrowthData, props.stacked)
 })
 
-// Format growth for display
-const formatGrowth = (growth: number | undefined): string => {
-  // Don't invert the actual number - show the real growth percentage
-  // The inversion only affects the CSS class (color)
-  return formatGrowthUtil(growth)
-}
-
 // Use reactive mobile detection composable
 const { isMobile } = useIsMobile()
 
@@ -413,7 +406,7 @@ watch(categoryDataCache, (newData) => {
 })
 
 // Prepare params for builder
-const getBuilderParams = (isLarge: boolean): ChartOptionBuilderParams => ({
+const getBuilderParams = (_isLarge: boolean): ChartOptionBuilderParams => ({
   title: props.title,
   series: props.series,
   compactSeries: props.compactSeries,

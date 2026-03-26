@@ -25,7 +25,7 @@ export interface UseMacroChartReturn {
  * Composable for managing individual macro chart state
  */
 export function useMacroChart(options: UseMacroChartOptions): UseMacroChartReturn {
-  const { id, syncedByDefault = true } = options
+  const { syncedByDefault = true } = options
 
   // Reactive state
   const chartRef = ref<InstanceType<typeof VChart> | null>(null)

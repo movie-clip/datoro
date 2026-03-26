@@ -6,7 +6,7 @@ import logger from '../services/logger.js'
 
 import express from 'express'
 import type { NextFunction, Request, Response } from 'express'
-import type { TickerDataRequest, TickerDataResponse, ErrorResponse } from '../types/api.types.js'
+import type { TickerDataResponse, ErrorResponse } from '../types/api.types.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { fmpLimiter, globalFmpLimiter, decrementGlobalFmpCounter } from '../middleware/rateLimiter.js'
 import { getCacheService, CacheTTL } from '../services/cacheService.js'
@@ -436,14 +436,8 @@ router.get('/:ticker/static', precheckStaticCache, fmpLimiter, globalFmpLimiter,
     staticCacheKey,
     async () => {
       const full = mode === 'priority'
-        ? await fetchTickerPriority(t, FMP_API_KEY)
-        : await fetchTickerBatch(t, FMP_API_KEY)
-
-      const quoteData = (full as any)?.data?.quote
-      if (Array.isArray(quoteData) && quoteData.length > 0) {
-        const quoteCacheKey = cache.generateKey('quote', t)
-        cache.setFast(quoteCacheKey, quoteData, resolveQuoteTtlSeconds())
-      }
+        ? await fetchTickerPriority(t, FMP_API_KEY, { includeQuote: false })
+        : await fetchTickerBatch(t, FMP_API_KEY, { includeQuote: false })
 
       return toStaticBatchPayload(full)
     },
