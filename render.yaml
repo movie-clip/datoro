@@ -12,7 +12,6 @@ services:
     name: datoro-api
     runtime: node
     buildCommand: npm ci && npx prisma generate
-    preDeployCommand: node scripts/render-migrate.mjs
     startCommand: node --import tsx server/server.ts
     healthCheckPath: /api/health
     
@@ -54,7 +53,9 @@ services:
       # Keep this managed by Render via fromDatabase so the service uses
       # the private-network connection string instead of a manual external URL.
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: datoro-db
+          property: connectionString
 
       # Optional direct database URL for Prisma Migrate if the pooled/main URL
       # causes connection resets during deploys.
