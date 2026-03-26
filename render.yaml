@@ -98,7 +98,6 @@ services:
   # ==============================================
   - type: keyvalue
     name: datoro-redis
-    plan: free # FREE: 25MB storage
     maxmemoryPolicy: allkeys-lru # Auto-evict least recently used keys when full
     ipAllowList: [] # Empty = allow all Render services
 
@@ -158,7 +157,6 @@ databases:
   - name: datoro-db
     databaseName: datoro
     user: datoro
-    plan: free # FREE: 90 days trial, then $7/month
     ipAllowList: [] # Empty = allow all Render services
 
 # ==============================================
