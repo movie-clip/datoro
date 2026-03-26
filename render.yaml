@@ -55,6 +55,11 @@ services:
       # the private-network connection string instead of a manual external URL.
       - key: DATABASE_URL
         sync: false
+
+      # Optional direct database URL for Prisma Migrate if the pooled/main URL
+      # causes connection resets during deploys.
+      - key: DIRECT_DATABASE_URL
+        sync: false
       
       # Redis connection for cache and rate limiting
       - key: REDIS_URL
