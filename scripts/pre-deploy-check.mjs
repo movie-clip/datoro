@@ -48,7 +48,15 @@ function parseCommandError(error) {
 
 function runCommand(command, options = {}) {
   const { cwd = rootDir, stdio = 'pipe' } = options;
-  return execSync(command, { cwd, stdio, encoding: 'utf-8' });
+  return execSync(command, {
+    cwd,
+    stdio,
+    encoding: 'utf-8',
+    env: {
+      ...process.env,
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test'
+    }
+  });
 }
 
 function parseVitestSummary(output = '') {
@@ -584,4 +592,3 @@ if (checks.failed.length === 0) {
   console.log('\n⛔ Fix failed checks before deploying');
   process.exit(1);
 }
-
