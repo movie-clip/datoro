@@ -25,11 +25,23 @@ function toStripeServiceError(error: unknown): StripeServiceErrorLike {
   }
 }
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-10-29.clover',
-  typescript: true
-})
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
+let stripeClient: Stripe | null = null
+
+function getStripe(): Stripe {
+  if (!STRIPE_SECRET_KEY) {
+    throw new Error('Stripe is not configured')
+  }
+
+  if (!stripeClient) {
+    stripeClient = new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: '2025-10-29.clover',
+      typescript: true
+    })
+  }
+
+  return stripeClient
+}
 
 // Stripe configuration
 const STRIPE_CONFIG = {
@@ -77,7 +89,7 @@ export async function createOrGetStripeCustomer(userId: string, email: string, n
     if (subscription?.stripeCustomerId) {
       // Verify customer still exists in Stripe
       try {
-        await stripe.customers.retrieve(subscription.stripeCustomerId)
+        await getStripe().customers.retrieve(subscription.stripeCustomerId)
         return subscription.stripeCustomerId
       } catch (error) {
         logger.warn(`[Stripe] Customer ${subscription.stripeCustomerId} not found, creating new one`)
@@ -85,7 +97,7 @@ export async function createOrGetStripeCustomer(userId: string, email: string, n
     }
 
     // Create new Stripe customer
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email,
       name: name || undefined,
       metadata: {
@@ -173,7 +185,7 @@ export async function createCheckoutSession(
       logger.info(`[Stripe] No trial offered for returning user ${userId}`)
     }
 
-    const session = await stripe.checkout.sessions.create(sessionConfig)
+    const session = await getStripe().checkout.sessions.create(sessionConfig)
 
     logger.info(`[Stripe] Created checkout session ${session.id} for user ${userId}`)
     return session
@@ -209,7 +221,7 @@ export async function createPortalSession(userId: string): Promise<string> {
     }
 
     // Create portal session
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: subscription.stripeCustomerId,
       return_url: process.env.APP_URL ? `${process.env.APP_URL}/account` : 'http://localhost:5173/account'
     })
@@ -239,7 +251,7 @@ export async function cancelSubscription(userId: string): Promise<void> {
     }
 
     // Cancel subscription at period end (user keeps access until end of billing period)
-    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+    await getStripe().subscriptions.update(subscription.stripeSubscriptionId, {
       cancel_at_period_end: true
     })
 
@@ -276,7 +288,7 @@ export async function resumeSubscription(userId: string): Promise<void> {
     }
 
     // Resume subscription
-    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+    await getStripe().subscriptions.update(subscription.stripeSubscriptionId, {
       cancel_at_period_end: false
     })
 
@@ -311,7 +323,7 @@ export function constructWebhookEvent(
   signature: string
 ): Stripe.Event {
   try {
-    return stripe.webhooks.constructEvent(
+    return getStripe().webhooks.constructEvent(
       payload,
       signature,
       STRIPE_CONFIG.webhookSecret
@@ -322,5 +334,6 @@ export function constructWebhookEvent(
   }
 }
 
-// Export Stripe instance for direct access if needed
-export { stripe }
+export function isStripeConfigured(): boolean {
+  return Boolean(STRIPE_SECRET_KEY)
+}

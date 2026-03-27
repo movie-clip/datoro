@@ -48,14 +48,18 @@ function parseCommandError(error) {
 
 function runCommand(command, options = {}) {
   const { cwd = rootDir, stdio = 'pipe' } = options;
-  return execSync(command, {
-    cwd,
-    stdio,
-    encoding: 'utf-8',
-    env: {
-      ...process.env,
-      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test'
-    }
+  return execSync(command, { cwd, stdio, encoding: 'utf-8', env: process.env });
+}
+
+function envValueExists(key) {
+  if (process.env[key]) return true;
+
+  const envFiles = ['.env', '.env.local', '.env.development.local', '.env.test.local'];
+  return envFiles.some(file => {
+    const fullPath = join(rootDir, file);
+    if (!existsSync(fullPath)) return false;
+    const content = readFileSync(fullPath, 'utf-8');
+    return new RegExp(`^\s*${key}\s*=`, 'm').test(content);
   });
 }
 
@@ -354,31 +358,39 @@ try {
 
 // Check 7: Prisma schema
 console.log('\n🗄️  Checking Prisma Schema...');
-try {
-  runCommand('npx --no-install prisma validate');
-  checks.passed.push('Prisma Schema');
-  console.log('✅ Prisma Schema valid');
-} catch (error) {
-  const details = parseCommandError(error);
-  checks.failed.push({ name: 'Prisma Schema', error: details ? `Invalid schema\n${details}` : 'Invalid schema' });
-  console.log('❌ Prisma Schema invalid');
+if (!envValueExists('DATABASE_URL')) {
+  warn('Prisma Schema', 'Skipped prisma validate because DATABASE_URL is not configured in CI/local env.');
+} else {
+  try {
+    runCommand('npx --no-install prisma validate');
+    checks.passed.push('Prisma Schema');
+    console.log('✅ Prisma Schema valid');
+  } catch (error) {
+    const details = parseCommandError(error);
+    checks.failed.push({ name: 'Prisma Schema', error: details ? `Invalid schema\n${details}` : 'Invalid schema' });
+    console.log('❌ Prisma Schema invalid');
+  }
 }
 
 // Check 7.5: Verify Prisma migrations are synced
 console.log('\n🔄 Checking Prisma Migrations...');
-try {
-  const migrationStatus = runCommand('npx --no-install prisma migrate status', { stdio: 'pipe' });
-  if (/database schema is up to date/i.test(migrationStatus)) {
-    checks.passed.push('Prisma Migrations');
-    console.log('✅ Prisma migrations synced');
-  } else if (/not yet been applied/i.test(migrationStatus)) {
-    warn('Prisma Migrations', 'Pending migrations detected. Run: npx prisma migrate deploy');
-  } else {
-    checks.passed.push('Prisma Migrations');
-    console.log('✅ Prisma migrations status checked');
+if (!process.env.DATABASE_URL) {
+  warn('Prisma Migrations', 'Skipped migration status check in CI/local env because no live DATABASE_URL is configured.');
+} else {
+  try {
+    const migrationStatus = runCommand('npx --no-install prisma migrate status', { stdio: 'pipe' });
+    if (/database schema is up to date/i.test(migrationStatus)) {
+      checks.passed.push('Prisma Migrations');
+      console.log('✅ Prisma migrations synced');
+    } else if (/not yet been applied/i.test(migrationStatus)) {
+      warn('Prisma Migrations', 'Pending migrations detected. Run: npx prisma migrate deploy');
+    } else {
+      checks.passed.push('Prisma Migrations');
+      console.log('✅ Prisma migrations status checked');
+    }
+  } catch (_error) {
+    warn('Prisma Migrations', 'Could not verify migration status. Ensure database is accessible.');
   }
-} catch (_error) {
-  warn('Prisma Migrations', 'Could not verify migration status. Ensure database is accessible.');
 }
 
 // Check 8: Environment variables

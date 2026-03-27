@@ -11,7 +11,9 @@ services:
   - type: web
     name: datoro-api
     runtime: node
-    buildCommand: npm install && npx prisma generate
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci && npx prisma generate
+    preDeployCommand: npx prisma migrate deploy
     startCommand: node --import tsx server/server.ts
     healthCheckPath: /api/health
     
@@ -36,35 +38,42 @@ services:
       - key: FMP_API_KEY
         sync: false
       
-      # REQUIRED: Set manually in Render dashboard (authentication)
-      # Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+      # Authentication secret. Render generates this on first blueprint creation
+      # and preserves any existing value on later syncs.
       - key: JWT_SECRET
-        sync: true
+        generateValue: true
 
-      # RECOMMENDED: Protect admin/ops endpoints (cache clear, monitoring reset, DB pool stats)
-      # Send requests with: X-Admin-Key: <value>
+      # Protect admin/ops endpoints (cache clear, monitoring reset, DB pool stats).
+      # Render generates this on first blueprint creation and preserves it later.
       - key: ADMIN_API_KEY
-        sync: false
+        generateValue: true
       
       - key: JWT_EXPIRES_IN
         value: 7d
       
       # Database connection for Prisma migrations and runtime.
-      # Keep this managed by Render via fromDatabase so the service uses
-      # the private-network connection string instead of a manual external URL.
+      # Keep this managed by Render so deploys automatically follow the current
+      # database instance and avoid stale manual URLs.
       - key: DATABASE_URL
-        sync: true
+        fromDatabase:
+          name: datoro-db
+          property: connectionString
 
       # Redis connection for cache and rate limiting
       - key: REDIS_URL
-        sync: true
+        fromService:
+          type: keyvalue
+          name: datoro-redis
+          property: connectionString
       
       # OPTIONAL: Set manually if using Sentry
       - key: SENTRY_DSN
         sync: false
       
       # Stripe Subscription System
-      # REQUIRED: Set manually in Render dashboard
+      # REQUIRED: Set manually in Render dashboard.
+      # Note: Render only prompts for sync:false values during the initial
+      # blueprint creation flow. For existing services, add/update them manually.
       # Get from: https://dashboard.stripe.com/apikeys
       - key: STRIPE_SECRET_KEY
         sync: false
@@ -104,7 +113,8 @@ services:
   - type: web
     name: datoro
     runtime: static
-    buildCommand: npm install && npm run build
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     previews:
       generation: automatic
