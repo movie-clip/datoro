@@ -14,7 +14,7 @@ ungrouped:
       runtime: node
       autoDeployTrigger: checksPass
       buildCommand: npm ci && npx prisma generate
-      startCommand: npm run server:render
+      startCommand: node --import tsx server/server.ts
       healthCheckPath: /api/health
       
       # Only rebuild backend when these files change
