@@ -52,19 +52,15 @@ ungrouped:
           value: 7d
         
         # Database connection for Prisma migrations and runtime.
-        # Keep this managed by Render so deploys automatically follow the current
-        # database instance and avoid stale manual URLs.
+        # Link this manually in the Render dashboard for existing services.
+        # Render's dashboard binding currently produces the working runtime value
+        # more reliably than blueprint sync for this project.
         - key: DATABASE_URL
-          fromDatabase:
-            name: datoro-db
-            property: connectionString
+          sync: false
 
         # Redis connection for cache and rate limiting
         - key: REDIS_URL
-          fromService:
-            type: keyvalue
-            name: datoro-redis
-            property: connectionString
+          sync: false
         
         # OPTIONAL: Set manually if using Sentry
         - key: SENTRY_DSN

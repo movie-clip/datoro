@@ -65,7 +65,7 @@ function getProviderConfig(providerKey: string): ProviderConfig | null {
 export function detectProvider(databaseUrl: string | undefined): string {
   if (!databaseUrl) return CONNECTION_POOL_CONFIG.defaultProvider
   
-  if (databaseUrl.includes('render.com')) {
+  if (databaseUrl.includes('render.com') || /@dpg-[a-z0-9-]+(?::\d+)?\//i.test(databaseUrl)) {
     return 'render-postgres'
   }
   if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
