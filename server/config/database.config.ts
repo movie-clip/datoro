@@ -42,7 +42,6 @@ export const CONNECTION_POOL_CONFIG = {
     connect_timeout: 5,          // Seconds for initial connection
     statement_timeout: 10000,    // Milliseconds for query timeout (prevents hung connections)
     statement_cache: true,       // Cache prepared statements for performance
-    prepared_statements: true,   // Enable prepared statements
   },
   
   // Query timeout strategies (milliseconds)
@@ -106,8 +105,14 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
     connect_timeout?: number
     statement_timeout?: number
     statement_cache?: boolean
+    sslmode?: string
   }
   config.connection_limit = provider.connectionsPerWorker
+
+  // Render Postgres internal connections require TLS. Add sslmode if missing.
+  if (providerKey === 'render-postgres' && !url.searchParams.has('sslmode')) {
+    config.sslmode = 'require'
+  }
   
   // Build parameter string
   const params: string[] = []
@@ -125,6 +130,10 @@ export function buildDatabaseUrl(baseUrl: string, providerOverride: string | nul
   // Performance optimizations
   if (config.statement_cache) {
     params.push('statement_cache_size=500')
+  }
+
+  if (config.sslmode) {
+    params.push(`sslmode=${config.sslmode}`)
   }
   
   // Add to URL query string (preserve existing parameters)
