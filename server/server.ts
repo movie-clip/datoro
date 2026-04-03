@@ -62,8 +62,8 @@ import { requestId } from './middleware/requestId.js'
 // Load environment variables from .env first, then .env.local (overrides)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-config({ path: join(__dirname, '..', '.env') })
-config({ path: join(__dirname, '..', '.env.local'), override: true })
+config({ path: join(__dirname, '..', '.env'), quiet: true })
+config({ path: join(__dirname, '..', '.env.local'), override: true, quiet: true })
 
 // Initialize services
 const cache = getCacheService()
@@ -162,8 +162,8 @@ if (process.env.NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
   }
 }
 
-logger.info(`[CORS] Allowed origins: ${JSON.stringify(allowedOrigins)}`)
-logger.info(`[CORS] NODE_ENV: ${process.env.NODE_ENV}`)
+logger.info(`[Startup] Environment: ${process.env.NODE_ENV || 'development'}`)
+logger.info(`[Startup] CORS origins: ${allowedOrigins.join(', ')}`)
 
 app.use(cors({ 
   origin: (origin, callback) => {
@@ -985,22 +985,24 @@ app.use(sentryService.errorHandler())
 app.use(errorHandler(monitoring))
 
 const server = app.listen(PORT, '0.0.0.0', async () => {
-  logger.info(`FMP Proxy Server listening on http://0.0.0.0:${PORT}`)
-  logger.info(`Access from network: http://<your-pc-ip>:${PORT}`)
-  logger.info(`CORS allowed origin: ${DEV_ORIGIN}`)
-  logger.info(`FMP API: ${FMP_API_KEY ? 'ENABLED' : 'DISABLED (set FMP_API_KEY)'}`)
+  logger.info(`[Startup] API listening on 0.0.0.0:${PORT}`)
+  logger.info('[Startup] FMP API: enabled')
   
   // Warm up database connection pool to prevent cold start delays
   // This prevents the first auth request from timing out after server restart
-  logger.info('[Database] Warming up connection pool...')
-  try {
-    const prisma = getPrismaClient()
-    // Simple query to establish connection
-    await prisma.$queryRaw`SELECT 1`
-    logger.info('[Database] ✓ Connection pool warmed up')
-  } catch (_error: unknown) {
-    logger.warn('[Database] ✗ Failed to warm up connection:', getErrorMessage(_error))
-    logger.warn('[Database] First requests may be slower than usual')
+  if (process.env.WARM_DB_ON_STARTUP === 'true') {
+    logger.info('[Database] Warming up connection pool...')
+    try {
+      const prisma = getPrismaClient()
+      // Simple query to establish connection
+      await prisma.$queryRaw`SELECT 1`
+      logger.info('[Database] ✓ Connection pool warmed up')
+    } catch (_error: unknown) {
+      logger.warn('[Database] ✗ Failed to warm up connection:', getErrorMessage(_error))
+      logger.warn('[Database] First requests may be slower than usual')
+    }
+  } else {
+    logger.debug('[Database] Warmup skipped (WARM_DB_ON_STARTUP=false)')
   }
   
   // Schedule daily session cleanup (only on worker 0 or if not using PM2)

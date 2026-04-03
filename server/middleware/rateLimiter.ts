@@ -316,12 +316,9 @@ export function initializeRateLimiters(redisClient: Redis | null) {
   if (redisClient) {
     globalFmpLimiterImpl = createRedisGlobalFmpLimiter(redisClient)
     decrementGlobalFmpCounterImpl = createRedisGlobalFmpDecrement(redisClient)
-    logger.info('[RateLimit] Using Redis store (cluster-safe, distributed across all workers)')
-    logger.info('[RateLimit] ✓ Active limiters swapped to Redis (cluster-safe)')
+    logger.info('[RateLimit] Redis-backed limiters enabled')
   } else {
-    logger.warn('[RateLimit] Redis not available - using memory store (NOT cluster-safe)')
-    logger.warn('[RateLimit] Each PM2 worker has independent counters - rate limits can be bypassed!')
-    logger.warn('[RateLimit] ✗ Active limiters using memory store (NOT cluster-safe)')
+    logger.warn('[RateLimit] Redis unavailable; using in-memory limiters')
   }
 }
 
