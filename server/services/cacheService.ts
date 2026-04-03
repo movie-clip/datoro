@@ -82,6 +82,7 @@ class CacheService {
   private redisEnabled: boolean
   private redis: Redis | null
   private connected: boolean
+  private socketConnected: boolean
   private hasConnectedOnce: boolean
   private startupRedisErrorLogged: boolean
   private memoryCache: LRUCache<string, CacheValue>
@@ -95,6 +96,7 @@ class CacheService {
     this.redisEnabled = !!this.redisUrl
     this.redis = null
     this.connected = false
+    this.socketConnected = false
     this.hasConnectedOnce = false
     this.startupRedisErrorLogged = false
     this.pendingFetches = new Map()
@@ -158,7 +160,12 @@ class CacheService {
 
       // Event handlers
       this.redis.on('connect', () => {
-        logger.info('[CacheService] Connected to Redis')
+        this.socketConnected = true
+        logger.info('[CacheService] Redis socket connected')
+      })
+
+      this.redis.on('ready', () => {
+        logger.info('[CacheService] Redis ready')
         this.connected = true
         this.hasConnectedOnce = true
         this.startupRedisErrorLogged = false
@@ -172,7 +179,12 @@ class CacheService {
 
         if (!this.hasConnectedOnce) {
           if (!this.startupRedisErrorLogged) {
-            logger.error('[CacheService] Redis startup connection error', errorMeta)
+            logger.error(
+              this.socketConnected
+                ? '[CacheService] Redis startup error after socket connect'
+                : '[CacheService] Redis startup connection error',
+              errorMeta
+            )
             this.startupRedisErrorLogged = true
           }
         } else {
@@ -184,6 +196,13 @@ class CacheService {
 
       this.redis.on('close', () => {
         logger.debug('[CacheService] Redis connection closed')
+        this.socketConnected = false
+        this.connected = false
+      })
+
+      this.redis.on('end', () => {
+        logger.debug('[CacheService] Redis connection ended')
+        this.socketConnected = false
         this.connected = false
       })
 
@@ -198,6 +217,7 @@ class CacheService {
       }
 
       this.redis?.disconnect()
+      this.socketConnected = false
       this.connected = false
       logger.warn('[CacheService] Falling back to memory-only mode')
       this.redisEnabled = false

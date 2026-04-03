@@ -58,9 +58,13 @@ ungrouped:
         - key: DATABASE_URL
           sync: false
 
-        # Redis connection for cache and rate limiting
+        # Redis connection for cache and rate limiting.
+        # Use the managed private-network connection string from Render Key Value.
         - key: REDIS_URL
-          sync: false
+          fromService:
+            name: datoro-redis
+            type: keyvalue
+            property: connectionString
         
         # OPTIONAL: Set manually if using Sentry
         - key: SENTRY_DSN
