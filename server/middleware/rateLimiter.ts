@@ -60,6 +60,7 @@ function createGeneralLimiter(redisClient: Redis | null = null) {
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.GENERAL_MAX,
     store,
+    passOnStoreError: true,
     message: {
       error: 'Too many requests from this IP, please try again later.',
       retryAfter: '60 seconds'
@@ -84,6 +85,7 @@ function createFmpLimiter(redisClient: Redis | null = null) {
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.FMP_PER_IP_MAX,
     store,
+    passOnStoreError: true,
     message: {
       error: 'Too many API requests, please slow down.',
       retryAfter: '60 seconds'
@@ -112,6 +114,7 @@ function createAdminLimiter(redisClient: Redis | null = null) {
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.ADMIN_MAX,
     store,
+    passOnStoreError: true,
     message: 'Too many requests to admin endpoint',
     standardHeaders: true,
     legacyHeaders: false,
@@ -135,6 +138,7 @@ function createAiLimiter(redisClient: Redis | null = null) {
     windowMs: RATE_LIMIT.WINDOW_MS,
     max: RATE_LIMIT.AI_MAX,
     store,
+    passOnStoreError: true,
     message: 'Too many AI requests',
     standardHeaders: true,
     legacyHeaders: false,
@@ -314,6 +318,44 @@ export function initializeRateLimiters(redisClient: Redis | null) {
   activeLimiters = createRateLimiters(redisClient)
 
   if (redisClient) {
+    const handleRedisLimiterDisconnect = () => {
+      logger.warn('[RateLimit] Redis rate limiter connection lost; falling back to in-memory limiters')
+      activeLimiters = createRateLimiters(null)
+      globalFmpLimiterImpl = (req, res, next) => {
+        if (shouldSkipFmpRateLimit(req)) {
+          return next()
+        }
+
+        const now = Date.now()
+        if (now - globalFmpWindowStart >= RATE_LIMIT.WINDOW_MS) {
+          globalFmpCounter = 0
+          globalFmpWindowStart = now
+        }
+
+        if (globalFmpCounter >= RATE_LIMIT.FMP_GLOBAL_MAX) {
+          const timeUntilReset = Math.ceil((RATE_LIMIT.WINDOW_MS - (now - globalFmpWindowStart)) / 1000)
+          logger.warn(`[RateLimit] Global FMP limit reached (${RATE_LIMIT.FMP_GLOBAL_MAX}/min). Blocking request from ${req.ip}`)
+          return res.status(503).json({
+            error: 'Service temporarily unavailable',
+            message: 'The API quota is currently exhausted. Please try again in a moment.',
+            retryAfter: `${timeUntilReset} seconds`,
+            globalLimit: RATE_LIMIT.FMP_GLOBAL_MAX,
+            window: '1 minute'
+          })
+        }
+
+        req.fmpCallTracked = true
+        globalFmpCounter++
+        return next()
+      }
+      decrementGlobalFmpCounterImpl = () => {
+        if (globalFmpCounter > 0) globalFmpCounter--
+      }
+    }
+
+    redisClient.on('close', handleRedisLimiterDisconnect)
+    redisClient.on('end', handleRedisLimiterDisconnect)
+
     globalFmpLimiterImpl = createRedisGlobalFmpLimiter(redisClient)
     decrementGlobalFmpCounterImpl = createRedisGlobalFmpDecrement(redisClient)
     logger.info('[RateLimit] Redis-backed limiters enabled')

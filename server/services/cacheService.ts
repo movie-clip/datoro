@@ -408,7 +408,7 @@ class CacheService {
         const freshData = await fetchFn()
         
         if (freshData !== null && freshData !== undefined) {
-          await this.set(key, freshData, ttlSeconds)
+          this.setFast(key, freshData, ttlSeconds)
         }
         
         return freshData

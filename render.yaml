@@ -66,10 +66,6 @@ ungrouped:
             type: keyvalue
             property: connectionString
         
-        # OPTIONAL: Set manually if using Sentry
-        - key: SENTRY_DSN
-          sync: false
-        
         # Stripe Subscription System
         # REQUIRED: Set manually in Render dashboard.
         # Note: Render only prompts for sync:false values during the initial
